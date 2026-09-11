@@ -1,0 +1,135 @@
+---
+name: presentation-maker
+description: >-
+  Expert system for designing, structuring, and generating professional presentation decks (PowerPoint / .pptx) using the unified CLI (`uv run bench ppt`), python-pptx, consulting frameworks, and modern slide design systems. Use whenever creating, editing, redesigning, or automating PowerPoint presentations.
+---
+
+# Presentation Maker Skill
+
+A comprehensive guide for generating high-impact, professional presentations using the unified Enterprise Bench CLI (`uv run bench ppt ...`), modular consulting archetypes from `src.ppt_engine`, and clean visual design standards.
+
+---
+
+## 🚨 Primary Protocol: Unified CLI-First Execution
+
+> **CRITICAL RULE:** Do NOT write raw, throwaway Python scripts or manual slide assembly scripts from scratch. Always invoke presentation tasks through the unified `bench` CLI or import from `src.ppt_engine`.
+
+### Exact 1-Line CLI Commands
+
+1. **Generate Consulting Presentation Deck:**
+   ```bash
+   uv run bench ppt generate --theme brickred --title "Enterprise Strategy Review" --client "Strategic Partner" --output output/strategy_review.pptx
+   ```
+
+2. **List Available Enterprise Themes:**
+   ```bash
+   uv run bench ppt themes
+   ```
+
+3. **Verify Generation & Fast Unit Sanity:**
+   ```bash
+   uv run bench test --unit
+   ```
+
+---
+
+## 1. Core Workflow
+
+```
+1. Outline & Narrative Architecture  →  2. Design System & Palette  →  3. Archetype Selection  →  4. CLI / Engine Execution  →  5. Asset & Visual QA
+```
+
+### Phase 1: Narrative & Deck Architecture
+- **Define Slide Roles**: Every slide must have a distinct functional purpose (e.g., Cover, Problem Framing, Regulatory Context, Research Gap, Theoretical Framework, Methodology, Empirical Results, Robustness, Implications, Q&A).
+- **Takeaway Headlines**: Write action titles that express the conclusion, not just category labels (e.g., *"ESG Disclosure Significantly Enhances Financial Reporting Quality in High-Scrutiny Sectors"* instead of *"Results"*).
+- **Pacing & Breathing Room**: Limit to 1 core idea per slide. Avoid dense wall-of-text paragraphs; use structured cards, columns, and visual callouts.
+
+### Phase 2: Engine Integration (When Extending Beyond CLI Defaults)
+When building customized decks in Python, import directly from the engine primitives rather than writing raw `python-pptx` scripts:
+```python
+from src.ppt_engine.consulting_archetypes import (
+    create_presentation,
+    ConsultingDeckBuilder,
+    HorizonColumnData,
+    ScorecardQuadrantData,
+    build_bcg_3_horizon_slide,
+    build_balanced_scorecard_slide,
+)
+from src.ppt_engine.theme_engine import get_theme
+
+active_theme = get_theme("brickred")
+prs = create_presentation(active_theme)
+# Assemble slides using archetypes...
+prs.save("output/custom_deck.pptx")
+```
+
+---
+
+## 2. Visual Design System
+
+### A. Aspect Ratio & Dimensions
+- Default to **16:9 Widescreen** (enforced by `create_presentation(theme)`):
+  - Width: `13.333 inches` (`12192000 EMUs`)
+  - Height: `7.5 inches` (`6858000 EMUs`)
+
+### B. Color Palettes
+Choose a cohesive palette with 60-30-10 distribution (60% background/neutral, 30% primary/secondary slate, 10% high-contrast accent):
+
+1. **Modern Consulting (`brickred`)**:
+   - Background: Off-white / Cool Gray (`#F8F9FA`)
+   - Primary Text: Deep Navy / Slate (`#1E293B`)
+   - Secondary / Structural: Slate Blue (`#475569`)
+   - Accent / Highlight: Crimson Red (`#DC2626`)
+   - Surface / Card Fill: Pure White (`#FFFFFF`)
+   - Border / Hairline: Subtle Slate (`#E2E8F0`)
+
+2. **Executive Enterprise (`snowblue`)**:
+   - Background: Snow Mist (`#F0F4F8`)
+   - Text: Deep Charcoal (`#0F172A`)
+   - Accent: Cerulean Blue (`#0284C7`)
+   - Secondary: Muted Navy (`#1E3A8A`)
+
+---
+
+## 3. Slide Archetypes & Layouts
+
+Refer to detailed implementation recipes in [`references/slide_archetypes.md`](./references/slide_archetypes.md):
+1. **Title / Cover Slide**: Minimalist, strong typography, metadata in understated pill or baseline.
+2. **Horizontal Flow / Process**: 3–4 sequenced cards with connector arrows or step badges.
+3. **2-Column / 3-Column Comparison**: Distinct cards with hairline borders and top accent bands.
+4. **BCG 3-Horizon Modernization**: 3 phased columns (`Horizon 1: 0-6m`, `Horizon 2: 6-18m`, `Horizon 3: 18-36m`).
+5. **Balanced Scorecard KPI Matrix**: 4 quadrants (Financial, Customer, Operational, Resilience) with metric chips.
+6. **Key Metrics / Stat Highlights**: Large 36–48pt numbers paired with concise 12pt descriptive labels.
+
+---
+
+## 4. Programmatic Rules & Collision Prevention
+
+Detailed code templates are available in [`references/python_pptx_recipes.md`](./references/python_pptx_recipes.md).
+
+### Golden Rules for Slide Layouts:
+1. **Explicit Positioning**: Never rely on default PowerPoint placeholders. Calculate explicit `left`, `top`, `width`, `height`.
+2. **Text Box Margin Zeroing**: Always set internal padding when aligning text inside visual cards:
+   ```python
+   tf = shape.text_frame
+   tf.word_wrap = True
+   tf.margin_left = Inches(0.15)
+   tf.margin_right = Inches(0.15)
+   tf.margin_top = Inches(0.15)
+   tf.margin_bottom = Inches(0.15)
+   ```
+3. **Card Container Shapes**: Place rounded rectangle or rectangle shapes behind content groups to establish visual hierarchy.
+4. **Consistent Typography Tokens**:
+   - Header Tracker / Category: 10–11pt bold, uppercase
+   - Main Slide Action Title: 22–26pt bold
+   - Card Titles / Subheaders: 13–15pt bold
+   - Body Text: 11–12pt regular
+   - Captions / Footnotes: 9–10pt muted
+
+---
+
+## 5. Reference Files
+- [Python-PPTX Code Recipes](./references/python_pptx_recipes.md)
+- [Design Systems & Color Schemes](./references/design_systems.md)
+- [Slide Layout Archetypes](./references/slide_archetypes.md)
+- [Deck Template Generator Script](./scripts/create_deck_template.py)
