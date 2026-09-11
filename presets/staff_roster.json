@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "description": "Standardized Enterprise Delivery Staff Roster Archetypes (Committed Baseline)",
+  "last_updated": "2026-09-11T15:35:00",
+  "staff": [
+    {
+      "staff_id": "ROLE_PROJECT_MANAGER",
+      "full_name": "ROLE_PROJECT_MANAGER",
+      "official_position": "Senior Project Manager",
+      "department": "Enterprise Cloud Delivery",
+      "email": "pm@enterprise-consulting.com",
+      "primary_skills": ["Project Governance", "PMP", "Scrum", "Risk Management", "Client PMO"],
+      "last_updated": "2026-09-11"
+    },
+    {
+      "staff_id": "ROLE_STEERING_LEAD",
+      "full_name": "ROLE_STEERING_LEAD",
+      "official_position": "Division Manager / Steering Lead",
+      "department": "Executive Leadership",
+      "email": "steering@enterprise-consulting.com",
+      "primary_skills": ["Executive Steering", "Commercial Negotiations", "Account Governance"],
+      "last_updated": "2026-09-11"
+    },
+    {
+      "staff_id": "ROLE_LEAD_ARCHITECT",
+      "full_name": "ROLE_LEAD_ARCHITECT",
+      "official_position": "Lead Enterprise Architect",
+      "department": "Data & Cloud Architecture",
+      "email": "architect@enterprise-consulting.com",
+      "primary_skills": ["Snowflake Architecture", "Data Modeling", "Cutover & Rollback"],
+      "last_updated": "2026-09-11"
+    },
+    {
+      "staff_id": "ROLE_STREAMLIT_DEV",
+      "full_name": "ROLE_STREAMLIT_DEV",
+      "official_position": "Analytics & UI Engineer",
+      "department": "Modern Analytics & AI",
+      "email": "ui-dev@enterprise-consulting.com",
+      "primary_skills": ["Streamlit Analytics", "Snowpark Python", "Cortex AI", "Financial Reporting Views"],
+      "last_updated": "2026-09-11"
+    },
+    {
+      "staff_id": "ROLE_DATA_ENGINEER_1",
+      "full_name": "ROLE_DATA_ENGINEER_1",
+      "official_position": "Senior Data Engineer",
+      "department": "Data Engineering & Integration",
+      "email": "data-eng1@enterprise-consulting.com",
+      "primary_skills": ["ETL Pipelines", "Snowpipe Ingestion", "dbt Transformations"],
+      "last_updated": "2026-09-11"
+    },
+    {
+      "staff_id": "ROLE_DATA_ENGINEER_2",
+      "full_name": "ROLE_DATA_ENGINEER_2",
+      "official_position": "Data & BI Engineer",
+      "department": "Analytics & Visualization",
+      "email": "data-eng2@enterprise-consulting.com",
+      "primary_skills": ["Snowflake SQL", "Data Aggregation", "UI Filters", "Integration Testing"],
+      "last_updated": "2026-09-11"
+    },
+    {
+      "staff_id": "ROLE_QA_LEAD",
+      "full_name": "ROLE_QA_LEAD",
+      "official_position": "QA & Test Automation Lead",
+      "department": "Quality Assurance",
+      "email": "qa@enterprise-consulting.com",
+      "primary_skills": ["SIT Automation", "UAT Coordination", "Defect Triage"],
+      "last_updated": "2026-09-11"
+    },
+    {
+      "staff_id": "ROLE_TECHNICAL_WRITER",
+      "full_name": "ROLE_TECHNICAL_WRITER",
+      "official_position": "Technical Documentation Specialist",
+      "department": "Delivery Operations",
+      "email": "docs@enterprise-consulting.com",
+      "primary_skills": ["User Guides", "Admin Guides", "Operational Runbooks"],
+      "last_updated": "2026-09-11"
+    }
+  ]
+}

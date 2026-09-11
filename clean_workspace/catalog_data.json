@@ -1,0 +1,1306 @@
+[
+  {
+    "project": "KRA_ESG_Research",
+    "stage": "presentations",
+    "filename": "KRA_1 Sept2026.pptx",
+    "rel_path": "KRA_ESG_Research/presentations/KRA_1 Sept2026.pptx",
+    "ext": ".pptx",
+    "size_kb": 7845.3,
+    "slides_count": 21,
+    "slide_titles": [
+      "Dr. TESSA VANINA SOETANTO, ST, M.Com",
+      "Introduction",
+      "Otoritas Jasa Keuangan mengeluarkan peraturan POJK No 51/POJK.03/2017",
+      "ESG Disclosure mempengaruhi  Financial Reporting Quality",
+      "Research Gap",
+      "Teori",
+      "Jumlah observasi yang didapatkan sebesar 630",
+      "Dependent Variable",
+      "Skor ESG Disclosure - Bloomberg",
+      "FRQ diukur dari model Accrual Quality yang diusulkan oleh (Dechow & Dichev, 2002), disesuaikan oleh (McNichols, 2002) dan (Francis et al., 2005). ",
+      "FRQ   : Financial Reporting Quality perusahaan i pada waktu t;",
+      "Robustness Test"
+    ]
+  },
+  {
+    "project": "KRA_ESG_Research",
+    "stage": "presentations",
+    "filename": "KRA_1_Sept2026_Modern_Consulting.pptx",
+    "rel_path": "KRA_ESG_Research/presentations/KRA_1_Sept2026_Modern_Consulting.pptx",
+    "ext": ".pptx",
+    "size_kb": 182.4,
+    "slides_count": 15,
+    "slide_titles": [
+      "ACADEMIC RESEARCH PRESENTATION",
+      "INTRODUCTION | LATAR BELAKANG",
+      "KONTEKS REGULASI | INDONESIA",
+      "RESEARCH GAP & QUESTION | PERUMUSAN MASALAH",
+      "KERANGKA TEORI | THEORETICAL LENS",
+      "METODOLOGI | PEMILIHAN SAMPEL",
+      "METODOLOGI | OPERASIONALISASI VARIABEL",
+      "PENGUKURAN | DIMENSI BLOOMBERG",
+      "SPESIFIKASI MODEL | EKONOMETRIKA",
+      "BUKTI DESKRIPTIF | TREN DATA",
+      "HASIL EMPIRIS | REGRESI UTAMA",
+      "UJI KETAHANAN | ROBUSTNESS ANALYSIS"
+    ]
+  },
+  {
+    "project": "KRA_ESG_Research",
+    "stage": "presentations",
+    "filename": "generate_redesigned_deck.py",
+    "rel_path": "KRA_ESG_Research/presentations/generate_redesigned_deck.py",
+    "ext": ".py",
+    "size_kb": 63.4,
+    "info": "Non-office asset or diagram"
+  },
+  {
+    "project": "KRA_ESG_Research",
+    "stage": "presentations",
+    "filename": "montage.png",
+    "rel_path": "KRA_ESG_Research/presentations/montage.png",
+    "ext": ".png",
+    "size_kb": 1130.5,
+    "info": "Non-office asset or diagram"
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "01_presales",
+    "filename": "Account_POC_Scope_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/01_presales/Account_POC_Scope_Template.docx",
+    "ext": ".docx",
+    "size_kb": 15.9,
+    "headings": [],
+    "body_excerpt": [
+      "{{ client_abbr }} 24 Nov 24 Des",
+      "WRBBVPB-ZJ81989.{{ tech_partner }}computing.com",
+      "user : admin",
+      "pass : {{ tech_partner }}{{ vendor_group }}.123"
+    ],
+    "tables": []
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "01_presales",
+    "filename": "Cloud_Sizing_Calculator_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/01_presales/Cloud_Sizing_Calculator_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 18.0,
+    "sheets": [
+      "Sheet2",
+      "Calculator (development)",
+      "Calculator (live)",
+      "Calculator",
+      "Price per Credit",
+      "Credit Consumption"
+    ],
+    "sheet_samples": {
+      "Sheet2": [
+        [
+          "Year1",
+          "Year2"
+        ],
+        [
+          "prev",
+          "baru",
+          "saving",
+          "yearly cost lama",
+          "yearly cost baru"
+        ],
+        [
+          "Prod platform cost",
+          "398452800",
+          "152689920",
+          "398452800"
+        ]
+      ],
+      "Calculator (development)": [
+        [
+          "Customer",
+          "{{ client_short_name }}",
+          "pilih spec di kolom kuning"
+        ],
+        [
+          "Solution",
+          "{{ tech_partner }}",
+          "edit yg di kolom hijau"
+        ],
+        [
+          "Platform",
+          "{{ tech_partner }} on AWS (Jakarta)",
+          "1",
+          "15",
+          "31"
+        ]
+      ],
+      "Calculator (live)": [
+        [
+          "Customer",
+          "{{ client_short_name }}",
+          "pilih spec di kolom kuning"
+        ],
+        [
+          "Solution",
+          "{{ tech_partner }}",
+          "edit yg di kolom hijau"
+        ],
+        [
+          "Platform",
+          "{{ tech_partner }} on AWS (Jakarta)",
+          "1",
+          "15",
+          "31"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "01_presales",
+    "filename": "Modernize_Data_Platform_Pitch_Deck_Template.pptx",
+    "rel_path": "TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx",
+    "ext": ".pptx",
+    "size_kb": 44702.0,
+    "slides_count": 36,
+    "slide_titles": [
+      "Data Application for Financial Analytics with {{ tech_partner }}",
+      "Our Company\u000bProfile",
+      "{{ vendor_group }} CORPORATE STRUCTURE",
+      "{{ vendor_group }} 8 PILLARS OFFERING :",
+      "Our Data & AI Portfolio",
+      "Our Product Portfolio",
+      "Orchestration",
+      "Our Key Points",
+      "Our Customer References",
+      "Cloud Data Analytics Customer References",
+      "{{ vendor_group }} Data Science Portfolio",
+      "Data Analytics Journey"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "01_presales",
+    "filename": "Timeline_and_Mandays_Estimate_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/01_presales/Timeline_and_Mandays_Estimate_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 21.1,
+    "sheets": [
+      "Sheet1"
+    ],
+    "sheet_samples": {
+      "Sheet1": [
+        [
+          "streamlit",
+          "T&M Activity",
+          "Implementation"
+        ],
+        [
+          "pages",
+          "mandays",
+          "per page",
+          "M1",
+          "M2"
+        ],
+        [
+          "15",
+          "analisa",
+          "1",
+          "W1",
+          "W2"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "02_initiating",
+    "filename": "1.1_Kick-off_Material_Template.pptx",
+    "rel_path": "TTI_Snowflake_Analytics/02_initiating/1.1_Kick-off_Material_Template.pptx",
+    "ext": ".pptx",
+    "size_kb": 6744.3,
+    "slides_count": 19,
+    "slide_titles": [
+      "{{ client_short_name }}\u000bDATA APPLICATION FOR FINANCIAL ANALYTICS WITH {{ tech_partner }}",
+      "1",
+      "1. Latar Belakang",
+      "2. Tujuan",
+      "3. Stakeholder & Role",
+      "4. Tim Project",
+      "5. Ruang Lingkup",
+      "6. Deliverables",
+      "7. Asumsi",
+      "8. Arsitektur To-be",
+      "9. Timeline High Level",
+      "10. Timeline Detail"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "02_initiating",
+    "filename": "1.2_Project_Charter_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/02_initiating/1.2_Project_Charter_Template.docx",
+    "ext": ".docx",
+    "size_kb": 148.7,
+    "headings": [
+      "Latar Belakang",
+      "Tujuan",
+      "Stakeholder",
+      "Ruang Lingkup & Deliverables",
+      "Subscription {{ tech_partner }}",
+      "Project Management",
+      "Assessment & Analisis / Desain",
+      "Development",
+      "Testing",
+      "Go-live, Transfer Knowledge, & Guarantee-Period"
+    ],
+    "body_excerpt": [
+      "Nama Proyek:",
+      "Data Application for Financial Analytics with {{ tech_partner }}",
+      "Project Sponsor:",
+      "{{ client_exec_name }} (CFO & VP {{ client_company }})",
+      "Disiapkan Oleh:"
+    ],
+    "tables": [
+      "Role | Organisasi | Akuntabilitas",
+      "Project Sponsor | CFO & VP {{ client_company }} | Menyetujui arah dan pendanaan proyek",
+      "Fase | Aktivitas | Target Tanggal",
+      "Initiating / Planning | Kick-off meeting | 16 Dec 2025 \u2013 2 Jan 2026",
+      "Milestone | Target Pencapaian",
+      "Kick-off Meeting | 16 Dec 2025"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "02_initiating",
+    "filename": "1.3_Stakeholders_Register_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/02_initiating/1.3_Stakeholders_Register_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 10.0,
+    "sheets": [
+      "Stakeholders",
+      "Department Tasks"
+    ],
+    "sheet_samples": {
+      "Stakeholders": [
+        [
+          "No",
+          "Company",
+          "Name",
+          "Email",
+          "Phone"
+        ],
+        [
+          "{{ client_short_name }}",
+          "{{ client_exec_name }}",
+          "CFO & VP",
+          "Steering Committee",
+          "Y"
+        ],
+        [
+          "{{ client_short_name }}",
+          "{{ client_pm_name }}",
+          "{{ contact_email_3 }}",
+          "{{ contact_phone_1 }}",
+          "Department Officer"
+        ]
+      ],
+      "Department Tasks": [
+        [
+          "Business Accounting"
+        ],
+        [
+          "Support preparation of raw data requirem"
+        ],
+        [
+          "Validate & sound feedback from outlook t"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "02_initiating",
+    "filename": "1.4.1_Project_Timeline_Baseline_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/02_initiating/1.4.1_Project_Timeline_Baseline_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 9.0,
+    "sheets": [
+      "Project Timeline"
+    ],
+    "sheet_samples": {
+      "Project Timeline": [
+        [
+          "WBS",
+          "Task Name",
+          "Duration",
+          "Start",
+          "Finish"
+        ],
+        [
+          "0",
+          "Data Application for Financial Analytics",
+          "104 days",
+          "2025-12-15 00:00:00",
+          "2026-06-02 00:00:00"
+        ],
+        [
+          "1",
+          "   Initiating / Planning",
+          "8 days",
+          "2025-12-15 00:00:00",
+          "2026-01-02 00:00:00"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "02_initiating",
+    "filename": "1.4_Project_Timeline_Baseline_Template.mpp",
+    "rel_path": "TTI_Snowflake_Analytics/02_initiating/1.4_Project_Timeline_Baseline_Template.mpp",
+    "ext": ".mpp",
+    "size_kb": 782.0,
+    "info": "Non-office asset or diagram"
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "02_initiating",
+    "filename": "Project_Org_Structure_Template.pptx",
+    "rel_path": "TTI_Snowflake_Analytics/02_initiating/Project_Org_Structure_Template.pptx",
+    "ext": ".pptx",
+    "size_kb": 420.0,
+    "slides_count": 1,
+    "slide_titles": [
+      "Project Manager\u000b{{ vendor_pm_name }}"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "03_planning",
+    "filename": "2.1_Project_Management_Plan_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/03_planning/2.1_Project_Management_Plan_Template.docx",
+    "ext": ".docx",
+    "size_kb": 984.7,
+    "headings": [
+      "Reviews & Acceptance",
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Daftar Gambar",
+      "Pendahuluan",
+      "Tujuan dari Project Management Plan",
+      "Tentang Proyek",
+      "Dokumen Referensi",
+      "Organisasi & Tata Kelola Proyek",
+      "Struktur Tata Kelola Proyek"
+    ],
+    "body_excerpt": [
+      "PROJECT MANAGEMENT PLAN",
+      "Data Application for Financial Analytics with {{ tech_partner }}",
+      "Reviews & Acceptance",
+      "Dokumen ini telah diketahui, ditinjau, dikonfirmasi, diterima, dan disetujui oleh:",
+      "PT {{ client_short_name }} Indonesia"
+    ],
+    "tables": [
+      "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
+      "Project Manager Approval            {{ client_lead_name }} Date: | Project Advisor            {{ client_pm_name }} Date:",
+      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Arif Nanda Atmavidya Date:"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "03_planning",
+    "filename": "2.3_Functional_Specification_Document_FSD_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/03_planning/2.3_Functional_Specification_Document_FSD_Template.docx",
+    "ext": ".docx",
+    "size_kb": 3224.6,
+    "headings": [
+      "Reviews & Acceptance",
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Daftar Gambar",
+      "Tujuan dan Latar Belakang",
+      "Dokumen Referensi",
+      "Gambaran Umum Kebutuhan Fungsional",
+      "Kebutuhan Aplikasi",
+      "Tujuan Bisnis",
+      "Target User"
+    ],
+    "body_excerpt": [
+      "FUNCTIONAL SPECIFICATION DOCUMENT",
+      "Data Application for Financial Analytics with {{ tech_partner }}\nmodul sales",
+      "Reviews & Acceptance",
+      "Dokumen ini telah diketahui, ditinjau, dikonfirmasi, diterima, dan disetujui oleh:",
+      "{{ client_company }}"
+    ],
+    "tables": [
+      "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
+      "Reviewer       Andri  Date: | Reviewer       {{ client_analyst_1 }} Date:",
+      "Project Manager Approval       {{ client_lead_name }} Date: | Project Advisor       {{ client_pm_name }} Date:",
+      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Arif Nanda Atmavidya Date:"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "03_planning",
+    "filename": "FSD_Architecture_Diagrams_Template.drawio",
+    "rel_path": "TTI_Snowflake_Analytics/03_planning/FSD_Architecture_Diagrams_Template.drawio",
+    "ext": ".drawio",
+    "size_kb": 110.6,
+    "info": "Non-office asset or diagram"
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.1_Technical_Specification_Document_TSD_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.1_Technical_Specification_Document_TSD_Template.docx",
+    "ext": ".docx",
+    "size_kb": 21842.0,
+    "headings": [
+      "Reviews & Acceptance",
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Daftar Gambar",
+      "Pendahuluan",
+      "Tujuan Dokumen",
+      "Ruang Lingkup",
+      "Dokumen Referensi",
+      "Arsitektur Sistem",
+      "Arsitektur High-Level"
+    ],
+    "body_excerpt": [
+      "TECHNICAL SPECIFICATION DOCUMENT",
+      "Data Application for Financial Analytics with {{ tech_partner }}",
+      "Reviews & Acceptance",
+      "Dokumen ini telah diketahui, ditinjau, dikonfirmasi, diterima, dan disetujui oleh:",
+      "{{ client_company }}"
+    ],
+    "tables": [
+      "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
+      "Project Manager Approval            {{ client_lead_name }} Date: | Project Advisor            {{ client_analyst_1 }} Date:",
+      "Project Manager Viewer      {{ vendor_pm_name }} Date: | Steering Committee      Arif Nanda Atmavidya Date:"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.3.1_SIT_Scenario_Backend_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.3.1_SIT_Scenario_Backend_Template.docx",
+    "ext": ".docx",
+    "size_kb": 7624.8,
+    "headings": [
+      "Reviews & Acceptance",
+      "Kontrol Dokumen",
+      "Tujuan & Ruang Lingkup",
+      "Tujuan",
+      "Ruang Lingkup",
+      "Dokumen Referensi",
+      "Asumsi & Dependensi",
+      "Pendekatan Unit Test",
+      "Persiapan Data Unit Test",
+      "Summary Skenario Unit Test"
+    ],
+    "body_excerpt": [
+      "SYSTEM INTEGRATION TEST RESULT",
+      "Data Application for Financial Analytics with {{ tech_partner }}\nBackend",
+      "Reviews & Acceptance",
+      "Dokumen ini telah diketahui, ditinjau, dikonfirmasi, diterima, dan disetujui oleh:",
+      "{{ client_company }}"
+    ],
+    "tables": [
+      "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
+      "Reviewer\u00a0 \u00a0 \u00a0 \u00a0  \u00a0 {{ client_engineer_1 }}\u00a0 Date: | Reviewer\u00a0 \u00a0 \u00a0 \u00a0  \u00a0\u00a0 {{ client_analyst_2 }}\u00a0 Date:",
+      "Project Manager Approval\u00a0 \u00a0 \u00a0 \u00a0   {{ client_lead_name }}\u00a0 Date: | Project Advisor\u00a0 \u00a0 \u00a0  \u00a0 \u00a0 {{ client_analyst_1 }}\u00a0 Date:",
+      "Project Manager Reviewer\u00a0 \u00a0 \u00a0 \u00a0 \u00a0 \u00a0 {{ vendor_pm_name }}\u00a0 Date:\u00a029 Jun 2026 | Steering Committee\u00a0 \u00a0 \u00a0 \u00a0 \u00a0 \u00a0 Arif Nanda Atmavidya\u00a0 Date:\u00a029 Jun 2026"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.3.2_SIT_Scenario_Frontend_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.3.2_SIT_Scenario_Frontend_Template.docx",
+    "ext": ".docx",
+    "size_kb": 3262.0,
+    "headings": [
+      "Reviews & Acceptance",
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Tujuan & Ruang Lingkup",
+      "Tujuan",
+      "Ruang Lingkup",
+      "Dokumen Referensi",
+      "Asumsi & Dependensi",
+      "Pendekatan Unit Test",
+      "Persiapan Data Unit Test"
+    ],
+    "body_excerpt": [
+      "SYSTEM INTEGRATION TEST RESULT",
+      "Data Application for Financial Analytics with {{ tech_partner }}",
+      "frontend",
+      "Reviews & Acceptance",
+      "Dokumen ini telah diketahui, ditinjau, dikonfirmasi, diterima, dan disetujui oleh:"
+    ],
+    "tables": [
+      "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
+      "Reviewer       {{ client_engineer_1 }} Date: | Reviewer       {{ client_analyst_2 }} Date:",
+      "Project Manager Approval       {{ client_lead_name }} Date: | Project Advisor       {{ client_analyst_1 }} Date:",
+      "Project Manager Reviewer      {{ vendor_pm_name }} Date:  29 Juni 2026 | Steering Committee      Arif Nanda Atmavidya Date: 29 Juni 2026"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.4_Sosialisasi_UAT_Briefing_Template.pptx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.4_Sosialisasi_UAT_Briefing_Template.pptx",
+    "ext": ".pptx",
+    "size_kb": 10233.3,
+    "slides_count": 25,
+    "slide_titles": [
+      "{{ client_short_name }}\u000bDATA APPLICATION FOR FINANCIAL ANALYTICS WITH {{ tech_partner }}",
+      "1",
+      "Pendahuluan & Tujuan UAT",
+      "Ruang Lingkup UAT",
+      "Timeline UAT",
+      "Testing Plan",
+      "Environment UAT",
+      "Test Scenario",
+      "Defect Log",
+      "Panduan Singkat Aplikasi",
+      "Step-by Step Login Pertama Kali",
+      "Step-by Step Login Pertama Kali (2)"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.4_Timeline_UAT_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.4_Timeline_UAT_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 6.0,
+    "sheets": [
+      "Sheet1"
+    ],
+    "sheet_samples": {
+      "Sheet1": [
+        [
+          "No",
+          "Aktivitas",
+          "Durasi",
+          "Start",
+          "Finish"
+        ],
+        [
+          "W3",
+          "W4",
+          "W1",
+          "W2",
+          "W3"
+        ],
+        [
+          "1",
+          "Sosialisasi UAT",
+          "1 hari",
+          "2026-02-20 00:00:00"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.4_UAT_Scenario_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.4_UAT_Scenario_Template.docx",
+    "ext": ".docx",
+    "size_kb": 1956.2,
+    "headings": [
+      "Reviews & Acceptance",
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Tujuan & Ruang Lingkup",
+      "Tujuan",
+      "Ruang Lingkup",
+      "Dokumen Referensi",
+      "Asumsi & Dependensi",
+      "Pendekatan Unit Test",
+      "Persiapan Data Unit Test"
+    ],
+    "body_excerpt": [
+      "USER ACCEPTANCE TESTING SCENARIO",
+      "Data Application for Financial Analytics with {{ tech_partner }}",
+      "Reviews & Acceptance",
+      "Dokumen ini telah diketahui, ditinjau, dikonfirmasi, diterima, dan disetujui oleh:",
+      "{{ client_company }}"
+    ],
+    "tables": [
+      "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
+      "Reviewer       {{ client_engineer_1 }} Date: | Reviewer       {{ client_analyst_1 }} Date:",
+      "Project Manager Approval       {{ client_lead_name }} Date: | Project Advisor       {{ client_pm_name }} Date:",
+      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Arif Nanda Atmavidya Date:"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.6.1_User_Guide_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.6.1_User_Guide_Template.docx",
+    "ext": ".docx",
+    "size_kb": 7335.2,
+    "headings": [
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Pendahuluan",
+      "Tujuan",
+      "Ruang Lingkup",
+      "Overview Sistem",
+      "Kebutuhan Sistem",
+      "Akses & Login",
+      "Cara Mengakses Aplikasi",
+      "Proses Login"
+    ],
+    "body_excerpt": [
+      "User Guide",
+      "Data Application for Financial Analytics with {{ tech_partner }}",
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Pendahuluan"
+    ],
+    "tables": [
+      "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
+      "Tanggal | Versi | Editor | Modifikasi",
+      "24 Apr 2026 | 1.0 | Marcel Jeremy Wiradinata {{ vendor_contributor_name }} Willyam Saputra {{ vendor_pm_name }} | Versi final 1.0",
+      "Contoh MFA menggunakan aplikasi DUO. | Contoh Google Authenticator input code."
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.6.2_Admin_Guide_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.6.2_Admin_Guide_Template.docx",
+    "ext": ".docx",
+    "size_kb": 6898.3,
+    "headings": [
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Daftar Gambar",
+      "Pendahuluan",
+      "Tujuan",
+      "Ruang Lingkup",
+      "Overview Sistem",
+      "Role: Data Owner",
+      "Task: Upload Excel Files",
+      "Task: Run Job Manual"
+    ],
+    "body_excerpt": [
+      "ADMIN GUIDE",
+      "Data Application for Financial Analytics with {{ tech_partner }}",
+      "Kontrol Dokumen",
+      "Daftar Isi",
+      "Daftar Gambar"
+    ],
+    "tables": [
+      "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
+      "Tanggal | Versi | Editor | Modifikasi",
+      "24 Apr 2026 | 1.0 | {{ vendor_lead_name }} Willyam Saputra Marcel Jeremy Wiradinata {{ vendor_pm_name }} | Versi final 1.0",
+      "Modul | Nama / Format File | Stage",
+      "Sales / GP / OP / PBT | tcp16_mmm_yyyy.xlsx | TCP16"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.6_Defect_List_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.6_Defect_List_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 70.6,
+    "sheets": [
+      "Defect List",
+      "Pivot",
+      "Refs",
+      "Note pengecekan",
+      "CR4 & CR5 test"
+    ],
+    "sheet_samples": {
+      "Defect List": [
+        [
+          "Defect List"
+        ],
+        [
+          "No",
+          "Entry Date",
+          "Module",
+          "Activity",
+          "Summary"
+        ],
+        [
+          "2026-02-15 00:00:00",
+          "(All)",
+          "A. Unit Testing",
+          "RBAC {{ tech_partner }} belum diterapkan",
+          "Sesuai FSD, RBAC mengatur hak akses user"
+        ]
+      ],
+      "Pivot": [
+        [
+          "Count of No",
+          "Column Labels"
+        ],
+        [
+          "Row Labels",
+          "2. Major",
+          "(blank)",
+          "Grand Total"
+        ],
+        [
+          "In Progress",
+          "1",
+          "1"
+        ]
+      ],
+      "Refs": [
+        [
+          "Severity",
+          "Description",
+          "Priority",
+          "Description",
+          "Status"
+        ],
+        [
+          "1. Critical",
+          "Masalah yang membuat sistem tidak bisa d",
+          "1. High",
+          "Harus dikerjakan segera atau di cycle te",
+          "Open"
+        ],
+        [
+          "2. Major",
+          "Fungsi utama masih berjalan, tapi ada ba",
+          "2. Medium",
+          "Penting, tapi tidak urgent sekarang.\n\nKa",
+          "Assigned"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "04_executing",
+    "filename": "3.7_Rundown_Deployment_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/04_executing/3.7_Rundown_Deployment_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 10.5,
+    "sheets": [
+      "Rundown Deployment",
+      "Rollback Plan"
+    ],
+    "sheet_samples": {
+      "Rundown Deployment": [
+        [
+          "Rundown Deployment",
+          "sesuai kesepakatan dari {{ client_abbr }"
+        ],
+        [
+          "1. Backup"
+        ],
+        [
+          "No",
+          "Tanggal",
+          "Judul",
+          "Deskripsi",
+          "Durasi (Menit)"
+        ]
+      ],
+      "Rollback Plan": [
+        [
+          "Rollback Plan"
+        ],
+        [
+          "No",
+          "Tanggal",
+          "Judul",
+          "Deskripsi",
+          "Durasi (Jam)"
+        ],
+        [
+          "1",
+          "Restore Backup Clone",
+          "Metode Rollback menggunakan backup hasil",
+          "30",
+          "Adam"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "05_monitoring",
+    "filename": "4.1_MoM_Minutes_of_Meeting_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/05_monitoring/4.1_MoM_Minutes_of_Meeting_Template.docx",
+    "ext": ".docx",
+    "size_kb": 58.8,
+    "headings": [],
+    "body_excerpt": [
+      "Project Meeting Information",
+      "Meeting Agenda & Discussion",
+      "Next Action"
+    ],
+    "tables": [
+      "Customer Name | : | PT {{ client_company }} | PT {{ client_company }}",
+      "Project Name | : | Data Application for Financial Analytics with {{ tech_partner }} | Data Application for Financial Analytics with {{ tech_partner }}",
+      "Topik pembahasan meeting ini adalah finalisasi user requirement untuk modul-modul berikut ini: Weekly Progress Report Pembahasan Risiko & Isu Project management plan telah dipresentasikan sekilas dan akan dikirimkan setelah meeting. Risiko dan Isu yang masih open telah dipaparkan dan dipahami bersama. PT {{ client_abbr }} menerima action plan {{ vendor_abbr }} untuk isu nomor 1 mengenai keterlambata delivery FSD yaitu: Penyesuaian milestone fase asesmen / desain dari tanggal 2 Jan 2026 ke 19 Jan 2026 Penyelesaian untuk semua FSD di tanggal 19 Jan 2026  Username yang akan digunakan untuk proses development telah dibuat dan berhasil dicoba: {{ client_abbr }}_MMI_DEV -> Willyam {{ client_abbr }}_MMI_DEV_2 -> Golden {{ client_abbr }}_MMI_DEV_3 -> Marcell {{ client_abbr }}_MMI_DEV_4 -> Adam Data-data AO yang dibutuhkan oleh team Developer {{ vendor_abbr }} sebagai sample sumber data selama fase Development sudah disimpan dalam repository project (Sharepoint) dan akan dicek oleh team Developer. Request dari Pak Fredric mengenai akun admin {{ tech_partner }} jika memungkinkan tidak hanya satu (Pak Andri A). Telah dijawab oleh team {{ vendor_abbr }} harusnya bisa dilakukan untuk meng-assign username lain dengan role admin. Mengenai request untuk memajukan meeting asesment tanggal 9 Jan 26 lebih awal, Pak Andri S mengusulkan untuk mempelajari terlebih dahulu file-file yang dikirim agar dapat dipahami terlebih dahulu oleh team {{ vendor_abbr }}.",
+      "Weekly progress meeting berikutnya akan dilakukan setiap hari Jumat jam 15.00. {{ vendor_abbr }} akan mengirimkan Project Management Plan ke {{ client_abbr }} untuk di review."
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "05_monitoring",
+    "filename": "4.2_Weekly_Progress_Report_Deck_Template.pptx",
+    "rel_path": "TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Report_Deck_Template.pptx",
+    "ext": ".pptx",
+    "size_kb": 7371.3,
+    "slides_count": 11,
+    "slide_titles": [
+      "{{ client_short_name }}\u000bDATA APPLICATION FOR FINANCIAL ANALYTICS WITH {{ tech_partner }}",
+      "1",
+      "Project Management Plan",
+      "Overal Progres",
+      "Detail Aktivitas Mingguan",
+      "Rencana Aktivitas Minggu Depan",
+      "Status Milestone",
+      "Risk Register",
+      "Issue Log",
+      "Q&A"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "05_monitoring",
+    "filename": "4.2_Weekly_Progress_Timeline_Update_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Timeline_Update_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 29.2,
+    "sheets": [
+      "Sheet1"
+    ],
+    "sheet_samples": {
+      "Sheet1": [
+        [
+          "Task Name",
+          "2025-12-15 00:00:00"
+        ],
+        [
+          "Data Application for Financial Analytics",
+          "H",
+          "P",
+          "1",
+          "0.25"
+        ],
+        [
+          "H",
+          "A",
+          "1",
+          "0.25",
+          "0.5"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "05_monitoring",
+    "filename": "4.4_Change_Log_Ledger_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/05_monitoring/4.4_Change_Log_Ledger_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 9.6,
+    "sheets": [
+      "Change Log",
+      "Refs"
+    ],
+    "sheet_samples": {
+      "Change Log": [
+        [
+          "Change Log"
+        ],
+        [
+          "No",
+          "Tanggal CR",
+          "Judul",
+          "Deskripsi",
+          "Kategori"
+        ],
+        [
+          "2026-01-27 00:00:00",
+          "Perubahan jadwal UAT 1",
+          "Jadwal UAT 1 berdasarkan jadwal baseline",
+          "Schedule Change",
+          "Resource Constraint"
+        ]
+      ],
+      "Refs": [
+        [
+          "Kategori",
+          "Status",
+          "Keputusan",
+          "Driver Change"
+        ],
+        [
+          "Scope Change",
+          "Open",
+          "Under Review",
+          "Business Request"
+        ],
+        [
+          "Schedule Change",
+          "Approved",
+          "Impact Analysis Completed",
+          "External Dependency"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "05_monitoring",
+    "filename": "4.4_Change_Request_Form_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/05_monitoring/4.4_Change_Request_Form_Template.docx",
+    "ext": ".docx",
+    "size_kb": 176.4,
+    "headings": [
+      "Sign-off"
+    ],
+    "body_excerpt": [
+      "Informasi Umum Change",
+      "Deskripsi Change",
+      "Analisis Dampak (Impact Analysis)",
+      "Estimasi Effort",
+      "Alternatif & Rekomendasi"
+    ],
+    "tables": [
+      "A | Change Request ID | 6",
+      "B | Tanggal Pengajuan | 10 Juni 2026",
+      "A | Judul Change | Penggabungan Department",
+      "B | Jenis Change (Scope / Schedule / Requirement / Design / Technical / Bug Fix) | Scope",
+      "A | Dampak terhadap Scope | Penambahan ruang lingkup yang sebelumnya tidak tercantum dalam baseline, yaitu: Penambahan fitur penggabungan departemen yang dapat dikonfigurasi oleh Administrator Melakukan agregasi data dari sumber data masing-masing departemen yang digabungkan menjadi satu kesatuan analisis. Penambahan fitur pemfilteran untuk entri divisi (division), departemen (department), dan seksi (section) pada modul Operating Profit dan Profit Before Tax. Ruang lingkup tersebut mencakup tahap perencanaan, pengembangan, pengujian, penerapan (deployment) dari lingkungan Dev ke Prod, serta dokumentasi.",
+      "B | Dampak terhadap Schedule | Estimasi waktu yang dibutuhkan untuk pelaksanaan pengembangan adalah 15 hari + 2 hari buffer."
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "05_monitoring",
+    "filename": "4.5_Risk_Register_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/05_monitoring/4.5_Risk_Register_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 10.1,
+    "sheets": [
+      "Risk Register",
+      "Refs"
+    ],
+    "sheet_samples": {
+      "Risk Register": [
+        [
+          "Risk Register"
+        ],
+        [
+          "No",
+          "Tanggal Identifikasi",
+          "Judul",
+          "Deskripsi",
+          "Dampak"
+        ],
+        [
+          "2025-12-16 00:00:00",
+          "Perluasan kebutuhan di luar FSD baseline",
+          "Risiko adanya permintaan tambahan atau p",
+          "Schedule delay, cost overrun, scope expa",
+          "Scope"
+        ]
+      ],
+      "Refs": [
+        [
+          "Kategori",
+          "Rating",
+          "Status",
+          "Probabilitas",
+          "Tingkat Dampak"
+        ],
+        [
+          "Scope",
+          "Low",
+          "Open",
+          "Low",
+          "Low"
+        ],
+        [
+          "Schedule",
+          "Medium",
+          "Monitoring",
+          "Medium",
+          "Medium"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "05_monitoring",
+    "filename": "4.6_Issue_Log_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/05_monitoring/4.6_Issue_Log_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 8.9,
+    "sheets": [
+      "Issue Log",
+      "Refs"
+    ],
+    "sheet_samples": {
+      "Issue Log": [
+        [
+          "Issue Log"
+        ],
+        [
+          "No",
+          "Tanggal Identifikasi",
+          "Judul",
+          "Deskripsi",
+          "Kategori"
+        ],
+        [
+          "2026-01-02 00:00:00",
+          "Keterlambatan delivery FSD karena bertep",
+          "Risiko yang sudah terjadi karena keterla",
+          "Resource",
+          "{{ vendor_pm_name }}"
+        ]
+      ],
+      "Refs": [
+        [
+          "Category",
+          "Impacted Area",
+          "Severity",
+          "Status"
+        ],
+        [
+          "Requirement",
+          "Ruang Lingkup",
+          "Critical",
+          "Open"
+        ],
+        [
+          "Technical",
+          "Timeline",
+          "High",
+          "In Progress"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "06_closing",
+    "filename": "5.1_Project_Closing_Deck_Template.pptx",
+    "rel_path": "TTI_Snowflake_Analytics/06_closing/5.1_Project_Closing_Deck_Template.pptx",
+    "ext": ".pptx",
+    "size_kb": 5560.7,
+    "slides_count": 9,
+    "slide_titles": [
+      "{{ client_short_name }}\u000bDATA APPLICATION FOR FINANCIAL ANALYTICS WITH {{ tech_partner }}",
+      "1",
+      "Ruang Lingkup",
+      "Deliverables",
+      "Closing Checklist",
+      "Transition to Maintenance Phase",
+      "Maintenance Contacts & Flow",
+      "Maintenance Deliverables"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "06_closing",
+    "filename": "5.2_Project_Closeout_Checklist_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/06_closing/5.2_Project_Closeout_Checklist_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 9.0,
+    "sheets": [
+      "Closing Checklist"
+    ],
+    "sheet_samples": {
+      "Closing Checklist": [
+        [
+          "Project Closing Checklist"
+        ],
+        [
+          "1. Deliverables"
+        ],
+        [
+          "No",
+          "Deliverables",
+          "Status"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "07_internal_legal_contracts",
+    "filename": "BAST_Change_Request_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/07_internal_legal_contracts/BAST_Change_Request_Template.docx",
+    "ext": ".docx",
+    "size_kb": 48.9,
+    "headings": [],
+    "body_excerpt": [
+      "BERITA ACARA SERAH TERIMA",
+      "Pekerjaan   \t: Jasa Implementasi {{ tech_partner }}",
+      "No. Perjanjian\t: {{ contract_number }}",
+      "Quotation\t: 0114258/00/{{ vendor_abbr }}/CS7/III/2026",
+      "Pada hari ini Kamis tanggal dua puluh Bulan Agustus Tahun Dua Ribu Dua Puluh Enam, yang bertandatangan di bawah ini:"
+    ],
+    "tables": [
+      "PT {{ client_short_name }} Indonesia | PT {{ vendor_company }}",
+      "Debby Lutfi Ardiyanto Project Leader | Arif Nanda Atmavidya  Division Manager / Project Steering Committee"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "07_internal_legal_contracts",
+    "filename": "BAST_Milestone_1_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/07_internal_legal_contracts/BAST_Milestone_1_Template.docx",
+    "ext": ".docx",
+    "size_kb": 48.7,
+    "headings": [],
+    "body_excerpt": [
+      "BERITA ACARA SERAH TERIMA",
+      "Pekerjaan   \t: Jasa Implementasi {{ tech_partner }}",
+      "No. Perjanjian\t: {{ contract_number }}",
+      "Pada hari ini Senin tanggal dua puluh enam Bulan Januari Tahun Dua Ribu Dua Puluh Enam, yang bertandatangan di bawah ini:",
+      "1.\tNama\t: Debby Lutfi Ardiyanto"
+    ],
+    "tables": [
+      "PT Toyota Tshuso Indonesia | PT {{ vendor_company }}",
+      "Debby Lutfi Ardiyanto Project Leader | Arif Nanda Atmavidya  Division Manager / Project Steering Committee"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "07_internal_legal_contracts",
+    "filename": "BAST_Milestone_2_Final_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/07_internal_legal_contracts/BAST_Milestone_2_Final_Template.docx",
+    "ext": ".docx",
+    "size_kb": 48.8,
+    "headings": [],
+    "body_excerpt": [
+      "BERITA ACARA SERAH TERIMA",
+      "Pekerjaan   \t: Jasa Implementasi {{ tech_partner }}",
+      "No. Perjanjian\t: {{ contract_number }}",
+      "Pada hari ini Jumat tanggal dua puluh tujuh Bulan Maret Tahun Dua Ribu Dua Puluh Enam, yang bertandatangan di bawah ini:",
+      "1.\tNama\t: Debby Lutfi Ardiyanto"
+    ],
+    "tables": [
+      "PT {{ client_short_name }} Indonesia | PT {{ vendor_company }}",
+      "Debby Lutfi Ardiyanto Project Leader | Arif Nanda Atmavidya  Division Manager / Project Steering Committee"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "07_internal_legal_contracts",
+    "filename": "CR_Scoping_and_Mandays_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/07_internal_legal_contracts/CR_Scoping_and_Mandays_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 255.4,
+    "sheets": [
+      "General",
+      "CR5 InventoryAging"
+    ],
+    "sheet_samples": {
+      "General": [
+        [
+          "Located in:",
+          "CR5: Inventory Aging Only"
+        ],
+        [
+          "Implementation / Internal Only",
+          "Tabel sama, nambah column UI"
+        ],
+        [
+          "Mereka cuman mau lihat overdue pada bula"
+        ]
+      ],
+      "CR5 InventoryAging": [
+        [
+          "CR5: inventory aging"
+        ],
+        [
+          "User ingin menambah informasi (table/kol"
+        ],
+        [
+          "TIM DATA",
+          "Work day"
+        ]
+      ]
+    }
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "07_internal_legal_contracts",
+    "filename": "Perjanjian_Kerjasama_PKS_Template.docx",
+    "rel_path": "TTI_Snowflake_Analytics/07_internal_legal_contracts/Perjanjian_Kerjasama_PKS_Template.docx",
+    "ext": ".docx",
+    "size_kb": 743.5,
+    "headings": [
+      "SCHEDULE 1 / LAMPIRAN 1"
+    ],
+    "body_excerpt": [
+      "SCHEDULE 1 / LAMPIRAN 1",
+      "SERVICE DELIVERABLES / LAYANAN"
+    ],
+    "tables": [
+      "COOPERATION AGREEMENT FOR  No. xxxx | PERJANJIAN KERJASAMA JASA  No. xxxx",
+      "This Service Agreement (hereinafter referred to as the \u201cAgreement\u201d) is made on xxxx by and between: | Perjanjian Kerja Sama Jasa Pengembangan / Pembuatan Aplikasi (selanjutnya disebut sebagai \"Perjanjian\") ini dibuat di Jakarta pada hari xxxx, tanggal xx xxxx 20xx oleh dan antara:",
+      "First Party / Pihak Pertama  Name Director | Second Party / Pihak Kedua"
+    ]
+  },
+  {
+    "project": "TTI_Snowflake_Analytics",
+    "stage": "07_internal_legal_contracts",
+    "filename": "Resource_Leave_Schedule_Template.xlsx",
+    "rel_path": "TTI_Snowflake_Analytics/07_internal_legal_contracts/Resource_Leave_Schedule_Template.xlsx",
+    "ext": ".xlsx",
+    "size_kb": 7.9,
+    "sheets": [
+      "Sheet1",
+      "Sheet2"
+    ],
+    "sheet_samples": {
+      "Sheet1": [
+        [
+          "2026-05-01 00:00:00",
+          "2026-06-01 00:00:00",
+          "2026-07-01 00:00:00"
+        ],
+        [
+          "No",
+          "Nama",
+          "Count",
+          "2026-05-01 00:00:00",
+          "2026-05-02 00:00:00"
+        ],
+        [
+          "1",
+          "{{ vendor_pm_name }}",
+          "*",
+          "*"
+        ]
+      ],
+      "Sheet2": [
+        [
+          "Tanggal",
+          "Libur"
+        ],
+        [
+          "2026-05-01 00:00:00",
+          "May Day"
+        ],
+        [
+          "2026-05-14 00:00:00",
+          "Ascension Day"
+        ]
+      ]
+    }
+  }
+]
