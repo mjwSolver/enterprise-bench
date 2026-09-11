@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Enterprise Bench Pre-Commit Security Guardrail
+# ===============================================
+# Prevents accidental leakage of binary Office files, un-sanitized client deliverables,
+# and private identity vaults into Git commit history.
+
+set -e
+
+# Blocked file extensions
+BLOCKED_EXTENSIONS="(\.docx|\.pptx|\.xlsx|\.xls|\.mpp|\.doc|\.ppt|\.pdf|\.drawio)$"
+
+# Blocked path patterns
+BLOCKED_PATHS="^(raw_source_files/|clean_workspace/projects/|output/|work_archive/|\.env|\.local\.json|.*vault.*\.json)"
+
+# Check staged files
+STAGED_FILES=$(git diff --cached --name-only)
+
+if [ -z "$STAGED_FILES" ]; then
+    exit 0
+fi
+
+FAILED=0
+
+for FILE in $STAGED_FILES; do
+    # Check binary extension
+    if echo "$FILE" | grep -Ei "$BLOCKED_EXTENSIONS" > /dev/null; then
+        echo "🚨 [PRE-COMMIT REJECTED] Binary file detected: $FILE"
+        echo "   Rule: Binary Office files (*.docx, *.pptx, *.xlsx, *.mpp) must never be committed to Git history."
+        FAILED=1
+    fi
+
+    # Check blocked directory or vault file
+    if echo "$FILE" | grep -Ei "$BLOCKED_PATHS" > /dev/null; then
+        echo "🚨 [PRE-COMMIT REJECTED] Sensitive or local workspace path detected: $FILE"
+        echo "   Rule: Project deliverables, raw intake, and local identity vaults (*.local.json) must remain local."
+        FAILED=1
+    fi
+done
+
+if [ $FAILED -ne 0 ]; then
+    echo ""
+    echo "❌ Commit aborted. Please unstage sensitive/binary files using: git reset HEAD <file>"
+    exit 1
+fi
+
+exit 0
