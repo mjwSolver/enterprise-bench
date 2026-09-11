@@ -1,0 +1,75 @@
+[project]
+name = "enterprise-bench"
+version = "0.1.0"
+description = "Universal Enterprise Office Document & Presentation Automation Workbench"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Marcell JW", email = "marcelljw@users.noreply.github.com" }
+]
+
+# ------------------------------------------------------------------------------
+# Core Shared Dependencies (Non-Negotiable Base)
+# Required across all document engines (PPT, DOCX, XLSX) for data validation,
+# templating, CLI orchestration, and configuration.
+# ------------------------------------------------------------------------------
+dependencies = [
+    "pydantic>=2.7.0",
+    "jinja2>=3.1.3",
+    "rich>=13.7.0",
+    "typer>=0.12.0",
+    "python-dotenv>=1.0.1",
+    "pillow>=10.3.0",
+    "pyyaml>=6.0.1",
+    "requests>=2.31.0",
+    "cairosvg>=2.9.1",
+]
+
+# ------------------------------------------------------------------------------
+# Feature-Specific Extra Dependencies (Tiered by Engine)
+# Installable on-demand via UV: `uv sync --extra <group>` or `uv sync --all-extras`
+# ------------------------------------------------------------------------------
+[project.optional-dependencies]
+ppt = [
+    "python-pptx>=0.6.23",
+    "matplotlib>=3.8.0",
+    "numpy>=1.26.0",
+]
+docx = [
+    "python-docx>=1.1.0",
+    "docxtpl>=0.16.8",
+]
+xlsx = [
+    "openpyxl>=3.1.2",
+    "pandas>=2.2.0",
+]
+all = [
+    "enterprise-bench[ppt,docx,xlsx]",
+]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.9.0",
+]
+
+[project.scripts]
+bench = "src.cli:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit: Fast in-memory unit tests (<1s execution)",
+    "integration: Full rendering and OpenXML/PPTX document assembly tests",
+    "ppt: Presentation engine tests",
+    "docx: Document compliance engine tests",
+    "xlsx: Spreadsheet engine tests",
+    "core: Shared models, PII scrubbing, and configuration tests",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+

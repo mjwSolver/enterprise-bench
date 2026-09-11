@@ -1,0 +1,70 @@
+name: "snowblue"
+description: "Snow Blue: crisp frost #F0FDF4 / #F0F9FF, cobalt #0284C7, cyan accent #06B6D4, surface #FFFFFF, border #BAE6FD, corner_radius 8, soft modern borders"
+
+palette:
+  background: "#F0F9FF"
+  surface: "#FFFFFF"
+  surface_muted: "#F0FDF4"
+  border: "#BAE6FD"
+  border_accent: "#38BDF8"
+  primary: "#0F172A"
+  secondary: "#334155"
+  muted: "#64748B"
+  accent: "#0284C7"
+  accent_secondary: "#06B6D4"
+  accent_teal: "#0D9488"
+  success: "#10B981"
+  warning: "#F59E0B"
+  danger: "#EF4444"
+
+  # Status Badges
+  badge_blue_fill: "#E0F2FE"
+  badge_blue_text: "#0369A1"
+  badge_green_fill: "#ECFDF5"
+  badge_green_text: "#047857"
+  badge_amber_fill: "#FEF3C7"
+  badge_amber_text: "#B45309"
+  badge_red_fill: "#FEE2E2"
+  badge_red_text: "#B91C1C"
+
+geometry:
+  corner_radius: 8
+  enable_shadows: true
+  card_border_width_pt: 1.0
+  accent_stripe_height_in: 0.08
+
+typography:
+  font_family: "Helvetica, Arial, sans-serif"
+  font_family_header: "Helvetica, Arial, sans-serif"
+  thresholds:
+    tracker_pt: 9.5
+    action_title_pt: 20.0
+    subtitle_pt: 11.0
+    card_title_pt: 12.0
+    body_pt: 10.0
+    bullet_pt: 9.5
+    caption_pt: 8.5
+    metric_large_pt: 24.0
+    metric_medium_pt: 18.0
+    metric_small_pt: 14.0
+    badge_pt: 8.0
+
+diagram:
+  canvas_bg: "#F0F9FF"
+  container_fill: "#E0F2FE"
+  container_stroke: "#BAE6FD"
+  container_font: "#0F172A"
+  node_fill: "#FFFFFF"
+  node_stroke: "#0284C7"
+  node_stroke_width: "2"
+  node_font: "#0F172A"
+  node_font_family: "Helvetica, Arial, sans-serif"
+  node_font_size: "13"
+  accent_node_fill: "#E0F2FE"
+  accent_node_stroke: "#0284C7"
+  accent_node_font: "#0369A1"
+  edge_stroke: "#0284C7"
+  edge_stroke_width: "2"
+  edge_font: "#334155"
+  edge_font_size: "11"
+  state_node_fill: "#0284C7"

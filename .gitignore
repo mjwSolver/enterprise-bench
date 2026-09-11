@@ -1,0 +1,38 @@
+# Virtual Environment & Python Caches
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+.DS_Store
+
+# Strict Binary Document Exclusion (Never commit binary deliverables to Git history)
+*.docx
+*.pptx
+*.xlsx
+*.xls
+*.mpp
+*.doc
+*.ppt
+*.pdf
+*.drawio
+
+# Intake, Output & Clean Workspace Projects (Strictly local/runtime)
+raw_source_files/
+clean_workspace/projects/
+output/
+work_archive/
+project_outputs/
+tests/project_outputs/
+
+# Local Identity Vaults & Credentials (Strictly gitignored privacy boundary)
+*.local.json
+*vault*.json
+*.env*
+secrets/

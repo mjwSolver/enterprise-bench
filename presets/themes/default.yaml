@@ -1,0 +1,70 @@
+name: "default"
+description: "Clean Corporate: slate #1E293B, royal blue #2563EB, background #F8FAFC, surface #FFFFFF, border #E2E8F0, corner_radius 0, no shadows"
+
+palette:
+  background: "#F8FAFC"
+  surface: "#FFFFFF"
+  surface_muted: "#F1F5F9"
+  border: "#E2E8F0"
+  border_accent: "#BFDBFE"
+  primary: "#1E293B"
+  secondary: "#475569"
+  muted: "#94A3B8"
+  accent: "#2563EB"
+  accent_secondary: "#0EA5E9"
+  accent_teal: "#0F766E"
+  success: "#16A34A"
+  warning: "#D97706"
+  danger: "#DC2626"
+  
+  # Status Badges
+  badge_blue_fill: "#EFF6FF"
+  badge_blue_text: "#1D4ED8"
+  badge_green_fill: "#F0FDF4"
+  badge_green_text: "#15803D"
+  badge_amber_fill: "#FEF3C7"
+  badge_amber_text: "#B45309"
+  badge_red_fill: "#FEF2F2"
+  badge_red_text: "#B91C1C"
+
+geometry:
+  corner_radius: 0
+  enable_shadows: false
+  card_border_width_pt: 1.0
+  accent_stripe_height_in: 0.08
+
+typography:
+  font_family: "Helvetica, Arial, sans-serif"
+  font_family_header: "Helvetica, Arial, sans-serif"
+  thresholds:
+    tracker_pt: 9.5
+    action_title_pt: 20.0
+    subtitle_pt: 11.0
+    card_title_pt: 12.0
+    body_pt: 10.0
+    bullet_pt: 9.5
+    caption_pt: 8.5
+    metric_large_pt: 24.0
+    metric_medium_pt: 18.0
+    metric_small_pt: 14.0
+    badge_pt: 8.0
+
+diagram:
+  canvas_bg: "#F8FAFC"
+  container_fill: "#F1F5F9"
+  container_stroke: "#CBD5E1"
+  container_font: "#1E293B"
+  node_fill: "#FFFFFF"
+  node_stroke: "#2563EB"
+  node_stroke_width: "2"
+  node_font: "#1E293B"
+  node_font_family: "Helvetica, Arial, sans-serif"
+  node_font_size: "13"
+  accent_node_fill: "#EFF6FF"
+  accent_node_stroke: "#3B82F6"
+  accent_node_font: "#1E40AF"
+  edge_stroke: "#64748B"
+  edge_stroke_width: "2"
+  edge_font: "#475569"
+  edge_font_size: "11"
+  state_node_fill: "#1E293B"

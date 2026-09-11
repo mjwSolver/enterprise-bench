@@ -1,0 +1,70 @@
+name: "brickred"
+description: "Brick Red: warm terracotta / crimson #DC2626 / #991B1B, dark charcoal #0F172A, surface #FFFFFF, border #FECACA, corner_radius 0, sharp corporate square geometry"
+
+palette:
+  background: "#FFFBFB"
+  surface: "#FFFFFF"
+  surface_muted: "#F8FAFC"
+  border: "#FECACA"
+  border_accent: "#F87171"
+  primary: "#0F172A"
+  secondary: "#334155"
+  muted: "#64748B"
+  accent: "#DC2626"
+  accent_secondary: "#991B1B"
+  accent_teal: "#0F766E"
+  success: "#16A34A"
+  warning: "#D97706"
+  danger: "#991B1B"
+
+  # Status Badges
+  badge_blue_fill: "#EFF6FF"
+  badge_blue_text: "#1D4ED8"
+  badge_green_fill: "#F0FDF4"
+  badge_green_text: "#15803D"
+  badge_amber_fill: "#FEF3C7"
+  badge_amber_text: "#B45309"
+  badge_red_fill: "#FEF2F2"
+  badge_red_text: "#991B1B"
+
+geometry:
+  corner_radius: 0
+  enable_shadows: false
+  card_border_width_pt: 1.0
+  accent_stripe_height_in: 0.08
+
+typography:
+  font_family: "Helvetica, Arial, sans-serif"
+  font_family_header: "Helvetica, Arial, sans-serif"
+  thresholds:
+    tracker_pt: 9.5
+    action_title_pt: 20.0
+    subtitle_pt: 11.0
+    card_title_pt: 12.0
+    body_pt: 10.0
+    bullet_pt: 9.5
+    caption_pt: 8.5
+    metric_large_pt: 24.0
+    metric_medium_pt: 18.0
+    metric_small_pt: 14.0
+    badge_pt: 8.0
+
+diagram:
+  canvas_bg: "#FFFBFB"
+  container_fill: "#FEF2F2"
+  container_stroke: "#FECACA"
+  container_font: "#0F172A"
+  node_fill: "#FFFFFF"
+  node_stroke: "#DC2626"
+  node_stroke_width: "2"
+  node_font: "#0F172A"
+  node_font_family: "Helvetica, Arial, sans-serif"
+  node_font_size: "13"
+  accent_node_fill: "#FEF2F2"
+  accent_node_stroke: "#DC2626"
+  accent_node_font: "#991B1B"
+  edge_stroke: "#64748B"
+  edge_stroke_width: "2"
+  edge_font: "#334155"
+  edge_font_size: "11"
+  state_node_fill: "#DC2626"
