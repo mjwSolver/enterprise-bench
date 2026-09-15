@@ -45,20 +45,29 @@ def sanitize_text(text: str, custom_rules: Optional[List[Tuple[str, str]]] = Non
     return sanitized
 
 
+from src.core.docx_purger import purge_docx_elements, PurgeReport
+
+
 def sanitize_docx(
     input_path: Union[str, Path],
     output_path: Optional[Union[str, Path]] = None,
     custom_rules: Optional[List[Tuple[str, str]]] = None,
+    purge_elements: bool = True,
 ) -> Path:
     """
     Sanitize text and metadata within a Word (.docx) file.
-    Uses the universal DocxHandler.
+    Uses the universal DocxHandler, followed by post-PII element purging
+    (strips review comments, author highlights, and revision artifacts).
     """
     in_p = Path(input_path)
     out_p = Path(output_path) if output_path else in_p
     rules_dict = {pat: repl for pat, repl in (custom_rules or DEFAULT_SCRUB_RULES)}
     mapping = ReplacementMapping(strategy="jinja", replacements=rules_dict, strip_metadata=True)
     res = sanitize_file(in_p, out_p, mapping=mapping)
+
+    if purge_elements:
+        purge_docx_elements(out_p, out_p, purge_comments=True, purge_highlights=True, accept_revisions=True)
+
     return Path(res.output_path)
 
 

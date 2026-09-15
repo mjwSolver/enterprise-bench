@@ -325,6 +325,58 @@ def sanitize_doc(
     rprint(f"[green]✓ Sanitized document saved to:[/green] [bold]{result}[/bold]")
 
 
+@doc_app.command("purge")
+def purge_doc(
+    file: Optional[str] = typer.Option(None, "--file", "-f", help="Path to .docx file to purge"),
+    directory: Optional[str] = typer.Option(None, "--dir", "-d", help="Directory of .docx files to batch purge"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output path (default: in-place overwrite)"),
+    comments: bool = typer.Option(True, "--comments/--no-comments", help="Purge comments and review parts"),
+    highlights: bool = typer.Option(True, "--highlights/--no-highlights", help="Purge text highlighting"),
+    revisions: bool = typer.Option(True, "--revisions/--no-revisions", help="Accept insertions, remove deletions and change markers"),
+) -> None:
+    """Purge comments, text highlights, and tracked changes from Word (.docx) documents."""
+    from src.core.docx_purger import purge_docx_elements, purge_directory_elements
+
+    if not file and not directory:
+        rprint("[red]Error:[/red] Specify either --file <path.docx> or --dir <directory>")
+        raise typer.Exit(code=1)
+
+    if file:
+        f_p = Path(file)
+        if not f_p.exists():
+            rprint(f"[red]Error:[/red] File not found: {file}")
+            raise typer.Exit(code=1)
+        rep = purge_docx_elements(
+            f_p, output or f_p,
+            purge_comments=comments,
+            purge_highlights=highlights,
+            accept_revisions=revisions,
+        )
+        if rep.success:
+            rprint(f"[green]✓ Purged document:[/green] [bold]{rep.file_path}[/bold]")
+            rprint(f"  Comments: {rep.comments_removed} | Highlights: {rep.highlights_removed} | Revisions: {rep.revisions_removed}")
+        else:
+            rprint(f"[red]✗ Purge failed:[/red] {rep.error_message}")
+            raise typer.Exit(code=1)
+
+    if directory:
+        d_p = Path(directory)
+        if not d_p.exists():
+            rprint(f"[red]Error:[/red] Directory not found: {directory}")
+            raise typer.Exit(code=1)
+        reps = purge_directory_elements(
+            d_p,
+            purge_comments=comments,
+            purge_highlights=highlights,
+            accept_revisions=revisions,
+        )
+        tot_c = sum(r.comments_removed for r in reps)
+        tot_h = sum(r.highlights_removed for r in reps)
+        tot_r = sum(r.revisions_removed for r in reps)
+        rprint(f"[green]✓ Batch purged {len(reps)} documents in:[/green] [bold]{directory}[/bold]")
+        rprint(f"  Comments removed: {tot_c} | Highlights: {tot_h} | Revisions normalized: {tot_r}")
+
+
 @doc_app.command("lint")
 def lint_doc(
     file: str = typer.Option(..., "--file", "-f", help="Path to .docx file to inspect"),
