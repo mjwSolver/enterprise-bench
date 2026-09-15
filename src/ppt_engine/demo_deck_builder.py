@@ -123,27 +123,24 @@ def add_slide_header(
     p_tr.font.bold = True
     p_tr.font.color.rgb = tracker_color
 
-    # 2. Action-driven Headline (Conclusions upfront)
-    title_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.72), Inches(11.733), Inches(0.55))
-    tf_t = title_box.text_frame
-    tf_t.word_wrap = True
-    tf_t.margin_left = tf_t.margin_right = tf_t.margin_top = tf_t.margin_bottom = 0
-    p_t = tf_t.paragraphs[0]
+    # 2. Action-driven Headline & Subtitle (Unified Frame for Consistent Spacing)
+    header_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.72), Inches(11.733), Inches(0.95))
+    tf_h = header_box.text_frame
+    tf_h.word_wrap = True
+    tf_h.margin_left = tf_h.margin_right = tf_h.margin_top = tf_h.margin_bottom = 0
+    p_t = tf_h.paragraphs[0]
     p_t.text = action_title
     p_t.font.size = Pt(20)
     p_t.font.bold = True
     p_t.font.color.rgb = Palette.TEXT_PRIMARY
 
-    # 3. Context Subtitle
+    # 3. Context Subtitle (Flowed via paragraph offset)
     if subtitle:
-        sub_box = slide.shapes.add_textbox(Inches(0.8), Inches(1.30), Inches(11.733), Inches(0.35))
-        tf_s = sub_box.text_frame
-        tf_s.word_wrap = True
-        tf_s.margin_left = tf_s.margin_right = tf_s.margin_top = tf_s.margin_bottom = 0
-        p_s = tf_s.paragraphs[0]
+        p_s = tf_h.add_paragraph()
         p_s.text = subtitle
         p_s.font.size = Pt(11)
         p_s.font.color.rgb = Palette.TEXT_SECONDARY
+        p_s.space_before = Pt(10)
 
 
 def add_card(
@@ -155,9 +152,12 @@ def add_card(
     bg_color: RGBColor = Palette.CARD_BG,
     border_color: RGBColor = Palette.BORDER_LIGHT,
     border_width: Pt = Pt(1),
+    has_top_stripe: bool = False,
 ) -> Any:
-    """Draws a card container with rounded corners and hairline border."""
-    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+    """Draws a card container. Enforces sharp 90-degree rectangle if has_top_stripe=True."""
+    shape_type = MSO_SHAPE.RECTANGLE if has_top_stripe else MSO_SHAPE.ROUNDED_RECTANGLE
+    card = slide.shapes.add_shape(shape_type, left, top, width, height)
+    card.shadow.inherit = False
     card.fill.solid()
     card.fill.fore_color.rgb = bg_color
     if border_color:
@@ -178,6 +178,7 @@ def add_slide_footer(slide: Any, current_idx: int, total_slides: int = 3) -> Non
         Inches(11.733),
         Inches(0.015),
     )
+    divider.shadow.inherit = False
     divider.fill.solid()
     divider.fill.fore_color.rgb = Palette.BORDER_LIGHT
     divider.line.fill.background()
@@ -473,10 +474,11 @@ def build_slide_2(prs: Presentation, assets_map: Dict[str, Path]) -> None:
 
     for i, cdata in enumerate(cards_data):
         cx = Inches(0.8) + i * (col_w + col_gap)
-        add_card(slide, cx, row2_y, col_w, row2_h, bg_color=Palette.CARD_BG)
+        add_card(slide, cx, row2_y, col_w, row2_h, bg_color=Palette.CARD_BG, has_top_stripe=True)
 
         # Top Accent Stripe
-        stripe = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, row2_y, col_w, Inches(0.08))
+        stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, row2_y, col_w, Inches(0.08))
+        stripe.shadow.inherit = False
         stripe.fill.solid()
         stripe.fill.fore_color.rgb = cdata["accent"]
         stripe.line.fill.background()
@@ -637,10 +639,11 @@ def build_slide_3(prs: Presentation, assets_map: Dict[str, Path]) -> None:
 
     for i, phase in enumerate(phases):
         cx = Inches(0.8) + i * (card_w + card_gap)
-        add_card(slide, cx, row2_y, card_w, row2_h, bg_color=Palette.CARD_BG)
+        add_card(slide, cx, row2_y, card_w, row2_h, bg_color=Palette.CARD_BG, has_top_stripe=True)
 
         # Top Accent Stripe
-        stripe = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, row2_y, card_w, Inches(0.08))
+        stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, row2_y, card_w, Inches(0.08))
+        stripe.shadow.inherit = False
         stripe.fill.solid()
         stripe.fill.fore_color.rgb = phase["accent"]
         stripe.line.fill.background()
@@ -653,6 +656,7 @@ def build_slide_3(prs: Presentation, assets_map: Dict[str, Path]) -> None:
             Inches(1.15),
             Inches(0.28),
         )
+        status_pill.shadow.inherit = False
         status_pill.fill.solid()
         status_pill.fill.fore_color.rgb = phase["status_bg"]
         status_pill.line.color.rgb = phase["status_color"]

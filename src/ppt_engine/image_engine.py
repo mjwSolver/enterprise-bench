@@ -527,7 +527,7 @@ def frame_slide_image(
     corner_radius: int = 24,
     border_width: int = 1,
     border_color: str = "#E2E8F0",
-    shadow: bool = True,
+    shadow: bool = False,
     shadow_blur: int = 14,
     shadow_offset: Tuple[int, int] = (0, 6),
     output_path: Optional[Union[str, Path]] = None,
@@ -586,3 +586,104 @@ def search_stock_photos(query: str, limit: int = 5, source: str = "all") -> List
 
 def download_image(url: str, output_path: Optional[Union[str, Path]] = None) -> Path:
     return _default_image_engine.download_image(url=url, output_path=output_path)
+
+
+def replace_slide_picture_shape(
+    slide: Any,
+    shape: Any,
+    new_image_path: Union[str, Path],
+    preserve_aspect_ratio: bool = True,
+) -> bool:
+    """
+    Substitutes the image in a single picture shape with a new image.
+    Preserves bounding box bounds and scales proportionally if preserve_aspect_ratio is True.
+    """
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    if shape.shape_type != MSO_SHAPE_TYPE.PICTURE:
+        return False
+
+    new_img_p = Path(new_image_path)
+    if not new_img_p.exists():
+        raise FileNotFoundError(f"Replacement image not found: {new_image_path}")
+
+    # Embed image in slide relationships
+    _, rId = slide.part.get_or_add_image_part(str(new_img_p))
+
+    # Update blip relationship embed
+    blips = shape._element.xpath(".//a:blip")
+    if not blips:
+        return False
+
+    blips[0].set("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed", rId)
+
+    if preserve_aspect_ratio:
+        orig_w, orig_h = shape.width, shape.height
+        orig_left, orig_top = shape.left, shape.top
+
+        with Image.open(str(new_img_p)) as img:
+            img_w, img_h = img.size
+
+        scale = min(orig_w / img_w, orig_h / img_h)
+        new_w = int(img_w * scale)
+        new_h = int(img_h * scale)
+
+        shape.left = orig_left + (orig_w - new_w) // 2
+        shape.top = orig_top + (orig_h - new_h) // 2
+        shape.width = new_w
+        shape.height = new_h
+
+    return True
+
+
+def substitute_presentation_images(
+    prs_or_path: Union[str, Path, Any],
+    new_image_path: Union[str, Path],
+    output_path: Optional[Union[str, Path]] = None,
+    slide_index: Optional[int] = None,
+    preserve_aspect_ratio: bool = True,
+) -> Tuple[int, Path]:
+    """
+    Substitutes all (or targeted slide's) preexisting images in a PowerPoint presentation
+    with a new image, saving the result to output_path.
+    """
+    import pptx
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    if isinstance(prs_or_path, (str, Path)):
+        in_path = Path(prs_or_path)
+        prs = pptx.Presentation(str(in_path))
+    else:
+        prs = prs_or_path
+        in_path = Path("presentation.pptx")
+
+    if slide_index is not None:
+        if slide_index < 1 or slide_index > len(prs.slides):
+            raise IndexError(f"Slide index {slide_index} out of bounds (1..{len(prs.slides)})")
+        target_slides = [prs.slides[slide_index - 1]]
+    else:
+        target_slides = list(prs.slides)
+
+    count = 0
+    for slide in target_slides:
+        def _walk_shapes(shapes):
+            nonlocal count
+            for shape in shapes:
+                if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                    if replace_slide_picture_shape(slide, shape, new_image_path, preserve_aspect_ratio):
+                        count += 1
+                elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                    _walk_shapes(shape.shapes)
+
+        _walk_shapes(slide.shapes)
+
+    if output_path is None:
+        out_path = in_path.parent / f"{in_path.stem}_substituted{in_path.suffix}"
+    else:
+        out_path = Path(output_path)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    prs.save(str(out_path))
+
+    return count, out_path
+

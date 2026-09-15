@@ -220,17 +220,6 @@ class PurePythonSlideRenderer:
             radius = int(min(w, h) * 0.12) if min(w, h) > 0 else 8
             radius = max(4, min(radius, 24))
 
-            # Subtle card drop shadow for floating cards
-            if fill_color and fill_color == (255, 255, 255) and w > 100 and h > 50:
-                shadow_layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
-                s_draw = ImageDraw.Draw(shadow_layer)
-                s_draw.rounded_rectangle(
-                    [x + 2, y + 3, x + w + 2, y + h + 3],
-                    radius=radius,
-                    fill=(0, 0, 0, 15),
-                )
-                canvas.alpha_composite(shadow_layer)
-
             draw.rounded_rectangle(
                 [x, y, x + w, y + h],
                 radius=radius,

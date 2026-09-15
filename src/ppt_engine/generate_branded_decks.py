@@ -132,27 +132,24 @@ def add_header(
     p_tr.font.bold = True
     p_tr.font.color.rgb = theme.brand_primary
 
-    # 2. Action Headline
-    tb_t = slide.shapes.add_textbox(Inches(0.8), Inches(0.72), Inches(11.733), Inches(0.55))
-    tf_t = tb_t.text_frame
-    tf_t.word_wrap = True
-    tf_t.margin_left = tf_t.margin_right = tf_t.margin_top = tf_t.margin_bottom = 0
-    p_t = tf_t.paragraphs[0]
+    # 2. Action Headline & Subtitle (Unified Frame for Consistent Spacing)
+    tb_header = slide.shapes.add_textbox(Inches(0.8), Inches(0.72), Inches(11.733), Inches(0.95))
+    tf_h = tb_header.text_frame
+    tf_h.word_wrap = True
+    tf_h.margin_left = tf_h.margin_right = tf_h.margin_top = tf_h.margin_bottom = 0
+    p_t = tf_h.paragraphs[0]
     p_t.text = title
     p_t.font.size = Pt(20)
     p_t.font.bold = True
     p_t.font.color.rgb = theme.text_primary
 
-    # 3. Subtitle
+    # 3. Subtitle (Flowed via paragraph offset)
     if subtitle:
-        tb_s = slide.shapes.add_textbox(Inches(0.8), Inches(1.30), Inches(11.733), Inches(0.35))
-        tf_s = tb_s.text_frame
-        tf_s.word_wrap = True
-        tf_s.margin_left = tf_s.margin_right = tf_s.margin_top = tf_s.margin_bottom = 0
-        p_s = tf_s.paragraphs[0]
+        p_s = tf_h.add_paragraph()
         p_s.text = subtitle
         p_s.font.size = Pt(11)
         p_s.font.color.rgb = theme.text_secondary
+        p_s.space_before = Pt(10)
 
 
 def add_card_box(
@@ -165,8 +162,12 @@ def add_card_box(
     bg_color: Optional[RGBColor] = None,
     border_color: Optional[RGBColor] = None,
     border_width: Pt = Pt(1),
+    has_top_stripe: bool = False,
 ) -> Any:
-    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+    # GEOMETRY INTEGRITY: Overlapping top stripes require crisp 90-degree rectangle
+    shape_type = MSO_SHAPE.RECTANGLE if has_top_stripe else MSO_SHAPE.ROUNDED_RECTANGLE
+    card = slide.shapes.add_shape(shape_type, left, top, width, height)
+    card.shadow.inherit = False
     card.fill.solid()
     card.fill.fore_color.rgb = bg_color or theme.card_bg
     if border_color or theme.border_light:
@@ -180,6 +181,7 @@ def add_card_box(
 def add_footer(slide: Any, theme: ThemeConfig, current_idx: int, total_slides: int = 3, dept: str = "Enterprise Architecture Group") -> None:
     # Divider line
     div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(6.90), Inches(11.733), Inches(0.015))
+    div.shadow.inherit = False
     div.fill.solid()
     div.fill.fore_color.rgb = theme.border_light
     div.line.fill.background()
@@ -333,8 +335,9 @@ def build_snowblue_deck(project_dir: Path, theme: ThemeConfig, assets: Dict[str,
     ]
     for i, cd in enumerate(c_data):
         cx = Inches(0.8) + i * (card_w + card_gap)
-        add_card_box(s2, theme, cx, Inches(4.52), card_w, Inches(2.28))
-        st = s2.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, Inches(4.52), card_w, Inches(0.08))
+        add_card_box(s2, theme, cx, Inches(4.52), card_w, Inches(2.28), has_top_stripe=True)
+        st = s2.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, Inches(4.52), card_w, Inches(0.08))
+        st.shadow.inherit = False
         st.fill.solid()
         st.fill.fore_color.rgb = cd["col"]
         st.line.fill.background()
@@ -395,13 +398,15 @@ def build_snowblue_deck(project_dir: Path, theme: ThemeConfig, assets: Dict[str,
     ]
     for i, ph in enumerate(phases):
         cx = Inches(0.8) + i * (card_w + card_gap)
-        add_card_box(s3, theme, cx, Inches(3.58), card_w, Inches(3.22))
-        st = s3.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, Inches(3.58), card_w, Inches(0.08))
+        add_card_box(s3, theme, cx, Inches(3.58), card_w, Inches(3.22), has_top_stripe=True)
+        st = s3.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, Inches(3.58), card_w, Inches(0.08))
+        st.shadow.inherit = False
         st.fill.solid()
         st.fill.fore_color.rgb = ph["col"]
         st.line.fill.background()
 
         pill = s3.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx + card_w - Inches(1.35), Inches(3.76), Inches(1.15), Inches(0.28))
+        pill.shadow.inherit = False
         pill.fill.solid()
         pill.fill.fore_color.rgb = ph["st_bg"]
         pill.line.color.rgb = ph["st_col"]
@@ -584,8 +589,9 @@ def build_brickred_deck(project_dir: Path, theme: ThemeConfig, assets: Dict[str,
     ]
     for i, cd in enumerate(c_data):
         cx = Inches(0.8) + i * (card_w + card_gap)
-        add_card_box(s2, theme, cx, Inches(4.52), card_w, Inches(2.28))
-        st = s2.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, Inches(4.52), card_w, Inches(0.08))
+        add_card_box(s2, theme, cx, Inches(4.52), card_w, Inches(2.28), has_top_stripe=True)
+        st = s2.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, Inches(4.52), card_w, Inches(0.08))
+        st.shadow.inherit = False
         st.fill.solid()
         st.fill.fore_color.rgb = cd["col"]
         st.line.fill.background()
@@ -646,13 +652,15 @@ def build_brickred_deck(project_dir: Path, theme: ThemeConfig, assets: Dict[str,
     ]
     for i, ph in enumerate(phases):
         cx = Inches(0.8) + i * (card_w + card_gap)
-        add_card_box(s3, theme, cx, Inches(3.58), card_w, Inches(3.22))
-        st = s3.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, Inches(3.58), card_w, Inches(0.08))
+        add_card_box(s3, theme, cx, Inches(3.58), card_w, Inches(3.22), has_top_stripe=True)
+        st = s3.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, Inches(3.58), card_w, Inches(0.08))
+        st.shadow.inherit = False
         st.fill.solid()
         st.fill.fore_color.rgb = ph["col"]
         st.line.fill.background()
 
         pill = s3.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx + card_w - Inches(1.35), Inches(3.76), Inches(1.15), Inches(0.28))
+        pill.shadow.inherit = False
         pill.fill.solid()
         pill.fill.fore_color.rgb = ph["st_bg"]
         pill.line.color.rgb = ph["st_col"]

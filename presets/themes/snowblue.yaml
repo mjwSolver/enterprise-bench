@@ -29,7 +29,7 @@ palette:
 
 geometry:
   corner_radius: 8
-  enable_shadows: true
+  enable_shadows: false
   card_border_width_pt: 1.0
   accent_stripe_height_in: 0.08
 

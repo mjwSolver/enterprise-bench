@@ -63,6 +63,7 @@ def add_slide_with_background(prs: Presentation, theme: Theme) -> Any:
         prs.slide_width,
         prs.slide_height,
     )
+    bg.shadow.inherit = False
     bg.fill.solid()
     bg.fill.fore_color.rgb = theme.get_rgb("background")
     bg.line.fill.background()
@@ -93,29 +94,30 @@ def add_slide_header(
     p_tr.font.bold = True
     p_tr.font.color.rgb = tracker_rgb
 
-    # 2. Action Headline
-    tb_t = slide.shapes.add_textbox(Inches(0.8), Inches(0.68), Inches(11.733), Inches(0.55))
-    tf_t = tb_t.text_frame
-    tf_t.word_wrap = True
-    tf_t.margin_left = tf_t.margin_right = tf_t.margin_top = tf_t.margin_bottom = 0
-    p_t = tf_t.paragraphs[0]
+    # 2. Action Headline & Context Subtitle (Unified Text Frame for Consistent Spacing)
+    tb_header = slide.shapes.add_textbox(Inches(0.8), Inches(0.66), Inches(11.733), Inches(0.95))
+    tf_h = tb_header.text_frame
+    tf_h.word_wrap = True
+    tf_h.margin_left = tf_h.margin_right = tf_h.margin_top = tf_h.margin_bottom = 0
+
+    p_t = tf_h.paragraphs[0]
     p_t.text = action_title
     p_t.font.name = theme.font_family_header
-    p_t.font.size = Pt(thresholds.get("action_title_pt", 20.0))
+    base_title_pt = thresholds.get("action_title_pt", 18.0)
+    if len(action_title) > 60:
+        base_title_pt = min(base_title_pt, 16.5)
+    p_t.font.size = Pt(base_title_pt)
     p_t.font.bold = True
     p_t.font.color.rgb = theme.get_rgb("primary")
 
-    # 3. Context Subtitle
+    # 3. Context Subtitle (Flowed via paragraph offset to ensure consistent spacing at all times)
     if subtitle:
-        tb_s = slide.shapes.add_textbox(Inches(0.8), Inches(1.26), Inches(11.733), Inches(0.35))
-        tf_s = tb_s.text_frame
-        tf_s.word_wrap = True
-        tf_s.margin_left = tf_s.margin_right = tf_s.margin_top = tf_s.margin_bottom = 0
-        p_s = tf_s.paragraphs[0]
+        p_s = tf_h.add_paragraph()
         p_s.text = subtitle
         p_s.font.name = theme.font_family
         p_s.font.size = Pt(thresholds.get("subtitle_pt", 11.0))
         p_s.font.color.rgb = theme.get_rgb("secondary")
+        p_s.space_before = Pt(10)
 
 
 def add_card(
@@ -128,10 +130,25 @@ def add_card(
     bg_color: Optional[RGBColor] = None,
     border_color: Optional[RGBColor] = None,
     border_width_pt: Optional[float] = None,
+    has_top_stripe: bool = False,
+    force_rectangle: bool = False,
 ) -> Any:
-    """Draws a card container respecting theme corner radius and borders."""
-    shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
+    """
+    Draws a card container respecting theme corner radius and borders.
+
+    GEOMETRY INTEGRITY RULE:
+    A card container that features a top accent line, stripe, or header bar
+    MUST NEVER have rounded corners at the top. Overlapping a straight line across
+    rounded corners creates severe geometric collision and visual defect.
+    When has_top_stripe=True or force_rectangle=True, MSO_SHAPE.RECTANGLE is strictly enforced.
+    """
+    if has_top_stripe or force_rectangle or theme.corner_radius <= 0:
+        shape_type = MSO_SHAPE.RECTANGLE
+    else:
+        shape_type = MSO_SHAPE.ROUNDED_RECTANGLE
+
     card = slide.shapes.add_shape(shape_type, left, top, width, height)
+    card.shadow.inherit = False
 
     card.fill.solid()
     card.fill.fore_color.rgb = bg_color or theme.get_rgb("surface")
@@ -144,6 +161,45 @@ def add_card(
         card.line.fill.background()
 
     return card
+
+
+def add_card_with_top_stripe(
+    slide: Any,
+    theme: Theme,
+    left: Inches,
+    top: Inches,
+    width: Inches,
+    height: Inches,
+    accent_rgb: RGBColor,
+    bg_color: Optional[RGBColor] = None,
+    border_color: Optional[RGBColor] = None,
+    border_width_pt: Optional[float] = None,
+    stripe_height_in: Optional[float] = None,
+) -> Tuple[Any, Any]:
+    """
+    Draws a card container with an integrated flush top accent stripe.
+    Guarantees strict geometric alignment: both card container and stripe are sharp
+    rectangles (MSO_SHAPE.RECTANGLE) with zero rounded top corner artifacts.
+    """
+    card = add_card(
+        slide,
+        theme,
+        left,
+        top,
+        width,
+        height,
+        bg_color=bg_color,
+        border_color=border_color,
+        border_width_pt=border_width_pt,
+        has_top_stripe=True,
+    )
+    st_h = Inches(stripe_height_in or theme.accent_stripe_height_in)
+    stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, st_h)
+    stripe.shadow.inherit = False
+    stripe.fill.solid()
+    stripe.fill.fore_color.rgb = accent_rgb
+    stripe.line.fill.background()
+    return card, stripe
 
 
 def add_slide_footer(
@@ -164,6 +220,7 @@ def add_slide_footer(
         Inches(11.733),
         Inches(0.015),
     )
+    divider.shadow.inherit = False
     divider.fill.solid()
     divider.fill.fore_color.rgb = theme.get_rgb("border")
     divider.line.fill.background()
@@ -298,15 +355,17 @@ def build_bcg_3_horizon_slide(
         cx = start_x + i * (card_w + card_gap)
         accent_rgb = theme.get_rgb(h_data.accent_key)
 
-        # 1. Main Background Card
-        add_card(slide, theme, cx, row_y, card_w, card_h, bg_color=theme.get_rgb("surface"))
-
-        # 2. Top Accent Stripe
-        stripe_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
-        stripe = slide.shapes.add_shape(stripe_type, cx, row_y, card_w, Inches(theme.accent_stripe_height_in))
-        stripe.fill.solid()
-        stripe.fill.fore_color.rgb = accent_rgb
-        stripe.line.fill.background()
+        # 1. Main Background Card & 2. Top Accent Stripe (Strict Geometry Rule: NEVER rounded corners at top)
+        add_card_with_top_stripe(
+            slide,
+            theme,
+            cx,
+            row_y,
+            card_w,
+            card_h,
+            accent_rgb=accent_rgb,
+            bg_color=theme.get_rgb("surface"),
+        )
 
         # 3. Status Badge (Pill)
         status_w = Inches(1.20)
@@ -316,6 +375,7 @@ def build_bcg_3_horizon_slide(
 
         status_shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
         status_pill = slide.shapes.add_shape(status_shape_type, status_x, status_y, status_w, status_h)
+        status_pill.shadow.inherit = False
         status_pill.fill.solid()
         status_pill.fill.fore_color.rgb = theme.get_rgb(h_data.status_bg_key)
         status_pill.line.color.rgb = theme.get_rgb(h_data.status_text_key)
@@ -332,29 +392,44 @@ def build_bcg_3_horizon_slide(
         p_st.font.color.rgb = theme.get_rgb(h_data.status_text_key)
 
         # 4. Column Header: Horizon Tag & Title
-        h_tb = slide.shapes.add_textbox(cx + Inches(0.22), row_y + Inches(0.18), card_w - status_w - Inches(0.45), Inches(0.70))
-        h_tf = h_tb.text_frame
-        h_tf.word_wrap = True
-        h_tf.margin_left = h_tf.margin_right = h_tf.margin_top = h_tf.margin_bottom = 0
+        icon_offset_x = Inches(0.0)
+        if h_data.icon_path and Path(h_data.icon_path).exists():
+            slide.shapes.add_picture(
+                str(h_data.icon_path),
+                cx + Inches(0.20),
+                row_y + Inches(0.16),
+                width=Inches(0.36),
+                height=Inches(0.36),
+            )
+            icon_offset_x = Inches(0.44)
 
-        p_tag = h_tf.paragraphs[0]
+        # Tag line (sits between icon and status pill)
+        tag_tb = slide.shapes.add_textbox(cx + Inches(0.20) + icon_offset_x, row_y + Inches(0.18), card_w - status_w - Inches(0.45) - icon_offset_x, Inches(0.28))
+        tag_tf = tag_tb.text_frame
+        tag_tf.word_wrap = True
+        tag_tf.margin_left = tag_tf.margin_right = tag_tf.margin_top = tag_tf.margin_bottom = 0
+        p_tag = tag_tf.paragraphs[0]
         p_tag.text = h_data.horizon_tag
         p_tag.font.name = theme.font_family_header
-        p_tag.font.size = Pt(thresholds.get("tracker_pt", 9.0))
+        p_tag.font.size = Pt(thresholds.get("tracker_pt", 8.5))
         p_tag.font.bold = True
         p_tag.font.color.rgb = accent_rgb
 
-        p_title = h_tf.add_paragraph()
+        # Title line (spans full card width below status row)
+        title_tb = slide.shapes.add_textbox(cx + Inches(0.20), row_y + Inches(0.56), card_w - Inches(0.40), Inches(0.44))
+        title_tf = title_tb.text_frame
+        title_tf.word_wrap = True
+        title_tf.margin_left = title_tf.margin_right = title_tf.margin_top = title_tf.margin_bottom = 0
+        p_title = title_tf.paragraphs[0]
         p_title.text = h_data.title
         p_title.font.name = theme.font_family_header
-        p_title.font.size = Pt(thresholds.get("card_title_pt", 13.0))
+        p_title.font.size = Pt(thresholds.get("card_title_pt", 12.0))
         p_title.font.bold = True
         p_title.font.color.rgb = theme.get_rgb("primary")
-        p_title.space_before = Pt(2)
 
         # 5. Metric Highlight Callout Container
-        metric_box_y = row_y + Inches(0.98)
-        metric_box_h = Inches(0.95)
+        metric_box_y = row_y + Inches(1.08)
+        metric_box_h = Inches(0.88)
         m_card = add_card(
             slide,
             theme,
@@ -436,6 +511,7 @@ class StrategyPillarData:
     target_kpi: str             # e.g. "Target: 4.2x Deployment Velocity"
     proof_points: List[Tuple[str, str]]  # List of (Key Lever, Supporting Evidence / Target)
     accent_key: str = "accent"
+    icon_path: Optional[Union[str, Path]] = None
 
 
 def build_mckinsey_cascade_slide(
@@ -541,18 +617,31 @@ def build_mckinsey_cascade_slide(
         cx = start_x + i * (card_w + card_gap)
         accent_rgb = theme.get_rgb(pillar.accent_key)
 
-        # Card container
-        add_card(slide, theme, cx, pillar_y, card_w, pillar_h, bg_color=theme.get_rgb("surface"))
-
-        # Top Accent Stripe
-        stripe_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
-        stripe = slide.shapes.add_shape(stripe_type, cx, pillar_y, card_w, Inches(theme.accent_stripe_height_in))
-        stripe.fill.solid()
-        stripe.fill.fore_color.rgb = accent_rgb
-        stripe.line.fill.background()
+        # Card container & Top Accent Stripe (Strict Geometry Rule: NEVER rounded corners at top)
+        add_card_with_top_stripe(
+            slide,
+            theme,
+            cx,
+            pillar_y,
+            card_w,
+            pillar_h,
+            accent_rgb=accent_rgb,
+            bg_color=theme.get_rgb("surface"),
+        )
 
         # Pillar Header Box
-        ph_tb = slide.shapes.add_textbox(cx + Inches(0.20), pillar_y + Inches(0.16), card_w - Inches(0.40), Inches(0.65))
+        icon_offset_x = Inches(0.0)
+        if pillar.icon_path and Path(pillar.icon_path).exists():
+            slide.shapes.add_picture(
+                str(pillar.icon_path),
+                cx + Inches(0.20),
+                pillar_y + Inches(0.18),
+                width=Inches(0.42),
+                height=Inches(0.42),
+            )
+            icon_offset_x = Inches(0.50)
+
+        ph_tb = slide.shapes.add_textbox(cx + Inches(0.20) + icon_offset_x, pillar_y + Inches(0.16), card_w - Inches(0.40) - icon_offset_x, Inches(0.65))
         ph_tf = ph_tb.text_frame
         ph_tf.word_wrap = True
         ph_tf.margin_left = ph_tf.margin_right = ph_tf.margin_top = ph_tf.margin_bottom = 0
@@ -567,13 +656,13 @@ def build_mckinsey_cascade_slide(
         p_ptit = ph_tf.add_paragraph()
         p_ptit.text = pillar.title
         p_ptit.font.name = theme.font_family_header
-        p_ptit.font.size = Pt(thresholds.get("card_title_pt", 12.5))
+        p_ptit.font.size = Pt(thresholds.get("card_title_pt", 11.5))
         p_ptit.font.bold = True
         p_ptit.font.color.rgb = theme.get_rgb("primary")
         p_ptit.space_before = Pt(2)
 
         # Proof Points List Box
-        pp_tb = slide.shapes.add_textbox(cx + Inches(0.20), pillar_y + Inches(0.85), card_w - Inches(0.40), pillar_h - Inches(0.95))
+        pp_tb = slide.shapes.add_textbox(cx + Inches(0.20), pillar_y + Inches(1.18), card_w - Inches(0.40), pillar_h - Inches(1.28))
         pp_tf = pp_tb.text_frame
         pp_tf.word_wrap = True
         pp_tf.margin_left = pp_tf.margin_right = pp_tf.margin_top = pp_tf.margin_bottom = 0
@@ -774,11 +863,11 @@ def build_balanced_scorecard_slide(
 
     # Grid Dimensions (2 columns x 2 rows)
     grid_x = Inches(0.8)
-    grid_y = Inches(1.72)
+    grid_y = Inches(1.68)
     quad_w = Inches(5.72)
-    quad_h = Inches(2.45)
+    quad_h = Inches(2.50)
     gap_x = Inches(0.29)
-    gap_y = Inches(0.25)
+    gap_y = Inches(0.18)
 
     positions = [
         (grid_x, grid_y),                                   # Q1: Top-Left
@@ -791,15 +880,17 @@ def build_balanced_scorecard_slide(
         qx, qy = positions[idx]
         accent_rgb = theme.get_rgb(quad_data.accent_key)
 
-        # 1. Main Quadrant Card
-        add_card(slide, theme, qx, qy, quad_w, quad_h, bg_color=theme.get_rgb("surface"))
-
-        # 2. Top Accent Stripe
-        stripe_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
-        stripe = slide.shapes.add_shape(stripe_type, qx, qy, quad_w, Inches(theme.accent_stripe_height_in))
-        stripe.fill.solid()
-        stripe.fill.fore_color.rgb = accent_rgb
-        stripe.line.fill.background()
+        # 1. Main Quadrant Card & 2. Top Accent Stripe (Strict Geometry Rule: NEVER rounded corners at top)
+        add_card_with_top_stripe(
+            slide,
+            theme,
+            qx,
+            qy,
+            quad_w,
+            quad_h,
+            accent_rgb=accent_rgb,
+            bg_color=theme.get_rgb("surface"),
+        )
 
         # 3. Optional Icon
         content_offset_x = Inches(0.20)
@@ -896,6 +987,7 @@ def build_balanced_scorecard_slide(
 
             badge_shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
             bp = slide.shapes.add_shape(badge_shape_type, badge_x, badge_y, badge_w, badge_h)
+            bp.shadow.inherit = False
             bp.fill.solid()
             bp.fill.fore_color.rgb = theme.get_rgb(metric.status_bg_key)
             bp.line.color.rgb = theme.get_rgb(metric.status_text_key)

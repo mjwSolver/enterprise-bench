@@ -336,7 +336,7 @@ class ThemeEngine:
                     "badge_red_fill": "#FEE2E2",
                     "badge_red_text": "#B91C1C",
                 },
-                geometry={"corner_radius": 8, "enable_shadows": True, "card_border_width_pt": 1.0},
+                geometry={"corner_radius": 8, "enable_shadows": False, "card_border_width_pt": 1.0},
             )
         elif name == "brickred":
             return Theme(

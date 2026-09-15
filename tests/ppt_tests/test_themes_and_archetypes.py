@@ -91,7 +91,7 @@ class TestThemeEngine(unittest.TestCase):
 
         # Geometry & Shadows
         self.assertEqual(theme.corner_radius, 8)
-        self.assertTrue(theme.enable_shadows)
+        self.assertFalse(theme.enable_shadows)
 
         # Badges
         self.assertEqual(theme.get_hex("badge_blue_fill"), "#E0F2FE")

@@ -279,6 +279,48 @@ def generate_ppt(
     rprint(f"[green]✓ Presentation created successfully:[/green] [bold]{out_path}[/bold]")
 
 
+@ppt_app.command("replace-image")
+def replace_ppt_image(
+    input_file: str = typer.Option(..., "--input", "-i", help="Path to input .pptx deck"),
+    output_file: Optional[str] = typer.Option(None, "--output", "-o", help="Path to save new .pptx deck"),
+    new_image: str = typer.Option(..., "--new-image", "-n", help="Path to replacement image"),
+    slide: Optional[int] = typer.Option(None, "--slide", "-s", help="Target slide number (1-indexed, default: all slides)"),
+    fit: bool = typer.Option(True, "--fit/--stretch", help="Preserve aspect ratio within original bounding box"),
+    open_deck: bool = typer.Option(False, "--open", help="Open generated presentation on desktop via Microsoft PowerPoint"),
+) -> None:
+    """Substitute preexisting images in a PowerPoint file with a new image and create a new presentation."""
+    import subprocess
+    from src.ppt_engine.image_engine import substitute_presentation_images
+
+    in_path = Path(input_file)
+    if not in_path.exists():
+        rprint(f"[red]Error:[/red] Input PowerPoint file not found: {input_file}")
+        raise typer.Exit(code=1)
+
+    img_path = Path(new_image)
+    if not img_path.exists():
+        rprint(f"[red]Error:[/red] Replacement image not found: {new_image}")
+        raise typer.Exit(code=1)
+
+    out_path = Path(output_file) if output_file else in_path.parent / f"{in_path.stem}_substituted{in_path.suffix}"
+
+    rprint(f"[cyan]ℹ Processing PowerPoint:[/cyan] [bold]{in_path}[/bold]")
+    count, final_out = substitute_presentation_images(
+        prs_or_path=in_path,
+        new_image_path=img_path,
+        output_path=out_path,
+        slide_index=slide,
+        preserve_aspect_ratio=fit,
+    )
+
+    rprint(f"[green]✓ Substituted {count} image(s) -> created:[/green] [bold]{final_out}[/bold]")
+
+    if open_deck:
+        cmd = f'open -a "Microsoft PowerPoint" "{final_out.resolve()}" && osascript -e \'tell application "Microsoft PowerPoint" to activate\''
+        rprint(f"[cyan]ℹ Launching desktop PowerPoint:[/cyan] [bold]{final_out.name}[/bold]")
+        subprocess.run(cmd, shell=True)
+
+
 # ============================================================================
 # Document Commands (bench doc ...)
 # ============================================================================
