@@ -725,6 +725,63 @@ def delete_diagram_page(
         rprint(f"[yellow]Page '{page}' not found in:[/yellow] {target}")
 
 
+@diagram_app.command("import-library")
+def import_diagram_library(
+    file: str = typer.Argument(..., help="Path to Draw.io .xml library file (<mxlibrary>)"),
+    pack: str = typer.Option(..., "--pack", "-p", help="Pack name / vendor category (e.g. cloudera, snowflake, databricks)"),
+) -> None:
+    """Import an external Draw.io <mxlibrary> XML package, extract SVGs, and register into icon catalog."""
+    from src.ppt_engine.library_importer import import_drawio_library
+
+    lib_p = Path(file)
+    if not lib_p.exists():
+        rprint(f"[red]Error:[/red] Library file not found: {file}")
+        raise typer.Exit(code=1)
+
+    try:
+        res = import_drawio_library(lib_p, pack_name=pack)
+        rprint(f"[green]✓ Successfully imported {res['imported']} icons into pack '[bold]{pack}[/bold]'![/green]")
+        table = Table(title=f"Imported Icons: {pack}")
+        table.add_column("Icon ID", style="cyan")
+        table.add_column("Title", style="bold green")
+        table.add_column("Format", style="yellow")
+        table.add_column("Relative Path", style="dim")
+
+        for ic in res["icons"]:
+            table.add_row(ic["id"], ic["title"], ic["format"], ic["file"])
+
+        console.print(table)
+    except Exception as e:
+        rprint(f"[red]Error importing library:[/red] {e}")
+        raise typer.Exit(code=1)
+
+
+@diagram_app.command("list-icons")
+def list_diagram_icons(
+    pack: Optional[str] = typer.Option(None, "--pack", "-p", help="Filter by pack/category name"),
+    query: Optional[str] = typer.Option(None, "--query", "-q", help="Search query on icon title or ID"),
+) -> None:
+    """List or search all registered technology icons available in the workbench."""
+    from src.ppt_engine.library_importer import IconRegistry
+
+    icons = IconRegistry.list_icons(pack=pack, query=query)
+    if not icons:
+        rprint(f"[yellow]No icons found matching query '{query or ''}' in pack '{pack or 'all'}'[/yellow]")
+        return
+
+    table = Table(title=f"Registered Diagram Icons ({len(icons)} total)")
+    table.add_column("Icon ID / Key", style="cyan")
+    table.add_column("Title", style="bold green")
+    table.add_column("Pack", style="magenta")
+    table.add_column("Format", style="yellow")
+    table.add_column("File Path", style="dim")
+
+    for ic in icons:
+        table.add_row(ic["id"], ic.get("title", ""), ic.get("pack", "logos"), ic.get("format", "svg"), ic.get("file", ""))
+
+    console.print(table)
+
+
 if __name__ == "__main__":
     app()
 

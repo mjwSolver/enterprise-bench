@@ -1,0 +1,201 @@
+{
+  "version": "1.0.0",
+  "packs": [
+    {
+      "id": "logos",
+      "name": "Core Enterprise Tech Logos",
+      "vendor": "Various"
+    },
+    {
+      "id": "lucide",
+      "name": "Lucide UI Icons",
+      "vendor": "Lucide"
+    },
+    {
+      "id": "feather",
+      "name": "Feather Icons",
+      "vendor": "Feather"
+    },
+    {
+      "id": "cloudera",
+      "name": "Cloudera",
+      "vendor": "Cloudera"
+    }
+  ],
+  "icons": [
+    {
+      "id": "amazons3",
+      "title": "Amazons3",
+      "pack": "logos",
+      "file": "assets/logos/amazons3.svg",
+      "format": "svg"
+    },
+    {
+      "id": "audit_log",
+      "title": "Audit Log",
+      "pack": "logos",
+      "file": "assets/logos/audit_log.svg",
+      "format": "svg"
+    },
+    {
+      "id": "aws",
+      "title": "Aws",
+      "pack": "logos",
+      "file": "assets/logos/aws.svg",
+      "format": "svg"
+    },
+    {
+      "id": "cloudera:cloudera_manager",
+      "title": "Cloudera Manager",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_manager.svg",
+      "format": "svg",
+      "category": "general"
+    },
+    {
+      "id": "dbt",
+      "title": "Dbt",
+      "pack": "logos",
+      "file": "assets/logos/dbt.svg",
+      "format": "svg"
+    },
+    {
+      "id": "kafka",
+      "title": "Kafka",
+      "pack": "logos",
+      "file": "assets/logos/kafka.svg",
+      "format": "svg"
+    },
+    {
+      "id": "mobile",
+      "title": "Mobile",
+      "pack": "logos",
+      "file": "assets/logos/mobile.svg",
+      "format": "svg"
+    },
+    {
+      "id": "pos_store",
+      "title": "Pos Store",
+      "pack": "logos",
+      "file": "assets/logos/pos_store.svg",
+      "format": "svg"
+    },
+    {
+      "id": "snowflake",
+      "title": "Snowflake",
+      "pack": "logos",
+      "file": "assets/logos/snowflake.svg",
+      "format": "svg"
+    },
+    {
+      "id": "soc2_badge",
+      "title": "Soc2 Badge",
+      "pack": "logos",
+      "file": "assets/logos/soc2_badge.svg",
+      "format": "svg"
+    },
+    {
+      "id": "vault",
+      "title": "Vault",
+      "pack": "logos",
+      "file": "assets/logos/vault.svg",
+      "format": "svg"
+    },
+    {
+      "id": "cloudera:cloudera_cdp_data_hub",
+      "title": "Cloudera CDP Data Hub",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_cdp_data_hub.svg",
+      "format": "svg",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_data_flow",
+      "title": "Cloudera Data Flow",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_data_flow.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_ai",
+      "title": "Cloudera AI",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_ai.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_data_catalog",
+      "title": "Cloudera Data Catalog",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_data_catalog.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_data_engineering",
+      "title": "Cloudera Data Engineering",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_data_engineering.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_data_warehouse",
+      "title": "Cloudera Data Warehouse",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_data_warehouse.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_hub_clusters",
+      "title": "Cloudera Hub Clusters",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_hub_clusters.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_management_console",
+      "title": "Cloudera Management Console",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_management_console.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_observability",
+      "title": "Cloudera Observability",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_observability.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_operational_database",
+      "title": "Cloudera Operational Database",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_operational_database.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_replication_manager",
+      "title": "Cloudera Replication Manager",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_replication_manager.png",
+      "format": "png",
+      "category": "general"
+    },
+    {
+      "id": "cloudera:cloudera_long_icon",
+      "title": "Cloudera Long Icon",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_long_icon.png",
+      "format": "png",
+      "category": "general"
+    }
+  ]
+}
