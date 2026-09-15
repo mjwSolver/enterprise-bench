@@ -32,6 +32,14 @@ from .consulting_archetypes import (
     build_bcg_3_horizon_slide,
     build_mckinsey_cascade_slide,
     build_balanced_scorecard_slide,
+    build_chapter_divider_slide,
+)
+from .resource_manager import (
+    ResourceSpec,
+    ResourceManager,
+    get_resource_manager,
+    resolve_asset,
+    check_resources,
 )
 
 __all__ = [
@@ -61,4 +69,10 @@ __all__ = [
     "build_bcg_3_horizon_slide",
     "build_mckinsey_cascade_slide",
     "build_balanced_scorecard_slide",
+    "build_chapter_divider_slide",
+    "ResourceSpec",
+    "ResourceManager",
+    "get_resource_manager",
+    "resolve_asset",
+    "check_resources",
 ]

@@ -321,6 +321,54 @@ def replace_ppt_image(
         subprocess.run(cmd, shell=True)
 
 
+@ppt_app.command("check-resources")
+def check_ppt_resources(
+    download: bool = typer.Option(True, "--download/--no-download", help="Attempt silent download for missing assets"),
+    clean_report: bool = typer.Option(True, "--clean/--no-clean", help="Clean missing_resources.md if all assets are present"),
+    strict: bool = typer.Option(False, "--strict", help="Exit with code 1 if any resource is missing"),
+) -> None:
+    """Verify or download all registered presentation assets and update missing_resources.md."""
+    from src.ppt_engine.resource_manager import get_resource_manager
+
+    rm = get_resource_manager()
+    results = rm.check_resources(download=download)
+
+    table = Table(title="Enterprise Presentation Resource Registry")
+    table.add_column("Resource Key", style="bold cyan")
+    table.add_column("Expected Path", style="dim")
+    table.add_column("Status", style="bold")
+    table.add_column("Fallback Mode", style="magenta")
+    table.add_column("Impacted Slide(s)", style="yellow")
+
+    has_missing = False
+    for key, info in results.items():
+        spec = info["spec"]
+        if info["present"]:
+            status_str = "[green]✓ Present[/green]" if not info["downloaded"] else "[green]✓ Downloaded[/green]"
+        else:
+            status_str = "[red]✗ Missing (Fallback Active)[/red]"
+            has_missing = True
+
+        slides_str = ", ".join(spec.impacted_slides) if spec.impacted_slides else "N/A"
+        try:
+            rel_p = spec.target_path.relative_to(ROOT_DIR).as_posix()
+        except ValueError:
+            rel_p = spec.target_path.as_posix()
+
+        table.add_row(key, rel_p, status_str, spec.fallback_type, slides_str)
+
+    console.print(table)
+
+    if has_missing:
+        rprint(f"[yellow]⚠ One or more resources are missing. Diagnostic report written to: {rm.missing_report_path}[/yellow]")
+        if strict:
+            raise typer.Exit(code=1)
+    else:
+        if clean_report:
+            rm.clean_missing_report(remove=True)
+        rprint("[green]✓ All registered presentation resources are verified and ready.[/green]")
+
+
 # ============================================================================
 # Document Commands (bench doc ...)
 # ============================================================================

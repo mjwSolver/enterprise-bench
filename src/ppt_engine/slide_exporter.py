@@ -25,7 +25,7 @@ from PIL import Image, ImageColor, ImageDraw, ImageFont
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 
 
 # ============================================================================
@@ -141,16 +141,10 @@ class PurePythonSlideRenderer:
         canvas = Image.new("RGBA", (width_px, height_px), (248, 250, 252, 255))
         draw = ImageDraw.Draw(canvas)
 
-        # 1. First pass: Render background fills and container cards
+        # Single-pass painter's algorithm respecting natural shape z-order
         for shape in slide.shapes:
             self._render_shape_background(canvas, draw, shape, scale_x, scale_y)
-
-        # 2. Second pass: Render pictures and embedded diagrams
-        for shape in slide.shapes:
             self._render_shape_picture(canvas, draw, shape, scale_x, scale_y)
-
-        # 3. Third pass: Render text frames and typography
-        for shape in slide.shapes:
             self._render_shape_text(canvas, draw, shape, scale_x, scale_y)
 
         return canvas.convert("RGB")
@@ -189,6 +183,7 @@ class PurePythonSlideRenderer:
             return
 
         fill_color = None
+        alpha_val = 255
         border_color = None
         border_width = 0
 
@@ -197,6 +192,16 @@ class PurePythonSlideRenderer:
             try:
                 if hasattr(shape.fill, "fore_color") and shape.fill.fore_color:
                     fill_color = _hex_or_rgb_to_tuple(shape.fill.fore_color.rgb)
+                # Check for OpenXML DrawingML alpha
+                spPr = getattr(shape._element, "spPr", None)
+                if spPr is not None:
+                    solid_fill = spPr.find("{http://schemas.openxmlformats.org/drawingml/2006/main}solidFill")
+                    if solid_fill is not None:
+                        srgb_clr = solid_fill.find("{http://schemas.openxmlformats.org/drawingml/2006/main}srgbClr")
+                        if srgb_clr is not None:
+                            alpha_elem = srgb_clr.find("{http://schemas.openxmlformats.org/drawingml/2006/main}alpha")
+                            if alpha_elem is not None and "val" in alpha_elem.attrib:
+                                alpha_val = int(round(int(alpha_elem.attrib["val"]) / 100000.0 * 255))
             except Exception:
                 fill_color = None
 
@@ -210,10 +215,34 @@ class PurePythonSlideRenderer:
             except Exception:
                 border_color = None
 
-        fill_rgba = (*fill_color, 255) if fill_color else None
+        fill_rgba = (*fill_color, alpha_val) if fill_color else None
         border_rgba = (*border_color, 255) if border_color else None
 
         if not fill_rgba and not border_rgba:
+            return
+
+        # If transparent alpha is present, composite via a separate layer
+        if fill_rgba and fill_rgba[3] < 255:
+            overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+            overlay_draw = ImageDraw.Draw(overlay)
+            if auto_type == MSO_SHAPE.ROUNDED_RECTANGLE:
+                radius = int(min(w, h) * 0.12) if min(w, h) > 0 else 8
+                radius = max(4, min(radius, 24))
+                overlay_draw.rounded_rectangle(
+                    [x, y, x + w, y + h],
+                    radius=radius,
+                    fill=fill_rgba,
+                    outline=border_rgba,
+                    width=border_width if border_rgba else 0,
+                )
+            elif auto_type == MSO_SHAPE.RECTANGLE:
+                overlay_draw.rectangle(
+                    [x, y, x + w, y + h],
+                    fill=fill_rgba,
+                    outline=border_rgba,
+                    width=border_width if border_rgba else 0,
+                )
+            canvas.alpha_composite(overlay)
             return
 
         if auto_type == MSO_SHAPE.ROUNDED_RECTANGLE:
@@ -300,7 +329,15 @@ class PurePythonSlideRenderer:
             return
 
         tf = shape.text_frame
-        cur_y = y + (tf.margin_top.pt * scale_y if tf.margin_top else 2)
+        is_middle = getattr(tf, "vertical_anchor", None) == MSO_ANCHOR.MIDDLE
+        if is_middle and len(tf.paragraphs) == 1:
+            p_first = tf.paragraphs[0]
+            f_pt = p_first.font.size.pt if p_first.font.size else (p_first.runs[0].font.size.pt if p_first.runs and p_first.runs[0].font.size else 10.0)
+            font_px = max(8, int(f_pt * scale_y * 1.33))
+            line_height = int(font_px * 1.25)
+            cur_y = y + max(0, (h - line_height) / 2)
+        else:
+            cur_y = y + (tf.margin_top.pt * scale_y if tf.margin_top else 2)
         left_margin = (tf.margin_left.pt * scale_x if tf.margin_left else 2)
         usable_w = max(10, w - left_margin - (tf.margin_right.pt * scale_x if tf.margin_right else 2))
 

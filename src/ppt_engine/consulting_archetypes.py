@@ -33,7 +33,9 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.oxml import parse_xml
 from pptx.util import Inches, Pt
+from PIL import Image
 
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb
 
@@ -1008,7 +1010,245 @@ def build_balanced_scorecard_slide(
 
 
 # ============================================================================
-# 5. High-Level Consulting Archetype Deck Generator
+# 5. Modern Chapter Divider / Section Header Archetype
+# ============================================================================
+
+def build_chapter_divider_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str,
+    title: Optional[str] = None,
+    subtitle: Optional[str] = None,
+    hero_image_path: Optional[Union[str, Path]] = None,
+    logo_path: Optional[Union[str, Path]] = None,
+    action_title: Optional[str] = None,
+    division_tag: Optional[str] = "BAS Division  |  Data & AI Practice",
+    tagline: Optional[str] = None,
+    scrim_alpha: float = 0.45,
+    scrim_color: Optional[RGBColor] = None,
+    tracker_color: Optional[RGBColor] = None,
+    current_idx: Optional[int] = None,
+    total_slides: Optional[int] = None,
+    show_footer: bool = False,
+) -> Any:
+    """
+    Builds a modern, de-squared chapter divider / section header slide.
+
+    Layout Architecture:
+      - 1/3 Left Typographic Narrative Panel (x=0.8", y=2.0", w=3.6", h=4.0"):
+        Unified text box frame housing Tracker breadcrumb, high-contrast Action Title,
+        and optional context Subtitle/synopsis without floating box collisions.
+      - 2/3 Right Photographic Hero Panel (x=4.8", y=0.0", w=8.533", h=7.5"):
+        High-res photographic plate scaled/cropped to bleed edge.
+        If photo is missing, gracefully falls back to a deep primary solid container.
+      - Translucent Scrim Overlay:
+        OpenXML DrawingML 45% alpha dark overlay (<a:alpha val="45000"/>) over
+        the photographic hero panel ensuring high-contrast readability.
+      - Centered Division / Logo Lockup:
+        Metrodata square mark (x≈7.87", y≈2.4", w=2.4", h=2.1") and white division tag.
+        If logo is missing, gracefully falls back to a typographic badge ([ METRODATA ]).
+      - Strict Geometry:
+        Zero rounded corners on containers with top stripes/overlays; sharp rectangular
+        panels (MSO_SHAPE.RECTANGLE) throughout.
+    """
+    effective_title = title or action_title or ""
+    thresholds = theme.typography_thresholds
+
+    # 1. Base slide with canvas background
+    slide = add_slide_with_background(prs, theme)
+
+    # 2. Left 1/3 Typographic Narrative Panel (Unified Text Frame)
+    # x=0.8", y=2.0", w=3.6", h=4.0"
+    narrative_tb = slide.shapes.add_textbox(Inches(0.8), Inches(2.0), Inches(3.6), Inches(4.0))
+    tf = narrative_tb.text_frame
+    tf.word_wrap = True
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+
+    # Paragraph 1: Tracker Breadcrumb (10pt bold uppercase, theme accent)
+    p_tr = tf.paragraphs[0]
+    p_tr.text = tracker.upper()
+    p_tr.font.name = theme.font_family_header
+    p_tr.font.size = Pt(thresholds.get("tracker_pt", 10.0))
+    p_tr.font.bold = True
+    p_tr.font.color.rgb = tracker_color or theme.get_rgb("accent")
+
+    # Paragraph 2: Action Title (32-36pt bold, theme primary, space_before=12pt)
+    p_ti = tf.add_paragraph()
+    p_ti.text = effective_title
+    p_ti.font.name = theme.font_family_header
+    base_title_pt = 34.0 if len(effective_title) <= 45 else 30.0
+    p_ti.font.size = Pt(base_title_pt)
+    p_ti.font.bold = True
+    p_ti.font.color.rgb = theme.get_rgb("primary")
+    p_ti.space_before = Pt(12)
+
+    # Paragraph 3: Context Synopsis / Subtitle (11.5pt regular, theme secondary, space_before=14pt)
+    if subtitle:
+        p_sub = tf.add_paragraph()
+        p_sub.text = subtitle
+        p_sub.font.name = theme.font_family
+        p_sub.font.size = Pt(thresholds.get("subtitle_pt", 11.5))
+        p_sub.font.color.rgb = theme.get_rgb("secondary")
+        p_sub.space_before = Pt(14)
+
+    # 3. Right 2/3 Photographic Hero Panel (x=4.8", y=0.0", w=8.533", h=7.5")
+    resolved_hero: Optional[Path] = None
+    if hero_image_path is not None:
+        p = Path(hero_image_path)
+        if p.is_file():
+            resolved_hero = p
+    else:
+        from src.ppt_engine.resource_manager import get_resource_manager
+        resolved_hero = get_resource_manager().resolve_asset(
+            "stock_chapter_photo",
+            impacted_slide="Chapter Divider",
+        )
+        if resolved_hero is None:
+            # Check secondary local candidates before falling back to solid color
+            candidate_paths = [
+                Path("assets/images/datacenter_stock.jpg"),
+                Path("assets/images/noc_operations_stock.jpg"),
+            ]
+            for cand in candidate_paths:
+                if cand.is_file():
+                    resolved_hero = cand
+                    break
+
+    panel_x = Inches(4.8)
+    panel_y = Inches(0.0)
+    panel_w = Inches(8.533)
+    panel_h = Inches(7.5)
+
+    if resolved_hero is not None:
+        try:
+            with Image.open(resolved_hero) as im:
+                iw, ih = im.size
+            target_ratio = 8.533 / 7.5
+            cur_ratio = iw / ih if ih > 0 else target_ratio
+
+            pic = slide.shapes.add_picture(str(resolved_hero), panel_x, panel_y, panel_w, panel_h)
+            if cur_ratio > target_ratio:
+                excess = 1.0 - (target_ratio / cur_ratio)
+                pic.crop_left = excess / 2.0
+                pic.crop_right = excess / 2.0
+            elif cur_ratio < target_ratio:
+                excess = 1.0 - (cur_ratio / target_ratio)
+                pic.crop_top = excess / 2.0
+                pic.crop_bottom = excess / 2.0
+        except Exception:
+            fallback_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, panel_x, panel_y, panel_w, panel_h)
+            fallback_bg.shadow.inherit = False
+            fallback_bg.line.fill.background()
+            fallback_bg.fill.solid()
+            fallback_bg.fill.fore_color.rgb = hex_to_rgb("#0F172A")
+    else:
+        # Photo missing (Fallback): Solid rectangle filled with deep primary color (#0F172A)
+        fallback_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, panel_x, panel_y, panel_w, panel_h)
+        fallback_bg.shadow.inherit = False
+        fallback_bg.line.fill.background()
+        fallback_bg.fill.solid()
+        fallback_bg.fill.fore_color.rgb = hex_to_rgb("#0F172A")
+
+    # 4. Dark Translucent Scrim Overlay (45% alpha via OpenXML DrawingML)
+    scrim = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, panel_x, panel_y, panel_w, panel_h)
+    scrim.shadow.inherit = False
+    scrim.line.fill.background()
+    scrim.fill.solid()
+    scrim.fill.fore_color.rgb = scrim_color or hex_to_rgb("#0B132B")
+
+    try:
+        alpha_val = int(round(scrim_alpha * 100000))
+        solid_fill = scrim._element.spPr.find("{http://schemas.openxmlformats.org/drawingml/2006/main}solidFill")
+        if solid_fill is not None:
+            srgb_clr = solid_fill.find("{http://schemas.openxmlformats.org/drawingml/2006/main}srgbClr")
+            if srgb_clr is not None:
+                alpha_elem = parse_xml(
+                    f'<a:alpha xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" val="{alpha_val}"/>'
+                )
+                srgb_clr.append(alpha_elem)
+    except Exception:
+        pass
+
+    # 5. Logo & Division Lockup
+    resolved_logo: Optional[Path] = None
+    if logo_path is not None:
+        lp = Path(logo_path)
+        if lp.is_file():
+            resolved_logo = lp
+    else:
+        from src.ppt_engine.resource_manager import get_resource_manager
+        resolved_logo = get_resource_manager().resolve_asset(
+            "logo_metrodata_square",
+            impacted_slide="Chapter Divider",
+        )
+
+    logo_w = Inches(2.4)
+    logo_h = Inches(2.1)
+    logo_x = Inches(9.0665) - (logo_w / 2)
+    logo_y = Inches(2.35)
+
+    if resolved_logo is not None:
+        slide.shapes.add_picture(str(resolved_logo), logo_x, logo_y, logo_w, logo_h)
+    else:
+        # Fallback: High-contrast white typographic pill badge ([ METRODATA ])
+        badge_w = Inches(2.8)
+        badge_h = Inches(0.65)
+        badge_x = Inches(9.0665) - (badge_w / 2)
+        badge_y = Inches(2.80)
+
+        badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, badge_x, badge_y, badge_w, badge_h)
+        badge.shadow.inherit = False
+        badge.fill.solid()
+        badge.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        badge.line.fill.background()
+
+        badge_tf = badge.text_frame
+        badge_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        badge_tf.margin_left = badge_tf.margin_right = badge_tf.margin_top = badge_tf.margin_bottom = 0
+        p_bg = badge_tf.paragraphs[0]
+        p_bg.text = "METRODATA"
+        p_bg.font.name = theme.font_family_header
+        p_bg.font.size = Pt(14.0)
+        p_bg.font.bold = True
+        p_bg.alignment = PP_ALIGN.CENTER
+        p_bg.font.color.rgb = hex_to_rgb("#0B132B")
+
+    # Division Lockup / Capability Tag below logo
+    div_y = Inches(4.70)
+    div_tb = slide.shapes.add_textbox(Inches(5.0), div_y, Inches(8.133), Inches(0.9))
+    div_tf = div_tb.text_frame
+    div_tf.word_wrap = True
+    div_tf.margin_left = div_tf.margin_right = div_tf.margin_top = div_tf.margin_bottom = 0
+
+    if division_tag:
+        p_div = div_tf.paragraphs[0]
+        p_div.text = division_tag
+        p_div.font.name = theme.font_family_header
+        p_div.font.size = Pt(12.0)
+        p_div.font.bold = True
+        p_div.alignment = PP_ALIGN.CENTER
+        p_div.font.color.rgb = RGBColor(255, 255, 255)
+
+    if tagline:
+        p_tag = div_tf.add_paragraph() if division_tag else div_tf.paragraphs[0]
+        p_tag.text = tagline
+        p_tag.font.name = theme.font_family
+        p_tag.font.size = Pt(10.5)
+        p_tag.font.bold = False
+        p_tag.alignment = PP_ALIGN.CENTER
+        p_tag.font.color.rgb = RGBColor(226, 232, 240)
+        if division_tag:
+            p_tag.space_before = Pt(4)
+
+    # Optional footer (defaults to False for chapter dividers)
+    if show_footer and current_idx is not None and total_slides is not None:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides)
+
+    return slide
+
+
+# ============================================================================
+# 6. High-Level Consulting Archetype Deck Generator
 # ============================================================================
 
 class ConsultingDeckBuilder:
@@ -1084,6 +1324,34 @@ class ConsultingDeckBuilder:
             quadrants=quadrants,
             current_idx=idx,
             total_slides=3,
+        )
+
+    def add_chapter_divider_slide(
+        self,
+        tracker: str = "PHASE 02: ARCHITECTURE & PLANNING",
+        title: str = "Modern Cloud Data Platform Architecture",
+        subtitle: Optional[str] = "End-to-end data pipelines, staging lakehouse, and analytics delivery.",
+        hero_image_path: Optional[Union[str, Path]] = None,
+        logo_path: Optional[Union[str, Path]] = None,
+        division_tag: Optional[str] = "BAS Division  |  Data & AI Practice",
+        tagline: Optional[str] = None,
+        scrim_alpha: float = 0.45,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_chapter_divider_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            title=title,
+            subtitle=subtitle,
+            hero_image_path=hero_image_path,
+            logo_path=logo_path,
+            division_tag=division_tag,
+            tagline=tagline,
+            scrim_alpha=scrim_alpha,
+            current_idx=idx,
+            total_slides=idx,
+            show_footer=False,
         )
 
     def save(self, output_path: Union[str, Path]) -> Path:
