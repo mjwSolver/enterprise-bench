@@ -54,6 +54,11 @@ description: >-
   - `consulting_archetypes.py`: Programmatic slide structures (BCG 3-Horizon, Balanced Scorecard, Metric Grids, Process Flows).
   - `diagram_engine.py`: Vector diagram drawing (cloud topologies, sequenced pipelines).
   - `theme_engine.py`: Corporate color palettes and font tokens loaded from `presets/themes/*.yaml`.
+* **Geometry Integrity Rule (Zero Overlapping Top Lines on Rounded Containers)**:
+  - Cards with top accent stripes/lines or header bars **MUST NEVER** have rounded corners at the top.
+  - When an archetype features a top accent stripe, both container card and stripe **MUST be sharp rectangles (`MSO_SHAPE.RECTANGLE`)**.
+  - Thin stripes must **never** use `MSO_SHAPE.ROUNDED_RECTANGLE` (which distorts into pills/capsules).
+  - Enforced via `add_card_with_top_stripe(...)` or `add_card(..., has_top_stripe=True)`.
 
 ### C. The Spreadsheet & Financial Engine (`src/xlsx_engine/`)
 * **Philosophy**: Formula-preserving automated calculation and data injection.
@@ -66,6 +71,7 @@ description: >-
 * `models.py`: Strongly typed Pydantic v2 schemas (`ProjectInfo`, `BASTPayload`, `MoMPayload`, `Stakeholder`).
 * `theme.py`: `BrandTheme` dataclass and hex/RGB color transformers.
 * `sanitizer.py`: High-entropy regex cleaner for masking corporate identities, PII, and credentials across DOCX and XLSX.
+* `docx_purger.py`: Zero-corruption OpenXML comment, highlight, tracked revision, and author profile purger. Preserves `[Content_Types].xml` and `.rels` while clearing part contents. See full runbook: [`docs/OPENXML_PURGING_AND_CLEANSING.md`](../../docs/OPENXML_PURGING_AND_CLEANSING.md).
 
 ---
 

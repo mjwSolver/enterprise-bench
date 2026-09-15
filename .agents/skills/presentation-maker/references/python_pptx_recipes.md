@@ -80,8 +80,11 @@ def add_header(slide, tracker_text, title_text, subtitle_text=None,
 def add_card(slide, left, top, width, height,
              bg_color=RGBColor(255, 255, 255),
              border_color=RGBColor(226, 232, 240),
-             border_width=Pt(1)):
-    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+             border_width=Pt(1),
+             has_top_stripe=False):
+    # Geometric Integrity: Cards with top stripes MUST NOT have rounded corners at the top
+    shape_type = MSO_SHAPE.RECTANGLE if has_top_stripe else MSO_SHAPE.ROUNDED_RECTANGLE
+    card = slide.shapes.add_shape(shape_type, left, top, width, height)
     card.fill.solid()
     card.fill.fore_color.rgb = bg_color
     if border_color:
@@ -94,11 +97,11 @@ def add_card(slide, left, top, width, height,
 def add_card_with_header(slide, left, top, width, height, title, items,
                          accent_color=RGBColor(15, 118, 110),
                          card_bg=RGBColor(255, 255, 255)):
-    # Background card
-    add_card(slide, left, top, width, height, bg_color=card_bg)
+    # Background card (sharp rectangle flush with top stripe)
+    add_card(slide, left, top, width, height, bg_color=card_bg, has_top_stripe=True)
 
-    # Accent Top Stripe
-    stripe = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, Inches(0.12))
+    # Accent Top Stripe (clean rectangle, never rounded)
+    stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, Inches(0.08))
     stripe.fill.solid()
     stripe.fill.fore_color.rgb = accent_color
     stripe.line.fill.background()

@@ -118,15 +118,27 @@ Detailed code templates are available in [`references/python_pptx_recipes.md`](.
    tf.margin_top = Inches(0.15)
    tf.margin_bottom = Inches(0.15)
    ```
-3. **Card Container Shapes**: Place rounded rectangle or rectangle shapes behind content groups to establish visual hierarchy.
-4. **Consistent Typography Tokens**:
+3. **Card Container Shapes & Geometric Integrity**:
+   - 🚨 **ANTI-PATTERN TO PREVENT**: Never place an overlapping horizontal line, accent stripe, or header bar across a container that has rounded corners at the top.
+   - **Enforcement Rule**: Any container card that features a top accent line, stripe, or header bar **MUST BE A CRISP RECTANGLE (`MSO_SHAPE.RECTANGLE`)**. Both the card and the stripe must use `MSO_SHAPE.RECTANGLE` with identical width for flush 90-degree edge-to-edge alignment.
+   - Thin horizontal accent stripes must **NEVER** use `MSO_SHAPE.ROUNDED_RECTANGLE` (which distorts into an awkward capsule/pill).
+   - Rounded corners (`MSO_SHAPE.ROUNDED_RECTANGLE`) are reserved exclusively for standalone self-contained metric callouts (without top lines) and floating status badges/pills.
+4. **Cover Slide Elegance & Clean Metadata**:
+   - 🚨 **ANTI-PATTERN TO PREVENT**: Never place metadata (Client, Vendor, Date, Confidentiality) inside an awkward bordered card or box container at the bottom of a cover slide.
+   - **Enforcement Rule**: Metadata must be rendered as clean typographic columns (e.g., `PREPARED FOR` and `ENGAGEMENT PARTNER`) separated from the title area by an optional subtle hairline divider.
+   - **Zero Cover Footers**: Cover slides must **NEVER** feature slide footer divider bars or page numbers (e.g. `01 / 06`). Slide footers and pagination strictly begin on content slide 2.
+5. **Consistent Typography Tokens**:
    - Header Tracker / Category: 10–11pt bold, uppercase
    - Main Slide Action Title: 22–26pt bold
    - Card Titles / Subheaders: 13–15pt bold
    - Body Text: 11–12pt regular
    - Captions / Footnotes: 9–10pt muted
+6. **Unified Title & Subtitle Frame (Zero Coordinate Guessing)**:
+   - 🚨 **ANTI-PATTERN TO PREVENT**: Never place Action Title and Subtitle in separate textboxes with hardcoded Y positions. When titles wrap to 2 lines, the subtitle collides or crowds the headline.
+   - **Enforcement Rule**: Place Action Title and Subtitle as sequential paragraphs within the **SAME text frame**. Use `p_subtitle.space_before = Pt(10)` to enforce an exact 10pt offset regardless of how many lines the title spans.
 
 ---
+
 
 ## 5. Reference Files
 - [Python-PPTX Code Recipes](./references/python_pptx_recipes.md)

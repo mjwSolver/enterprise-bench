@@ -62,11 +62,34 @@ Before generating code, authoring new deliverables, designing presentations, or 
 4. **`slide-image-prompter`** ([`skills/slide-image-prompter/SKILL.md`](skills/slide-image-prompter/SKILL.md)):
    - **When to check:** Generating high-fidelity AI visual prompts for presentation backgrounds, custom infographics, or full-slide concept diagrams.
 
-**First Action Protocol:** Identify whether your goal is **Operational (Track A)** or **Development (Track B)** and **inspect the corresponding skill file first** before proceeding.
+#### 🖥 Track C: Desktop Review & Fast Turnaround (Local App Launching)
+5. **`local-app-preview`** ([`skills/local-app-preview/SKILL.md`](skills/local-app-preview/SKILL.md)):
+   - **Target Role:** Review Coordinator, Enterprise Consultant, Pair Programming Assistant.
+   - **When to check:** Whenever tasked with opening or previewing Word (`.docx`), Excel (`.xlsx`), PowerPoint (`.pptx`), PDF, or diagram (`.drawio`, `.png`) deliverables on the user's local machine, or proactively suggesting desktop reviews to accelerate feedback.
+
+**First Action Protocol:** Identify whether your goal is **Operational (Track A)**, **Development (Track B)**, or **Review & Preview (Track C)** and **inspect the corresponding skill file first** before proceeding.
 
 ---
 
 ## 🏛 Repository Conventions (`enterprise-bench`)
+
+### 🖥 Desktop Review & Native App Launching Protocol (`open` & `osascript`)
+* **Accelerated Review Directive:** After generating or stamping deliverables (presentations, contracts, specs, financial models), agents should proactively offer or suggest opening the files directly in local desktop applications (Microsoft Word, Microsoft Excel, Microsoft PowerPoint, Preview, Draw.io) on the user's macOS device.
+* **Launch & Focus Pattern:**
+  ```bash
+  # Word:
+  open -a "Microsoft Word" "<file.docx>" && osascript -e 'tell application "Microsoft Word" to activate'
+
+  # Excel:
+  open -a "Microsoft Excel" "<file.xlsx>" && osascript -e 'tell application "Microsoft Excel" to activate'
+
+  # PowerPoint:
+  open -a "Microsoft PowerPoint" "<file.pptx>" && osascript -e 'tell application "Microsoft PowerPoint" to activate'
+
+  # Diagram / Image in Preview:
+  open -a "Preview" "<file.png>"
+  ```
+* Always wrap target file paths in quotes and confirm file existence prior to execution.
 
 ### Environment & Tooling
 * Always execute Python commands through `uv` (e.g., `uv run bench ...`, `uv sync`).
@@ -78,8 +101,41 @@ Before generating code, authoring new deliverables, designing presentations, or 
 * `src/ppt_engine/`: Generative consulting presentations (`python-pptx`, visual cards, collision detection).
 * `src/docx_engine/`: Deterministic legal/technical documents (`docxtpl`, OpenXML, BAST, PKS, FSD).
 * `src/xlsx_engine/`: Spreadsheets, calculators, S-curves, RAID logs (`openpyxl`, `pandas`).
-* `src/core/`: Shared models, brand color palettes, PII sanitization.
+* `src/core/`: Shared models, brand color palettes, PII sanitization, and document element purgers (`docx_purger.py`).
 * `clean_workspace/`: Canonical workspace containing 38 sanitized golden master templates (`projects/TTI_Snowflake_Analytics/`).
+
+### 🧹 Post-PII Document Sanitization: Comments & Highlight Purging Protocol
+* **Mandatory Post-Sanitization Cleanse:** Raw enterprise deliverables often contain residual editorial comments, user highlights, and tracked changes.
+* Following PII entity substitution, all `.docx` deliverables and templates must have these editorial artifacts purged:
+  - **Review Comments:** Strip `word/comments*.xml` parts, relationship entries, and inline comment anchors (`<w:commentRangeStart>`, `<w:commentRangeEnd>`, `<w:commentReference>`).
+  - **Text Highlighting:** Clear all run-level `<w:highlight>` elements across body, tables, and headers/footers.
+  - **Tracked Revisions:** Remove `<w:del>` markup and strip revision change markers (`<w:rPrChange>`, `<w:pPrChange>`).
+* Executable via: `uv run bench doc purge --file <path.docx>` or batch `uv run bench doc purge --dir <directory>`.
+
+### 📐 PowerPoint Presentation Geometry: Zero Overlapping Top Lines on Rounded Containers
+* **Strict Geometric Alignment Rule:** Any container card that features a top accent line, stripe, or header bar **MUST NEVER** have rounded corners at the top.
+* **Anti-Pattern Prohibited:** Never place an overlapping horizontal line or stripe shape on top of a rounded container (`MSO_SHAPE.ROUNDED_RECTANGLE`), as it causes severe visual distortion, protruding corner artifacts, and mismatched radii.
+* **Enforced Pattern:**
+  - When an accent line, stripe, or header bar is anchored to a container, **both the container card and the stripe MUST be sharp rectangles (`MSO_SHAPE.RECTANGLE`)**.
+  - Thin accent stripes must **never** be rendered as rounded rectangles (which distort into capsules/pills).
+  - Rounded shapes (`MSO_SHAPE.ROUNDED_RECTANGLE`) are reserved exclusively for standalone metric badges, status pills, or self-contained cards without top overlapping lines.
+  - Implement via `add_card_with_top_stripe(...)` or `add_card(..., has_top_stripe=True)`.
+
+### 📄 PowerPoint Cover Slide Architecture: Clean Typographic Metadata (Zero Boxed Cards)
+* **No Boxed Metadata Containers:** Never place metadata (Client, Vendor, Date, Confidentiality) inside an awkward bordered card or box container at the bottom of a cover slide.
+* **Typographic Multi-Column Alignment:** Render metadata directly on the slide background in clean typographic columns (e.g., `PREPARED FOR` and `ENGAGEMENT PARTNER`) separated from the title area by an optional subtle baseline hairline.
+* **No Cover Footers or Pagination:** Cover slides must **NEVER** feature slide footer divider bars, confidentiality disclaimers, or page numbers (e.g. `01 / 06`). Slide footers and pagination strictly begin on content slide 2.
+
+### 🔤 PowerPoint Header Architecture: Unified Title & Subtitle Frame (Zero Coordinate Collision)
+* **No Separate Floating Text Boxes:** Never render Action Titles and Subtitles into separate shape text boxes with hardcoded Y coordinates. Guessing Y coordinates based on character length inevitably causes collision/crowding on 2-line wrapped titles, or oversized gaps on 1-line titles.
+* **Unified Flow Architecture:** Place Action Title and Subtitle as sequential paragraphs within the **SAME text box**.
+* **Paragraph Spacing Offset:** Enforce a strict paragraph offset (`space_before = Pt(10)`) on the subtitle paragraph. PowerPoint's text layout engine will automatically flow the subtitle exactly 10pt below the final line of the title regardless of line wrap.
+
+### 📊 Diagram Architecture & Visual Hierarchy Standard: Large Typography & Vector Iconography
+* **Balanced Multi-Tier Aspect Ratio:** Diagrams embedded into 16:9 presentation slides or executive documents must avoid ultra-wide single-tier horizontal chains ($>4$ nodes stretched linearly, creating $\sim 10:1$ aspect ratios that shrink to unreadable hairline ribbons). Enforce balanced 3-column or multi-row layouts (target aspect ratio $\sim 2.5:1$ to $3.5:1$) so typography scales legibly ($\ge 11\text{pt}$ to $14\text{pt}$ optical equivalent) when rendered inside slide cards.
+* **Mandatory Vector Logos & Iconography (Zero Plain-Text Boxes):** Diagram vertices must incorporate official vector technology logos (SVG from `assets/logos/`, e.g., Kafka, Snowflake, dbt, AWS, HashiCorp Vault) or standardized icon glyphs (Lucide/Heroicons) rather than generic plain-text rectangles.
+* **Node Geometry & Left-Aligned Text Flow:** Diagram cards must allocate dedicated icon slots ($40\times 40$ px to $48\times 48$ px) with left-aligned title/body labels adjacent to the emblem and generous card volume to prevent text crowding.
+* **Sub-Canvas Grouping:** Topologies with multiple subgraphs must map subgraphs into distinct vertical columns or cohesive functional swimlanes with smart orthogonal routing (`_compute_subgraph_columnar_layout`).
 
 ---
 

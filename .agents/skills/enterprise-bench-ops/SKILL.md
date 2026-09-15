@@ -239,9 +239,21 @@ uv run bench diagram export output/project_master.drawio --page "Storage Cluster
 
 When onboarding external raw deliverables or client files into templates:
 ```bash
-# Sanitize raw client documents before cataloging
+# 1. Sanitize raw client documents before cataloging (includes automated post-PII element purge)
 uv run bench doc sanitize --input raw_source_files/sample.docx --output clean_workspace/sanitized_sample.docx
+
+# 2. Standalone Element Purge: Wipe review comments, author highlights & tracked revisions
+uv run bench doc purge --file output/project_deliverable.docx
+
+# 3. Batch Element Purge across an entire project directory
+uv run bench doc purge --dir output/project_alpha/documents/
 ```
 
+### Post-PII Document Cleansing Protocol (Comments & Highlights Purge)
+- Raw client deliverables frequently retain hundreds of internal stakeholder comments, yellow/colored text highlights, and residual tracked revisions.
+- Following standard PII entity substitution, the engine runs an automated OpenXML element purge:
+  1. **Comments Purge:** Strips all `word/comments.xml`, extended comment parts, relationship bindings, and inline `<w:commentRangeStart>`, `<w:commentRangeEnd>`, and `<w:commentReference>` anchors.
+  2. **Highlights Purge:** Strips all `<w:highlight>` formatting across body paragraphs, tables, headers, and footers.
+  3. **Revisions Purge:** Normalizes `<w:ins>`, removes `<w:del>` markup, and strips editorial change markers (`<w:rPrChange>`, `<w:pPrChange>`).
 - All stamped deliverables and newly generated files **MUST** be placed in `output/` or `project_outputs/<project_name>/`.
 - **NEVER** overwrite files in `clean_workspace/` with generated client deliverables; `clean_workspace/` is strictly for clean golden master templates.
