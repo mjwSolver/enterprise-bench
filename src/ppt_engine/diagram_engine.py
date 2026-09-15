@@ -94,6 +94,21 @@ class DiagramSubgraph:
 
 
 @dataclass
+class IngressBus:
+    id: str
+    source_node_ids: List[str]
+    target_node_id: str
+    bus_x: float
+    y_min: float
+    y_max: float
+    target_y: float
+    has_junction_dots: bool = True
+    label: Optional[str] = None
+    style_type: str = "solid"
+    custom_style: Dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class ParsedDiagram:
     diagram_type: str  # flowchart, stateDiagram
     direction: str  # TD, TB, LR, BT, RL
@@ -101,6 +116,7 @@ class ParsedDiagram:
     edges: List[DiagramEdge] = field(default_factory=list)
     subgraphs: Dict[str, DiagramSubgraph] = field(default_factory=dict)
     classes: Dict[str, Dict[str, str]] = field(default_factory=dict)
+    buses: List[IngressBus] = field(default_factory=list)
     # Global diagram bounds
     total_width: float = 0.0
     total_height: float = 0.0
@@ -575,7 +591,9 @@ class HierarchicalLayoutEngine:
 
         # If multiple subgraphs exist and structure the diagram, use columnar subgraph layout
         if len(diagram.subgraphs) > 1 and sum(len(sg.node_ids) for sg in diagram.subgraphs.values()) >= len(diagram.nodes) * 0.7:
-            return self._compute_subgraph_columnar_layout(diagram)
+            laid_out = self._compute_subgraph_columnar_layout(diagram)
+            self._detect_and_route_buses(laid_out)
+            return laid_out
 
         adj, rev_adj = self._build_adjacency(diagram)
         ranks = self._assign_ranks(diagram, adj, rev_adj)
@@ -657,6 +675,7 @@ class HierarchicalLayoutEngine:
         diagram.total_width = max_bound_x + 40.0
         diagram.total_height = max_bound_y + 40.0
 
+        self._detect_and_route_buses(diagram)
         return diagram
 
     def _compute_subgraph_columnar_layout(self, diagram: ParsedDiagram) -> ParsedDiagram:
@@ -747,6 +766,119 @@ class HierarchicalLayoutEngine:
             diagram.total_height = current_primary - self.rank_spacing + 40.0
 
         return diagram
+
+    def _detect_and_route_buses(self, diagram: ParsedDiagram) -> Tuple[ParsedDiagram, List[IngressBus]]:
+        """
+        Detects convergence where N >= 2 upstream nodes from a columnar stage target
+        the same downstream ingress component, bundling them into a clean dedicated
+        inter-column Ingress Bus (vertical trunk line).
+        """
+        if diagram.buses:
+            return diagram, diagram.buses
+
+        if not diagram.nodes or not diagram.edges:
+            return diagram, []
+
+        # Group edges by (source_column_or_subgraph_key, target_node_id)
+        candidate_groups: Dict[Tuple[str, str], List[DiagramEdge]] = {}
+        for edge in diagram.edges:
+            if edge.source_id not in diagram.nodes or edge.target_id not in diagram.nodes:
+                continue
+            src = diagram.nodes[edge.source_id]
+            tgt = diagram.nodes[edge.target_id]
+
+            # Ingress bus requires target to be downstream (to the right) of source
+            if (src.x + src.width) >= tgt.x:
+                continue
+
+            if src.subgraph_id:
+                # Do not bundle if within the same subgraph/column
+                if src.subgraph_id == tgt.subgraph_id:
+                    continue
+                sg_key = src.subgraph_id
+            else:
+                sg_key = f"col_{int(round(src.x / 100.0) * 100)}"
+
+            candidate_groups.setdefault((sg_key, edge.target_id), []).append(edge)
+
+        # Filter candidate groups with len >= 2
+        qualifying_groups: Dict[str, List[Tuple[str, List[DiagramEdge]]]] = {}
+        for (src_col, tgt_id), edges in candidate_groups.items():
+            if len(edges) >= 2:
+                qualifying_groups.setdefault(src_col, []).append((tgt_id, edges))
+
+        buses: List[IngressBus] = []
+        bundled_pairs: Set[Tuple[str, str]] = set()
+
+        for src_col, target_clusters in qualifying_groups.items():
+            # Sort clusters by target Y for consistent deterministic channel assignment
+            target_clusters.sort(key=lambda t_item: diagram.nodes[t_item[0]].y)
+            cluster_count = len(target_clusters)
+
+            for idx, (tgt_id, edges) in enumerate(target_clusters):
+                tgt_node = diagram.nodes[tgt_id]
+                src_nodes = [diagram.nodes[e.source_id] for e in edges]
+
+                # Determine channel boundary
+                first_src = src_nodes[0]
+                if first_src.subgraph_id and first_src.subgraph_id in diagram.subgraphs:
+                    sg_src = diagram.subgraphs[first_src.subgraph_id]
+                    gutter_left = sg_src.x + sg_src.width
+                else:
+                    gutter_left = max(s.x + s.width for s in src_nodes)
+
+                if tgt_node.subgraph_id and tgt_node.subgraph_id in diagram.subgraphs:
+                    sg_tgt = diagram.subgraphs[tgt_node.subgraph_id]
+                    gutter_right = sg_tgt.x
+                else:
+                    gutter_right = tgt_node.x
+
+                # Safety check: if subgraphs overlap or inverted, fall back to node coordinates
+                if gutter_right <= gutter_left:
+                    gutter_left = max(s.x + s.width for s in src_nodes)
+                    gutter_right = tgt_node.x
+
+                gutter_width = max(gutter_right - gutter_left, 40.0)
+
+                # Assign bus_x evenly within the gutter channel
+                bus_x = gutter_left + (idx + 1) * (gutter_width / (cluster_count + 1))
+
+                # Calculate Y bounds
+                src_ids = [e.source_id for e in edges]
+                tap_ys = [diagram.nodes[sid].y + diagram.nodes[sid].height / 2.0 for sid in src_ids]
+                target_y = tgt_node.y + tgt_node.height / 2.0
+
+                y_min = min(min(tap_ys), target_y)
+                y_max = max(max(tap_ys), target_y)
+
+                # Preserve label if any
+                bus_label = next((e.label for e in edges if e.label), None)
+
+                bus_id = f"{src_col}_{tgt_id}"
+                bus = IngressBus(
+                    id=bus_id,
+                    source_node_ids=src_ids,
+                    target_node_id=tgt_id,
+                    bus_x=bus_x,
+                    y_min=y_min,
+                    y_max=y_max,
+                    target_y=target_y,
+                    has_junction_dots=True,
+                    label=bus_label,
+                )
+                buses.append(bus)
+
+                for sid in src_ids:
+                    bundled_pairs.add((sid, tgt_id))
+
+        # Filter bundled edges from diagram.edges so they are not rendered twice
+        diagram.edges = [
+            e for e in diagram.edges
+            if (e.source_id, e.target_id) not in bundled_pairs
+        ]
+        diagram.buses = buses
+
+        return diagram, buses
 
     def _calculate_node_sizes(self, diagram: ParsedDiagram) -> None:
         fs = self.font_size
@@ -972,6 +1104,87 @@ class DrawIOConverter:
             )
             ET.SubElement(e_cell, "mxGeometry", attrib={"relative": "1", "as": "geometry"})
 
+        # 4. Render Ingress Buses
+        if not diagram.buses:
+            HierarchicalLayoutEngine()._detect_and_route_buses(diagram)
+
+        for bus in diagram.buses:
+            if bus.target_node_id not in diagram.nodes:
+                continue
+
+            junction_id = f"bus_junction_{bus.id}"
+            j_cell = ET.SubElement(
+                root,
+                "mxCell",
+                attrib={
+                    "id": junction_id,
+                    "value": "",
+                    "style": (
+                        f"shape=ellipse;fillColor={self.theme['edge_stroke']};strokeColor=none;"
+                        f"perimeter=none;points=[];rounded=1;"
+                    ),
+                    "vertex": "1",
+                    "parent": "1",
+                },
+            )
+            ET.SubElement(
+                j_cell,
+                "mxGeometry",
+                attrib={
+                    "x": str(int(bus.bus_x - 3)),
+                    "y": str(int(bus.target_y - 3)),
+                    "width": "6",
+                    "height": "6",
+                    "as": "geometry",
+                },
+            )
+
+            # Feeder edges from sources to junction cell
+            for sid in bus.source_node_ids:
+                edge_counter += 1
+                feeder_style = (
+                    f"edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;"
+                    f"strokeColor={self.theme['edge_stroke']};strokeWidth={self.theme['edge_stroke_width']};"
+                    f"endArrow=none;exitX=1;exitY=0.5;entryX=0.5;entryY=0.5;"
+                )
+                feeder_cell = ET.SubElement(
+                    root,
+                    "mxCell",
+                    attrib={
+                        "id": f"edge_{edge_counter}",
+                        "value": "",
+                        "style": feeder_style,
+                        "edge": "1",
+                        "parent": "1",
+                        "source": f"node_{sid}",
+                        "target": junction_id,
+                    },
+                )
+                ET.SubElement(feeder_cell, "mxGeometry", attrib={"relative": "1", "as": "geometry"})
+
+            # Single trunk ingress edge from junction cell to target node
+            edge_counter += 1
+            trunk_style = (
+                f"edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;"
+                f"strokeColor={self.theme['edge_stroke']};strokeWidth={self.theme['edge_stroke_width']};"
+                f"endArrow=classic;exitX=0.5;exitY=0.5;entryX=0;entryY=0.5;"
+            )
+            trunk_val = html.escape(bus.label or "").replace("\n", "<br>")
+            trunk_cell = ET.SubElement(
+                root,
+                "mxCell",
+                attrib={
+                    "id": f"edge_{edge_counter}",
+                    "value": trunk_val,
+                    "style": trunk_style,
+                    "edge": "1",
+                    "parent": "1",
+                    "source": junction_id,
+                    "target": f"node_{bus.target_node_id}",
+                },
+            )
+            ET.SubElement(trunk_cell, "mxGeometry", attrib={"relative": "1", "as": "geometry"})
+
         raw_xml = ET.tostring(mxfile, encoding="utf-8")
         parsed_xml = minidom.parseString(raw_xml)
         return parsed_xml.toprettyxml(indent="  ", encoding="utf-8").decode("utf-8")
@@ -1105,7 +1318,58 @@ class DiagramRenderer:
                 f'font-size="{sg_fs}" font-weight="bold" fill="{self.theme["container_font"]}">{html.escape(sg.title)}</text>'
             )
 
-        # 2. Edges
+        # 2. Ingress Buses (Dedicated Inter-Column Trunk Highways)
+        if not diagram.buses:
+            HierarchicalLayoutEngine()._detect_and_route_buses(diagram)
+
+        for bus in diagram.buses:
+            if bus.target_node_id not in diagram.nodes:
+                continue
+            tgt = diagram.nodes[bus.target_node_id]
+            src_nodes = [diagram.nodes[sid] for sid in bus.source_node_ids if sid in diagram.nodes]
+            if not src_nodes:
+                continue
+
+            bus_stroke = self.theme["edge_stroke"]
+            bus_sw = self.theme["edge_stroke_width"]
+
+            # A. Feeder Taps (horizontal stubs from source right to bus_x) & Junction Dots
+            for src in src_nodes:
+                tap_x = src.x + src.width
+                tap_y = src.y + src.height / 2.0
+                svg_lines.append(
+                    f'  <path d="M {tap_x:.1f} {tap_y:.1f} L {bus.bus_x:.1f} {tap_y:.1f}" fill="none" '
+                    f'stroke="{bus_stroke}" stroke-width="{bus_sw}"/>'
+                )
+                if bus.has_junction_dots:
+                    svg_lines.append(
+                        f'  <circle cx="{bus.bus_x:.1f}" cy="{tap_y:.1f}" r="2.5" fill="{bus_stroke}"/>'
+                    )
+
+            # B. Shared Vertical Trunk Backbone
+            svg_lines.append(
+                f'  <path d="M {bus.bus_x:.1f} {bus.y_min:.1f} L {bus.bus_x:.1f} {bus.y_max:.1f}" fill="none" '
+                f'stroke="{bus_stroke}" stroke-width="{bus_sw}"/>'
+            )
+
+            # C. Single Ingress Arrow into target card
+            tgt_x = tgt.x
+            tgt_y = bus.target_y
+            svg_lines.append(
+                f'  <path d="M {bus.bus_x:.1f} {tgt_y:.1f} L {tgt_x:.1f} {tgt_y:.1f}" fill="none" '
+                f'stroke="{bus_stroke}" stroke-width="{bus_sw}" marker-end="url(#arrow)"/>'
+            )
+
+            # Optional label on ingress arrow
+            if bus.label:
+                lbl_x = (bus.bus_x + tgt_x) / 2.0
+                lbl_y = tgt_y - 8.0
+                svg_lines.append(
+                    f'  <text x="{lbl_x:.1f}" y="{lbl_y:.1f}" font-family="{self.theme["node_font_family"]}" '
+                    f'font-size="{self.theme["edge_font_size"]}" fill="{self.theme["edge_font"]}" text-anchor="middle">{html.escape(bus.label)}</text>'
+                )
+
+        # 3. Standard Unbundled Edges
         for edge in diagram.edges:
             if edge.source_id not in diagram.nodes or edge.target_id not in diagram.nodes:
                 continue
@@ -1142,6 +1406,13 @@ class DiagramRenderer:
                     sx, sy = src.x, src.y + src.height / 2.0
                     tx, ty = tgt.x + tgt.width, tgt.y + tgt.height / 2.0
                 mx = (sx + tx) / 2.0
+
+                # Collision avoidance with bus trunks in the same corridor
+                for b in diagram.buses:
+                    if min(sx, tx) < b.bus_x < max(sx, tx):
+                        if abs(mx - b.bus_x) < 14.0:
+                            mx = b.bus_x - 18.0 if mx <= b.bus_x else b.bus_x + 18.0
+
                 d_path = f"M {sx:.1f} {sy:.1f} L {mx:.1f} {sy:.1f} L {mx:.1f} {ty:.1f} L {tx:.1f} {ty:.1f}"
                 label_x = mx
                 label_y = (sy + ty) / 2.0 - 6.0
@@ -1479,6 +1750,8 @@ def mxgraph_to_ast(diagram_elem: ET.Element) -> ParsedDiagram:
         h = float(geom.attrib.get("height", 50)) if geom is not None and "height" in geom.attrib else 50.0
 
         if is_vertex:
+            if cid.startswith("bus_junction_"):
+                continue
             if "swimlane" in style:
                 sg_id = cid.replace("subgraph_", "")
                 parsed.subgraphs[sg_id] = DiagramSubgraph(
@@ -1560,8 +1833,41 @@ def mxgraph_to_ast(diagram_elem: ET.Element) -> ParsedDiagram:
                 if nid not in sg.node_ids:
                     sg.node_ids.append(nid)
 
+    # Resolve any junction waypoint connections back to logical edges
+    junction_sources: Dict[str, List[DiagramEdge]] = {}
+    junction_targets: Dict[str, List[DiagramEdge]] = {}
+    standard_edges: List[DiagramEdge] = []
+
+    for edge in parsed.edges:
+        if edge.target_id.startswith("bus_junction_"):
+            junction_sources.setdefault(edge.target_id, []).append(edge)
+        elif edge.source_id.startswith("bus_junction_"):
+            junction_targets.setdefault(edge.source_id, []).append(edge)
+        else:
+            standard_edges.append(edge)
+
+    resolved_edges = list(standard_edges)
+    for j_id, in_edges in junction_sources.items():
+        out_edges = junction_targets.get(j_id, [])
+        for out_e in out_edges:
+            for in_e in in_edges:
+                resolved_edges.append(
+                    DiagramEdge(
+                        source_id=in_e.source_id,
+                        target_id=out_e.target_id,
+                        label=out_e.label or in_e.label,
+                        style_type=out_e.style_type or in_e.style_type,
+                        arrow_start=in_e.arrow_start,
+                        arrow_end=out_e.arrow_end,
+                    )
+                )
+
+    parsed.edges = resolved_edges
+
     parsed.total_width = max(max_x + 40.0, 400.0)
     parsed.total_height = max(max_y + 40.0, 300.0)
+
+    HierarchicalLayoutEngine()._detect_and_route_buses(parsed)
     return parsed
 
 
