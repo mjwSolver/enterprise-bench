@@ -1,5 +1,36 @@
 # Enterprise Workbench Changelog & Architecture Updates
 
+## [2026-09-15] - Slide Geometry Containment, 3-Column Diagram Re-Architecture & Ingress Bus Specification
+
+### Summary
+Fixed PowerPoint slide overflow defects where unconstrained aspect-ratio scaling drove diagrams into the slide footer ($7.49"$ on $7.50"$ slides), eliminated $>450,000\text{ px}^2$ of dead whitespace in Draw.io diagrams by re-architecting to balanced 3-column layouts ($2.77:1$), implemented macOS live presentation concurrency automation, and authored an engineering handover specification for Ingress Bus edge bundling.
+
+---
+
+### Key Additions & Changes
+
+#### 1. Presentation Geometry & Footer Collision Defense (`scripts/`)
+- Diagnosed single-dimension image scaling in `python-pptx`: passing only `width` caused squarish diagrams ($1.22:1$) to expand to $5.57"$ height, overflowing the $5.10"$ container card and colliding with slide footers ($Y \ge 6.90"$).
+- Implemented `fit_image_within_bounds()` dual-constraint containment calculation in [`scripts/generate_xyz_decks.py`](../scripts/generate_xyz_decks.py) and [`scripts/generate_xyz_enhanced_visual_deck.py`](../scripts/generate_xyz_enhanced_visual_deck.py).
+- Guaranteed container centering and strict bottom-margin safety ($Y = 5.50"$, maintaining $1.40"$ clear headroom above the footer line).
+
+#### 2. Diagram Architecture & Whitespace Elimination (`src/ppt_engine/diagram_engine.py`)
+- Identified root cause of dead whitespace in `01_ingestion_streaming`: asymmetrical top-horizontal + left-vertical layout leaving $>450,000\text{ px}^2$ empty in the lower-right quadrant.
+- Restructured `page_ingestion___streaming` in [`output/proj-xyz/diagrams/xyz_platform_architecture.drawio`](../output/proj-xyz/diagrams/xyz_platform_architecture.drawio) into a balanced 3-column columnar layout (`flowchart LR`, $2.77:1$ aspect ratio):
+  - **Column 1:** Omni-Channel Event Sources (`APP`, `POS`, `WEB`, `ERP`).
+  - **Column 2:** Real-Time Streaming Core (`GW`, `KAFKA`, `SPARK`).
+  - **Column 3:** Cloud Landing Zone (`S3`, `SNOW_RAW`).
+- Embedded official vector logos from `assets/logos/` and `assets/icons/lucide/` on all nodes.
+- Re-exported vector SVG and 300-DPI PNG assets via Cairo rasterizer.
+
+#### 3. Live Desktop Automation & Concurrency Lock Protocol
+- Integrated safe PowerPoint process lock handling using AppleScript (`osascript`) to close active presentations without blocking prompts, rebuild PPTX decks, and auto-focus target slides on macOS.
+
+#### 4. Ingress Bus & Edge Bundling Handover Specification (`docs/`)
+- Authored comprehensive platform engineering specification in [`docs/HANDOVER_INGRESS_BUS_ROUTING.md`](HANDOVER_INGRESS_BUS_ROUTING.md) detailing shared inter-column trunk-line routing to eliminate orthogonal connector clutter ("mess of cables") across columnar subgraphs.
+
+---
+
 ## [2026-09-11] - Consolidation of PPT Engine & Core Suite Launch
 
 ### Summary

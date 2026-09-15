@@ -98,6 +98,7 @@ enterprise-bench/
 │   │   ├── config.py           (Environment & workspace paths)
 │   │   ├── theme.py            (Corporate color palettes, typography tokens)
 │   │   ├── sanitizer.py        (PII stripping & generic variable replacer)
+│   │   ├── docx_purger.py      (Zero-corruption OpenXML comment, highlight & revision purger)
 │   │   └── models.py           (Pydantic schemas for Project, Milestone, Deliverable)
 │   │
 │   ├── ppt_engine/             # Migrated from PPTMaking/src
@@ -195,10 +196,60 @@ All 38 files have been relocated and sanitized under `clean_workspace/projects/T
   - Exposed Typer CLI with `bench init-project`, `bench ppt generate`, `bench ppt themes`, `bench doc stamp`, `bench doc sanitize`, and `bench doc lint`.
 - [x] **5. Test Suite:**
   - Implemented [`tests/test_core.py`](tests/test_core.py), [`tests/test_docx_engine.py`](tests/test_docx_engine.py), and [`tests/test_ppt_engine.py`](tests/test_ppt_engine.py) (9/9 passed).
+- [x] **6. Desktop Native App Preview Subsystem (`skills/local-app-preview/`):**
+  - Implemented macOS `open` + AppleScript (`osascript`) workflow to launch and auto-focus Word, Excel, PowerPoint, and Preview.
+  - Documented protocol in [`AGENTS.md`](AGENTS.md) and [`skills/local-app-preview/SKILL.md`](skills/local-app-preview/SKILL.md).
+- [x] **7. Zero-Corruption OpenXML Purging Subsystem (`src/core/docx_purger.py`):**
+  - Engineered zero-corruption comment, highlight, tracked revision, and author profile purging for `.docx`.
+  - Integrated into `src/core/sanitizer.py` and exposed via `uv run bench doc purge`.
+  - Audited all output deliverables and golden master templates (0 comments, 0 highlights, 0 revisions).
+  - Authored comprehensive architectural runbook in [`docs/OPENXML_PURGING_AND_CLEANSING.md`](docs/OPENXML_PURGING_AND_CLEANSING.md).
+- [x] **8. Slide Geometry Containment, Diagram 3-Column Re-Architecture & Ingress Bus Specification (2026-09-15):**
+  - **Slide Geometry & Footer Guardrail:** Eliminated single-dimension unbounded image scaling in `python-pptx` that allowed squarish ($1.22:1$) diagrams to blow past container boundaries and hit $7.49"$ on $7.50"$ slides. Implemented `fit_image_within_bounds()` dual-constraint containment across `scripts/generate_xyz_decks.py` and `scripts/generate_xyz_enhanced_visual_deck.py`.
+  - **Draw.io Whitespace Elimination:** Re-engineered `01_ingestion_streaming` from an asymmetrical hybrid ($>450,000\text{ px}^2$ dead whitespace in bottom-right) to a balanced 3-column architecture (`flowchart LR`, $2.77:1$ widescreen aspect ratio) with integrated vector tech logos (Kafka, Snowflake, AWS, S3, Lucide).
+  - **Live Presentation Concurrency:** Established clean macOS AppleScript lock handling to close active PowerPoint presentations without saving prompts, re-generate decks, and auto-focus Slide 4.
+  - **Ingress Bus Architecture Handover:** Formulated formal architectural design and specification for edge bundling / trunk-line routing in [`docs/HANDOVER_INGRESS_BUS_ROUTING.md`](docs/HANDOVER_INGRESS_BUS_ROUTING.md) to eliminate orthogonal connector clutter ("mess of cables").
 
-### Immediate Next Backlog for the Next Sprint
-1. **Spreadsheet Engine (`src/xlsx_engine/`):**
+---
+
+## 7. OpenXML Sanitization & Document Cleansing Architecture
+
+> Full technical guide: [`docs/OPENXML_PURGING_AND_CLEANSING.md`](docs/OPENXML_PURGING_AND_CLEANSING.md)
+
+### The Two Major OpenXML Traps Solved
+1. **The `[Content_Types].xml` & `.rels` Namespace Corruption Trap:**
+   - Standard Python parsers (`xml.etree.ElementTree`) serialize root elements with synthetic prefixes (e.g. `<ns0:Types>`, `<ns0:Relationships>`). Microsoft Word requires these root tags to use the default namespace without prefixes; any prefix immediately corrupts the package.
+   - **Solution:** **Never touch package files.** Leave `[Content_Types].xml` and `word/_rels/document.xml.rels` intact. Empty the children of `word/comments*.xml` and `word/people.xml` while preserving their root XML containers.
+2. **The "Ghost Comments" vs Tracked Revisions Confusion:**
+   - Word's "All Markup" view renders Tracked Changes (`<w:ins>`, `<w:del>`, `<w:rPrChange>`, `<w:pPrChange>`) in right-hand margin balloons that look identical to comments.
+   - **Solution:**
+     - Drop all deletions (`etree.strip_elements(root, f"{{{W_NS}}}del", with_tail=False)`).
+     - Accept all insertions (`etree.strip_tags(root, f"{{{W_NS}}}ins")` keeping run text intact).
+     - Strip change markers (`rPrChange`, `pPrChange`, `tblPrChange`, etc.).
+     - Empty `word/people.xml` author profile cards.
+     - Disable `<w:trackRevisions>` in `word/settings.xml`.
+
+### CLI Usage:
+```bash
+# Purge single document
+uv run bench doc purge --file path/to/document.docx
+
+# Batch purge directory
+uv run bench doc purge --dir clean_workspace/projects/TTI_Snowflake_Analytics
+```
+
+---
+
+## 8. Immediate Next Backlog for the Next Sprint
+1. **Presentation Imagery Archetypes & Company Logo Formatting:**
+   - Detailed specifications captured in [`docs/BACKLOG_SLIDE_DESIGN_VARIETY.md`](docs/BACKLOG_SLIDE_DESIGN_VARIETY.md) (Section 5).
+   - Standardize template-level image placeholder zones across archetypes (Hero Cover, Split-Screen Case Study 1/2 photo + 1/2 text, Side-by-Side Proof card, Team Bio Grid).
+   - Implement dual client/vendor logo lockups on cover slides and header/footer banners (`client_logo_path`, `vendor_logo_path`) with transparent aspect-ratio constrained rendering.
+   - Declarative data models in `consulting_archetypes.py` (`SlideImageReference`, `BrandingConfig`).
+2. **Spreadsheet Engine (`src/xlsx_engine/`):**
    - Implement `calculator_stamper.py` to drive `Cloud_Sizing_Calculator_Template.xlsx` and `Timeline_and_Mandays_Estimate_Template.xlsx`.
    - Implement `s_curve_generator.py` for automated project progress curves.
-2. **Batch Template Sanitization:**
+3. **Batch Template Sanitization:**
    - Completed batch regex sanitization across all 38 templates, cataloged in [`clean_workspace/projects/TTI_Snowflake_Analytics/`](clean_workspace/projects/TTI_Snowflake_Analytics/).
+
+
