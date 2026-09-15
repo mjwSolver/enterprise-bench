@@ -74,3 +74,43 @@ Presentation slide builders frequently require diagram exports. Both modes are i
 > - `output/<project>/diagrams/04_cutover_runbook.drawio` (3-5 tabs)
 >
 > This gives human reviewers manageable files (never more than 8 tabs per file), prevents Git merge conflicts, and maps 1:1 with deliverable handovers.
+
+---
+
+## 6. Backlog Item: Diagram Icon Weight, Stroke Consistency & Palette Harmonization
+
+> **Status:** Queued Architecture Item  
+> **Target Subsystem:** `src/ppt_engine/diagram_engine.py`, `assets/logos/`, `DrawIONode` AST
+
+### A. Context & Motivation
+With the integration of vector iconography and brand emblems into `.drawio` nodes (`icon` / `icon_color`), diagrams now visually communicate technology identities directly (e.g., Apache Kafka, Snowflake, dbt, AWS, HashiCorp Vault). 
+
+However, visual asset consistency across heterogeneous icons presents two specific design challenges:
+1. **Stroke Weight Mismatch (`light` outline vs. `weighted` solid):**
+   - Combining ultra-thin line icons (e.g., 1px stroke Lucide wireframes) directly alongside heavy, solid filled silhouettes (e.g., solid font-awesome glyphs or dense logos) creates visual imbalance on executive slides.
+2. **Color Fragmentation vs. Brand Preservation:**
+   - Generic utility icons (e.g., database, lock, cloud, server) look best when harmonized to the parent container's accent color (e.g. primary brand blue `#2563EB` or slate `#475569`).
+   - Official vendor logos (e.g., Snowflake cyan `#29B5E8`, AWS orange `#FF9900`, Vault green `#000000`) must preserve their authentic corporate brand colors, unless explicitly specified in monochrome/duotone mode for high-contrast slides.
+
+---
+
+### B. Requirements & Design Specifications
+
+1. **Explicit Weight Classification (`weight: "light" | "weighted" | "brand"`):**
+   - In `DrawIONode` and the icon asset manifest, annotate vector assets with their geometric style:
+     - `light`: Outline stroke vectors (stroke width 1.5–2px, transparent fill).
+     - `weighted`: Solid silhouette fills.
+     - `brand`: Multi-color official corporate logos.
+   - Enforce consistency: Diagrams within the same deliverable should default to a unified glyph style unless distinguishing external inputs/outputs from internal system core.
+
+2. **Dynamic SVG Palette Injection & Stroke Replacement:**
+   - Enhance SVG asset inlining in `_render_node_svg`:
+     - When an outline or monochrome icon has `icon_color` specified (or defaults to the node's `stroke_color`), the engine should dynamically replace `currentColor`, `stroke="..."`, or `fill="..."` attributes with the designated theme hex before base64 encoding.
+     - Provide an opt-in toggle `preserve_brand_color: bool = True` for official logos so brand trademarks are not inadvertently overridden by container theme tints.
+
+3. **Curated Icon Asset Library (`assets/logos/` & `assets/icons/`):**
+   - Establish a standard asset catalog partitioned by style:
+     - `assets/icons/outline/`: Standardized Lucide/Heroicon SVGs normalized to 24×24 viewBox and 1.75px stroke.
+     - `assets/icons/solid/`: Normalized weighted SVGs.
+     - `assets/logos/`: Official brand SVGs (Kafka, Snowflake, dbt, AWS, Vault, etc.) with normalized square viewports.
+

@@ -8,6 +8,7 @@ preset brand palettes, and headless vector SVG / high-DPI PNG compilation.
 
 from __future__ import annotations
 
+import base64
 import ctypes
 import ctypes.util
 import html
@@ -115,19 +116,21 @@ THEME_PRESETS: Dict[str, Dict[str, Any]] = {
         "container_fill": "#F1F5F9",
         "container_stroke": "#CBD5E1",
         "container_font": "#0F172A",
+        "container_font_size": "16",
+        "container_start_size": "36",
         "node_fill": "#FFFFFF",
         "node_stroke": "#0F766E",
         "node_stroke_width": "2",
         "node_font": "#0F172A",
         "node_font_family": "Helvetica, Arial, sans-serif",
-        "node_font_size": "13",
+        "node_font_size": "18",
         "accent_node_fill": "#F0FDF4",
         "accent_node_stroke": "#16A34A",
         "accent_node_font": "#14532D",
         "edge_stroke": "#64748B",
         "edge_stroke_width": "2",
         "edge_font": "#475569",
-        "edge_font_size": "11",
+        "edge_font_size": "14",
         "state_node_fill": "#0F172A",
     },
     "corporate_navy": {
@@ -135,19 +138,21 @@ THEME_PRESETS: Dict[str, Dict[str, Any]] = {
         "container_fill": "#F1F5F9",
         "container_stroke": "#CBD5E1",
         "container_font": "#1E293B",
+        "container_font_size": "16",
+        "container_start_size": "36",
         "node_fill": "#FFFFFF",
         "node_stroke": "#2563EB",
         "node_stroke_width": "2",
         "node_font": "#1E293B",
         "node_font_family": "Helvetica, Arial, sans-serif",
-        "node_font_size": "13",
+        "node_font_size": "18",
         "accent_node_fill": "#EFF6FF",
         "accent_node_stroke": "#3B82F6",
         "accent_node_font": "#1E40AF",
         "edge_stroke": "#64748B",
         "edge_stroke_width": "2",
         "edge_font": "#475569",
-        "edge_font_size": "11",
+        "edge_font_size": "14",
         "state_node_fill": "#1E293B",
     },
     "executive_tech": {
@@ -155,19 +160,21 @@ THEME_PRESETS: Dict[str, Dict[str, Any]] = {
         "container_fill": "#1E293B",
         "container_stroke": "#334155",
         "container_font": "#F8FAFC",
+        "container_font_size": "16",
+        "container_start_size": "36",
         "node_fill": "#1E293B",
         "node_stroke": "#06B6D4",
         "node_stroke_width": "2",
         "node_font": "#F8FAFC",
         "node_font_family": "Helvetica, Arial, sans-serif",
-        "node_font_size": "13",
+        "node_font_size": "18",
         "accent_node_fill": "#312E81",
         "accent_node_stroke": "#6366F1",
         "accent_node_font": "#EEF2FF",
         "edge_stroke": "#94A3B8",
         "edge_stroke_width": "2",
         "edge_font": "#CBD5E1",
-        "edge_font_size": "11",
+        "edge_font_size": "14",
         "state_node_fill": "#38BDF8",
     },
     "warm_amber": {
@@ -175,19 +182,21 @@ THEME_PRESETS: Dict[str, Dict[str, Any]] = {
         "container_fill": "#FEF3C7",
         "container_stroke": "#FDE68A",
         "container_font": "#78350F",
+        "container_font_size": "16",
+        "container_start_size": "36",
         "node_fill": "#FFFFFF",
         "node_stroke": "#D97706",
         "node_stroke_width": "2",
         "node_font": "#78350F",
         "node_font_family": "Helvetica, Arial, sans-serif",
-        "node_font_size": "13",
+        "node_font_size": "18",
         "accent_node_fill": "#FFFBEB",
         "accent_node_stroke": "#B45309",
         "accent_node_font": "#78350F",
         "edge_stroke": "#92400E",
         "edge_stroke_width": "2",
         "edge_font": "#78350F",
-        "edge_font_size": "11",
+        "edge_font_size": "14",
         "state_node_fill": "#D97706",
     },
 }
@@ -545,15 +554,17 @@ class HierarchicalLayoutEngine:
 
     def __init__(
         self,
-        rank_spacing: float = 80.0,
-        node_spacing: float = 40.0,
-        subgraph_padding: float = 30.0,
-        subgraph_header: float = 35.0,
+        rank_spacing: float = 85.0,
+        node_spacing: float = 44.0,
+        subgraph_padding: float = 32.0,
+        subgraph_header: float = 48.0,
+        font_size: float = 18.0,
     ) -> None:
-        self.rank_spacing = rank_spacing
-        self.node_spacing = node_spacing
-        self.subgraph_padding = subgraph_padding
-        self.subgraph_header = subgraph_header
+        self.font_size = font_size
+        self.rank_spacing = max(rank_spacing, font_size * 4.6)
+        self.node_spacing = max(node_spacing, font_size * 2.5)
+        self.subgraph_padding = max(subgraph_padding, font_size * 1.8)
+        self.subgraph_header = max(subgraph_header, font_size * 2.7)
 
     def compute_layout(self, diagram: ParsedDiagram) -> ParsedDiagram:
         """Assign coordinates to all nodes and subgraphs."""
@@ -561,6 +572,11 @@ class HierarchicalLayoutEngine:
             return diagram
 
         self._calculate_node_sizes(diagram)
+
+        # If multiple subgraphs exist and structure the diagram, use columnar subgraph layout
+        if len(diagram.subgraphs) > 1 and sum(len(sg.node_ids) for sg in diagram.subgraphs.values()) >= len(diagram.nodes) * 0.7:
+            return self._compute_subgraph_columnar_layout(diagram)
+
         adj, rev_adj = self._build_adjacency(diagram)
         ranks = self._assign_ranks(diagram, adj, rev_adj)
 
@@ -643,20 +659,110 @@ class HierarchicalLayoutEngine:
 
         return diagram
 
+    def _compute_subgraph_columnar_layout(self, diagram: ParsedDiagram) -> ParsedDiagram:
+        """
+        Lays out multi-subgraph architectures into balanced columns (LR) or rows (TD),
+        preserving executive readability and eliminating aspect-ratio stretching.
+        """
+        is_horizontal = diagram.direction in ("LR", "RL")
+        sg_keys = list(diagram.subgraphs.keys())
+
+        # Determine column dimensions
+        max_node_w = max((n.width for n in diagram.nodes.values()), default=220.0)
+        col_w = max_node_w + 2 * self.subgraph_padding
+
+        current_primary = 40.0
+        start_cross = 40.0
+        max_sg_span = 0.0
+
+        for sg_id in sg_keys:
+            sg = diagram.subgraphs[sg_id]
+            sg_nodes = [diagram.nodes[nid] for nid in sg.node_ids if nid in diagram.nodes]
+            if not sg_nodes:
+                continue
+
+            # Topological / dependency sort within subgraph
+            int_adj: Dict[str, List[str]] = {n.id: [] for n in sg_nodes}
+            int_in_degree: Dict[str, int] = {n.id: 0 for n in sg_nodes}
+            for e in diagram.edges:
+                if e.source_id in int_adj and e.target_id in int_adj:
+                    int_adj[e.source_id].append(e.target_id)
+                    int_in_degree[e.target_id] += 1
+
+            zero_in = [nid for nid, deg in int_in_degree.items() if deg == 0]
+            ordered_ids: List[str] = []
+            while zero_in:
+                curr = zero_in.pop(0)
+                ordered_ids.append(curr)
+                for ch in int_adj.get(curr, []):
+                    int_in_degree[ch] -= 1
+                    if int_in_degree[ch] == 0:
+                        zero_in.append(ch)
+
+            for nid in sg.node_ids:
+                if nid in diagram.nodes and nid not in ordered_ids:
+                    ordered_ids.append(nid)
+
+            if is_horizontal:
+                sg.x = current_primary
+                sg.y = start_cross
+                sg.width = col_w
+
+                cur_y = start_cross + self.subgraph_header
+                for nid in ordered_ids:
+                    node = diagram.nodes[nid]
+                    node.x = sg.x + (sg.width - node.width) / 2.0
+                    node.y = cur_y
+                    cur_y += node.height + self.node_spacing
+
+                sg.height = (cur_y - start_cross) - self.node_spacing + self.subgraph_padding
+                max_sg_span = max(max_sg_span, sg.height)
+                current_primary += sg.width + self.rank_spacing
+            else:
+                sg.x = start_cross
+                sg.y = current_primary
+                sg.height = max((n.height for n in sg_nodes), default=60.0) + self.subgraph_header + self.subgraph_padding
+
+                cur_x = start_cross + self.subgraph_padding
+                for nid in ordered_ids:
+                    node = diagram.nodes[nid]
+                    node.x = cur_x
+                    node.y = sg.y + self.subgraph_header
+                    cur_x += node.width + self.node_spacing
+
+                sg.width = (cur_x - start_cross) - self.node_spacing + self.subgraph_padding
+                max_sg_span = max(max_sg_span, sg.width)
+                current_primary += sg.height + self.rank_spacing
+
+        # Normalize subgraph heights/widths for clean visual alignment
+        if is_horizontal:
+            for sg in diagram.subgraphs.values():
+                sg.height = max_sg_span
+            diagram.total_width = current_primary - self.rank_spacing + 40.0
+            diagram.total_height = start_cross + max_sg_span + 40.0
+        else:
+            for sg in diagram.subgraphs.values():
+                sg.width = max_sg_span
+            diagram.total_width = start_cross + max_sg_span + 40.0
+            diagram.total_height = current_primary - self.rank_spacing + 40.0
+
+        return diagram
+
     def _calculate_node_sizes(self, diagram: ParsedDiagram) -> None:
+        fs = self.font_size
         for node in diagram.nodes.values():
             if node.shape in ("startState", "endState"):
-                node.width = 32.0
-                node.height = 32.0
+                node.width = fs * 2.2
+                node.height = fs * 2.2
                 continue
             if node.shape == "circle":
-                size = max(60.0, len(node.label) * 7.5 + 24.0)
+                size = max(fs * 4.2, len(node.label) * (fs * 0.55) + fs * 1.8)
                 node.width = size
                 node.height = size
                 continue
             if node.shape == "rhombus":
-                size = max(80.0, len(node.label) * 8.0 + 35.0)
-                node.width = size * 1.2
+                size = max(fs * 5.2, len(node.label) * (fs * 0.58) + fs * 2.5)
+                node.width = size * 1.25
                 node.height = size
                 continue
 
@@ -664,8 +770,11 @@ class HierarchicalLayoutEngine:
             max_line_len = max((len(l) for l in lines), default=1)
             line_count = len(lines)
 
-            calc_width = max(140.0, max_line_len * 8.5 + 36.0)
-            calc_height = max(52.0, line_count * 20.0 + 26.0)
+            # Sized proportionally to font_size
+            calc_width = max(fs * 9.5, max_line_len * (fs * 0.65) + (fs * 2.8))
+            if node.custom_style.get("icon") or node.custom_style.get("logo"):
+                calc_width += 56.0
+            calc_height = max(fs * 3.6, line_count * (fs * 1.50) + (fs * 1.8))
 
             node.width = round(calc_width, 1)
             node.height = round(calc_height, 1)
@@ -781,11 +890,13 @@ class DrawIOConverter:
         for sg_id, sg in diagram.subgraphs.items():
             if sg.width <= 0 or sg.height <= 0:
                 continue
+            sg_fs = self.theme.get("container_font_size", "16")
+            sg_ss = self.theme.get("container_start_size", "36")
             sg_style = (
-                f"swimlane;whiteSpace=wrap;html=1;startSize=28;rounded=1;arcSize=8;"
+                f"swimlane;whiteSpace=wrap;html=1;startSize={sg_ss};rounded=1;arcSize=8;"
                 f"fillColor={self.theme['container_fill']};strokeColor={self.theme['container_stroke']};"
                 f"strokeWidth=1.5;fontColor={self.theme['container_font']};"
-                f"fontFamily={self.theme['node_font_family']};fontSize=12;fontStyle=1;"
+                f"fontFamily={self.theme['node_font_family']};fontSize={sg_fs};fontStyle=1;"
             )
             sg_cell = ET.SubElement(
                 root,
@@ -890,6 +1001,10 @@ class DrawIOConverter:
             "fontStyle=0;",
             "shadow=0;",
         ]
+        if "icon" in node.custom_style:
+            style_parts.append(f"icon={node.custom_style['icon']};")
+        if "icon_color" in node.custom_style:
+            style_parts.append(f"icon_color={node.custom_style['icon_color']};")
         return "".join(style_parts)
 
     def _build_edge_style(self, edge: DiagramEdge, direction: str) -> str:
@@ -934,10 +1049,11 @@ class DiagramRenderer:
     Uses native drawio CLI if installed, or built-in SVG vector compiler + Cairo/Pillow.
     """
 
-    def __init__(self, theme_name: str = "modern_consulting", custom_theme: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, theme_name: str = "modern_consulting", custom_theme: Optional[Dict[str, Any]] = None, enable_shadows: bool = False) -> None:
         self.theme = dict(THEME_PRESETS.get(theme_name, THEME_PRESETS["modern_consulting"]))
         if custom_theme:
             self.theme.update(custom_theme)
+        self.enable_shadows = enable_shadows or bool(self.theme.get("enable_shadows", False))
 
     def render_svg(
         self,
@@ -950,18 +1066,26 @@ class DiagramRenderer:
         h = max(300.0, diagram.total_height)
         bg_fill = canvas_bg or self.theme.get("canvas_bg", "#FFFFFF")
 
-        svg_lines = [
-            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.1f} {h:.1f}" width="{w:.1f}" height="{h:.1f}">',
-            "  <defs>",
-            '    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">',
-            '      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.06"/>',
-            "    </filter>",
+        defs_elements = []
+        if self.enable_shadows:
+            defs_elements.extend([
+                '    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">',
+                '      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.06"/>',
+                "    </filter>",
+            ])
+        defs_elements.extend([
             '    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">',
             f'      <path d="M 0 1 L 10 5 L 0 9 z" fill="{self.theme["edge_stroke"]}"/>',
             "    </marker>",
             '    <marker id="arrow-start" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">',
             f'      <path d="M 10 1 L 0 5 L 10 9 z" fill="{self.theme["edge_stroke"]}"/>',
             "    </marker>",
+        ])
+
+        svg_lines = [
+            f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {w:.1f} {h:.1f}" width="{w:.1f}" height="{h:.1f}">',
+            "  <defs>",
+            *defs_elements,
             "  </defs>",
         ]
         if not transparent:
@@ -975,9 +1099,10 @@ class DiagramRenderer:
                 f'  <rect x="{sg.x:.1f}" y="{sg.y:.1f}" width="{sg.width:.1f}" height="{sg.height:.1f}" rx="8" '
                 f'fill="{self.theme["container_fill"]}" stroke="{self.theme["container_stroke"]}" stroke-width="1.5"/>'
             )
+            sg_fs = self.theme.get("container_font_size", "16")
             svg_lines.append(
-                f'  <text x="{sg.x + 16:.1f}" y="{sg.y + 22:.1f}" font-family="{self.theme["node_font_family"]}" '
-                f'font-size="12" font-weight="bold" fill="{self.theme["container_font"]}">{html.escape(sg.title)}</text>'
+                f'  <text x="{sg.x + 16:.1f}" y="{sg.y + 24:.1f}" font-family="{self.theme["node_font_family"]}" '
+                f'font-size="{sg_fs}" font-weight="bold" fill="{self.theme["container_font"]}">{html.escape(sg.title)}</text>'
             )
 
         # 2. Edges
@@ -987,16 +1112,47 @@ class DiagramRenderer:
             src = diagram.nodes[edge.source_id]
             tgt = diagram.nodes[edge.target_id]
 
-            if diagram.direction in ("LR", "RL"):
+            dx = (tgt.x + tgt.width / 2.0) - (src.x + src.width / 2.0)
+            dy = (tgt.y + tgt.height / 2.0) - (src.y + src.height / 2.0)
+
+            # Detect alignment: same vertical column or same horizontal row
+            is_vert = abs(dx) < max(src.width, tgt.width) * 0.45
+            is_horiz = abs(dy) < max(src.height, tgt.height) * 0.45
+
+            if is_vert and dy > 0:
+                # Direct top-to-bottom edge in same column
+                sx, sy = src.x + src.width / 2.0, src.y + src.height
+                tx, ty = tgt.x + tgt.width / 2.0, tgt.y
+                d_path = f"M {sx:.1f} {sy:.1f} L {tx:.1f} {ty:.1f}"
+                label_x = (sx + tx) / 2.0 + 12.0
+                label_y = (sy + ty) / 2.0
+            elif is_horiz and dx > 0:
+                # Direct left-to-right edge in same row
                 sx, sy = src.x + src.width, src.y + src.height / 2.0
                 tx, ty = tgt.x, tgt.y + tgt.height / 2.0
+                d_path = f"M {sx:.1f} {sy:.1f} L {tx:.1f} {ty:.1f}"
+                label_x = (sx + tx) / 2.0
+                label_y = sy - 8.0
+            elif abs(dx) >= abs(dy):
+                # Primarily horizontal cross-column connection
+                if dx > 0:
+                    sx, sy = src.x + src.width, src.y + src.height / 2.0
+                    tx, ty = tgt.x, tgt.y + tgt.height / 2.0
+                else:
+                    sx, sy = src.x, src.y + src.height / 2.0
+                    tx, ty = tgt.x + tgt.width, tgt.y + tgt.height / 2.0
                 mx = (sx + tx) / 2.0
                 d_path = f"M {sx:.1f} {sy:.1f} L {mx:.1f} {sy:.1f} L {mx:.1f} {ty:.1f} L {tx:.1f} {ty:.1f}"
                 label_x = mx
                 label_y = (sy + ty) / 2.0 - 6.0
             else:
-                sx, sy = src.x + src.width / 2.0, src.y + src.height
-                tx, ty = tgt.x + tgt.width / 2.0, tgt.y
+                # Primarily vertical cross-row connection
+                if dy > 0:
+                    sx, sy = src.x + src.width / 2.0, src.y + src.height
+                    tx, ty = tgt.x + tgt.width / 2.0, tgt.y
+                else:
+                    sx, sy = src.x + src.width / 2.0, src.y
+                    tx, ty = tgt.x + tgt.width / 2.0, tgt.y + tgt.height
                 my = (sy + ty) / 2.0
                 d_path = f"M {sx:.1f} {sy:.1f} L {sx:.1f} {my:.1f} L {tx:.1f} {my:.1f} L {tx:.1f} {ty:.1f}"
                 label_x = (sx + tx) / 2.0 + 8.0
@@ -1046,33 +1202,35 @@ class DiagramRenderer:
                 lines.append(f'  <circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r - 7.0:.1f}" fill="{self.theme["state_node_fill"]}"/>')
             return lines
 
+        filter_attr = ' filter="url(#card-shadow)"' if self.enable_shadows else ""
+
         if node.shape == "circle":
             r = node.width / 2.0
             cx, cy = node.x + r, node.y + r
             lines.append(
-                f'  <circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" filter="url(#card-shadow)"/>'
+                f'  <circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"{filter_attr}/>'
             )
         elif node.shape == "rhombus":
             cx, cy = node.x + node.width / 2.0, node.y + node.height / 2.0
             pts = f"{cx:.1f},{node.y:.1f} {node.x + node.width:.1f},{cy:.1f} {cx:.1f},{node.y + node.height:.1f} {node.x:.1f},{cy:.1f}"
             lines.append(
-                f'  <polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" filter="url(#card-shadow)"/>'
+                f'  <polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"{filter_attr}/>'
             )
         elif node.shape == "cylinder":
             lines.append(
                 f'  <rect x="{node.x:.1f}" y="{node.y:.1f}" width="{node.width:.1f}" height="{node.height:.1f}" rx="12" '
-                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}" filter="url(#card-shadow)"/>'
+                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}"{filter_attr}/>'
             )
         elif node.shape == "stadium":
             rx = node.height / 2.0
             lines.append(
                 f'  <rect x="{node.x:.1f}" y="{node.y:.1f}" width="{node.width:.1f}" height="{node.height:.1f}" rx="{rx:.1f}" '
-                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}" filter="url(#card-shadow)"/>'
+                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}"{filter_attr}/>'
             )
         elif node.shape == "subroutine":
             lines.append(
                 f'  <rect x="{node.x:.1f}" y="{node.y:.1f}" width="{node.width:.1f}" height="{node.height:.1f}" rx="4" '
-                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}" filter="url(#card-shadow)"/>'
+                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}"{filter_attr}/>'
             )
             lines.append(f'  <line x1="{node.x + 10:.1f}" y1="{node.y:.1f}" x2="{node.x + 10:.1f}" y2="{node.y + node.height:.1f}" stroke="{stroke}" stroke-width="1.5"/>')
             lines.append(f'  <line x1="{node.x + node.width - 10:.1f}" y1="{node.y:.1f}" x2="{node.x + node.width - 10:.1f}" y2="{node.y + node.height:.1f}" stroke="{stroke}" stroke-width="1.5"/>')
@@ -1080,19 +1238,50 @@ class DiagramRenderer:
             rx = "8" if node.shape == "rounded" else "3"
             lines.append(
                 f'  <rect x="{node.x:.1f}" y="{node.y:.1f}" width="{node.width:.1f}" height="{node.height:.1f}" rx="{rx}" '
-                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}" filter="url(#card-shadow)"/>'
+                f'fill="{fill}" stroke="{stroke}" stroke-width="{sw}"{filter_attr}/>'
             )
 
+        # Check for optional logo / icon embedding
+        icon_path_str = node.custom_style.get("icon") or node.custom_style.get("logo")
+        text_cx = node.x + node.width / 2.0
+        text_anchor = "middle"
+
+        if icon_path_str:
+            icon_p = Path(icon_path_str)
+            if icon_p.exists():
+                try:
+                    raw_svg = icon_p.read_text(encoding="utf-8")
+                    icon_col = node.custom_style.get("icon_color")
+                    if icon_col:
+                        raw_svg = raw_svg.replace("currentColor", icon_col)
+                        if 'fill="none"' in raw_svg and "stroke=" not in raw_svg:
+                            raw_svg = raw_svg.replace("<svg ", f'<svg stroke="{icon_col}" ')
+
+                    b64_data = base64.b64encode(raw_svg.encode("utf-8")).decode("ascii")
+                    icon_sz = min(node.height * 0.52, 36.0)
+                    icon_x = node.x + 18.0
+                    icon_y = node.y + (node.height - icon_sz) / 2.0
+                    lines.append(
+                        f'  <image xlink:href="data:image/svg+xml;base64,{b64_data}" x="{icon_x:.1f}" y="{icon_y:.1f}" width="{icon_sz:.1f}" height="{icon_sz:.1f}"/>'
+                    )
+                    text_cx = icon_x + icon_sz + 14.0
+                    text_anchor = "start"
+                except Exception:
+                    pass
+
         text_lines = node.label.split("\n")
-        total_text_h = len(text_lines) * 16.0
-        start_y = node.y + (node.height - total_text_h) / 2.0 + 13.0
-        cx = node.x + node.width / 2.0
+        fs = float(self.theme.get("node_font_size", 18))
+        lh = fs * 1.35
+        total_text_h = len(text_lines) * lh
+        start_y = node.y + (node.height - total_text_h) / 2.0 + (fs * 0.92)
+        font_fam = self.theme["node_font_family"]
+        font_sz = self.theme["node_font_size"]
 
         for i, tline in enumerate(text_lines):
-            cur_y = start_y + i * 16.0
+            cur_y = start_y + i * lh
             lines.append(
-                f'  <text x="{cx:.1f}" y="{cur_y:.1f}" font-family="{self.theme["node_font_family"]}" '
-                f'font-size="{self.theme["node_font_size"]}" fill="{font_col}" text-anchor="middle" font-weight="500">{html.escape(tline)}</text>'
+                f'  <text x="{text_cx:.1f}" y="{cur_y:.1f}" font-family="{font_fam}" '
+                f'font-size="{font_sz}" fill="{font_col}" text-anchor="{text_anchor}" font-weight="600">{html.escape(tline)}</text>'
             )
 
         return lines
@@ -1109,6 +1298,18 @@ class DiagramRenderer:
             pass
 
         try:
+            import ctypes.util, os, sys
+            if sys.platform == "darwin" and not ctypes.util.find_library("cairo"):
+                for p in ("/opt/homebrew/lib", "/usr/local/lib"):
+                    if os.path.exists(f"{p}/libcairo.2.dylib"):
+                        orig_find = ctypes.util.find_library
+                        def _find_cairo(name):
+                            if name in ("cairo", "cairo-2", "libcairo-2"):
+                                return f"{p}/libcairo.2.dylib"
+                            return orig_find(name)
+                        ctypes.util.find_library = _find_cairo
+                        break
+
             import cairosvg
             cairosvg.svg2png(
                 bytestring=svg_content.encode("utf-8"),
@@ -1309,7 +1510,7 @@ def mxgraph_to_ast(diagram_elem: ET.Element) -> ParsedDiagram:
                 for part in style.split(";"):
                     if "=" in part:
                         k, v = part.split("=", 1)
-                        if k.strip() in ("fillColor", "strokeColor", "fontColor"):
+                        if k.strip() in ("fillColor", "strokeColor", "fontColor", "icon", "icon_color"):
                             custom_style[k.strip()] = v.strip()
 
                 parsed.nodes[nid] = DiagramNode(
@@ -1455,12 +1656,13 @@ class DrawIOProject:
         diagram: ParsedDiagram,
         page_id: Optional[str] = None,
         theme: str = "modern_consulting",
+        custom_theme: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Converts a ParsedDiagram AST to mxGraphModel and inserts or replaces the named page.
         Returns the page_id.
         """
-        converter = DrawIOConverter(theme_name=theme)
+        converter = DrawIOConverter(theme_name=theme, custom_theme=custom_theme)
         temp_xml = converter.to_xml(diagram, page_name=name)
         temp_root = ET.fromstring(temp_xml.strip())
         temp_diag = temp_root.find("diagram")
@@ -1491,13 +1693,27 @@ class DrawIOProject:
         mermaid_code: str,
         page_id: Optional[str] = None,
         theme: str = "modern_consulting",
+        font_size: Optional[float] = None,
+        custom_theme: Optional[Dict[str, Any]] = None,
+        node_icons: Optional[Dict[str, Dict[str, str]]] = None,
     ) -> str:
-        """Parses Mermaid code, calculates layout, and adds/updates the page."""
+        """Parses Mermaid code, calculates layout with custom font_size, and adds/updates the page."""
+        fs = font_size or (float(custom_theme["node_font_size"]) if custom_theme and "node_font_size" in custom_theme else 18.0)
+        c_theme = dict(custom_theme or {})
+        if font_size and "node_font_size" not in c_theme:
+            c_theme["node_font_size"] = str(int(font_size))
+            c_theme["container_font_size"] = str(int(font_size * 0.88))
+            c_theme["edge_font_size"] = str(int(font_size * 0.75))
+
         parser = MermaidParser()
-        layout = HierarchicalLayoutEngine()
+        layout = HierarchicalLayoutEngine(font_size=fs)
         parsed = parser.parse(mermaid_code)
+        if node_icons:
+            for nid, idata in node_icons.items():
+                if nid in parsed.nodes:
+                    parsed.nodes[nid].custom_style.update(idata)
         laid_out = layout.compute_layout(parsed)
-        return self.add_or_update_page(name=name, diagram=laid_out, page_id=page_id, theme=theme)
+        return self.add_or_update_page(name=name, diagram=laid_out, page_id=page_id, theme=theme, custom_theme=c_theme)
 
     def delete_page(self, name_or_index: Union[str, int]) -> bool:
         """Deletes a diagram page by name or index. Returns True if removed."""
@@ -1530,6 +1746,8 @@ class DrawIOProject:
         format: str = "png",
         scale: float = 3.0,
         theme: str = "modern_consulting",
+        custom_theme: Optional[Dict[str, Any]] = None,
+        font_size: Optional[float] = None,
         transparent: bool = False,
         canvas_bg: Optional[str] = None,
     ) -> Path:
@@ -1549,8 +1767,14 @@ class DrawIOProject:
         diagrams = self.root.findall("diagram")
         page_idx = diagrams.index(page)
 
-        # 1. Try native draw.io CLI if file exists on disk
-        if self.file_path and self.file_path.exists():
+        c_theme = dict(custom_theme or {})
+        if font_size and "node_font_size" not in c_theme:
+            c_theme["node_font_size"] = str(int(font_size))
+            c_theme["container_font_size"] = str(int(font_size * 0.88))
+            c_theme["edge_font_size"] = str(int(font_size * 0.75))
+
+        # 1. Try native draw.io CLI if file exists on disk and no custom overrides
+        if self.file_path and self.file_path.exists() and not font_size and not custom_theme:
             cli_success = self._try_cli_export(
                 self.file_path, page_idx, out_p, fmt, scale, transparent=transparent
             )
@@ -1559,7 +1783,7 @@ class DrawIOProject:
 
         # 2. Built-in headless renderer fallback
         ast = mxgraph_to_ast(page)
-        renderer = DiagramRenderer(theme_name=theme)
+        renderer = DiagramRenderer(theme_name=theme, custom_theme=c_theme)
         svg_str = renderer.render_svg(ast, transparent=transparent, canvas_bg=canvas_bg)
 
         if fmt == "svg":
