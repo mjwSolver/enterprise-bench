@@ -97,12 +97,25 @@ Before generating code, authoring new deliverables, designing presentations, or 
 * Maintain documentation integrity; use relative links for internal file references (e.g., `[HANDOVER.md](HANDOVER.md)`), never absolute machine paths.
 * Historical context, architectural rationale, and previous handovers live in [`HANDOVER.md`](HANDOVER.md) and [`docs/`](docs/).
 
+### 🧹 Git Commit & Push Hygiene: Scratch Directory & Multi-Agent Greenlight Protocol
+* **Pre-Commit/Pre-Push Scratch Inspection:** Prior to staging, committing, or pushing to remote origin, agents must inspect if a runtime or temporary scratch directory (`scratch/`) exists in the workspace.
+* **Multi-Agent Coordination & Greenlight Gate:** When preparing a commit and a `scratch/` directory is present, the agent must explicitly report it to the user and request a greenlight before deletion. This allows the user to verify whether concurrent or background agents are actively generating or using temporary files.
+* **Sprint Cleanup:** Once the greenlight is confirmed (or sprint wrap-up is declared), delete the `scratch/` directory prior to finalizing git operations.
+
 ### Architectural Layout
-* `src/ppt_engine/`: Generative consulting presentations (`python-pptx`, visual cards, collision detection).
+* `src/ppt_engine/`: Generative consulting presentations (`python-pptx`, visual cards, collision detection, resource manager).
 * `src/docx_engine/`: Deterministic legal/technical documents (`docxtpl`, OpenXML, BAST, PKS, FSD).
 * `src/xlsx_engine/`: Spreadsheets, calculators, S-curves, RAID logs (`openpyxl`, `pandas`).
 * `src/core/`: Shared models, brand color palettes, PII sanitization, and document element purgers (`docx_purger.py`).
 * `clean_workspace/`: Canonical workspace containing 38 sanitized golden master templates (`projects/TTI_Snowflake_Analytics/`).
+
+### 🖼️ Presentation Asset Resolution & Missing Resource Ledger Protocol
+* **Graceful Degradation Guarantee:** Never allow missing external/stock images or corporate logos to throw unhandled `FileNotFoundError` during slide generation.
+* **Resolution Engine (`src/ppt_engine/resource_manager.py`):**
+  - All archetype image paths resolve through `ResourceManager.resolve_asset(key)`.
+  - Missing assets attempt a 3-second non-blocking download before falling back to theme-compliant typographic pills (`[ METRODATA ]`), vector glyphs, or dark gradient scrims.
+  - When fallbacks trigger, the engine logs diagnostic remediation steps in `missing_resources.md` at workspace root, complete with exact `curl` re-acquisition commands.
+  - Verification & on-demand download CLI: `uv run bench ppt check-resources`.
 
 ### 🧹 Post-PII Document Sanitization: Comments & Highlight Purging Protocol
 * **Mandatory Post-Sanitization Cleanse:** Raw enterprise deliverables often contain residual editorial comments, user highlights, and tracked changes.
@@ -126,6 +139,14 @@ Before generating code, authoring new deliverables, designing presentations, or 
 * **Typographic Multi-Column Alignment:** Render metadata directly on the slide background in clean typographic columns (e.g., `PREPARED FOR` and `ENGAGEMENT PARTNER`) separated from the title area by an optional subtle baseline hairline.
 * **No Cover Footers or Pagination:** Cover slides must **NEVER** feature slide footer divider bars, confidentiality disclaimers, or page numbers (e.g. `01 / 06`). Slide footers and pagination strictly begin on content slide 2.
 
+### 🏷️ PowerPoint Chapter Divider Slide Architecture: De-Squared Split Layout & Translucent Scrim
+* **Asymmetric 1/3 + 2/3 Composition:** Break box monotony by splitting the 16:9 widescreen canvas ($13.333'' \times 7.5''$) into an unboxed narrative panel on the left ($x=0.8''$, $y=2.0''$, $w=3.6''$, $h=4.0''$) and a full-bleed photographic hero plate on the right ($x=4.8''$ to $13.333''$, $y=0.0''$, $w=8.533''$, $h=7.5''$).
+* **Unified Narrative Framing:** Flow the Category Tracker breadcrumb (10pt bold uppercase, accent color), Action Headline (30–34pt bold, primary color), and context Subtitle (11.5pt, secondary color) as sequential paragraphs within a **single unified text frame** with exact paragraph offsets (`space_before = Pt(12)` and `Pt(14)`), preventing text box collisions.
+* **Translucent Dark Scrim Guarantee:** Always overlay the photographic hero panel with an OpenXML DrawingML 45% dark scrim (`#0B132B` via `<a:alpha val="45000"/>`), guaranteeing high contrast for brand marks and lockup labels regardless of underlying image luminance.
+* **Brand Lockup & Graceful Fallbacks:** Center the square Metrodata mark ($x \approx 7.87''$, $y \approx 2.35''$, $w=2.4''$, $h=2.1''$) with white division tagline at $y=4.70''$. If photos or logos are missing, automatically fall back to deep primary solid rectangles (`#0F172A`) and vertically centered typographic badges (`[ METRODATA ]`), logging remediation steps in `missing_resources.md`.
+* **Zero Top Stripes on Rounded Cards:** Enforce sharp rectangular geometry (`MSO_SHAPE.RECTANGLE`) across both hero and scrim plates.
+* **Implement via:** `build_chapter_divider_slide(...)` or `ConsultingDeckBuilder.add_chapter_divider_slide(...)`.
+
 ### 🔤 PowerPoint Header Architecture: Unified Title & Subtitle Frame (Zero Coordinate Collision)
 * **No Separate Floating Text Boxes:** Never render Action Titles and Subtitles into separate shape text boxes with hardcoded Y coordinates. Guessing Y coordinates based on character length inevitably causes collision/crowding on 2-line wrapped titles, or oversized gaps on 1-line titles.
 * **Unified Flow Architecture:** Place Action Title and Subtitle as sequential paragraphs within the **SAME text box**.
@@ -136,6 +157,11 @@ Before generating code, authoring new deliverables, designing presentations, or 
 * **Mandatory Vector Logos & Iconography (Zero Plain-Text Boxes):** Diagram vertices must incorporate official vector technology logos (SVG from `assets/logos/`, e.g., Kafka, Snowflake, dbt, AWS, HashiCorp Vault) or standardized icon glyphs (Lucide/Heroicons) rather than generic plain-text rectangles.
 * **Node Geometry & Left-Aligned Text Flow:** Diagram cards must allocate dedicated icon slots ($40\times 40$ px to $48\times 48$ px) with left-aligned title/body labels adjacent to the emblem and generous card volume to prevent text crowding.
 * **Sub-Canvas Grouping:** Topologies with multiple subgraphs must map subgraphs into distinct vertical columns or cohesive functional swimlanes with smart orthogonal routing (`_compute_subgraph_columnar_layout`).
+
+### 📐 Diagram Edge Architecture & Collision Prevention: Dynamic Port Anchoring & Gutter Routing
+* **Zero Slicing Through Containers:** Never route cross-column feedback lines or multi-column hops through the geometric center of intermediate subgraphs or cards. The engine (`DiagramRenderer.render_svg`) enforces gutter-channel routing ($sg.x \pm 18\text{ pt}$) to keep intermediate columns clear.
+* **Vertical Obstacle Detection & Bypass:** Intra-column edges between non-adjacent nodes must never cut straight through intervening cards. When defining intra-column relationships, prefer sequential top-to-bottom pipelines (`DW --> OpDB`, `OpDB --> AI`). If skip-hops are used, the engine automatically jogs $24\text{ pt}$ around the right perimeter of intermediate obstacles.
+* **Dynamic Draw.io XML Port Directionality:** Never hardcode edge ports (`exitX=1;entryX=0;`) for all connectors. `DrawIOConverter._build_edge_style` dynamically evaluates $(\Delta x, \Delta y)$ to assign exact attachment faces (top/bottom for vertical flows, left/right for forward/backward flows), guaranteeing that interactive `.drawio` files match headless SVG/PNG previews with zero looping or doubled lines. Reference: [`docs/DRAWIO_EDGE_ROUTING_AND_COLLISION_PREVENTION.md`](docs/DRAWIO_EDGE_ROUTING_AND_COLLISION_PREVENTION.md).
 
 ---
 

@@ -31,6 +31,7 @@ work_archive/
 project_outputs/
 tests/project_outputs/
 assets/images/
+scratch/
 
 # Local Identity Vaults & Credentials (Strictly gitignored privacy boundary)
 *.local.json

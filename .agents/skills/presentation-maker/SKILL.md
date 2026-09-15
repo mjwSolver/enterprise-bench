@@ -54,6 +54,7 @@ from src.ppt_engine.consulting_archetypes import (
     ScorecardQuadrantData,
     build_bcg_3_horizon_slide,
     build_balanced_scorecard_slide,
+    build_chapter_divider_slide,
 )
 from src.ppt_engine.theme_engine import get_theme
 
@@ -100,6 +101,7 @@ Refer to detailed implementation recipes in [`references/slide_archetypes.md`](.
 4. **BCG 3-Horizon Modernization**: 3 phased columns (`Horizon 1: 0-6m`, `Horizon 2: 6-18m`, `Horizon 3: 18-36m`).
 5. **Balanced Scorecard KPI Matrix**: 4 quadrants (Financial, Customer, Operational, Resilience) with metric chips.
 6. **Key Metrics / Stat Highlights**: Large 36–48pt numbers paired with concise 12pt descriptive labels.
+7. **De-Squared Chapter Divider / Section Header**: Asymmetric split (1/3 white typographic narrative panel + 2/3 photographic plate) with 45% dark translucent scrim overlay (`#0B132B`), center-anchored square brand mark, and graceful fallbacks. Use `build_chapter_divider_slide(...)` or `ConsultingDeckBuilder.add_chapter_divider_slide(...)`.
 
 ---
 

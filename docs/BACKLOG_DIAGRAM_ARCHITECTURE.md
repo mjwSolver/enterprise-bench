@@ -1,7 +1,8 @@
 # Backlog & Architecture Decision: Single Monolithic `.drawio` vs. Dedicated Per-Document Files
 
 > **Status:** Open Backlog / Architecture Trade-Off  
-> **Topic:** Diagram File Organization, Searchability, and Human Collaboration UX
+> **Topic:** Diagram File Organization, Searchability, and Human Collaboration UX  
+> **Related Documents:** [docs/ADR_DRAWIO_PIPELINE_VS_MCP.md](ADR_DRAWIO_PIPELINE_VS_MCP.md), [docs/DRAWIO_ICON_SYSTEM_ARCHITECTURE.md](DRAWIO_ICON_SYSTEM_ARCHITECTURE.md)
 
 ---
 

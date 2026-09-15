@@ -101,12 +101,13 @@ enterprise-bench/
 │   │   ├── docx_purger.py      (Zero-corruption OpenXML comment, highlight & revision purger)
 │   │   └── models.py           (Pydantic schemas for Project, Milestone, Deliverable)
 │   │
-│   ├── ppt_engine/             # Migrated from PPTMaking/src
-│   │   ├── consulting_archetypes.py
-│   │   ├── diagram_engine.py
-│   │   ├── theme_engine.py
+│   ├── ppt_engine/             # Generative consulting presentation engine
+│   │   ├── consulting_archetypes.py (BCG, McKinsey, Scorecard, De-Squared Chapter Divider)
+│   │   ├── diagram_engine.py   (Draw.io, SVG/PNG rendering, collision prevention)
+│   │   ├── theme_engine.py     (Corporate color tokens and palettes)
+│   │   ├── resource_manager.py (Asset registry, graceful fallback, missing_resources.md)
 │   │   ├── slide_validator.py
-│   │   └── slide_exporter.py
+│   │   └── slide_exporter.py   (DrawingML alpha, natural z-order exports)
 │   │
 │   ├── docx_engine/            # Deterministic document engine
 │   │   ├── template_stamper.py (Jinja2 / docxtpl stamping)
@@ -209,6 +210,24 @@ All 38 files have been relocated and sanitized under `clean_workspace/projects/T
   - **Draw.io Whitespace Elimination:** Re-engineered `01_ingestion_streaming` from an asymmetrical hybrid ($>450,000\text{ px}^2$ dead whitespace in bottom-right) to a balanced 3-column architecture (`flowchart LR`, $2.77:1$ widescreen aspect ratio) with integrated vector tech logos (Kafka, Snowflake, AWS, S3, Lucide).
   - **Live Presentation Concurrency:** Established clean macOS AppleScript lock handling to close active PowerPoint presentations without saving prompts, re-generate decks, and auto-focus Slide 4.
   - **Ingress Bus Architecture Handover:** Formulated formal architectural design and specification for edge bundling / trunk-line routing in [`docs/HANDOVER_INGRESS_BUS_ROUTING.md`](docs/HANDOVER_INGRESS_BUS_ROUTING.md) to eliminate orthogonal connector clutter ("mess of cables").
+- [x] **9. Diagram Edge Routing & Collision Prevention Subsystem (2026-09-15):**
+  - **Dynamic Port Directionality:** Engineered dynamic port anchoring in `DrawIOConverter._build_edge_style` to compute directional exit/entry ports based on relative $(\Delta x, \Delta y)$ geometry, eliminating hardcoded `exitX=1` loops in interactive `.drawio` files.
+  - **Vertical Obstacle Detection & Bypass:** Implemented intermediate card detection in `DiagramRenderer.render_svg`, preventing intra-column skip lines from slicing through intermediate nodes and jogging $24\text{ pt}$ outward around obstacles.
+  - **Intermediate Subgraph Collision Avoidance:** Re-engineered cross-column horizontal routing to shift vertical step channels into inter-column gutters ($sg.x \pm 18\text{ pt}$) rather than slicing down the geometric center of intermediate containers.
+  - **Cloudera CDP Topology Polish:** Refined `scripts/generate_drawio_single_slide.py` to a sequential pipeline (`DW --> OpDB --> AI`) and symmetrical 1-to-1 Control Plane governance, eliminating doubled lines and restoring sharp arrowheads across all nodes.
+  - **Comprehensive Architectural Specification:** Authored full technical guide and runbook in [`docs/DRAWIO_EDGE_ROUTING_AND_COLLISION_PREVENTION.md`](docs/DRAWIO_EDGE_ROUTING_AND_COLLISION_PREVENTION.md).
+- [x] **10. Presentation Asset Resolution & Missing Resource Reporting Subsystem (2026-09-15):**
+  - **Deterministic Asset Resolution (`src/ppt_engine/resource_manager.py`):** Implemented `ResourceManager` and `ResourceSpec` dataclass coordinating local asset verification, silent 3-second non-blocking download attempts (`urllib.request`), and zero-crash graceful fallback (`None` return value, never raising `FileNotFoundError`).
+  - **Diagnostic Ledger Generation (`missing_resources.md`):** Engineered automated workspace root report detailing missing resource keys, expected paths, impacted slide archetypes, and exact `curl` recovery commands whenever fallbacks trigger.
+  - **Automated Workspace Cleanup:** Guarantees automated unlinking and cleaning of `missing_resources.md` when all registered assets are verified on disk.
+  - **Unified CLI Check Command:** Exposed `uv run bench ppt check-resources` supporting `--download`, `--no-download`, and `--strict` validation gates.
+  - **Archetype Integration:** Integrated asset resolution into `build_chapter_divider_slide` and `ConsultingDeckBuilder.add_chapter_divider_slide` in [`src/ppt_engine/consulting_archetypes.py`](src/ppt_engine/consulting_archetypes.py) for hero photography and brand logos. Reference: [`docs/HANDOVER_PRESENTATION_MODERNIZATION.md`](docs/HANDOVER_PRESENTATION_MODERNIZATION.md).
+- [x] **11. Modern De-Squared Chapter Divider Slide Archetype (2026-09-15):**
+  - **Asymmetric 1/3 + 2/3 Composition:** Built `build_chapter_divider_slide(...)` and `ConsultingDeckBuilder.add_chapter_divider_slide(...)` in [`src/ppt_engine/consulting_archetypes.py`](src/ppt_engine/consulting_archetypes.py) to eliminate repetitive box grids.
+  - **Unified Header Framing:** Anchored a 1/3 white narrative panel ($x=0.8''$, $y=2.0''$) flowing Tracker breadcrumb (10pt bold uppercase), Action Headline (30–34pt bold), and Subtitle (11.5pt) inside a single text frame with exact `space_before` offsets to guarantee zero coordinate collision.
+  - **Translucent Scrim Overlay:** Applied an OpenXML DrawingML 45% dark scrim overlay (`#0B132B` via `<a:alpha val="45000"/>`) over the right 2/3 photographic plate ($x=4.8''$ to $13.333''$, $y=0.0''$ to $7.5''$), guaranteeing high contrast for brand marks.
+  - **Brand Lockup & Graceful Degradation:** Centered the square Metrodata mark ($x \approx 7.87''$, $y \approx 2.35''$) with white bold division tag. Falls back gracefully to deep primary solid containers (`#0F172A`) if photos are missing, and typographic pill badges (`[ METRODATA ]`) if logos are missing.
+  - **Exporter Layer Stacking:** Updated [`src/ppt_engine/slide_exporter.py`](src/ppt_engine/slide_exporter.py) to implement a single-pass painter's algorithm respecting natural shape z-ordering and DrawingML alpha extraction for preview renders. Reference: [`docs/HANDOVER_PRESENTATION_MODERNIZATION.md`](docs/HANDOVER_PRESENTATION_MODERNIZATION.md).
 
 ---
 

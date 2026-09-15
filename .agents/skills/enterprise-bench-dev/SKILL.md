@@ -51,14 +51,19 @@ description: >-
 ### B. The Generative Presentation Engine (`src/ppt_engine/`)
 * **Philosophy**: Visual storytelling, layout flexibility, and collision prevention.
 * **Core Modules**:
-  - `consulting_archetypes.py`: Programmatic slide structures (BCG 3-Horizon, Balanced Scorecard, Metric Grids, Process Flows).
+  - `consulting_archetypes.py`: Programmatic slide structures (BCG 3-Horizon, Balanced Scorecard, Metric Grids, Process Flows, De-Squared Chapter Dividers).
   - `diagram_engine.py`: Vector diagram drawing (cloud topologies, sequenced pipelines).
   - `theme_engine.py`: Corporate color palettes and font tokens loaded from `presets/themes/*.yaml`.
+  - `resource_manager.py`: Asset resolution, silent pre-flight acquisition, graceful fallback handling, and automated `missing_resources.md` diagnostic ledger generation.
 * **Geometry Integrity Rule (Zero Overlapping Top Lines on Rounded Containers)**:
   - Cards with top accent stripes/lines or header bars **MUST NEVER** have rounded corners at the top.
   - When an archetype features a top accent stripe, both container card and stripe **MUST be sharp rectangles (`MSO_SHAPE.RECTANGLE`)**.
   - Thin stripes must **never** use `MSO_SHAPE.ROUNDED_RECTANGLE` (which distorts into pills/capsules).
   - Enforced via `add_card_with_top_stripe(...)` or `add_card(..., has_top_stripe=True)`.
+* **Chapter Divider De-Squaring & Translucent Scrim (`build_chapter_divider_slide`)**:
+  - Implements asymmetric 1/3 narrative panel + 2/3 photographic plate with 45% dark scrim overlay (`#0B132B` via `<a:alpha val="45000"/>`).
+  - Enforces sharp rectangular containers (`MSO_SHAPE.RECTANGLE`) across hero plate and scrim overlay.
+  - Automatic graceful degradation via `ResourceManager.resolve_asset(...)` to deep primary solid containers (`#0F172A`) and typographic badges (`[ METRODATA ]`).
 
 ### C. The Spreadsheet & Financial Engine (`src/xlsx_engine/`)
 * **Philosophy**: Formula-preserving automated calculation and data injection.
