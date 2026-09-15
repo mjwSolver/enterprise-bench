@@ -42,40 +42,40 @@ def generate_single_slide_deck() -> Path:
     # 1. Author and Export Diagram with Columnar Architecture & Integrated Tech Logos
     diag_file = diag_dir / "04_security_governance_mesh.drawio"
     mermaid_code = """flowchart LR
-    subgraph Sources["Zero-Trust Ingress"]
-        POS["Store POS Terminals"]
-        Mobile["Mobile App Clients"]
-        WAF["AWS WAF Shield"]
+    subgraph Ingress["Real-Time Ingress"]
+        Hub["Data Hub Clusters"]
+        Flow["DataFlow Streaming"]
+        Eng["Data Engineering"]
     end
-    subgraph Mesh["Security & Streaming Mesh"]
-        Kafka["MSK Kafka Cluster"]
-        Vault["Tokenization Vault"]
-        Snowflake["Snowflake Lakehouse"]
+    subgraph Analytics["Cloud Analytics & Storage"]
+        DW["Data Warehouse"]
+        OpDB["Operational Database"]
+        AI["Cloudera Machine Learning"]
     end
-    subgraph Governance["Continuous Compliance"]
-        Audit["Immutable Audit Logs"]
-        dbt["dbt Data Contracts"]
-        SOC2["SOC-2 & ISO Gating"]
+    subgraph Control["Enterprise Control Plane"]
+        Catalog["Data Catalog"]
+        Repl["Replication Manager"]
+        Console["Management Console"]
     end
-    POS --> WAF
-    Mobile --> WAF
-    WAF --> Kafka
-    Kafka --> Vault
-    Vault --> Snowflake
-    Kafka --> Audit
-    Snowflake --> dbt
-    dbt --> SOC2"""
+    Hub --> DW
+    Flow --> DW
+    Eng --> OpDB
+    DW --> OpDB
+    OpDB --> AI
+    Catalog --> DW
+    Repl --> OpDB
+    Console --> AI"""
 
     node_icons = {
-        "POS": {"icon": "assets/logos/pos_store.svg", "icon_color": "#0284C7"},
-        "Mobile": {"icon": "assets/logos/mobile.svg", "icon_color": "#0284C7"},
-        "WAF": {"icon": "assets/logos/aws.svg"},
-        "Kafka": {"icon": "assets/logos/kafka.svg"},
-        "Vault": {"icon": "assets/logos/vault.svg"},
-        "Snowflake": {"icon": "assets/logos/snowflake.svg"},
-        "Audit": {"icon": "assets/logos/amazons3.svg"},
-        "dbt": {"icon": "assets/logos/dbt.svg"},
-        "SOC2": {"icon": "assets/logos/soc2_badge.svg", "icon_color": "#10B981"},
+        "Hub": {"icon": "cloudera:cloudera_hub_clusters"},
+        "Flow": {"icon": "cloudera:cloudera_data_flow"},
+        "Eng": {"icon": "cloudera:cloudera_data_engineering"},
+        "DW": {"icon": "cloudera:cloudera_data_warehouse"},
+        "OpDB": {"icon": "cloudera:cloudera_operational_database"},
+        "AI": {"icon": "cloudera:cloudera_ai"},
+        "Catalog": {"icon": "cloudera:cloudera_data_catalog"},
+        "Repl": {"icon": "cloudera:cloudera_replication_manager"},
+        "Console": {"icon": "cloudera:cloudera_management_console"},
     }
 
     proj = DrawIOProject()
@@ -102,9 +102,9 @@ def generate_single_slide_deck() -> Path:
     add_slide_header(
         slide,
         theme,
-        tracker="SECURITY & DATA GOVERNANCE MESH  |  PROJECT XYZ",
-        action_title="Zero-Trust Perimeter & Continuous Auditing Enforce SOC-2 Compliance Across 450+ Stores",
-        subtitle="3-Tier enterprise topology: hardware-grade mTLS ingress, tokenized PII isolation vault, and automated dbt contracts.",
+        tracker="CLOUDERA DATA PLATFORM (CDP)  |  ENTERPRISE ARCHITECTURE",
+        action_title="Full-Lifecycle Enterprise Data Cloud: Ingestion, Analytics & Control Plane Powered by Cloudera CDP",
+        subtitle="3-Tier enterprise topology: Data Hub & DataFlow ingress, DW & Operational DB lakehouse, and unified Control Plane governance.",
     )
 
     # Category Tracker Tag above Flowchart
@@ -112,7 +112,7 @@ def generate_single_slide_deck() -> Path:
     diag_tag_tf = diag_tag_tb.text_frame
     diag_tag_tf.margin_left = diag_tag_tf.margin_right = diag_tag_tf.margin_top = diag_tag_tf.margin_bottom = 0
     p_tag = diag_tag_tf.paragraphs[0]
-    p_tag.text = "TARGET ARCHITECTURE TOPOLOGY (DRAW.IO ENGINE — 3-TIER COLUMNAR MESH WITH INTEGRATED TECH LOGOS)"
+    p_tag.text = "CLOUDERA DATA CLOUD TOPOLOGY (DRAW.IO ENGINE — 100% NATIVE CDP SERVICE ICONS)"
     p_tag.font.name = theme.font_family_header
     p_tag.font.size = Pt(9.0)
     p_tag.font.bold = True
@@ -140,25 +140,25 @@ def generate_single_slide_deck() -> Path:
 
     takeaway_cards = [
         {
-            "tag": "TIER 01: ZERO-TRUST INGRESS",
-            "title": "Mutual TLS & WAF Shield",
-            "metric": "100% mTLS",
+            "tag": "TIER 01: REAL-TIME DATA INGRESS",
+            "title": "Data Hub & NiFi Streaming",
+            "metric": "Real-Time CDC",
             "accent": "accent",
-            "summary": "Hardware-attested TPM chips across 450+ POS registers & Okta OAuth JWT for mobile clients.",
+            "summary": "High-throughput NiFi pipelines and auto-scaling Data Hub clusters streaming into operational stores.",
         },
         {
-            "tag": "TIER 02: DATA PRIVACY & ISOLATION",
-            "title": "Tokenized PII Vault",
-            "metric": "AES-256 HSM",
+            "tag": "TIER 02: CLOUD ANALYTICS & ML",
+            "title": "CDW, HBase & CML Engine",
+            "metric": "Unified Lakehouse",
             "accent": "accent_teal",
-            "summary": "Pre-lakehouse tokenization vault with 24h key rotation and Snowflake row-level dynamic masking.",
+            "summary": "Sub-second Impala SQL queries, low-latency HBase key-value reads, and distributed Cloudera Machine Learning.",
         },
         {
-            "tag": "TIER 03: CONTINUOUS AUDITING",
-            "title": "Immutable Compliance Ledger",
-            "metric": "SOC-2 Ready",
+            "tag": "TIER 03: UNIFIED CONTROL PLANE",
+            "title": "Catalog & Replication Manager",
+            "metric": "Cross-Cloud SDX",
             "accent": "success",
-            "summary": "Write-once S3 Glacier compliance audit logging and 140+ automated dbt schema contract test assertions.",
+            "summary": "Centralized metadata lineage, policy-driven disaster recovery replication, and single-pane management console.",
         },
     ]
 

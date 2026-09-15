@@ -1086,7 +1086,9 @@ class DrawIOConverter:
             edge_counter += 1
             src_cell_id = f"node_{edge.source_id}"
             tgt_cell_id = f"node_{edge.target_id}"
-            edge_style = self._build_edge_style(edge, diagram.direction)
+            src_node = diagram.nodes.get(edge.source_id)
+            tgt_node = diagram.nodes.get(edge.target_id)
+            edge_style = self._build_edge_style(edge, diagram.direction, src_node=src_node, tgt_node=tgt_node)
             edge_val = html.escape(edge.label or "").replace("\n", "<br>")
 
             e_cell = ET.SubElement(
@@ -1190,6 +1192,13 @@ class DrawIOConverter:
         return parsed_xml.toprettyxml(indent="  ", encoding="utf-8").decode("utf-8")
 
     def _build_node_style(self, node: DiagramNode) -> str:
+        icon_key = node.custom_style.get("icon") or node.custom_style.get("logo") or ""
+        is_native_stencil = (
+            node.shape.startswith("mxgraph.")
+            or node.custom_style.get("shape", "").startswith("mxgraph.")
+            or icon_key.startswith("mxgraph.")
+        )
+
         shape_template = self.SHAPE_STYLE_MAP.get(node.shape, self.SHAPE_STYLE_MAP["rect"])
         if "{state_fill}" in shape_template:
             return shape_template.format(state_fill=self.theme["state_node_fill"])
@@ -1203,8 +1212,49 @@ class DrawIOConverter:
         stroke = node.custom_style.get("stroke", stroke)
         font_col = node.custom_style.get("color", font_col)
 
+        image_attr = ""
+        if icon_key and not is_native_stencil:
+            from src.ppt_engine.library_importer import IconRegistry
+            resolved_icon_path = IconRegistry.resolve_icon(icon_key)
+            if resolved_icon_path and resolved_icon_path.exists():
+                try:
+                    icon_sz = int(min(node.height * 0.52, 36.0))
+                    spacing_left = int(icon_sz + 18)
+                    if resolved_icon_path.suffix.lower() == ".svg":
+                        raw_svg = resolved_icon_path.read_text(encoding="utf-8")
+                        icon_col = node.custom_style.get("icon_color")
+                        if icon_col:
+                            raw_svg = raw_svg.replace("currentColor", icon_col)
+                            if 'fill="none"' in raw_svg and "stroke=" not in raw_svg:
+                                raw_svg = raw_svg.replace("<svg ", f'<svg stroke="{icon_col}" ')
+                        b64_data = base64.b64encode(raw_svg.encode("utf-8")).decode("ascii")
+                        image_uri = f"data:image/svg+xml;base64,{b64_data}"
+                    else:
+                        b64_data = base64.b64encode(resolved_icon_path.read_bytes()).decode("ascii")
+                        ext = resolved_icon_path.suffix.lower().lstrip(".")
+                        image_uri = f"data:image/{ext};base64,{b64_data}"
+
+                    image_attr = (
+                        f"image={image_uri};imageWidth={icon_sz};imageHeight={icon_sz};"
+                        f"imageAlign=left;spacingLeft={spacing_left};align=left;"
+                    )
+                except Exception:
+                    pass
+            else:
+                import sys
+                print(f"[WARNING] Icon '{icon_key}' could not be resolved for node '{node.id}'. Falling back to standard card container.", file=sys.stderr)
+
+        if is_native_stencil:
+            stencil_name = icon_key if icon_key.startswith("mxgraph.") else (node.shape if node.shape.startswith("mxgraph.") else node.custom_style.get("shape"))
+            shape_template = f"shape={stencil_name};whiteSpace=wrap;html=1;"
+        elif image_attr:
+            arc = "arcSize=14;" if node.shape == "rounded" else ""
+            rounded_flag = "1" if node.shape == "rounded" else "0"
+            shape_template = f"shape=label;rounded={rounded_flag};{arc}whiteSpace=wrap;html=1;"
+
         style_parts = [
             shape_template,
+            image_attr,
             f"fillColor={fill};",
             f"strokeColor={stroke};",
             f"strokeWidth={self.theme['node_stroke_width']};",
@@ -1214,13 +1264,19 @@ class DrawIOConverter:
             "fontStyle=0;",
             "shadow=0;",
         ]
-        if "icon" in node.custom_style:
-            style_parts.append(f"icon={node.custom_style['icon']};")
+        if icon_key:
+            style_parts.append(f"icon={icon_key};")
         if "icon_color" in node.custom_style:
             style_parts.append(f"icon_color={node.custom_style['icon_color']};")
         return "".join(style_parts)
 
-    def _build_edge_style(self, edge: DiagramEdge, direction: str) -> str:
+    def _build_edge_style(
+        self,
+        edge: DiagramEdge,
+        direction: str,
+        src_node: Optional[DiagramNode] = None,
+        tgt_node: Optional[DiagramNode] = None,
+    ) -> str:
         style_parts = [
             "edgeStyle=orthogonalEdgeStyle;",
             "rounded=1;",
@@ -1244,10 +1300,37 @@ class DrawIOConverter:
         if edge.arrow_start:
             style_parts.append("startArrow=classic;")
 
-        if direction in ("LR", "RL"):
-            style_parts.append("exitX=1;exitY=0.5;entryX=0;entryY=0.5;")
+        if src_node and tgt_node:
+            dx = (tgt_node.x + tgt_node.width / 2.0) - (src_node.x + src_node.width / 2.0)
+            dy = (tgt_node.y + tgt_node.height / 2.0) - (src_node.y + src_node.height / 2.0)
+            is_vert = abs(dx) < max(src_node.width, tgt_node.width) * 0.45
+            is_horiz = abs(dy) < max(src_node.height, tgt_node.height) * 0.45
+
+            if is_vert:
+                if dy > 0:
+                    style_parts.append("exitX=0.5;exitY=1;entryX=0.5;entryY=0;")
+                else:
+                    style_parts.append("exitX=0.5;exitY=0;entryX=0.5;entryY=1;")
+            elif is_horiz:
+                if dx > 0:
+                    style_parts.append("exitX=1;exitY=0.5;entryX=0;entryY=0.5;")
+                else:
+                    style_parts.append("exitX=0;exitY=0.5;entryX=1;entryY=0.5;")
+            elif abs(dx) >= abs(dy):
+                if dx > 0:
+                    style_parts.append("exitX=1;exitY=0.5;entryX=0;entryY=0.5;")
+                else:
+                    style_parts.append("exitX=0;exitY=0.5;entryX=1;entryY=0.5;")
+            else:
+                if dy > 0:
+                    style_parts.append("exitX=0.5;exitY=1;entryX=0.5;entryY=0;")
+                else:
+                    style_parts.append("exitX=0.5;exitY=0;entryX=0.5;entryY=1;")
         else:
-            style_parts.append("exitX=0.5;exitY=1;entryX=0.5;entryY=0;")
+            if direction in ("LR", "RL"):
+                style_parts.append("exitX=1;exitY=0.5;entryX=0;entryY=0.5;")
+            else:
+                style_parts.append("exitX=0.5;exitY=1;entryX=0.5;entryY=0;")
 
         return "".join(style_parts)
 
@@ -1385,11 +1468,26 @@ class DiagramRenderer:
 
             if is_vert and dy > 0:
                 # Direct top-to-bottom edge in same column
-                sx, sy = src.x + src.width / 2.0, src.y + src.height
-                tx, ty = tgt.x + tgt.width / 2.0, tgt.y
-                d_path = f"M {sx:.1f} {sy:.1f} L {tx:.1f} {ty:.1f}"
-                label_x = (sx + tx) / 2.0 + 12.0
-                label_y = (sy + ty) / 2.0
+                obstacles = [
+                    n for n in diagram.nodes.values()
+                    if n.id != src.id and n.id != tgt.id
+                    and abs((n.x + n.width / 2.0) - (src.x + src.width / 2.0)) < max(src.width, n.width) * 0.45
+                    and src.y < n.y < tgt.y
+                ]
+                if obstacles:
+                    max_obst_r = max(n.x + n.width for n in [src, tgt] + obstacles)
+                    route_x = max_obst_r + 24.0
+                    sx, sy = src.x + src.width, src.y + src.height / 2.0
+                    tx, ty = tgt.x + tgt.width, tgt.y + tgt.height / 2.0
+                    d_path = f"M {sx:.1f} {sy:.1f} L {route_x:.1f} {sy:.1f} L {route_x:.1f} {ty:.1f} L {tx:.1f} {ty:.1f}"
+                    label_x = route_x + 10.0
+                    label_y = (sy + ty) / 2.0
+                else:
+                    sx, sy = src.x + src.width / 2.0, src.y + src.height
+                    tx, ty = tgt.x + tgt.width / 2.0, tgt.y
+                    d_path = f"M {sx:.1f} {sy:.1f} L {tx:.1f} {ty:.1f}"
+                    label_x = (sx + tx) / 2.0 + 12.0
+                    label_y = (sy + ty) / 2.0
             elif is_horiz and dx > 0:
                 # Direct left-to-right edge in same row
                 sx, sy = src.x + src.width, src.y + src.height / 2.0
@@ -1406,6 +1504,18 @@ class DiagramRenderer:
                     sx, sy = src.x, src.y + src.height / 2.0
                     tx, ty = tgt.x + tgt.width, tgt.y + tgt.height / 2.0
                 mx = (sx + tx) / 2.0
+
+                # Collision avoidance with intermediate subgraphs
+                for sg in diagram.subgraphs.values():
+                    if (
+                        sg.x <= mx <= sg.x + sg.width
+                        and not (sg.x <= sx <= sg.x + sg.width)
+                        and not (sg.x <= tx <= sg.x + sg.width)
+                    ):
+                        if dx > 0:
+                            mx = sg.x - 18.0
+                        else:
+                            mx = sg.x + sg.width + 18.0
 
                 # Collision avoidance with bus trunks in the same corridor
                 for b in diagram.buses:
@@ -1518,27 +1628,38 @@ class DiagramRenderer:
         text_anchor = "middle"
 
         if icon_path_str:
-            icon_p = Path(icon_path_str)
-            if icon_p.exists():
+            from src.ppt_engine.library_importer import IconRegistry
+            icon_p = IconRegistry.resolve_icon(icon_path_str)
+            if icon_p and icon_p.exists():
                 try:
-                    raw_svg = icon_p.read_text(encoding="utf-8")
-                    icon_col = node.custom_style.get("icon_color")
-                    if icon_col:
-                        raw_svg = raw_svg.replace("currentColor", icon_col)
-                        if 'fill="none"' in raw_svg and "stroke=" not in raw_svg:
-                            raw_svg = raw_svg.replace("<svg ", f'<svg stroke="{icon_col}" ')
-
-                    b64_data = base64.b64encode(raw_svg.encode("utf-8")).decode("ascii")
                     icon_sz = min(node.height * 0.52, 36.0)
                     icon_x = node.x + 18.0
                     icon_y = node.y + (node.height - icon_sz) / 2.0
+                    if icon_p.suffix.lower() == ".svg":
+                        raw_svg = icon_p.read_text(encoding="utf-8")
+                        icon_col = node.custom_style.get("icon_color")
+                        if icon_col:
+                            raw_svg = raw_svg.replace("currentColor", icon_col)
+                            if 'fill="none"' in raw_svg and "stroke=" not in raw_svg:
+                                raw_svg = raw_svg.replace("<svg ", f'<svg stroke="{icon_col}" ')
+
+                        b64_data = base64.b64encode(raw_svg.encode("utf-8")).decode("ascii")
+                        mime = "data:image/svg+xml;base64"
+                    else:
+                        b64_data = base64.b64encode(icon_p.read_bytes()).decode("ascii")
+                        ext = icon_p.suffix.lower().lstrip(".")
+                        mime = f"data:image/{ext};base64"
+
                     lines.append(
-                        f'  <image xlink:href="data:image/svg+xml;base64,{b64_data}" x="{icon_x:.1f}" y="{icon_y:.1f}" width="{icon_sz:.1f}" height="{icon_sz:.1f}"/>'
+                        f'  <image xlink:href="{mime},{b64_data}" x="{icon_x:.1f}" y="{icon_y:.1f}" width="{icon_sz:.1f}" height="{icon_sz:.1f}"/>'
                     )
                     text_cx = icon_x + icon_sz + 14.0
                     text_anchor = "start"
                 except Exception:
                     pass
+            else:
+                import sys
+                print(f"[WARNING] Icon file '{icon_path_str}' could not be loaded for node '{node.id}' in slide renderer. Rendering centered plain text.", file=sys.stderr)
 
         text_lines = node.label.split("\n")
         fs = float(self.theme.get("node_font_size", 18))
@@ -1771,9 +1892,11 @@ def mxgraph_to_ast(diagram_elem: ET.Element) -> ParsedDiagram:
                     shape = "rhombus"
                 elif "cylinder" in style:
                     shape = "cylinder"
-                elif "rounded=1" in style:
+                elif "rounded=1" in style or "shape=label" in style:
                     if "arcSize=50" in style:
                         shape = "stadium"
+                    elif "rounded=0" in style:
+                        shape = "rect"
                     else:
                         shape = "rounded"
                 elif "shape=process" in style:
@@ -1783,7 +1906,7 @@ def mxgraph_to_ast(diagram_elem: ET.Element) -> ParsedDiagram:
                 for part in style.split(";"):
                     if "=" in part:
                         k, v = part.split("=", 1)
-                        if k.strip() in ("fillColor", "strokeColor", "fontColor", "icon", "icon_color"):
+                        if k.strip() in ("fillColor", "strokeColor", "fontColor", "icon", "icon_color", "image", "shape"):
                             custom_style[k.strip()] = v.strip()
 
                 parsed.nodes[nid] = DiagramNode(
