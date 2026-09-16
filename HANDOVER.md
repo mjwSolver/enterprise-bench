@@ -228,6 +228,14 @@ All 38 files have been relocated and sanitized under `clean_workspace/projects/T
   - **Translucent Scrim Overlay:** Applied an OpenXML DrawingML 45% dark scrim overlay (`#0B132B` via `<a:alpha val="45000"/>`) over the right 2/3 photographic plate ($x=4.8''$ to $13.333''$, $y=0.0''$ to $7.5''$), guaranteeing high contrast for brand marks.
   - **Brand Lockup & Graceful Degradation:** Centered the square Metrodata mark ($x \approx 7.87''$, $y \approx 2.35''$) with white bold division tag. Falls back gracefully to deep primary solid containers (`#0F172A`) if photos are missing, and typographic pill badges (`[ METRODATA ]`) if logos are missing.
   - **Exporter Layer Stacking:** Updated [`src/ppt_engine/slide_exporter.py`](src/ppt_engine/slide_exporter.py) to implement a single-pass painter's algorithm respecting natural shape z-ordering and DrawingML alpha extraction for preview renders. Reference: [`docs/HANDOVER_PRESENTATION_MODERNIZATION.md`](docs/HANDOVER_PRESENTATION_MODERNIZATION.md).
+- [x] **12. Standalone S-Curve Progress Engine & OpenXML LineChart Injection (2026-09-16):**
+  - **Mathematical Progress Modeling:** Engineered [`src/xlsx_engine/s_curve_generator.py`](src/xlsx_engine/s_curve_generator.py) implementing normalized Sigmoid logistic, cubic smoothstep ($3x^2 - 2x^3$), quintic smootherstep, and linear baselines.
+  - **Variance & Milestone Health Analytics:** Added schedule variance calculation ($SV$), relative $SV\%$, Schedule Performance Index ($SPI = EV/PV$), and milestone health indicators (`ON_TRACK`, `AT_RISK`, `CRITICAL_DELAY`, `COMPLETED`, `PLANNED`).
+  - **OpenXML Stamping & KPI Cards:** Automated 5-card KPI summary header blocks (rows 2–3) and formatted data tables with OpenXML `=IF(ISBLANK(...))` formulas and soft health status fills.
+  - **Native LineChart Injection:** Automated openpyxl `LineChart` construction (Primary Navy `#1E3A8A` planned line, Emerald Green `#10B981` actual curve with circular markers, smooth interpolation, and major gridlines).
+  - **CLI Integration:** Exposed `uv run bench xlsx s-curve` supporting template injection, JSON payloads, and dynamic simulation.
+  - **Verification Suite:** Validated via [`scripts/verify_s_curve.py`](scripts/verify_s_curve.py) adhering strictly to zero-pytest intermediate testing guardrails.
+
 
 ---
 
@@ -267,7 +275,8 @@ uv run bench doc purge --dir clean_workspace/projects/TTI_Snowflake_Analytics
    - Declarative data models in `consulting_archetypes.py` (`SlideImageReference`, `BrandingConfig`).
 2. **Spreadsheet Engine (`src/xlsx_engine/`):**
    - Implement `calculator_stamper.py` to drive `Cloud_Sizing_Calculator_Template.xlsx` and `Timeline_and_Mandays_Estimate_Template.xlsx`.
-   - Implement `s_curve_generator.py` for automated project progress curves.
+   - [x] Implemented `s_curve_generator.py` for automated project progress curves with openpyxl `LineChart` and CLI integration (2026-09-16).
+
 3. **Batch Template Sanitization:**
    - Completed batch regex sanitization across all 38 templates, cataloged in [`clean_workspace/projects/TTI_Snowflake_Analytics/`](clean_workspace/projects/TTI_Snowflake_Analytics/).
 
