@@ -44,27 +44,25 @@ open output/template_previews/kickoff/
 
 ## 3. Proposed Engine Archetypes to Implement
 
-When resuming development, implement the following programmatic builders in [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py):
+The following programmatic builders in [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py) expand the engine's design variety:
 
-1. **`build_chevron_process_slide(...)`**:
-   - 3–5 interconnected horizontal chevrons/ribbons with directional points.
-   - Distinct phase numbers, deliverable checklists, and progressive accent opacity.
-2. **`build_split_hero_slide(...)`**:
-   - Left 1/3: Deep contrast background fill (`theme.get_rgb("primary")` or `accent`), 44pt numeric highlight, sub-label.
+1. **`build_chevron_process_slide(...)`** (✓ Implemented):
+   - 3–5 interconnected horizontal chevrons/ribbons with directional points (`MSO_SHAPE.CHEVRON`).
+   - Distinct phase numbers, deliverable checklists, status pill badges, and progressive color saturation.
+2. **`build_split_hero_slide(...)`** (✓ Implemented):
+   - Left 1/3: Deep contrast background fill (`theme.get_rgb("primary")`), 40pt numeric highlight, metric label, and thesis narrative.
    - Right 2/3: 3 unbordered narrative blocks separated by subtle hairline dividers (`#E2E8F0`).
-3. **`build_gap_analysis_slide(...)`**:
-   - Left column (Muted Slate / Red accent): Existing Challenge & Deficit.
-   - Center: Transition / transformation arrow badge.
-   - Right column (Brand Accent / Green tint): Target Capability & Quantified Business Value.
-4. **`build_timeline_gantt_slide(...)`**:
+3. **`build_gap_analysis_slide(...)`** (✓ Implemented):
+   - Left column (Muted Slate / Red accent): Existing Challenge & Deficit (`[BOTTLENECK]`, `[AUDIT RISK]`).
+   - Center: Transition lever arrow badge (`➔`).
+   - Right column (Brand Accent / Green tint): Target Capability & Quantified Business Value (`TARGET BENEFIT • +98%`).
+4. **`build_cover_slide(...)`** (✓ Implemented):
+   - Left vertical accent framing bar, unified title/subtitle text frame.
+   - Dual client/vendor logo lockups with aspect-ratio containment.
+   - Typographic metadata multi-column alignment; zero boxed card containers; zero cover footers/pagination.
+5. **`build_timeline_gantt_slide(...)`** (Queued):
    - Top calendar axis (e.g., Weeks 1–12 or Months 1–6).
    - Left stream labels, right duration bars with rounded caps or milestone diamonds.
-
----
-
-## 4. Immediate Next Step
-
-Review the exported PNGs in `output/template_previews/pitch_deck/` to prioritize which 2 archetypes should be coded first into `src/ppt_engine/consulting_archetypes.py`.
 
 ---
 
@@ -89,14 +87,16 @@ Define standardized visual bounding boxes across consulting archetypes:
 - **Side-by-Side Proof Card:** Metric or architecture slides with a secondary supporting photographic proof thumbnail (`w=3.5"`, `h=2.2"`).
 - **Leadership & Bio Grid:** Multi-column team cards with circular or rounded avatar placeholders (`1:1` aspect ratio, `r=50%`).
 
-#### B. Company Logo Placement & Dual-Branding Protocol
-- **Cover Slide Lockup:**
-  - Support `client_logo_path` and `vendor_logo_path` in `PresentationConfig` / `build_cover_slide`.
-  - Place logos in the top-right header zone (`x=10.5"`, `y=0.8"`) or within the typographic metadata block.
-  - Enforce aspect-ratio preserving bounding box (`max_h=0.55"`, `max_w=2.0"`) with alpha transparency.
-- **Content Slide Header/Footer Integration:**
-  - Subtle client/vendor mark in slide header or footer divider (`h=0.25"`).
-  - High-contrast inversion handling for dark/light themes.
+#### B. Company Logo Placement & Dual-Branding Protocol (✓ Implemented)
+- **Cover Slide Triple-Lockup:**
+  - Standardized top-right co-branding header zone: `[ CLIENT LOGO ]` placeholder | `[ PLATFORM / SNOWFLAKE ]` | authentic Metrodata square logo (`assets/images/logos/metrodata_square.png`).
+  - Strict placeholder decoupling: Client logo defaults to safe placeholder pill `[ CLIENT LOGO ]` unless an authorized file is explicitly provided via `client_logo_path`.
+  - Enforces aspect-ratio preserving bounding boxes (`h=0.55"`, `w=1.6"-1.85"`) with subtle hairline dividers.
+- **Brand Theme Standardization:**
+  - Added authentic `metrodata` theme (`presets/themes/metrodata.yaml`) featuring Metrodata Blue (`#0052CC`), Metrodata Crimson Red (`#DC2626`), and Executive Slate (`#0F172A`).
+  - Unified archetype color harmony across BCG 3-Horizon and Balanced Scorecard slides.
+- **Automated Total Pagination:**
+  - `ConsultingDeckBuilder.save()` automatically post-processes slides to format pagination as `XX / YY` matching the exact total slide count.
 
 #### C. Declarative Archetype Schema Extensions
 Extend data models in `consulting_archetypes.py`:

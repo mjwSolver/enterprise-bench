@@ -73,7 +73,7 @@ uv run bench doc lint --file output/BAST_Final.docx
 ## 👥 Managing Team & Client Identities
 
 To update staff or client names manually without running CLI commands, see the step-by-step instructions in:
-👉 **[docs/MANUAL_IDENTITY_GUIDE.md](docs/MANUAL_IDENTITY_GUIDE.md)**
+👉 **[docs/specs/manual_identity_guide.md](docs/specs/manual_identity_guide.md)**
 
 ---
 

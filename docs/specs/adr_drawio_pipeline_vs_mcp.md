@@ -3,8 +3,8 @@
 > **Status:** Accepted / Canonical Architecture  
 > **Date:** September 2026  
 > **Topic:** Evaluation of Draw.io Model Context Protocol (MCP) Server vs. In-Engine Custom Python Pipeline  
-> **Target Subsystems:** [`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py), [`src/ppt_engine/library_importer.py`](../src/ppt_engine/library_importer.py), [`src/cli.py`](../src/cli.py), [`assets/logos/`](../assets/logos/)  
-> **Related Documents:** [docs/DRAWIO_ICON_SYSTEM_ARCHITECTURE.md](DRAWIO_ICON_SYSTEM_ARCHITECTURE.md), [docs/BACKLOG_DIAGRAM_ARCHITECTURE.md](BACKLOG_DIAGRAM_ARCHITECTURE.md)
+> **Target Subsystems:** [`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py), [`src/ppt_engine/library_importer.py`](../../src/ppt_engine/library_importer.py), [`src/cli.py`](../../src/cli.py), [`assets/logos/`](../../assets/logos/)  
+> **Related Documents:** [drawio_icon_system_architecture.md](drawio_icon_system_architecture.md), [../backlog/diagram_architecture.md](../backlog/diagram_architecture.md)
 
 ---
 

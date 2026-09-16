@@ -191,6 +191,6 @@ When evaluating a project repository workspace at any given time, use this quick
 ## 5. Architectural Deep Dives & Standalone Diagrams
 
 For extended visual diagrams and dedicated engineering subsystems:
-- **[LIFECYCLE_ARCHITECTURE.md](docs/LIFECYCLE_ARCHITECTURE.md):** Standalone Mermaid sequence diagrams, SIT-to-UAT quality gates, and FSD-to-TSD evolution models.
-- **[CHANGE_REQUEST_SUBSYSTEM.md](docs/CHANGE_REQUEST_SUBSYSTEM.md):** Comprehensive operational guide to the Change Request subsystem, detailing the 4 core artifacts, commercial addendums, and case studies (CR #1 through CR #6).
+- **[lifecycle_architecture.md](docs/specs/lifecycle_architecture.md):** Standalone Mermaid sequence diagrams, SIT-to-UAT quality gates, and FSD-to-TSD evolution models.
+- **[change_request_subsystem.md](docs/specs/change_request_subsystem.md):** Comprehensive operational guide to the Change Request subsystem, detailing the 4 core artifacts, commercial addendums, and case studies (CR #1 through CR #6).
 

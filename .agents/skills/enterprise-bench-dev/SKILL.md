@@ -76,7 +76,7 @@ description: >-
 * `models.py`: Strongly typed Pydantic v2 schemas (`ProjectInfo`, `BASTPayload`, `MoMPayload`, `Stakeholder`).
 * `theme.py`: `BrandTheme` dataclass and hex/RGB color transformers.
 * `sanitizer.py`: High-entropy regex cleaner for masking corporate identities, PII, and credentials across DOCX and XLSX.
-* `docx_purger.py`: Zero-corruption OpenXML comment, highlight, tracked revision, and author profile purger. Preserves `[Content_Types].xml` and `.rels` while clearing part contents. See full runbook: [`docs/OPENXML_PURGING_AND_CLEANSING.md`](../../docs/OPENXML_PURGING_AND_CLEANSING.md).
+* `docx_purger.py`: Zero-corruption OpenXML comment, highlight, tracked revision, and author profile purger. Preserves `[Content_Types].xml` and `.rels` while clearing part contents. See full runbook: [`docs/specs/openxml_purging_and_cleansing.md`](../../docs/specs/openxml_purging_and_cleansing.md).
 
 ---
 

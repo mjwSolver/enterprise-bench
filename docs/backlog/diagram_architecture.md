@@ -2,7 +2,7 @@
 
 > **Status:** Open Backlog / Architecture Trade-Off  
 > **Topic:** Diagram File Organization, Searchability, and Human Collaboration UX  
-> **Related Documents:** [docs/ADR_DRAWIO_PIPELINE_VS_MCP.md](ADR_DRAWIO_PIPELINE_VS_MCP.md), [docs/DRAWIO_ICON_SYSTEM_ARCHITECTURE.md](DRAWIO_ICON_SYSTEM_ARCHITECTURE.md)
+> **Related Documents:** [../specs/adr_drawio_pipeline_vs_mcp.md](../specs/adr_drawio_pipeline_vs_mcp.md), [../specs/drawio_icon_system_architecture.md](../specs/drawio_icon_system_architecture.md)
 
 ---
 

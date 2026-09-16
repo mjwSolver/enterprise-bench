@@ -3,8 +3,8 @@
 > **Target Role:** Core Platform Engineer / Diagram Engine Maintainer (`enterprise-bench-dev`, `enterprise-bench-ops`)  
 > **Topic:** Native Draw.io XML Icon Integration, Compound Shapes, External Vendor Libraries (Cloudera, Snowflake, Databricks), and Dual-Mode Stencil Resolution  
 > **Status:** Approved Architectural Specification  
-> **Target Subsystems:** [src/ppt_engine/diagram_engine.py](src/ppt_engine/diagram_engine.py), `src/cli.py`, `assets/logos/`, `assets/icons/`  
-> **Related Documents:** [docs/ADR_DRAWIO_PIPELINE_VS_MCP.md](ADR_DRAWIO_PIPELINE_VS_MCP.md), [docs/BACKLOG_DIAGRAM_ARCHITECTURE.md](BACKLOG_DIAGRAM_ARCHITECTURE.md), [docs/HANDOVER_INGRESS_BUS_ROUTING.md](HANDOVER_INGRESS_BUS_ROUTING.md), [LIFECYCLE.md](LIFECYCLE.md)
+> **Target Subsystems:** [`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py), [`src/cli.py`](../../src/cli.py), [`assets/logos/`](../../assets/logos/), [`assets/icons/`](../../assets/icons/)  
+> **Related Documents:** [adr_drawio_pipeline_vs_mcp.md](adr_drawio_pipeline_vs_mcp.md), [../backlog/diagram_architecture.md](../backlog/diagram_architecture.md), [ingress_bus_routing_architecture.md](ingress_bus_routing_architecture.md), [LIFECYCLE.md](../../LIFECYCLE.md)
 
 ---
 

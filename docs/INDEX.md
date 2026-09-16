@@ -1,0 +1,81 @@
+# Enterprise Workbench Documentation Hub
+
+This directory contains the central documentation, architectural blueprints, subsystem specifications, historical handovers, and roadmaps for `enterprise-bench`.
+
+---
+
+## 🧭 Directory Taxonomy & Operating Rules
+
+```text
+docs/
+├── INDEX.md               # This master navigation index
+├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–16+)
+│
+├── handovers/             # Historical sprint and session handover briefings
+│   ├── 2026-09-11_cli_skills_refactoring.md
+│   ├── 2026-09-15_presentation_modernization.md
+│   ├── 2026-09-16_universal_deliverable_recreation.md
+│   └── 2026-09-16_slide3_corporate_equity_tree.md
+│
+├── specs/                 # Permanent architectural references, runbooks & ADRs
+│   ├── adr_drawio_pipeline_vs_mcp.md
+│   ├── change_request_subsystem.md
+│   ├── drawio_edge_routing_and_collision_prevention.md
+│   ├── drawio_icon_system_architecture.md
+│   ├── ingress_bus_routing_architecture.md
+│   ├── lifecycle_architecture.md
+│   ├── manual_identity_guide.md
+│   ├── master_deliverable_recreation_plan.md
+│   └── openxml_purging_and_cleansing.md
+│
+└── backlog/               # Future sprint roadmaps, design proposals & backlogs
+    ├── cover_slide_hero_and_opening_modernization.md
+    ├── diagram_architecture.md
+    ├── localization_and_bilingual_deck_subsystem.md
+    ├── pitch_deck_screenshot_modernization.md
+    ├── slide_design_variety.md
+    └── template_variable_and_slug_consolidation.md
+```
+
+---
+
+## 🏛️ Documentation Standards for Agents
+
+1. **Active State vs. Historical Log:**
+   - **Root [`HANDOVER.md`](../HANDOVER.md)** is strictly a **lean pointer** to the current active sprint state and immediate next tasks ($\le 80$ lines).
+   - All historical milestone completions are logged in [`docs/CHANGELOG.md`](CHANGELOG.md).
+   - End-of-sprint transition briefings are archived in [`docs/handovers/`](handovers/) with the naming pattern `YYYY-MM-DD_<topic>.md`.
+2. **Subsystem Specifications:**
+   - Technical documentation explaining *how a subsystem or engine functions* must live in [`docs/specs/`](specs/). Never prefix technical specifications with `HANDOVER_`.
+3. **Roadmaps and Proposals:**
+   - Unscheduled initiatives, exploratory slide archetypes, and feature proposals live in [`docs/backlog/`](backlog/). When implemented, their functional spec moves to `specs/` and an entry is logged in `CHANGELOG.md`.
+
+---
+
+## 📚 Master Index
+
+### 1. Active Specifications & Architecture Runbooks (`docs/specs/`)
+* [**`adr_drawio_pipeline_vs_mcp.md`**](specs/adr_drawio_pipeline_vs_mcp.md): Architecture Decision Record on Draw.io headless export pipeline vs MCP.
+* [**`change_request_subsystem.md`**](specs/change_request_subsystem.md): Operational guide to the enterprise Change Request workflow, commercial addendums, and case studies.
+* [**`drawio_edge_routing_and_collision_prevention.md`**](specs/drawio_edge_routing_and_collision_prevention.md): Dynamic port directionality, vertical obstacle bypass, and inter-column gutter routing.
+* [**`drawio_icon_system_architecture.md`**](specs/drawio_icon_system_architecture.md): Vector tech iconography, Lucide glyph integration, and color tinting pipeline.
+* [**`ingress_bus_routing_architecture.md`**](specs/ingress_bus_routing_architecture.md): Shared trunk-line bus architecture for clean multi-source event streaming diagrams.
+* [**`lifecycle_architecture.md`**](specs/lifecycle_architecture.md): Sequence diagrams, SIT/UAT quality gates, and FSD-to-TSD document lifecycle transitions.
+* [**`manual_identity_guide.md`**](specs/manual_identity_guide.md): Visual identity tokens, Metrodata brand standards, and color usage.
+* [**`master_deliverable_recreation_plan.md`**](specs/master_deliverable_recreation_plan.md): Master strategy for recreating the 38 real-world enterprise consulting templates across 5 delivery tiers.
+* [**`openxml_purging_and_cleansing.md`**](specs/openxml_purging_and_cleansing.md): Zero-corruption comment, highlight, tracked revision, and author profile stripping for `.docx`.
+
+### 2. Backlogs & Proposals (`docs/backlog/`)
+* [**`cover_slide_hero_and_opening_modernization.md`**](backlog/cover_slide_hero_and_opening_modernization.md): Clean typographic metadata, dual vertical brand stripes, and hero covers.
+* [**`diagram_architecture.md`**](backlog/diagram_architecture.md): Aspect ratio containment and columnar subgraph partitioning.
+* [**`localization_and_bilingual_deck_subsystem.md`**](backlog/localization_and_bilingual_deck_subsystem.md): Indonesian/English dual-language string catalogs and layout adaptations.
+* [**`pitch_deck_screenshot_modernization.md`**](backlog/pitch_deck_screenshot_modernization.md): High-fidelity UI mockups and screenshot frames in pitch decks.
+* [**`slide_design_variety.md`**](backlog/slide_design_variety.md): Archetype expansion (case study split screens, quote cards, timeline tracks).
+* [**`template_variable_and_slug_consolidation.md`**](backlog/template_variable_and_slug_consolidation.md): Unified slug catalog and pre-commit PII audit specifications.
+
+### 3. Session Handovers (`docs/handovers/`)
+* [**`2026-09-11_cli_skills_refactoring.md`**](handovers/2026-09-11_cli_skills_refactoring.md): Initial CLI routing and skill unification handover.
+* [**`2026-09-15_presentation_modernization.md`**](handovers/2026-09-15_presentation_modernization.md): Slide containment, chapter divider archetype, and asset resolution handover.
+* [**`2026-09-16_universal_deliverable_recreation.md`**](handovers/2026-09-16_universal_deliverable_recreation.md): Deliverable recreation Milestones 13–15, financial XLSX suite, and PII linter.
+* [**`2026-09-16_slide3_corporate_equity_tree.md`**](handovers/2026-09-16_slide3_corporate_equity_tree.md): Task delegation brief for the multi-tier corporate shareholding and equity tree archetype.
+

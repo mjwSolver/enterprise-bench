@@ -95,7 +95,16 @@ Before generating code, authoring new deliverables, designing presentations, or 
 * Always execute Python commands through `uv` (e.g., `uv run bench ...`, `uv sync`).
 * Do not alter or break code preserving legacy implementations unless explicitly authorized.
 * Maintain documentation integrity; use relative links for internal file references (e.g., `[HANDOVER.md](HANDOVER.md)`), never absolute machine paths.
-* Historical context, architectural rationale, and previous handovers live in [`HANDOVER.md`](HANDOVER.md) and [`docs/`](docs/).
+* Historical context, architectural rationale, and previous handovers live in [`docs/INDEX.md`](docs/INDEX.md), [`docs/CHANGELOG.md`](docs/CHANGELOG.md), and [`docs/handovers/`](docs/handovers/).
+
+### 📚 Documentation Architecture & Taxonomy Protocol
+* **Strict Documentation Partitioning:** Agents must adhere to the 4-tier documentation taxonomy:
+  - **`HANDOVER.md` (Root):** Strictly an **Active State Pointer** ($\le 80$ lines). Contains only the current sprint's active status, key pointers, and immediate next backlog. Never append historical milestone lists indefinitely.
+  - **`docs/CHANGELOG.md`:** The **canonical historical milestone ledger**. When a milestone completes, record it chronologically here.
+  - **`docs/handovers/`:** Archived sprint or session transition briefings (`YYYY-MM-DD_<topic>.md`).
+  - **`docs/specs/`:** Permanent architectural reference runbooks, subsystem guides, and ADRs (e.g. OpenXML purging, Draw.io routing, Ingress Bus). Never prefix architectural specs with `HANDOVER_`.
+  - **`docs/backlog/`:** Future sprint proposals, uncurated designs, and draft roadmaps.
+* Index reference: Always check [`docs/INDEX.md`](docs/INDEX.md) for master cataloging.
 
 ### 🧹 Git Commit & Push Hygiene: Scratch Directory & Multi-Agent Greenlight Protocol
 * **Pre-Commit/Pre-Push Scratch Inspection:** Prior to staging, committing, or pushing to remote origin, agents must inspect if a runtime or temporary scratch directory (`scratch/`) exists in the workspace.
@@ -135,6 +144,7 @@ Before generating code, authoring new deliverables, designing presentations, or 
   - Implement via `add_card_with_top_stripe(...)` or `add_card(..., has_top_stripe=True)`.
 
 ### 📄 PowerPoint Cover Slide Architecture: Clean Typographic Metadata (Zero Boxed Cards)
+* **Dual Vertical Brand Accent Stripes (1 Red : 2 Blue Ratio):** Frame the left edge of the cover slide title area ($x=0.80''$, $y=1.80''$) with flush, adjacent vertical stripes mirroring the Metrodata emblem: a Crimson Red stripe ($w=0.045''$) immediately adjacent to a Metrodata Blue stripe ($w=0.090''$, exactly $2\times$ thickness), reflecting the authentic 1 red stroke to 2 blue strokes brand ratio.
 * **No Boxed Metadata Containers:** Never place metadata (Client, Vendor, Date, Confidentiality) inside an awkward bordered card or box container at the bottom of a cover slide.
 * **Typographic Multi-Column Alignment:** Render metadata directly on the slide background in clean typographic columns (e.g., `PREPARED FOR` and `ENGAGEMENT PARTNER`) separated from the title area by an optional subtle baseline hairline.
 * **No Cover Footers or Pagination:** Cover slides must **NEVER** feature slide footer divider bars, confidentiality disclaimers, or page numbers (e.g. `01 / 06`). Slide footers and pagination strictly begin on content slide 2.
@@ -161,7 +171,7 @@ Before generating code, authoring new deliverables, designing presentations, or 
 ### 📐 Diagram Edge Architecture & Collision Prevention: Dynamic Port Anchoring & Gutter Routing
 * **Zero Slicing Through Containers:** Never route cross-column feedback lines or multi-column hops through the geometric center of intermediate subgraphs or cards. The engine (`DiagramRenderer.render_svg`) enforces gutter-channel routing ($sg.x \pm 18\text{ pt}$) to keep intermediate columns clear.
 * **Vertical Obstacle Detection & Bypass:** Intra-column edges between non-adjacent nodes must never cut straight through intervening cards. When defining intra-column relationships, prefer sequential top-to-bottom pipelines (`DW --> OpDB`, `OpDB --> AI`). If skip-hops are used, the engine automatically jogs $24\text{ pt}$ around the right perimeter of intermediate obstacles.
-* **Dynamic Draw.io XML Port Directionality:** Never hardcode edge ports (`exitX=1;entryX=0;`) for all connectors. `DrawIOConverter._build_edge_style` dynamically evaluates $(\Delta x, \Delta y)$ to assign exact attachment faces (top/bottom for vertical flows, left/right for forward/backward flows), guaranteeing that interactive `.drawio` files match headless SVG/PNG previews with zero looping or doubled lines. Reference: [`docs/DRAWIO_EDGE_ROUTING_AND_COLLISION_PREVENTION.md`](docs/DRAWIO_EDGE_ROUTING_AND_COLLISION_PREVENTION.md).
+* **Dynamic Draw.io XML Port Directionality:** Never hardcode edge ports (`exitX=1;entryX=0;`) for all connectors. `DrawIOConverter._build_edge_style` dynamically evaluates $(\Delta x, \Delta y)$ to assign exact attachment faces (top/bottom for vertical flows, left/right for forward/backward flows), guaranteeing that interactive `.drawio` files match headless SVG/PNG previews with zero looping or doubled lines. Reference: [`docs/specs/drawio_edge_routing_and_collision_prevention.md`](docs/specs/drawio_edge_routing_and_collision_prevention.md).
 
 ---
 

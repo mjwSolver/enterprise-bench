@@ -3,8 +3,8 @@
 > **Target Role:** Core Platform Engineer / Diagram Engine Maintainer (`enterprise-bench-dev`, `enterprise-bench-ops`)  
 > **Topic:** Dynamic Port Anchoring, Intermediate Obstacle Avoidance, Gutter Channel Routing, and Parity between Draw.io XML and Headless Vector SVG  
 > **Status:** Enforced Architectural Standard  
-> **Target Subsystems:** [`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py) (`DrawIOConverter`, `DiagramRenderer`), [`scripts/generate_drawio_single_slide.py`](../scripts/generate_drawio_single_slide.py)  
-> **Related Documents:** [`docs/DRAWIO_ICON_SYSTEM_ARCHITECTURE.md`](DRAWIO_ICON_SYSTEM_ARCHITECTURE.md), [`docs/HANDOVER_INGRESS_BUS_ROUTING.md`](HANDOVER_INGRESS_BUS_ROUTING.md), [`AGENTS.md`](../AGENTS.md)
+> **Target Subsystems:** [`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py) (`DrawIOConverter`, `DiagramRenderer`), [`scripts/generate_drawio_single_slide.py`](../../scripts/generate_drawio_single_slide.py)  
+> **Related Documents:** [`drawio_icon_system_architecture.md`](drawio_icon_system_architecture.md), [`ingress_bus_routing_architecture.md`](ingress_bus_routing_architecture.md), [`AGENTS.md`](../../AGENTS.md)
 
 ---
 
