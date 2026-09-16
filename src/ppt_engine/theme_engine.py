@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
 from pptx.dml.color import RGBColor
@@ -108,6 +108,27 @@ class Theme:
         """Get python-pptx RGBColor object for the given palette or diagram key."""
         hex_val = self.get_hex(key, default=default)
         return hex_to_rgb(hex_val)
+
+    def resolve_status_badge_keys(self, status: str) -> Tuple[str, str]:
+        """
+        Deterministically resolve status badge fill and text theme keys from a status label:
+        - ON TRACK, EXCEEDED, PASSED, COMPLETE, SUCCESS, OPTIMAL -> badge_green_fill, badge_green_text
+        - AT RISK, DELAYED, BLOCKED, FAILED, CRITICAL, BOTTLENECK -> badge_red_fill, badge_red_text
+        - IN PROGRESS, REVIEW, PENDING, PLANNED, ANALYSIS -> badge_blue_fill, badge_blue_text
+        - Default -> badge_blue_fill, badge_blue_text
+        """
+        s = status.strip().upper()
+        if any(k in s for k in ["ON TRACK", "EXCEEDED", "PASSED", "COMPLETE", "SUCCESS", "OPTIMAL"]):
+            return ("badge_green_fill", "badge_green_text")
+        elif any(k in s for k in ["AT RISK", "DELAY", "BLOCK", "FAIL", "CRITICAL", "BOTTLENECK", "HIGH"]):
+            return ("badge_red_fill", "badge_red_text")
+        elif any(k in s for k in ["AMBER", "WARNING", "RESCHEDULE", "OCCURRED", "MEDIUM", "BERGESER"]):
+            if "badge_amber_fill" in self.palette:
+                return ("badge_amber_fill", "badge_amber_text")
+            return ("badge_red_fill", "badge_red_text")
+        elif any(k in s for k in ["PROGRESS", "REVIEW", "PENDING", "PLANNED", "ANALYSIS", "OPEN"]):
+            return ("badge_blue_fill", "badge_blue_text")
+        return ("badge_blue_fill", "badge_blue_text")
 
     # -------------------------------------------------------------------------
     # Geometry Accessors
@@ -363,6 +384,36 @@ class ThemeEngine:
                     "badge_green_text": "#15803D",
                     "badge_amber_fill": "#FEF3C7",
                     "badge_amber_text": "#B45309",
+                    "badge_red_fill": "#FEF2F2",
+                    "badge_red_text": "#991B1B",
+                },
+                geometry={"corner_radius": 0, "enable_shadows": False, "card_border_width_pt": 1.0},
+            )
+        elif name in ("metrodata", "mii"):
+            return Theme(
+                name="metrodata",
+                description="Metrodata Consulting: signature Metrodata Blue #0052CC, Metrodata Crimson Red #DC2626, deep charcoal #0F172A, crisp white #FFFFFF, slate #E2E8F0, sharp corporate geometry",
+                palette={
+                    "background": "#FFFFFF",
+                    "surface": "#FFFFFF",
+                    "surface_muted": "#F8FAFC",
+                    "border": "#E2E8F0",
+                    "border_accent": "#0052CC",
+                    "primary": "#0F172A",
+                    "secondary": "#334155",
+                    "muted": "#64748B",
+                    "accent": "#0052CC",
+                    "accent_secondary": "#DC2626",
+                    "accent_teal": "#0D9488",
+                    "success": "#059669",
+                    "warning": "#D97706",
+                    "danger": "#DC2626",
+                    "badge_blue_fill": "#EFF6FF",
+                    "badge_blue_text": "#0052CC",
+                    "badge_green_fill": "#ECFDF5",
+                    "badge_green_text": "#065F46",
+                    "badge_amber_fill": "#FEF3C7",
+                    "badge_amber_text": "#92400E",
                     "badge_red_fill": "#FEF2F2",
                     "badge_red_text": "#991B1B",
                 },

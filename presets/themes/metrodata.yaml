@@ -1,0 +1,62 @@
+name: "metrodata"
+description: "Metrodata Consulting Brand: signature Metrodata Blue #0052CC, Metrodata Crimson Red #DC2626, deep charcoal #0F172A, crisp white #FFFFFF, slate #E2E8F0, sharp corporate geometry"
+
+palette:
+  background: "#FFFFFF"
+  surface: "#FFFFFF"
+  surface_muted: "#F8FAFC"
+  border: "#E2E8F0"
+  border_accent: "#0052CC"
+  primary: "#0F172A"
+  secondary: "#334155"
+  muted: "#64748B"
+  accent: "#0052CC"
+  accent_secondary: "#DC2626"
+  accent_teal: "#0D9488"
+  success: "#059669"
+  warning: "#D97706"
+  danger: "#DC2626"
+
+  # Status Badges
+  badge_blue_fill: "#EFF6FF"
+  badge_blue_text: "#0052CC"
+  badge_green_fill: "#ECFDF5"
+  badge_green_text: "#065F46"
+  badge_amber_fill: "#FEF3C7"
+  badge_amber_text: "#92400E"
+  badge_red_fill: "#FEF2F2"
+  badge_red_text: "#991B1B"
+
+geometry:
+  corner_radius: 0
+  enable_shadows: false
+  card_border_width_pt: 1.0
+  accent_stripe_height_in: 0.08
+
+typography:
+  font_family: "Calibri, Helvetica, Arial, sans-serif"
+  font_family_header: "Calibri, Helvetica, Arial, sans-serif"
+  thresholds:
+    tracker_pt: 11.0
+    action_title_pt: 20.0
+    subtitle_pt: 12.5
+    card_title_pt: 14.0
+    body_pt: 12.0
+    bullet_pt: 11.5
+    caption_pt: 10.5
+    metric_large_pt: 26.0
+    metric_medium_pt: 18.0
+    metric_small_pt: 14.0
+    badge_pt: 10.0
+
+diagram:
+  canvas_bg: "#FFFFFF"
+  container_fill: "#F8FAFC"
+  container_stroke: "#CBD5E1"
+  container_font: "#0F172A"
+  node_fill: "#FFFFFF"
+  node_stroke: "#0052CC"
+  node_stroke_width: "2"
+  node_font: "#0F172A"
+  edge_stroke: "#475569"
+  edge_stroke_width: "1.5"

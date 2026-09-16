@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 from xml.dom import minidom
+import yaml
 
 # Auto-configure dynamic cairo library for macOS / Linux headless rasterization
 def _setup_cairo_library() -> None:
@@ -60,6 +61,7 @@ class DiagramNode:
     subgraph_id: Optional[str] = None
     style_classes: List[str] = field(default_factory=list)
     custom_style: Dict[str, str] = field(default_factory=dict)
+    _icon_weight: Optional[str] = field(default=None, repr=False)
     # Calculated layout geometry
     x: float = 0.0
     y: float = 0.0
@@ -67,6 +69,102 @@ class DiagramNode:
     height: float = 60.0
     rank: int = 0
     order: int = 0
+
+    def __init__(
+        self,
+        id: str,
+        label: str,
+        shape: str = "rect",
+        subgraph_id: Optional[str] = None,
+        style_classes: Optional[List[str]] = None,
+        custom_style: Optional[Dict[str, str]] = None,
+        _icon_weight: Optional[str] = None,
+        x: float = 0.0,
+        y: float = 0.0,
+        width: float = 160.0,
+        height: float = 60.0,
+        rank: int = 0,
+        order: int = 0,
+        icon_weight: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.id = id
+        self.label = label
+        self.shape = shape
+        self.subgraph_id = subgraph_id
+        self.style_classes = style_classes if style_classes is not None else []
+        self.custom_style = custom_style if custom_style is not None else {}
+        self._icon_weight = icon_weight if icon_weight is not None else _icon_weight
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rank = rank
+        self.order = order
+
+    @property
+    def icon_weight(self) -> str:
+        """
+        Icon stroke/fill weight classification: 'light' | 'weighted' | 'brand'.
+        Returns explicit property if set, otherwise infers default:
+        'brand' for corporate vendor logos, 'light' for Lucide/Heroicon outline icons.
+        """
+        if self._icon_weight:
+            return self._icon_weight
+        if "icon_weight" in self.custom_style:
+            return self.custom_style["icon_weight"]
+        if "weight" in self.custom_style:
+            return self.custom_style["weight"]
+        return self._infer_default_icon_weight()
+
+    @icon_weight.setter
+    def icon_weight(self, value: Optional[str]) -> None:
+        self._icon_weight = value
+
+    def _infer_default_icon_weight(self) -> str:
+        """Infer default icon weight based on asset provenance and identifier."""
+        icon_key = self.custom_style.get("icon") or self.custom_style.get("logo") or ""
+        if not icon_key:
+            return "light"
+
+        k_lower = icon_key.lower().strip()
+        if any(k_lower.startswith(p) for p in ("lucide:", "feather:", "heroicon:", "icon:", "outline:")):
+            return "light"
+
+        if any(k_lower.startswith(p) for p in ("logo:", "brand:", "logos:")):
+            return "brand"
+
+        known_brand_keys = {
+            "snowflake", "aws", "amazons3", "s3", "kafka", "dbt", "vault",
+            "cloudera", "cloudera_cdp", "cloudera_manager", "airflow", "spark",
+            "kubernetes", "docker", "python", "postgres", "postgresql",
+            "azure", "gcp", "googlecloud", "databricks", "redis", "mongodb",
+        }
+        stem = k_lower.split(":")[-1].split("/")[-1].replace(".svg", "").replace(".png", "")
+        if stem in known_brand_keys or any(b in stem for b in ("snowflake", "aws", "kafka", "cloudera", "dbt", "vault")):
+            return "brand"
+
+        try:
+            from src.ppt_engine.library_importer import IconRegistry
+            resolved = IconRegistry.resolve_icon(icon_key)
+            if resolved and resolved.exists():
+                resolved_str = resolved.as_posix().lower()
+                if "assets/logos" in resolved_str:
+                    if stem in ("audit_log", "mobile", "pos_store", "soc2_badge"):
+                        if resolved.suffix.lower() == ".svg":
+                            content = resolved.read_text(encoding="utf-8")
+                            if 'fill="none"' in content and "stroke=" in content:
+                                return "light"
+                    return "brand"
+                if "assets/icons" in resolved_str or "lucide" in resolved_str or "feather" in resolved_str:
+                    return "light"
+        except Exception:
+            pass
+
+        return "light"
+
+
+DrawIONode = DiagramNode
 
 
 @dataclass
@@ -948,6 +1046,173 @@ class HierarchicalLayoutEngine:
 
 
 # ============================================================================
+# 4.5 Icon Weight & Palette Harmonization Subsystem
+# ============================================================================
+
+def _is_dark_hex(hex_color: Optional[str]) -> bool:
+    """Determine if a hex color is perceptually dark (relative luminance < 0.45)."""
+    if not hex_color or not isinstance(hex_color, str):
+        return False
+    h = hex_color.strip().lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6:
+        return False
+    try:
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+        return lum < 0.45
+    except Exception:
+        return False
+
+
+VENDOR_BRAND_COLORS: Dict[str, str] = {
+    "snowflake": "#29B5E8",      # Snowflake Cyan
+    "aws": "#FF9900",            # AWS Orange
+    "amazons3": "#E05243",       # Amazon S3 Red-Orange
+    "s3": "#E05243",
+    "kafka": "#231F20",          # Kafka Black (swaps to #FFFFFF on dark containers)
+    "dbt": "#FF694B",            # dbt Orange
+    "vault": "#000000",          # HashiCorp Vault (swaps to #FFFFFF on dark containers)
+    "cloudera": "#F58220",       # Cloudera Orange
+    "airflow": "#017CEE",        # Apache Airflow Blue
+    "spark": "#E25A1C",          # Apache Spark Orange
+    "kubernetes": "#326CE5",     # Kubernetes Blue
+    "docker": "#2496ED",         # Docker Blue
+    "python": "#3776AB",         # Python Blue
+    "postgres": "#4169E1",       # PostgreSQL Blue
+    "postgresql": "#4169E1",
+    "databricks": "#FF3621",     # Databricks Red
+    "azure": "#0078D4",          # Azure Blue
+    "gcp": "#4285F4",            # Google Cloud Blue
+}
+
+
+def harmonize_icon_svg(
+    raw_svg: str,
+    icon_key: str,
+    icon_weight: str = "light",
+    icon_color: Optional[str] = None,
+    container_stroke: str = "#2563EB",
+    container_accent: str = "#3B82F6",
+    is_dark_bg: bool = False,
+    preserve_brand_color: bool = True,
+) -> str:
+    """
+    Harmonizes SVG stroke weight and palette based on AST icon_weight specification:
+    - 'light': Normalizes outline stroke rendering to >= 1.75px (preventing 1px hairline
+      disappearance on 1080p slide renders). Binds stroke to icon_color or container_stroke.
+    - 'brand': Preserves authentic multi-color corporate branding (e.g. Cloudera coral/white)
+      or applies canonical vendor brand colors (Snowflake cyan #29B5E8, AWS orange #FF9900,
+      Kafka white/black #FFFFFF/#231F20, dbt orange #FF694B, Vault #000000/#FFFFFF).
+    - 'weighted': Solid silhouette fills. Harmonizes fill and stroke to the container's
+      accent color palette (container_accent).
+    """
+    svg = raw_svg.strip()
+    k_lower = icon_key.lower().replace("-", "_")
+
+    # ------------------------------------------------------------------------
+    # 1. BRAND WEIGHT (Official vendor/partner corporate logos)
+    # ------------------------------------------------------------------------
+    if icon_weight == "brand":
+        # Check if caller explicitly overrides brand color (preserve_brand_color=False)
+        if icon_color and not preserve_brand_color:
+            svg = svg.replace("currentColor", icon_color)
+            if 'fill="none"' in svg and "stroke=" not in svg:
+                svg = re.sub(r'<svg(\s+)', rf'<svg\1stroke="{icon_color}" ', svg, count=1)
+            elif 'fill=' not in svg:
+                svg = re.sub(r'<svg(\s+)', rf'<svg\1fill="{icon_color}" ', svg, count=1)
+            return svg
+
+        # Detect if SVG is already multi-color (has multiple distinct non-neutral hex colors)
+        color_matches = set(re.findall(r'#(?:[0-9a-fA-F]{3}){1,2}', svg))
+        non_neutral = {c.upper() for c in color_matches if c.upper() not in ("#000", "#000000", "#FFF", "#FFFFFF", "#231F20")}
+        if len(non_neutral) >= 1 and ("fill=" in svg or "stroke=" in svg):
+            # Native multi-color corporate logo (e.g., Cloudera #FF6A80, partner badges)
+            # Preserve authentic vendor branding completely!
+            return svg
+
+        # Identify canonical vendor brand color
+        brand_hex: Optional[str] = None
+        for v_key, v_hex in VENDOR_BRAND_COLORS.items():
+            if v_key in k_lower:
+                if v_key in ("kafka", "vault"):
+                    brand_hex = "#FFFFFF" if is_dark_bg else v_hex
+                else:
+                    brand_hex = v_hex
+                break
+
+        if not brand_hex:
+            brand_hex = icon_color or ("#FFFFFF" if is_dark_bg else "#0F172A")
+
+        # Replace currentColor or inject fill
+        svg = svg.replace("currentColor", brand_hex)
+        if 'fill="none"' in svg and "stroke=" in svg:
+            svg = re.sub(r'stroke="[^"]*"', f'stroke="{brand_hex}"', svg)
+        elif 'fill="none"' in svg and "stroke=" not in svg:
+            svg = svg.replace('fill="none"', f'fill="{brand_hex}"')
+        elif 'fill=' in svg:
+            svg = re.sub(r'fill="(?:#000(?:000)?|black|currentColor)"', f'fill="{brand_hex}"', svg, flags=re.IGNORECASE)
+        else:
+            svg = re.sub(r'<svg(\s+)', rf'<svg\1fill="{brand_hex}" ', svg, count=1)
+
+        return svg
+
+    # ------------------------------------------------------------------------
+    # 2. WEIGHTED (Solid silhouette glyphs harmonized to container accent)
+    # ------------------------------------------------------------------------
+    elif icon_weight == "weighted":
+        accent_hex = icon_color or container_accent or container_stroke
+        svg = svg.replace("currentColor", accent_hex)
+        svg = svg.replace('fill="none"', f'fill="{accent_hex}"')
+        if 'fill=' in svg:
+            svg = re.sub(r'fill="(?:#000(?:000)?|black|currentColor)"', f'fill="{accent_hex}"', svg, flags=re.IGNORECASE)
+        else:
+            svg = re.sub(r'<svg(\s+)', rf'<svg\1fill="{accent_hex}" ', svg, count=1)
+
+        if 'stroke=' in svg:
+            svg = re.sub(r'stroke="(?:#000(?:000)?|black|currentColor)"', f'stroke="{accent_hex}"', svg, flags=re.IGNORECASE)
+        else:
+            svg = re.sub(r'<svg(\s+)', rf'<svg\1stroke="{accent_hex}" ', svg, count=1)
+
+        return svg
+
+    # ------------------------------------------------------------------------
+    # 3. LIGHT (Outline stroke vectors: Lucide, Feather, Heroicons)
+    # ------------------------------------------------------------------------
+    else:  # "light"
+        stroke_hex = icon_color or container_stroke
+        svg = svg.replace("currentColor", stroke_hex)
+
+        if 'stroke=' in svg:
+            svg = re.sub(r'stroke="(?:#000(?:000)?|black|currentColor)"', f'stroke="{stroke_hex}"', svg, flags=re.IGNORECASE)
+        else:
+            svg = re.sub(r'<svg(\s+)', rf'<svg\1stroke="{stroke_hex}" ', svg, count=1)
+
+        if 'fill="none"' not in svg and 'fill=' not in svg:
+            svg = re.sub(r'<svg(\s+)', r'<svg\1fill="none" ', svg, count=1)
+
+        # Prevent 1px hairline disappearance on 1080p slide renders:
+        # Normalize stroke-width to >= 1.75px (standard 1.8px)
+        def _normalize_stroke_width(match: re.Match) -> str:
+            val_str = match.group(1)
+            try:
+                val = float(val_str.replace("px", ""))
+                if val < 1.75:
+                    return 'stroke-width="1.8"'
+            except ValueError:
+                pass
+            return match.group(0)
+
+        if "stroke-width=" in svg:
+            svg = re.sub(r'stroke-width="([^"]+)"', _normalize_stroke_width, svg)
+        else:
+            svg = re.sub(r'<svg(\s+)', r'<svg\1stroke-width="1.8" ', svg, count=1)
+
+        return svg
+
+
+# ============================================================================
 # 5. Draw.io mxGraph XML Converter
 # ============================================================================
 
@@ -1222,12 +1487,18 @@ class DrawIOConverter:
                     spacing_left = int(icon_sz + 18)
                     if resolved_icon_path.suffix.lower() == ".svg":
                         raw_svg = resolved_icon_path.read_text(encoding="utf-8")
-                        icon_col = node.custom_style.get("icon_color")
-                        if icon_col:
-                            raw_svg = raw_svg.replace("currentColor", icon_col)
-                            if 'fill="none"' in raw_svg and "stroke=" not in raw_svg:
-                                raw_svg = raw_svg.replace("<svg ", f'<svg stroke="{icon_col}" ')
-                        b64_data = base64.b64encode(raw_svg.encode("utf-8")).decode("ascii")
+                        is_dark = _is_dark_hex(self.theme.get("canvas_bg", "#F8FAFC")) or _is_dark_hex(fill)
+                        processed_svg = harmonize_icon_svg(
+                            raw_svg=raw_svg,
+                            icon_key=icon_key,
+                            icon_weight=node.icon_weight,
+                            icon_color=node.custom_style.get("icon_color"),
+                            container_stroke=stroke,
+                            container_accent=self.theme.get("accent_node_stroke", stroke),
+                            is_dark_bg=is_dark,
+                            preserve_brand_color=True,
+                        )
+                        b64_data = base64.b64encode(processed_svg.encode("utf-8")).decode("ascii")
                         image_uri = f"data:image/svg+xml;base64,{b64_data}"
                     else:
                         b64_data = base64.b64encode(resolved_icon_path.read_bytes()).decode("ascii")
@@ -1268,6 +1539,8 @@ class DrawIOConverter:
             style_parts.append(f"icon={icon_key};")
         if "icon_color" in node.custom_style:
             style_parts.append(f"icon_color={node.custom_style['icon_color']};")
+        if node.icon_weight:
+            style_parts.append(f"icon_weight={node.icon_weight};")
         return "".join(style_parts)
 
     def _build_edge_style(
@@ -1637,13 +1910,18 @@ class DiagramRenderer:
                     icon_y = node.y + (node.height - icon_sz) / 2.0
                     if icon_p.suffix.lower() == ".svg":
                         raw_svg = icon_p.read_text(encoding="utf-8")
-                        icon_col = node.custom_style.get("icon_color")
-                        if icon_col:
-                            raw_svg = raw_svg.replace("currentColor", icon_col)
-                            if 'fill="none"' in raw_svg and "stroke=" not in raw_svg:
-                                raw_svg = raw_svg.replace("<svg ", f'<svg stroke="{icon_col}" ')
-
-                        b64_data = base64.b64encode(raw_svg.encode("utf-8")).decode("ascii")
+                        is_dark = _is_dark_hex(self.theme.get("canvas_bg", "#F8FAFC")) or _is_dark_hex(fill)
+                        processed_svg = harmonize_icon_svg(
+                            raw_svg=raw_svg,
+                            icon_key=icon_path_str,
+                            icon_weight=node.icon_weight,
+                            icon_color=node.custom_style.get("icon_color"),
+                            container_stroke=stroke,
+                            container_accent=self.theme.get("accent_node_stroke", stroke),
+                            is_dark_bg=is_dark,
+                            preserve_brand_color=True,
+                        )
+                        b64_data = base64.b64encode(processed_svg.encode("utf-8")).decode("ascii")
                         mime = "data:image/svg+xml;base64"
                     else:
                         b64_data = base64.b64encode(icon_p.read_bytes()).decode("ascii")
@@ -1746,6 +2024,7 @@ class DiagramEngine:
         theme: str = "modern_consulting",
         formats: Tuple[str, ...] = ("drawio", "svg", "png"),
         scale: float = 3.0,
+        node_icons: Optional[Dict[str, Dict[str, str]]] = None,
     ) -> Dict[str, Path]:
         """
         Full compilation pipeline:
@@ -1759,6 +2038,14 @@ class DiagramEngine:
         result_paths: Dict[str, Path] = {}
 
         parsed = self.parser.parse(mermaid_code)
+        if node_icons:
+            for nid, idata in node_icons.items():
+                if nid in parsed.nodes:
+                    parsed.nodes[nid].custom_style.update(idata)
+                    if "icon_weight" in idata:
+                        parsed.nodes[nid].icon_weight = idata["icon_weight"]
+                    elif "weight" in idata:
+                        parsed.nodes[nid].icon_weight = idata["weight"]
         laid_out = self.layout.compute_layout(parsed)
 
         converter = DrawIOConverter(theme_name=theme)
@@ -1906,7 +2193,7 @@ def mxgraph_to_ast(diagram_elem: ET.Element) -> ParsedDiagram:
                 for part in style.split(";"):
                     if "=" in part:
                         k, v = part.split("=", 1)
-                        if k.strip() in ("fillColor", "strokeColor", "fontColor", "icon", "icon_color", "image", "shape"):
+                        if k.strip() in ("fillColor", "strokeColor", "fontColor", "icon", "icon_color", "icon_weight", "weight", "image", "shape"):
                             custom_style[k.strip()] = v.strip()
 
                 parsed.nodes[nid] = DiagramNode(
@@ -1918,6 +2205,7 @@ def mxgraph_to_ast(diagram_elem: ET.Element) -> ParsedDiagram:
                     width=w,
                     height=h,
                     custom_style=custom_style,
+                    icon_weight=custom_style.get("icon_weight") or custom_style.get("weight"),
                 )
                 max_x = max(max_x, x + w)
                 max_y = max(max_y, y + h)
@@ -2141,6 +2429,10 @@ class DrawIOProject:
             for nid, idata in node_icons.items():
                 if nid in parsed.nodes:
                     parsed.nodes[nid].custom_style.update(idata)
+                    if "icon_weight" in idata:
+                        parsed.nodes[nid].icon_weight = idata["icon_weight"]
+                    elif "weight" in idata:
+                        parsed.nodes[nid].icon_weight = idata["weight"]
         laid_out = layout.compute_layout(parsed)
         return self.add_or_update_page(name=name, diagram=laid_out, page_id=page_id, theme=theme, custom_theme=c_theme)
 
@@ -2265,5 +2557,87 @@ class DrawIOProject:
                 except Exception:
                     pass
         return False
+
+    def export_all_pages(
+        self,
+        output_dir: Union[str, Path],
+        format: str = "png",
+        scale: float = 3.0,
+        theme: str = "modern_consulting",
+        custom_theme: Optional[Dict[str, Any]] = None,
+        font_size: Optional[float] = None,
+        transparent: bool = False,
+        canvas_bg: Optional[str] = None,
+    ) -> List[Path]:
+        """
+        Exports all diagram pages/tabs in the project to the target directory.
+        Filenames are normalized from page names (e.g., 'Sales Use Case' -> 'sales_use_case.png').
+        """
+        out_dir = Path(output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        results: List[Path] = []
+        pages = self.list_pages()
+        for p in pages:
+            page_name = p["name"]
+            slug = re.sub(r"[^a-zA-Z0-9_]", "_", page_name.lower()).strip("_")
+            if not slug:
+                slug = f"page_{p['index'] + 1}"
+            out_file = out_dir / f"{slug}.{format.lower()}"
+            exported = self.export_page(
+                name_or_index=p["index"],
+                output_path=out_file,
+                format=format,
+                scale=scale,
+                theme=theme,
+                custom_theme=custom_theme,
+                font_size=font_size,
+                transparent=transparent,
+                canvas_bg=canvas_bg,
+            )
+            results.append(exported)
+        return results
+
+    @classmethod
+    def build_from_config(
+        cls,
+        config_path: Union[str, Path],
+        output_path: Optional[Union[str, Path]] = None,
+    ) -> "DrawIOProject":
+        """
+        Constructs a multi-page Draw.io project from a declarative YAML specification.
+        The YAML file specifies pages, Mermaid syntax, themes, font sizes, and node icons.
+        """
+        cfg_file = Path(config_path)
+        if not cfg_file.exists():
+            raise FileNotFoundError(f"Diagram config not found: {config_path}")
+
+        data = yaml.safe_load(cfg_file.read_text(encoding="utf-8")) or {}
+        pages_cfg = data.get("pages", [])
+        default_theme = data.get("default_theme", "modern_consulting")
+        default_font_size = data.get("default_font_size", 16.0)
+
+        target_path = Path(output_path) if output_path else cfg_file.with_suffix(".drawio")
+        project = cls(file_path=target_path)
+
+        for p_data in pages_cfg:
+            p_name = p_data.get("name", "Untitled Page")
+            mermaid_code = p_data.get("mermaid", "").strip()
+            theme = p_data.get("theme", default_theme)
+            font_size = float(p_data.get("font_size", default_font_size))
+            node_icons = p_data.get("node_icons", None)
+            custom_theme = p_data.get("custom_theme", None)
+
+            if mermaid_code:
+                project.add_mermaid_page(
+                    name=p_name,
+                    mermaid_code=mermaid_code,
+                    theme=theme,
+                    font_size=font_size,
+                    custom_theme=custom_theme,
+                    node_icons=node_icons,
+                )
+
+        project.save(target_path)
+        return project
 
 

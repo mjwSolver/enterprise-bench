@@ -74,6 +74,16 @@ def get_default_resources(root_dir: Path) -> list[ResourceSpec]:
             recovery_command="git checkout assets/logos/snowflake.svg",
         ),
         ResourceSpec(
+            key="logo_snowflake_official",
+            target_path=root_dir / "assets" / "images" / "logos" / "snowflake_official.png",
+            canonical_url="https://upload.wikimedia.org/wikipedia/commons/f/ff/Snowflake_Logo.svg",
+            fallback_url=None,
+            fallback_type="typographic",
+            fallback_text="SNOWFLAKE",
+            impacted_slides=["Cover", "Architecture"],
+            recovery_command='curl -sSL "https://upload.wikimedia.org/wikipedia/commons/f/ff/Snowflake_Logo.svg" -o assets/logos/snowflake_official.svg',
+        ),
+        ResourceSpec(
             key="stock_chapter_photo",
             target_path=root_dir / "assets" / "images" / "stock" / "chapter_hero.jpg",
             canonical_url="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1600&auto=format&fit=crop",
@@ -84,14 +94,14 @@ def get_default_resources(root_dir: Path) -> list[ResourceSpec]:
             recovery_command='curl -sSL "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1600&auto=format&fit=crop" -o assets/images/stock/chapter_hero.jpg',
         ),
         ResourceSpec(
-            key="logo_metrodata_wide",
-            target_path=root_dir / "assets" / "images" / "logos" / "metrodata_wide.png",
+            key="hero_cloud_interchange_night",
+            target_path=root_dir / "assets" / "images" / "hero" / "cloud_interchange_night.jpg",
             canonical_url=None,
             fallback_url=None,
-            fallback_type="typographic",
-            fallback_text="METRODATA",
-            impacted_slides=["Cover"],
-            recovery_command='python3 -c "import zipfile; z=zipfile.ZipFile(\'clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx\'); open(\'assets/images/logos/metrodata_wide.png\', \'wb\').write(z.read(\'ppt/media/image95.png\'))"',
+            fallback_type="gradient",
+            fallback_text="",
+            impacted_slides=["Hero Cover"],
+            recovery_command="python -c \"from pptx import Presentation; prs = Presentation('clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx'); open('assets/images/hero/cloud_interchange_night.jpg', 'wb').write(prs.slides[0].shapes[0].image.blob)\"",
         ),
     ]
 

@@ -23,6 +23,9 @@ from .consulting_archetypes import (
     StrategyPillarData,
     ScorecardMetric,
     ScorecardQuadrantData,
+    ProcessChevronStep,
+    SplitHeroBlock,
+    GapDimensionData,
     create_presentation,
     add_slide_with_background,
     add_slide_header,
@@ -33,6 +36,11 @@ from .consulting_archetypes import (
     build_mckinsey_cascade_slide,
     build_balanced_scorecard_slide,
     build_chapter_divider_slide,
+    build_cover_slide,
+    build_hero_cover_slide,
+    build_chevron_process_slide,
+    build_split_hero_slide,
+    build_gap_analysis_slide,
 )
 from .resource_manager import (
     ResourceSpec,
@@ -41,8 +49,22 @@ from .resource_manager import (
     resolve_asset,
     check_resources,
 )
+from .weekly_progress_deck import WeeklyProgressDeckBuilder
+from .reference_slides import (
+    ReferenceDeckBuilder,
+    build_governance_org_structure_slide,
+    build_change_request_procedure_slide,
+    build_snowflake_platform_architecture_slide,
+    build_snowflake_data_pipeline_slide,
+)
 
 __all__ = [
+    "ReferenceDeckBuilder",
+    "WeeklyProgressDeckBuilder",
+    "build_governance_org_structure_slide",
+    "build_change_request_procedure_slide",
+    "build_snowflake_platform_architecture_slide",
+    "build_snowflake_data_pipeline_slide",
     "DiagramEngine",
     "DrawIOProject",
     "mxgraph_to_ast",
@@ -60,6 +82,9 @@ __all__ = [
     "StrategyPillarData",
     "ScorecardMetric",
     "ScorecardQuadrantData",
+    "ProcessChevronStep",
+    "SplitHeroBlock",
+    "GapDimensionData",
     "create_presentation",
     "add_slide_with_background",
     "add_slide_header",
@@ -70,6 +95,11 @@ __all__ = [
     "build_mckinsey_cascade_slide",
     "build_balanced_scorecard_slide",
     "build_chapter_divider_slide",
+    "build_cover_slide",
+    "build_hero_cover_slide",
+    "build_chevron_process_slide",
+    "build_split_hero_slide",
+    "build_gap_analysis_slide",
     "ResourceSpec",
     "ResourceManager",
     "get_resource_manager",

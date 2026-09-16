@@ -1,0 +1,27 @@
+deck_type: reference_slides
+theme: metrodata
+metadata:
+  project_name: "METRODATA CORPORATE EQUITY & SHAREHOLDING TREE"
+  client_name: "[CLIENT_COMPANY_NAME]"
+  vendor_name: "PT Metrodata Electronics Tbk"
+  product: "Snowflake AI Data Cloud"
+  date_str: "September 2026"
+  confidentiality: "[CLIENT_COMPANY_NAME] & Metrodata Consulting  |  Confidential & Proprietary"
+
+slides:
+  # Slide 1: Master Cover Slide
+  - archetype: cover
+    title: "CORPORATE EQUITY & GOVERNANCE STRUCTURE"
+    subtitle: "Legal Shareholding Architecture, Operating Subsidiaries & Specialized Joint Ventures"
+    client: "[CLIENT_COMPANY_NAME]"
+    vendor: "PT Metrodata Electronics Tbk"
+    product: "Enterprise Practice Group"
+    date_str: "September 2026"
+    tracker: "METRODATA GROUP CORPORATE GOVERNANCE"
+
+  # Slide 2: Corporate Equity Tree (Slide 3 Benchmark Reference)
+  - archetype: corporate_equity_tree
+    tracker: "CORPORATE GOVERNANCE | EQUITY STRUCTURE"
+    title: "Metrodata Group Operates Multi-Tier Operating Subsidiaries and Specialized JVs"
+    subtitle: "PT Metrodata Electronics Tbk (MTDL) maintains controlling equity across core ICT distribution, solutions, and digital consulting entities."
+    footnote: "*) Reflects legal equity shareholding percentages as of latest PMO baseline."

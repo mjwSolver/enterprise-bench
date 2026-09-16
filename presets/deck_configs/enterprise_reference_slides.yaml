@@ -1,0 +1,48 @@
+deck_type: reference_slides
+theme: metrodata
+metadata:
+  project_name: "ENTERPRISE BENCHMARK REFERENCE SLIDES"
+  client_name: "[CLIENT_COMPANY_NAME]"
+  vendor_name: "PT Metrodata Electronics Tbk"
+  product: "Snowflake AI Data Cloud"
+  date_str: "September 2026"
+  confidentiality: "[CLIENT_COMPANY_NAME] & Metrodata Consulting  |  Confidential & Proprietary"
+
+slides:
+  # Slide 1: Master Cover Slide (Cinematic Hero Plate)
+  - archetype: hero_cover
+    title: "ENTERPRISE BENCHMARK REFERENCE COLLATERAL"
+    subtitle: "Permanent Project Governance Matrix, Scope Control & Solution Architecture Blueprints"
+    client: "[CLIENT_COMPANY_NAME]"
+    vendor: "PT Metrodata Electronics Tbk"
+    product: "Snowflake AI Data Cloud"
+    date_str: "September 2026"
+    hero_image_path: "assets/images/hero/cloud_interchange_night.jpg"
+    hero_height: 3.65
+    scrim_alpha: 0.28
+
+  # Slide 2: Project Org Structure (Slide 33 reference)
+  - archetype: governance_org_structure
+    tracker: "PROJECT GOVERNANCE | ORGANIZATIONAL STRUCTURE"
+    title: "Joint Dual-Pillar Governance Matrix Establishes Clear Escalation & Delivery Ownership"
+    subtitle: "Hierarchical project structure connects executive steering committees, PMO leads, and specialized execution pods."
+    client_name: "[CLIENT_COMPANY_NAME]"
+    vendor_name: "PT Metrodata Electronics Tbk"
+
+  # Slide 3: Change Request Procedure (Slide 35 reference)
+  - archetype: change_request_procedure
+    tracker: "PROJECT GOVERNANCE | SCOPE & CHANGE CONTROL"
+    title: "Structured Change Request Procedure Governs Scope Adjustments Through Defined Decision Gates"
+    subtitle: "Sequential 4-stage governance pipeline with bi-level escalation thresholds and auditable legal sign-offs."
+
+  # Slide 4: Snowflake Platform Architecture (Slide 17 reference)
+  - archetype: snowflake_platform_architecture
+    tracker: "TECHNOLOGY PLATFORM BLUEPRINT | SNOWFLAKE DATA CLOUD"
+    title: "Fully-Managed Unified Platform Eliminates Data Silos Across Multi-Cloud Environments"
+    subtitle: "Official Snowflake platform blueprint showing decoupled storage, elastic compute, and Horizon governance."
+
+  # Slide 5: Snowflake End-to-End Data Pipeline (Slide 18 reference)
+  - archetype: snowflake_data_pipeline
+    tracker: "SOLUTION ARCHITECTURE | END-TO-END DATA PIPELINE"
+    title: "Modern Data Pipeline Streamlines Continuous Ingestion into Governed Analytics Consumption"
+    subtitle: "Official end-to-end data flow: transactional ERP/IoT sources into Snowflake core, virtual warehouses, and delivery channels."

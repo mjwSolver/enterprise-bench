@@ -145,6 +145,7 @@ class PurePythonSlideRenderer:
         for shape in slide.shapes:
             self._render_shape_background(canvas, draw, shape, scale_x, scale_y)
             self._render_shape_picture(canvas, draw, shape, scale_x, scale_y)
+            self._render_shape_table(canvas, draw, shape, scale_x, scale_y)
             self._render_shape_text(canvas, draw, shape, scale_x, scale_y)
 
         return canvas.convert("RGB")
@@ -235,7 +236,18 @@ class PurePythonSlideRenderer:
                     outline=border_rgba,
                     width=border_width if border_rgba else 0,
                 )
-            elif auto_type == MSO_SHAPE.RECTANGLE:
+            elif auto_type == MSO_SHAPE.CHEVRON:
+                notch = min(w * 0.18, h * 0.5) if (w > 0 and h > 0) else 10
+                pts = [
+                    (x, y),
+                    (x + w - notch, y),
+                    (x + w, y + h / 2),
+                    (x + w - notch, y + h),
+                    (x, y + h),
+                    (x + notch, y + h / 2),
+                ]
+                overlay_draw.polygon(pts, fill=fill_rgba, outline=border_rgba)
+            else:
                 overlay_draw.rectangle(
                     [x, y, x + w, y + h],
                     fill=fill_rgba,
@@ -257,7 +269,31 @@ class PurePythonSlideRenderer:
                 width=border_width if border_rgba else 0,
             )
 
+        elif auto_type == MSO_SHAPE.CHEVRON:
+            notch = min(w * 0.18, h * 0.5) if (w > 0 and h > 0) else 10
+            pts = [
+                (x, y),
+                (x + w - notch, y),
+                (x + w, y + h / 2),
+                (x + w - notch, y + h),
+                (x, y + h),
+                (x + notch, y + h / 2),
+            ]
+            draw.polygon(
+                pts,
+                fill=fill_rgba,
+                outline=border_rgba,
+            )
+
         elif auto_type == MSO_SHAPE.RECTANGLE:
+            draw.rectangle(
+                [x, y, x + w, y + h],
+                fill=fill_rgba,
+                outline=border_rgba,
+                width=border_width if border_rgba else 0,
+            )
+        else:
+            # Fallback for other geometric shapes: render bounding rectangle so shape is never invisible
             draw.rectangle(
                 [x, y, x + w, y + h],
                 fill=fill_rgba,
@@ -304,6 +340,46 @@ class PurePythonSlideRenderer:
             except Exception:
                 pass
 
+    def _render_shape_table(
+        self,
+        canvas: Image.Image,
+        draw: ImageDraw.ImageDraw,
+        shape: Any,
+        scale_x: float,
+        scale_y: float,
+    ) -> None:
+        if not getattr(shape, "has_table", False):
+            return
+        table = shape.table
+        try:
+            tbl_x = shape.left.pt * scale_x
+            tbl_y = shape.top.pt * scale_y
+        except Exception:
+            return
+
+        cur_y = tbl_y
+        for r_idx, row in enumerate(table.rows):
+            cur_x = tbl_x
+            row_h = row.height.pt * scale_y if hasattr(row, "height") and row.height else 24 * scale_y
+            for c_idx, cell in enumerate(row.cells):
+                col_w = table.columns[c_idx].width.pt * scale_x
+                cell_fill = (255, 255, 255)
+                if hasattr(cell, "fill") and cell.fill.type is not None:
+                    try:
+                        if cell.fill.fore_color and cell.fill.fore_color.rgb:
+                            cell_fill = _hex_or_rgb_to_tuple(cell.fill.fore_color.rgb)
+                    except Exception:
+                        pass
+                draw.rectangle([cur_x, cur_y, cur_x + col_w, cur_y + row_h], fill=cell_fill, outline=(226, 232, 240), width=1)
+
+                text = cell.text.strip()
+                if text:
+                    font = _get_system_font(size_px=max(8, int(10 * scale_y)), bold=(r_idx == 0))
+                    text_color = (255, 255, 255) if (cell_fill[0] < 80 and cell_fill[1] < 80 and cell_fill[2] < 80) else (15, 23, 42)
+                    draw.text((cur_x + 8 * scale_x, cur_y + 4 * scale_y), text, fill=text_color, font=font)
+                cur_x += col_w
+            cur_y += row_h
+
     def _render_shape_text(
         self,
         canvas: Image.Image,
@@ -333,7 +409,7 @@ class PurePythonSlideRenderer:
         if is_middle and len(tf.paragraphs) == 1:
             p_first = tf.paragraphs[0]
             f_pt = p_first.font.size.pt if p_first.font.size else (p_first.runs[0].font.size.pt if p_first.runs and p_first.runs[0].font.size else 10.0)
-            font_px = max(8, int(f_pt * scale_y * 1.33))
+            font_px = max(8, int(f_pt * scale_y))
             line_height = int(font_px * 1.25)
             cur_y = y + max(0, (h - line_height) / 2)
         else:
@@ -346,6 +422,9 @@ class PurePythonSlideRenderer:
             if not p_text.strip():
                 cur_y += 8 * scale_y
                 continue
+
+            if hasattr(p, "space_before") and p.space_before:
+                cur_y += p.space_before.pt * scale_y
 
             # Determine paragraph font properties
             font_pt = 10.0
@@ -367,18 +446,41 @@ class PurePythonSlideRenderer:
             elif p.runs and p.runs[0].font.color and hasattr(p.runs[0].font.color, "rgb") and p.runs[0].font.color.rgb:
                 color_rgb = _hex_or_rgb_to_tuple(p.runs[0].font.color.rgb, color_rgb)
 
-            font_px = max(8, int(font_pt * scale_y * 1.33))
+            font_px = max(8, int(font_pt * scale_y))
             pil_font = _get_system_font(size_px=font_px, bold=bold)
+
+            # Check if paragraph has bullet formatting (DrawingML buChar or leading bullet glyph)
+            bu_elem = p._p.find(".//{http://schemas.openxmlformats.org/drawingml/2006/main}buChar")
+            has_bullet = bu_elem is not None
+            bullet_char = bu_elem.get("char") if has_bullet else None
+
+            if not has_bullet and p_text.lstrip().startswith("•"):
+                has_bullet = True
+                bullet_char = "•"
+                p_text = p_text.lstrip("•\t ").strip()
+            elif has_bullet:
+                p_text = p_text.lstrip("•\t ").strip()
+
+            bullet_indent = 0.0
+            if has_bullet:
+                bullet_char = bullet_char or "•"
+                try:
+                    b_bbox = pil_font.getbbox(f"{bullet_char} ")
+                    bullet_indent = (b_bbox[2] - b_bbox[0]) * 1.5
+                except Exception:
+                    bullet_indent = font_px * 1.4
 
             # Check if paragraph has multi-run formatting (e.g. bold header + normal body)
             if len(p.runs) > 1:
-                # Render runs with inline styles
+                # If bulleted, draw bullet glyph at left margin
+                if has_bullet:
+                    draw.text((x + left_margin, cur_y), bullet_char, fill=(*color_rgb, 255), font=pil_font)
                 cur_y = self._render_multi_run_paragraph(
                     draw=draw,
                     runs=p.runs,
-                    x=x + left_margin,
+                    x=x + left_margin + bullet_indent,
                     y=cur_y,
-                    usable_w=usable_w,
+                    usable_w=usable_w - bullet_indent,
                     default_font_pt=font_pt,
                     scale_y=scale_y,
                     alignment=p.alignment,
@@ -386,34 +488,45 @@ class PurePythonSlideRenderer:
                     box_x=x,
                 )
             else:
-                # Single run / simple paragraph
-                wrapped_lines = self._wrap_text(p_text, pil_font, usable_w)
+                # Single run / simple paragraph with universal hanging indent
                 line_height = int(font_px * 1.25)
+                if has_bullet:
+                    wrapped_lines = self._wrap_text(p_text, pil_font, max(10, usable_w - bullet_indent))
+                    draw.text((x + left_margin, cur_y), bullet_char, fill=(*color_rgb, 255), font=pil_font)
+                    for line in wrapped_lines:
+                        draw.text(
+                            (x + left_margin + bullet_indent, cur_y),
+                            line,
+                            fill=(*color_rgb, 255),
+                            font=pil_font,
+                        )
+                        cur_y += line_height
+                else:
+                    wrapped_lines = self._wrap_text(p_text, pil_font, usable_w)
+                    for line in wrapped_lines:
+                        text_x = x + left_margin
+                        if p.alignment == PP_ALIGN.CENTER:
+                            try:
+                                bbox = pil_font.getbbox(line)
+                                tw = bbox[2] - bbox[0]
+                                text_x = x + (w - tw) / 2
+                            except Exception:
+                                pass
+                        elif p.alignment == PP_ALIGN.RIGHT:
+                            try:
+                                bbox = pil_font.getbbox(line)
+                                tw = bbox[2] - bbox[0]
+                                text_x = x + w - left_margin - tw
+                            except Exception:
+                                pass
 
-                for line in wrapped_lines:
-                    text_x = x + left_margin
-                    if p.alignment == PP_ALIGN.CENTER:
-                        try:
-                            bbox = pil_font.getbbox(line)
-                            tw = bbox[2] - bbox[0]
-                            text_x = x + (w - tw) / 2
-                        except Exception:
-                            pass
-                    elif p.alignment == PP_ALIGN.RIGHT:
-                        try:
-                            bbox = pil_font.getbbox(line)
-                            tw = bbox[2] - bbox[0]
-                            text_x = x + w - left_margin - tw
-                        except Exception:
-                            pass
-
-                    draw.text(
-                        (text_x, cur_y),
-                        line,
-                        fill=(*color_rgb, 255),
-                        font=pil_font,
-                    )
-                    cur_y += line_height
+                        draw.text(
+                            (text_x, cur_y),
+                            line,
+                            fill=(*color_rgb, 255),
+                            font=pil_font,
+                        )
+                        cur_y += line_height
 
             space_after = p.space_after.pt * scale_y if p.space_after else 3 * scale_y
             cur_y += space_after
@@ -444,7 +557,7 @@ class PurePythonSlideRenderer:
             if run.font.color and hasattr(run.font.color, "rgb") and run.font.color.rgb:
                 r_rgb = _hex_or_rgb_to_tuple(run.font.color.rgb, r_rgb)
 
-            r_font_px = max(8, int(r_pt * scale_y * 1.33))
+            r_font_px = max(8, int(r_pt * scale_y))
             r_font = _get_system_font(size_px=r_font_px, bold=r_bold)
 
             words = r_text.split(" ")
@@ -503,28 +616,46 @@ class PurePythonSlideRenderer:
             lx += tw
 
     def _wrap_text(self, text: str, font: ImageFont.ImageFont, max_width_px: float) -> List[str]:
-        """Wrap text according to pixel width constraints."""
+        """Wrap text according to pixel width constraints with hanging indent for bullets."""
         lines: List[str] = []
         raw_lines = text.split("\n")
 
         for rline in raw_lines:
-            words = rline.split(" ")
-            if not words:
+            is_bullet = False
+            bullet_prefix = ""
+            if rline.startswith("•\t") or rline.startswith("•  ") or rline.startswith("• "):
+                is_bullet = True
+                content_text = rline.lstrip("•\t ").strip()
+                bullet_prefix = "•  "
+                words = content_text.split(" ")
+            else:
+                words = rline.split(" ")
+
+            if not words or (is_bullet and not words[0]):
+                if is_bullet:
+                    lines.append(bullet_prefix.strip())
                 continue
-            cur_line = ""
+
+            indent_prefix = "    " if is_bullet else ""
+            cur_line = bullet_prefix if is_bullet else ""
+
             for word in words:
-                test_line = f"{cur_line} {word}".strip() if cur_line else word
+                if is_bullet and cur_line == bullet_prefix:
+                    test_line = f"{cur_line}{word}"
+                else:
+                    test_line = f"{cur_line} {word}".strip() if cur_line else word
+
                 try:
                     bbox = font.getbbox(test_line)
                     text_w = bbox[2] - bbox[0]
                 except Exception:
                     text_w = len(test_line) * 8
 
-                if text_w <= max_width_px or not cur_line:
+                if text_w <= max_width_px or (cur_line in ("", bullet_prefix)):
                     cur_line = test_line
                 else:
                     lines.append(cur_line)
-                    cur_line = word
+                    cur_line = f"{indent_prefix}{word}" if is_bullet else word
             if cur_line:
                 lines.append(cur_line)
 
@@ -588,20 +719,10 @@ class SlideExporter:
             print("  [SlideExporter] soffice backend failed, falling back to pure Python...")
             return self._export_pure_python(p_path, out_dir)
 
-        # Auto Backend Selection: macOS (Keynote -> PowerPoint) -> soffice -> pure Python
-        if platform.system() == "Darwin":
-            res = self._export_keynote(p_path, out_dir)
-            if res:
-                return res
-
-            res = self._export_powerpoint(p_path, out_dir)
-            if res:
-                return res
-
-        res = self._export_soffice(p_path, out_dir)
-        if res:
-            return res
-
+        # Auto Backend Selection: headless pure Python renderer
+        # Note: We intentionally avoid auto-launching GUI desktop applications (Keynote, PowerPoint)
+        # via AppleScript on macOS because doing so steals GUI window focus, triggers permission/conversion
+        # dialogs, and leaves the application permanently running in the background.
         return self._export_pure_python(p_path, out_dir)
 
     def _export_pure_python(self, pptx_path: Path, output_dir: Path) -> List[Path]:

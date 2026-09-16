@@ -1,0 +1,329 @@
+deck_type: weekly_progress
+theme: metrodata
+metadata:
+  project_name: "ENTERPRISE FINANCIAL INTELLIGENCE & CLOUD ANALYTICS PLATFORM"
+  client_name: "Nusantara Global Logistics"
+  vendor_name: "PT Metrodata Electronics Tbk"
+  report_number: "01"
+  report_date: "05 Jan 2000"
+  reporting_period: "15 Dec 1999 - 02 Jan 2000"
+  presenter: "Budi Pratama, PMP, Project Manager"
+  confidentiality: "Nusantara Global Logistics & Metrodata Consulting  |  Confidential & Proprietary"
+
+slides:
+  # Slide 1: Cover Slide
+  - archetype: cover
+    title: "ENTERPRISE FINANCIAL INTELLIGENCE & CLOUD ANALYTICS PLATFORM"
+    subtitle: "Weekly Progress Report #01"
+    client: "Nusantara Global Logistics"
+    vendor: "PT Metrodata Electronics Tbk"
+    product: "Snowflake AI Data Cloud"
+    date_str: "05 Jan 2000"
+    tracker: "PROJECT GOVERNANCE & WEEKLY STATUS"
+    client_sublabel: "Steering Committee & Executive Sponsors"
+    vendor_sublabel: "Data & AI Modernization Practice"
+
+  # Slide 2: Table of Contents / Agenda
+  - archetype: agenda
+    tracker: "EXECUTIVE SUMMARY | AGENDA"
+    title: "Project Status & Governance Agenda"
+    subtitle: "Structured weekly review covering delivery progress, milestones, lookahead, and RAID governance."
+    items:
+      - num: "01"
+        title: "Project Management Plan"
+        description: "Penyampaian tata kelola proyek, peran tim, dan baseline manajemen."
+      - num: "02"
+        title: "Overall Progress & S-Curve"
+        description: "Evaluasi progres durasi, bobot pekerjaan, dan analisis deviasi kumulatif."
+      - num: "03"
+        title: "Detail Aktivitas Mingguan"
+        description: "Pencapaian penyelesaian aktivitas pada periode 15 Dec 1999 - 02 Jan 2000."
+      - num: "04"
+        title: "Rencana Aktivitas Minggu Depan"
+        description: "Prioritas kerja dan target delivery untuk dua pekan mendatang."
+      - num: "05"
+        title: "Status Milestone"
+        description: "Tracking capaian target milestone kontrak dan perkiraan tanggal delivery."
+      - num: "06"
+        title: "Risk Register & Issue Log"
+        description: "Manajemen risiko aktif, mitigasi dampak, dan resolusi Issue #1."
+      - num: "07"
+        title: "Q&A & Diskusi Terbuka"
+        description: "Forum koordinasi, klarifikasi teknis, dan keputusan tindak lanjut."
+
+  # Slide 3: Executive Summary / Project Management Plan
+  - archetype: exec_summary
+    tracker: "GOVERNANCE FRAMEWORK | SECTION 01"
+    title: "Project Management Plan Establishes Governance & Quality Baselines"
+    subtitle: "Penyampaian singkat dokumen Project Management Plan dan kerangka kerja eksekusi."
+    cards:
+      - title: "Scope & Deliverables"
+        tag: "SCOPE BASELINE"
+        icon_name: "target"
+        summary: "Modernisasi analitik data finansial berbasis platform cloud enterprise."
+        points:
+          - "Definisi 4 use case analitik finansial dan konsolidasi ledger."
+          - "Staging data, dbt transformation pipelines, dan data warehouse."
+          - "Integrasi reporting BI dan modul automated summarization."
+      - title: "Team Governance & RACI"
+        tag: "TEAM ALIGNMENT"
+        icon_name: "users"
+        summary: "Struktur tim gabungan NGL dan MII beroperasi dengan peran yang jelas."
+        points:
+          - "Project Manager memimpin koordinasi harian dan sprint review."
+          - "Lead Data Architect mengawal standard arsitektur data cloud."
+          - "Weekly Progress Review dan Steering Committee berkala."
+      - title: "Quality & Acceptance Gate"
+        tag: "QUALITY ASSURANCE"
+        icon_name: "shield-check"
+        summary: "Verifikasi bertingkat sebelum sign-off dan serah terima resmi."
+        points:
+          - "Internal System Integration Testing (SIT) dengan zero critical defect."
+          - "User Acceptance Testing (UAT) bersama Business Owner NGL."
+          - "Sign-off formal BAST per milestone dan termin pembayaran."
+      - title: "Communication & Reporting"
+        tag: "COMMUNICATION PROTOCOL"
+        icon_name: "radio"
+        summary: "Transparansi status melalui pelaporan berkala dan dokumentasi terpusat."
+        points:
+          - "Weekly Progress Report diterbitkan setiap hari Senin."
+          - "MoM formal untuk setiap technical clarification meeting."
+          - "Eskalasi issue berjenjang ke Steering Committee."
+
+  # Slide 4: Overall Progress & S-Curve KPI
+  - archetype: overall_progress
+    tracker: "OVERALL PROGRESS | S-CURVE & SCHEDULE PERFORMANCE"
+    title: "Progress Tracks Within Tolerable Variance with Phase 1 Transition Underway"
+    subtitle: "Planned duration 12.6% vs actual completion 12.0% (Gap: -0.6% variance managed under Issue #1)."
+    kpis:
+      - label: "Planned Progress"
+        value: "12.6%"
+        subtext: "Baseline Target Week 03"
+        status: "PLANNED"
+      - label: "Actual Progress"
+        value: "12.0%"
+        subtext: "Cumulative Completed"
+        status: "ON TRACK"
+      - label: "Schedule Variance"
+        value: "-0.6%"
+        subtext: "Tolerance: +/- 2.0%"
+        status: "AT RISK"
+      - label: "Overall Health"
+        value: "AMBER"
+        subtext: "Minor delay; Go-Live protected"
+        status: "AT RISK"
+    status_narrative: "Keterlambatan minor pada beberapa aktivitas asesmen FSD, namun buffer jadwal fase development memastikan target Go-Live tetap aman sesuai baseline awal."
+    phases:
+      - phase: "Phase 1: Project Initiation & Charter"
+        planned: "100%"
+        actual: "100%"
+        status: "COMPLETED"
+      - phase: "Phase 2: Architecture & FSD Assessment"
+        planned: "90%"
+        actual: "85%"
+        status: "IN PROGRESS"
+      - phase: "Phase 3: Cloud Platform Setup & Staging"
+        planned: "25%"
+        actual: "25%"
+        status: "ON TRACK"
+      - phase: "Phase 4: Data Modeling & ETL Pipelines"
+        planned: "0%"
+        actual: "0%"
+        status: "PLANNED"
+      - phase: "Phase 5: SIT, UAT & Go-Live Cutover"
+        planned: "0%"
+        actual: "0%"
+        status: "PLANNED"
+
+  # Slide 5: Weekly Activity Detail (Chronological: Phase 1 -> 2 -> 3)
+  - archetype: weekly_detail
+    tracker: "DETAIL AKTIVITAS MINGGUAN | 15 DEC 1999 - 02 JAN 2000"
+    title: "Completed Activities Focus on Governance Sign-Off & Architecture Assessment"
+    subtitle: "Pencapaian aktivitas utama fase inisiasi dan asesmen teknis selama periode pelaporan."
+    workstreams:
+      - stream: "Project Governance & Admin"
+        badge: "PHASE 01"
+        items:
+          - "Kick-off meeting resmi bersama Steering Committee dan Business Owner NGL."
+          - "Penerbitan MoM inisiasi dan baseline Project Charter bertandatangan."
+          - "Registrasi risiko awal dan kesepakatan jadwal cuti bersama akhir tahun."
+          - "Setup repository dokumentasi terpusat dan kanal koordinasi harian."
+      - stream: "Architecture & Assessment (FSD)"
+        badge: "PHASE 02"
+        items:
+          - "Wawancara kebutuhan modul Financial Summary dan Journal Entries."
+          - "Penyusunan draft awal Functional Specification Document (FSD v0.8)."
+          - "Identifikasi struktur data source dan relasi database eksisting."
+          - "Review data dictionary dan katalog entitas akuntansi NGL."
+      - stream: "Platform Infrastructure & Setup"
+        badge: "PHASE 03"
+        items:
+          - "Provisioning akun Cloud Data Platform Enterprise Edition di AWS region."
+          - "Konfigurasi Virtual Warehouse (Compute XS/S) dan Resource Monitors."
+          - "Penyusunan baseline Role-Based Access Control (RBAC) dan network policy."
+          - "Pemberian akses developer dan integrasi authentication SSO."
+
+  # Slide 6: Lookahead Plan (Rencana Aktivitas Minggu Depan)
+  - archetype: lookahead_plan
+    tracker: "RENCANA AKTIVITAS MINGGU DEPAN | 2-WEEK LOOKAHEAD"
+    title: "Two-Week Lookahead Prioritizes FSD Finalization & Data Ingestion Staging"
+    subtitle: "Rencana eksekusi terfokus pada finalisasi asesmen use case dan persiapan environment staging."
+    periods:
+      - period_label: "Pekan 1: 05 Jan - 09 Jan 2000"
+        target_milestone: "FSD Assessment Finalization"
+        tasks:
+          - "Lanjutan meeting asesmen use-case automated analytics dengan key user (09 Jan 2000)."
+          - "Finalisasi data dictionary dan mapping tabel transaksi keuangan."
+          - "Review kapasitas komputasi warehouse dan konfigurasi storage integration."
+          - "Penyusunan draft final FSD untuk review internal stakeholder."
+      - period_label: "Pekan 2: 12 Jan - 16 Jan 2000"
+        target_milestone: "FSD Sign-Off & Pipeline Kickoff"
+        tasks:
+          - "Walkthrough komprehensif FSD bersama project owner dan tim business NGL."
+          - "Persetujuan dan formal sign-off dokumen FSD (Target: 19 Jan 2000)."
+          - "Kick-off sprint ingestion staging pipeline menggunakan dbt."
+          - "Verifikasi network connectivity dan secure tunnel ke on-premise source."
+
+  # Slide 7: Milestone Status (Native Vector Consulting Cards)
+  - archetype: milestone_status
+    tracker: "STATUS MILESTONE | CONTRACTUAL DELIVERY SCHEDULE"
+    title: "Baseline Milestones Remain Protected with FSD Buffer Absorption"
+    subtitle: "Pergeseran jadwal FSD diserap oleh buffer fase development tanpa menggeser target Go-Live."
+    milestones:
+      - num: "01"
+        name: "Kick-off Meeting"
+        target_date: "16 Dec 1999"
+        actual_date: "16 Dec 1999"
+        status: "COMPLETED"
+      - num: "02"
+        name: "Functional Specification Document (FSD) Sign-off"
+        target_date: "02 Jan 2000"
+        actual_date: "19 Jan 2000"
+        status: "RESCHEDULED"
+      - num: "03"
+        name: "Cloud Platform Subscription Started"
+        target_date: "02 Jan 2000"
+        actual_date: "02 Jan 2000"
+        status: "COMPLETED"
+      - num: "04"
+        name: "Core Data Pipeline Development Complete"
+        target_date: "13 Feb 2000"
+        actual_date: "13 Feb 2000"
+        status: "ON TRACK"
+      - num: "05"
+        name: "System Integration Testing (SIT) Sign-off"
+        target_date: "20 Feb 2000"
+        actual_date: "20 Feb 2000"
+        status: "ON TRACK"
+      - num: "06"
+        name: "User Acceptance Testing (UAT) Sign-off"
+        target_date: "06 Mar 2000"
+        actual_date: "06 Mar 2000"
+        status: "ON TRACK"
+      - num: "07"
+        name: "Go-Live & Production Cutover"
+        target_date: "13 Mar 2000"
+        actual_date: "13 Mar 2000"
+        status: "ON TRACK"
+      - num: "08"
+        name: "Project Closing & Handover (BAST Final)"
+        target_date: "27 Mar 2000"
+        actual_date: "27 Mar 2000"
+        status: "ON TRACK"
+
+  # Slide 8: Risk Register (3-Column Architecture: Red, Orange, Yellow with 3-Box Scaling Meters)
+  - archetype: risk_register
+    tracker: "RISK GOVERNANCE & CONTROL MATRIX | 3-TIER ESCALATION"
+    title: "Proactive Risk Controls Safeguard Schedule Buffer & Data Readiness"
+    subtitle: "Structured 3-tier risk governance categorizing active risks with visual scaling meters and preventive mitigations."
+    risk_tiers:
+      - tier_name: "CRITICAL / OCCURRED"
+        accent_color: "danger"
+        icon_name: "zap"
+        risk_id: "R-04"
+        title: "Year-End Assessment Schedule Shift"
+        prob_label: "PROBABILITY: HIGH"
+        prob_boxes: 3
+        impact_label: "IMPACT: MEDIUM"
+        impact_boxes: 2
+        description: "Pergeseran jadwal asesmen FSD akibat cuti bersama akhir tahun 1999."
+        mitigations:
+          - "Penjadwalan ulang meeting asesmen ke tanggal 09 Jan 2000."
+          - "Alokasi backup resource untuk modul Financial General Ledger."
+          - "Akselerasi review via preliminary wireframes dan mockups."
+        contingency: "Penyerapan delay (+17 hari) diserap penuh oleh buffer dev internal tanpa menggeser Go-Live."
+        owner: "Budi Pratama (PM)"
+
+      - tier_name: "MANAGED / HIGH IMPACT"
+        accent_color: "warning"
+        icon_name: "shield-check"
+        risk_id: "R-01"
+        title: "Scope Creep Beyond FSD Baseline"
+        prob_label: "PROBABILITY: MEDIUM"
+        prob_boxes: 2
+        impact_label: "IMPACT: HIGH"
+        impact_boxes: 3
+        description: "Permintaan tambahan fitur di luar 4 use case analitik finansial yang disepakati."
+        mitigations:
+          - "Freeze baseline FSD v1.0 secara formal sebagai acuan delivery."
+          - "Sosialisasi batas ruang lingkup ke seluruh stakeholder proyek."
+          - "Terapkan prosedur Change Request (CR) formal untuk request baru."
+        contingency: "Lakukan impact analysis biaya dan jadwal; eskalasi keputusan CR ke Steering Committee."
+        owner: "Budi Pratama (PM)"
+
+      - tier_name: "MONITORED / DATA QUALITY"
+        accent_color: "accent"
+        icon_name: "target"
+        risk_id: "R-02"
+        title: "Incomplete Source Schema & Key Discrepancies"
+        prob_label: "PROBABILITY: MEDIUM"
+        prob_boxes: 2
+        impact_label: "IMPACT: HIGH"
+        impact_boxes: 3
+        description: "Potensi anomali tipe data dan relasi foreign key yang belum tervalidasi pada staging berisiko memicu error automated ingestion."
+        mitigations:
+          - "Definisikan data dictionary & catalog sejak fase perencanaan."
+          - "Eksekusi automated data profiling pada environment staging."
+          - "Tetapkan quality threshold readiness minimal 98% pass rate."
+        contingency: "Cleansing data terfokus pada mandatory attributes; eskalasi deviasi skema ke tim sumber data."
+        owner: "Lead Data Architect"
+
+  # Slide 9: Issue Log
+  - archetype: issue_log
+    tracker: "ISSUE GOVERNANCE | ACTIVE ISSUE LOG"
+    title: "Issue #1 Resolution Plan Confines FSD Delay Without Slipping Milestone 4"
+    subtitle: "Root cause resolved via rescheduled assessment sessions; downstream target go-live protected."
+    issues:
+      - id: "ISSUE-01"
+        date: "02-Jan-00"
+        title: "Keterlambatan delivery FSD karena bertepatan dengan libur pergantian milenium"
+        owner: "Budi Pratama"
+        severity: "Medium"
+        status: "Open"
+        root_cause: "Personil kunci cuti pada periode akhir tahun 1999; asesmen analytics dijadwalkan ulang ke 9 Jan 2000."
+        impact: "Penyelesaian FSD bergeser dari 02 Jan 2000 ke 19 Jan 2000 (+17 hari kalender), tanpa menggeser milestone sesudahnya."
+        action_plan: "Pelaksanaan meeting asesmen tanggal 09 Jan 2000; konsolidasi FSD tanggal 15 Jan 2000; final sign-off tanggal 19 Jan 2000."
+        target_date: "19-Jan-00"
+
+  # Slide 10: Chapter Divider / Q&A
+  - archetype: chapter_divider
+    tracker: "ENGAGEMENT REVIEW & OPEN FORUM"
+    title: "Questions & Executive Discussion"
+    subtitle: "Steering Committee feedback, operational alignments, and immediate decision items."
+    division_tag: "BAS Division  |  Data & AI Practice"
+    tagline: "PT Metrodata Electronics Tbk"
+
+  # Slide 11: Thank You Slide
+  - archetype: thank_you
+    tracker: "ENGAGEMENT WRAP-UP | THANK YOU"
+    title: "Thank You"
+    subtitle: "Delivering Data-Driven Value & Predictive Intelligence with Cloud Analytics Platform."
+    contacts:
+      - name: "Budi Pratama, PMP"
+        role: "Project Manager, MII"
+        email: "budi.pratama@metrodata.co.id"
+      - name: "Engagement Leadership"
+        role: "Data & AI Modernization Practice"
+        email: "enterprise.consulting@metrodata.co.id"
+    company: "PT Metrodata Electronics Tbk"
+    office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"

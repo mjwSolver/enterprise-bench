@@ -270,7 +270,7 @@ class IconRegistry:
         if candidate_png.exists():
             return candidate_png.resolve()
 
-        # 4. Pack slash notation (e.g. 'cloudera/manager')
+        # 4. Pack slash/colon notation (e.g. 'cloudera/manager' or 'lucide:database')
         if "/" in key or ":" in key:
             norm_key = key.replace(":", "/")
             cand = _LOGOS_DIR / f"{norm_key}.svg"
@@ -279,11 +279,23 @@ class IconRegistry:
             cand_png = _LOGOS_DIR / f"{norm_key}.png"
             if cand_png.exists():
                 return cand_png.resolve()
+            # Also check _ICONS_DIR (e.g. assets/icons/lucide/database.svg)
+            cand_icon = _ICONS_DIR / f"{norm_key}.svg"
+            if cand_icon.exists():
+                return cand_icon.resolve()
+            # Strip pack prefix if present (e.g. lucide:database -> database in lucide)
+            slug = key.split(":")[-1].split("/")[-1]
+            cand_slug_lucide = _ICONS_DIR / "lucide" / f"{slug}.svg"
+            if cand_slug_lucide.exists():
+                return cand_slug_lucide.resolve()
 
         # 5. Lucide / Feather UI icons
         cand_lucide = _ICONS_DIR / "lucide" / f"{key}.svg"
         if cand_lucide.exists():
             return cand_lucide.resolve()
+        cand_feather = _ICONS_DIR / "feather" / f"{key}.svg"
+        if cand_feather.exists():
+            return cand_feather.resolve()
 
         return None
 
