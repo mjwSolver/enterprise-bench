@@ -10,6 +10,7 @@ Single entrypoint for presentations, documents, spreadsheets, diagrams, and comp
   bench doc list-templates [--phase <phase>] [--query <query>]
   bench catalog [--phase <phase>] [--query <query>]
   bench xlsx calculate --template Cloud_Sizing_Calculator_Template.xlsx --data data.json --output out.xlsx
+  bench xlsx s-curve [--template <template>] [--weeks 12] [--distribution sigmoid] [--output out.xlsx]
   bench diagram list project_master.drawio
   bench diagram add project_master.drawio --page "Doc A" --mermaid "graph TD; A-->B"
   bench diagram export project_master.drawio --page "Doc A" --output doc_a.png
@@ -584,6 +585,72 @@ def calculate_xlsx(
     except Exception as e:
         rprint(f"[red]Error calculating spreadsheet:[/red] {e}")
         raise typer.Exit(code=1)
+
+
+@xlsx_app.command("s-curve")
+def generate_scurve_cli(
+    template: Optional[str] = typer.Option(None, "--template", "-t", help="Base .xlsx template name or path to inject into (optional)"),
+    data: Optional[str] = typer.Option(None, "--data", "-d", help="Path to JSON data payload defining periods, planned, actual, milestones"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .xlsx destination path"),
+    weeks: int = typer.Option(12, "--weeks", "-w", help="Number of project weeks/periods to generate if data not provided"),
+    distribution: str = typer.Option("sigmoid", "--distribution", help="Mathematical distribution: sigmoid, polynomial, cubic, linear"),
+    current_week: Optional[int] = typer.Option(None, "--current-week", help="Current week index (1-based) for actual progress cut-off"),
+    lag: float = typer.Option(0.0, "--lag", help="Simulated actual lag factor relative to plan (e.g. -0.05 for 5% behind)"),
+    sheet_name: str = typer.Option("S-Curve", "--sheet-name", "-s", help="Target worksheet name"),
+    title: str = typer.Option("Project S-Curve: Planned vs Actual Cumulative Progress", "--title", help="Chart title"),
+    project: str = typer.Option("Enterprise Modernization Project", "--project", "-p", help="Project name for header"),
+) -> None:
+    """Generate an S-curve cumulative progress curve and inject an openpyxl LineChart."""
+    from src.xlsx_engine.s_curve_generator import SCurveGenerator
+
+    payload: dict = {}
+    if data:
+        data_path = Path(data)
+        if not data_path.exists():
+            rprint(f"[red]Error:[/red] Data file not found: {data}")
+            raise typer.Exit(code=1)
+        with open(data_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+
+    periods = payload.get("periods")
+    planned_pct = payload.get("planned_pct")
+    actual_pct = payload.get("actual_pct")
+    milestones = payload.get("milestones")
+    dist = payload.get("distribution", distribution)
+    proj_name = payload.get("project_name", project)
+    s_name = payload.get("sheet_name", sheet_name)
+    c_title = payload.get("chart_title", title)
+
+    c_period_idx = None
+    if current_week is not None:
+        c_period_idx = current_week - 1
+    elif "current_week" in payload:
+        c_period_idx = int(payload["current_week"]) - 1
+    elif "current_period_idx" in payload:
+        c_period_idx = int(payload["current_period_idx"])
+
+    lag_factor = payload.get("lag_factor", lag)
+
+    try:
+        generator = SCurveGenerator(template=template, project_name=proj_name)
+        out_p = generator.generate(
+            output_path=output,
+            periods=periods,
+            num_periods=weeks,
+            planned_pct=planned_pct,
+            actual_pct=actual_pct,
+            distribution=dist,
+            milestones=milestones,
+            current_period_idx=c_period_idx,
+            lag_factor=lag_factor,
+            sheet_name=s_name,
+            chart_title=c_title,
+        )
+        rprint(f"[green]✓ Project S-curve successfully generated:[/green] [bold]{out_p}[/bold]")
+    except Exception as e:
+        rprint(f"[red]Error generating S-curve:[/red] {e}")
+        raise typer.Exit(code=1)
+
 
 
 # ============================================================================
