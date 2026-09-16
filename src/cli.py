@@ -57,11 +57,13 @@ ppt_app = typer.Typer(name="ppt", help="Generative Consulting Presentation Engin
 doc_app = typer.Typer(name="doc", help="Deterministic Document Compliance Engine", no_args_is_help=True)
 xlsx_app = typer.Typer(name="xlsx", help="Spreadsheet & Calculator Engine", no_args_is_help=True)
 diagram_app = typer.Typer(name="diagram", help="Multi-Page Draw.io & Mermaid Diagram Engine", no_args_is_help=True)
+pii_app = typer.Typer(name="pii", help="Universal PII Sanitization & Slug Linter", no_args_is_help=True)
 
 app.add_typer(ppt_app, name="ppt")
 app.add_typer(doc_app, name="doc")
 app.add_typer(xlsx_app, name="xlsx")
 app.add_typer(diagram_app, name="diagram")
+app.add_typer(pii_app, name="pii")
 
 
 # ============================================================================
@@ -280,6 +282,66 @@ def generate_ppt(
     rprint(f"[green]✓ Presentation created successfully:[/green] [bold]{out_path}[/bold]")
 
 
+@ppt_app.command("build-deck")
+def build_ppt_deck(
+    config: str = typer.Option(..., "--config", "-c", help="Path to declarative YAML deck configuration"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .pptx destination path"),
+    theme: Optional[str] = typer.Option(None, "--theme", "-t", help="Optional brand theme override (e.g. metrodata, brickred, snowblue)"),
+    open_deck: bool = typer.Option(False, "--open", help="Open generated presentation on desktop via Microsoft PowerPoint"),
+    context_file: Optional[str] = typer.Option(None, "--context", "-ctx", help="Path to JSON/YAML engagement context file for slug replacement"),
+    locale: Optional[str] = typer.Option(None, "--locale", "-l", help="Locale override for bilingual decks (e.g. en, id)"),
+) -> None:
+    """Build a multi-slide executive consulting presentation deck from a YAML specification."""
+    import subprocess
+    import yaml
+    from src.ppt_engine.weekly_progress_deck import WeeklyProgressDeckBuilder
+    from src.core.slug_registry import EngagementContext, load_engagement_context
+
+    config_path = Path(config)
+    if not config_path.exists():
+        rprint(f"[red]Error:[/red] Config file not found: {config}")
+        raise typer.Exit(code=1)
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        config_data = yaml.safe_load(f)
+
+    deck_type = config_data.get("deck_type", "weekly_progress")
+    out_path = Path(output) if output else OUTPUT_DIR / "presentations" / f"{config_path.stem}.pptx"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    engagement_ctx = None
+    if context_file:
+        engagement_ctx = load_engagement_context(context_file)
+    elif "context" in config_data:
+        engagement_ctx = EngagementContext(**config_data["context"])
+
+    rprint(f"[cyan]ℹ Building presentation deck:[/cyan] [bold]{deck_type}[/bold] from [bold]{config_path.name}[/bold]")
+
+    if deck_type in ("reference_slides", "reference_deck"):
+        from src.ppt_engine.reference_slides import ReferenceDeckBuilder
+        builder = ReferenceDeckBuilder.from_yaml(config_path, theme_override=theme, locale_override=locale)
+        saved_file = builder.save(out_path, engagement_context=engagement_ctx)
+    elif deck_type == "weekly_progress":
+        builder = WeeklyProgressDeckBuilder.from_yaml(config_path, theme_override=theme)
+        builder.build_all()
+        saved_file = builder.save(out_path)
+    else:
+        builder = WeeklyProgressDeckBuilder.from_yaml(config_path, theme_override=theme)
+        builder.build_all()
+        saved_file = builder.save(out_path)
+
+    total_slides = len(builder.prs.slides)
+    rprint(f"[green]✓ Generated consulting presentation ({total_slides} slides):[/green] [bold]{saved_file}[/bold]")
+
+    if open_deck:
+        cmd = f'open -a "Microsoft PowerPoint" "{saved_file.resolve()}" && osascript -e \'tell application "Microsoft PowerPoint" to activate\''
+        rprint(f"[cyan]ℹ Launching desktop PowerPoint:[/cyan] [bold]{saved_file.name}[/bold]")
+        subprocess.run(cmd, shell=True)
+    else:
+        rprint(f"[dim]Tip: View in PowerPoint via desktop review: `open -a \"Microsoft PowerPoint\" \"{saved_file}\"`[/dim]")
+
+
+
 @ppt_app.command("replace-image")
 def replace_ppt_image(
     input_file: str = typer.Option(..., "--input", "-i", help="Path to input .pptx deck"),
@@ -398,6 +460,58 @@ def stamp_doc(
     rprint(f"[green]✓ Stamped document generated:[/green] [bold]{out_file}[/bold]")
     if report and not report.passed:
         rprint(f"[yellow]⚠ Document linter identified {report.total_issues} issues (e.g. unrendered tags).[/yellow]")
+
+
+@doc_app.command("compile-spec")
+def compile_spec_cli(
+    input_path: str = typer.Option(..., "--input", "-i", help="Path to a markdown file or directory of modular spec markdown files"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .docx destination path"),
+    theme: str = typer.Option("metrodata", "--theme", "-t", help="Brand theme name or path to YAML theme"),
+    client: Optional[str] = typer.Option(None, "--client", "-c", help="Client name override"),
+    vendor: Optional[str] = typer.Option(None, "--vendor", "-v", help="Vendor name override"),
+    title: Optional[str] = typer.Option(None, "--title", help="Document title override"),
+    context_file: Optional[str] = typer.Option(None, "--context", "-ctx", help="Path to JSON/YAML engagement context file for slug replacement"),
+) -> None:
+    """Compile modular Markdown specs into a styled, audit-ready Word document (.docx)."""
+    from src.core.slug_registry import load_engagement_context
+    from src.docx_engine.spec_compiler import (
+        SpecCompiler,
+        SpecMetadata,
+        compile_markdown_to_docx,
+        compile_spec_directory,
+    )
+
+    in_p = Path(input_path)
+    if not in_p.exists():
+        rprint(f"[red]Error:[/red] Input path not found: {input_path}")
+        raise typer.Exit(code=1)
+
+    if not output:
+        stem = in_p.stem if in_p.is_file() else in_p.name
+        out_p = OUTPUT_DIR / f"{stem}_compiled.docx"
+    else:
+        out_p = Path(output)
+
+    engagement_ctx = load_engagement_context(context_file) if context_file else None
+
+    try:
+        if in_p.is_dir():
+            res = compile_spec_directory(in_p, out_p, theme=theme, engagement_context=engagement_ctx)
+        else:
+            meta = SpecMetadata()
+            if client:
+                meta.client = client
+            if vendor:
+                meta.vendor = vendor
+            if title:
+                meta.title = title
+            res = compile_markdown_to_docx(in_p, out_p, theme=theme, metadata=meta, engagement_context=engagement_ctx)
+
+        rprint(f"[green]✓ Specification compiled successfully:[/green] [bold]{res}[/bold]")
+        rprint(f"Tip: Preview in Microsoft Word via desktop review: [cyan]`open -a \"Microsoft Word\" \"{res}\"`[/cyan]")
+    except Exception as e:
+        rprint(f"[red]Error compiling specification:[/red] {e}")
+        raise typer.Exit(code=1)
 
 
 @doc_app.command("sanitize")
@@ -652,6 +766,185 @@ def generate_scurve_cli(
         raise typer.Exit(code=1)
 
 
+@xlsx_app.command("append-risk")
+def append_risk_cli(
+    title: str = typer.Option(..., "--title", "-t", help="Title of the project risk"),
+    desc: str = typer.Option(..., "--desc", "-d", help="Description of the risk event and root cause"),
+    impact: str = typer.Option(..., "--impact", "-i", help="Operational and schedule impact statement"),
+    category: str = typer.Option("Scope", "--category", "-c", help="Category: Scope, Data, Resource, Schedule, Quality"),
+    owner: str = typer.Option("Project Manager", "--owner", help="Accountable mitigation owner"),
+    prob: str = typer.Option("Medium", "--prob", help="Probability level: Low, Medium, High"),
+    impact_level: str = typer.Option("Medium", "--impact-level", help="Impact level: Low, Medium, High"),
+    status: str = typer.Option("Open", "--status", help="Status: Open, Mitigated, Closed"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .xlsx destination path"),
+) -> None:
+    """Safely append a risk entry into the project Risk Register spreadsheet."""
+    from src.xlsx_engine.ledger_models import RiskEntry, append_risk_to_register
+
+    risk = RiskEntry(
+        title=title,
+        description=desc,
+        impact_statement=impact,
+        category=category,
+        owner=owner,
+        probability=prob,
+        impact_level=impact_level,
+        status=status,
+    )
+    out_p = append_risk_to_register(risk, output_path=output)
+    rprint(f"[green]✓ Risk entry appended successfully:[/green] [bold]{out_p}[/bold]")
+
+
+@xlsx_app.command("append-issue")
+def append_issue_cli(
+    title: str = typer.Option(..., "--title", "-t", help="Title of the blocker/issue"),
+    desc: str = typer.Option(..., "--desc", "-d", help="Description of the roadblock"),
+    category: str = typer.Option("Technical", "--category", "-c", help="Category: Resource, Requirement, Technical, Environment"),
+    owner: str = typer.Option("Lead Data Engineer", "--owner", help="PIC accountable for resolution"),
+    reported_by: str = typer.Option("Project Lead", "--reported-by", help="Originator who flagged the issue"),
+    area: str = typer.Option("Timeline", "--area", help="Impacted area: Timeline, Scope, Budget, Resource, Quality"),
+    severity: str = typer.Option("Medium", "--severity", "-s", help="Severity: Low, Medium, High, Critical"),
+    status: str = typer.Option("Open", "--status", help="Status: Open, In Progress, Closed"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .xlsx destination path"),
+) -> None:
+    """Safely append an issue entry into the project Issue Log spreadsheet."""
+    from src.xlsx_engine.ledger_models import IssueEntry, append_issue_to_log
+
+    issue = IssueEntry(
+        title=title,
+        description=desc,
+        category=category,
+        owner=owner,
+        reported_by=reported_by,
+        impacted_area=area,
+        severity=severity,
+        status=status,
+    )
+    out_p = append_issue_to_log(issue, output_path=output)
+    rprint(f"[green]✓ Issue entry appended successfully:[/green] [bold]{out_p}[/bold]")
+
+
+@xlsx_app.command("append-defect")
+def append_defect_cli(
+    summary: str = typer.Option(..., "--summary", "-s", help="Summary title of the defect"),
+    desc: str = typer.Option(..., "--desc", "-d", help="Detailed description of the bug"),
+    module: str = typer.Option("A. Sales", "--module", "-m", help="Module or component"),
+    activity: str = typer.Option("B. SIT", "--activity", "-a", help="Testing phase: A. Unit Testing, B. SIT, C. UAT"),
+    severity: str = typer.Option("2. Major", "--severity", help="Severity: 1. Critical, 2. Major, 3. Medium, 4. Low"),
+    priority: str = typer.Option("2. Medium", "--priority", help="Priority: 1. High, 2. Medium, 3. Low"),
+    status: str = typer.Option("Open", "--status", help="Status: Open, Assigned, In Progress, Resolved, Closed"),
+    pic: str = typer.Option("Data Dev", "--pic", help="Person in charge of fixing"),
+    test_case: str = typer.Option("TC-01", "--test-case", help="Test Case ID reference"),
+    expected: str = typer.Option("", "--expected", help="Expected correct result"),
+    actual: str = typer.Option("", "--actual", help="Observed actual defect result"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .xlsx destination path"),
+) -> None:
+    """Safely append a defect row into the 3.6_Defect_List_Template.xlsx tracker."""
+    from src.xlsx_engine.ledger_models import DefectEntry, append_defect_to_list
+
+    defect = DefectEntry(
+        summary=summary,
+        description=desc,
+        module=module,
+        activity=activity,
+        severity=severity,
+        priority=priority,
+        status=status,
+        pic=pic,
+        test_case=test_case,
+        expected_result=expected,
+        actual_result=actual,
+    )
+    out_p = append_defect_to_list(defect, output_path=output)
+    rprint(f"[green]✓ Defect entry appended successfully:[/green] [bold]{out_p}[/bold]")
+
+
+@xlsx_app.command("append-stakeholder")
+def append_stakeholder_cli(
+    name: str = typer.Option(..., "--name", "-n", help="Full name and title of stakeholder"),
+    email: str = typer.Option(..., "--email", "-e", help="Email address"),
+    company: str = typer.Option("Client Corp", "--company", "-c", help="Organization / Employer"),
+    phone: str = typer.Option("+62-811-0000-000", "--phone", help="Contact phone number"),
+    department: str = typer.Option("Finance", "--dept", help="Department or business unit"),
+    role: str = typer.Option("Project Manager", "--role", "-r", help="Project governance role"),
+    active: str = typer.Option("Y", "--active", help="Active flag: Y / N"),
+    notes: Optional[str] = typer.Option("", "--notes", help="Context or additional responsibilities"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .xlsx destination path"),
+) -> None:
+    """Safely append a stakeholder entry into 1.3_Stakeholders_Register_Template.xlsx."""
+    from src.xlsx_engine.ledger_models import StakeholderEntry, append_stakeholder_to_register
+
+    entry = StakeholderEntry(
+        name=name,
+        email=email,
+        company=company,
+        phone=phone,
+        department=department,
+        project_role=role,
+        is_active=active,
+        notes=notes or "",
+    )
+    out_p = append_stakeholder_to_register(entry, output_path=output)
+    rprint(f"[green]✓ Stakeholder appended successfully:[/green] [bold]{out_p}[/bold]")
+
+
+@xlsx_app.command("cloud-sizing")
+def cloud_sizing_cli(
+    client: str = typer.Option("Enterprise Client", "--client", "-c", help="Client name"),
+    storage: float = typer.Option(1.0, "--storage", help="Storage in TB"),
+    cortex: float = typer.Option(3660.0, "--cortex", help="Cortex AI annual USD"),
+    training: float = typer.Option(1500.0, "--training", help="Training cost USD"),
+    fx: float = typer.Option(16500.0, "--fx", help="USD to IDR exchange rate"),
+    config: Optional[str] = typer.Option(None, "--config", help="Optional JSON or YAML sizing spec"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .xlsx destination path"),
+) -> None:
+    """Calculate Snowflake infrastructure sizing and stamp Cloud_Sizing_Calculator_Template.xlsx."""
+    import json
+    import yaml
+    from src.xlsx_engine.cloud_sizing import CloudSizingConfig, calculate_cloud_sizing
+
+    if config and Path(config).exists():
+        p = Path(config)
+        raw = p.read_text(encoding="utf-8")
+        data = yaml.safe_load(raw) if p.suffix.lower() in (".yaml", ".yml") else json.loads(raw)
+        cfg = CloudSizingConfig(**data)
+    else:
+        cfg = CloudSizingConfig(
+            client_name=client,
+            storage_tb=storage,
+            cortex_ai_annual_usd=cortex,
+            training_seats_usd=training,
+            exchange_rate_idr=fx,
+        )
+
+    res = calculate_cloud_sizing(cfg, output_path=output)
+    rprint(f"[cyan]{res.summary_table()}[/cyan]")
+    rprint(f"[green]✓ Cloud sizing stamped successfully:[/green] [bold]{res.output_path}[/bold]")
+
+
+@xlsx_app.command("sync-s-curve")
+def sync_s_curve_cli(
+    timeline: Optional[str] = typer.Option(None, "--timeline", "-t", help="Path to 4.2_Weekly_Progress_Timeline_Update_Template.xlsx"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .xlsx destination path"),
+    chunk_days: int = typer.Option(7, "--chunk-days", help="Days per weekly progress interval"),
+) -> None:
+    """Extract daily progression from timeline workbook and inject executive S-curve line chart tab."""
+    from src.xlsx_engine.timeline_aggregator import TimelineAggregator
+
+    agg = TimelineAggregator(timeline_path=timeline)
+    analysis = agg.extract_s_curve(chunk_days=chunk_days)
+    out_p = agg.synchronize_and_chart(output_path=output, chunk_days=chunk_days)
+
+    rprint(f"[bold cyan]S-Curve Extracted from Timeline:[/bold cyan]")
+    rprint(f"  • Current Period: [bold]{analysis.current_period}[/bold]")
+    rprint(f"  • Planned Progress: [bold]{(analysis.current_planned_pct or 0.0) * 100:.1f}%[/bold]")
+    rprint(f"  • Actual Progress: [bold]{(analysis.current_actual_pct or 0.0) * 100:.1f}%[/bold]")
+    rprint(f"  • Variance: [bold]{analysis.current_variance_pct or 0.0:+.2f}%[/bold]")
+    rprint(f"  • Overall Health: [bold]{analysis.overall_health}[/bold] (SPI: {analysis.spi})")
+    rprint(f"[green]✓ S-Curve Analysis tab with LineChart injected:[/green] [bold]{out_p}[/bold]")
+
+
+
 
 # ============================================================================
 # Diagram Commands (bench diagram ...)
@@ -768,6 +1061,69 @@ def export_diagram_page(
         raise typer.Exit(code=1)
 
 
+@diagram_app.command("export-all")
+def export_all_diagram_pages(
+    file: str = typer.Argument(..., help="Path to .drawio project file"),
+    output_dir: str = typer.Option("output/diagrams", "--output-dir", "-o", help="Destination folder for exported images"),
+    format: str = typer.Option("png", "--format", help="Export format: 'png' or 'svg'"),
+    scale: float = typer.Option(3.0, "--scale", "-s", help="Rasterization scale/zoom factor for PNG"),
+    theme: str = typer.Option("modern_consulting", "--theme", "-t", help="Theme preset if regenerating vectors"),
+    transparent: bool = typer.Option(False, "--transparent", help="Export with transparent background"),
+    white_bg: bool = typer.Option(False, "--white-bg", help="Force solid pure white (#FFFFFF) background"),
+) -> None:
+    """Export all diagram pages from a multi-page Draw.io project to individual PNG or SVG files."""
+    from src.ppt_engine.diagram_engine import DrawIOProject
+
+    target = Path(file)
+    if not target.exists():
+        rprint(f"[red]Error:[/red] File not found: {file}")
+        raise typer.Exit(code=1)
+
+    proj = DrawIOProject.load(target)
+    canvas_bg = "#FFFFFF" if white_bg else None
+
+    try:
+        exported_files = proj.export_all_pages(
+            output_dir=output_dir,
+            format=format,
+            scale=scale,
+            theme=theme,
+            transparent=transparent,
+            canvas_bg=canvas_bg,
+        )
+        rprint(f"[green]✓ Exported {len(exported_files)} pages to directory:[/green] [bold]{output_dir}[/bold]")
+        for ef in exported_files:
+            rprint(f"  • {ef.name}")
+    except Exception as e:
+        rprint(f"[red]Error exporting pages:[/red] {e}")
+        raise typer.Exit(code=1)
+
+
+@diagram_app.command("build-project")
+def build_diagram_project(
+    config: str = typer.Option(..., "--config", "-c", help="Path to YAML diagram project specification"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Path to output .drawio project file"),
+) -> None:
+    """Build a multi-page Draw.io project from a declarative YAML specification."""
+    from src.ppt_engine.diagram_engine import DrawIOProject
+
+    cfg_path = Path(config)
+    if not cfg_path.exists():
+        rprint(f"[red]Error:[/red] Config file not found: {config}")
+        raise typer.Exit(code=1)
+
+    try:
+        proj = DrawIOProject.build_from_config(cfg_path, output_path=output)
+        out_file = proj.file_path
+        rprint(f"[green]✓ Built multi-page Draw.io project:[/green] [bold]{out_file}[/bold]")
+        pages = proj.list_pages()
+        for p in pages:
+            rprint(f"  • Tab {p['index'] + 1}: [bold]{p['name']}[/bold] ({p['node_count']} nodes, {p['edge_count']} edges)")
+    except Exception as e:
+        rprint(f"[red]Error building diagram project:[/red] {e}")
+        raise typer.Exit(code=1)
+
+
 @diagram_app.command("delete")
 def delete_diagram_page(
     file: str = typer.Argument(..., help="Path to .drawio project file"),
@@ -847,6 +1203,47 @@ def list_diagram_icons(
         table.add_row(ic["id"], ic.get("title", ""), ic.get("pack", "logos"), ic.get("format", "svg"), ic.get("file", ""))
 
     console.print(table)
+
+
+# ============================================================================
+# PII & Slug Audit Commands (bench pii ...)
+# ============================================================================
+
+@pii_app.command("audit")
+def audit_pii_cli(
+    path: str = typer.Option("output", "--path", "-p", help="Directory or file path to scan for PII leaks"),
+    fail_on_findings: bool = typer.Option(False, "--strict", help="Exit with error code 1 if forbidden entities found"),
+) -> None:
+    """Scan generated deliverables (.docx, .pptx, .xlsx) for forbidden legacy entities."""
+    from src.core.slug_registry import PIIAuditReport, audit_directory_pii, audit_pii_in_file
+
+    target = Path(path)
+    if not target.exists():
+        rprint(f"[red]Error:[/red] Target path not found: {path}")
+        raise typer.Exit(code=1)
+
+    if target.is_dir():
+        report = audit_directory_pii(target)
+    else:
+        findings = audit_pii_in_file(target)
+        report = PIIAuditReport(total_files_scanned=1, findings=findings)
+
+    if report.passed:
+        rprint(f"[green]✓ PII Audit Passed:[/green] Scanned {report.total_files_scanned} files in [bold]{path}[/bold] — 0 forbidden entities found.")
+    else:
+        rprint(f"[red]✗ PII Audit Failed:[/red] Found {len(report.findings)} potential leaks across {report.total_files_scanned} files scanned:")
+        table = Table(title=f"PII Leak Findings in {path}")
+        table.add_column("File", style="cyan")
+        table.add_column("Location", style="yellow")
+        table.add_column("Pattern", style="magenta")
+        table.add_column("Matched Snippet", style="bold red")
+
+        for f in report.findings:
+            table.add_row(f.file_path.name, f.location, f.pattern, f.match_snippet)
+
+        console.print(table)
+        if fail_on_findings:
+            raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

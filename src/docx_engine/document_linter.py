@@ -63,6 +63,9 @@ def lint_document(docx_path: Union[str, Path]) -> LintReport:
         txt = para.text
         if not txt:
             continue
+        # Monospace code blocks are literal examples (e.g. dbt SQL, Jinja macros)
+        if any(r.font.name in ("Consolas", "Courier New", "Courier", "Monaco", "Menlo") for r in para.runs):
+            continue
         # Unrendered tags
         for match in jinja_var_pattern.findall(txt):
             report.add_issue("ERROR", "UNRENDERED_TAG", f"Unrendered Jinja variable found: '{match}'", f"Paragraph {i + 1}")
@@ -76,6 +79,9 @@ def lint_document(docx_path: Union[str, Path]) -> LintReport:
                 for p_idx, para in enumerate(cell.paragraphs):
                     txt = para.text
                     if not txt:
+                        continue
+                    # Monospace code callouts inside table cards are literal examples
+                    if any(r.font.name in ("Consolas", "Courier New", "Courier", "Monaco", "Menlo") for r in para.runs):
                         continue
                     for match in jinja_var_pattern.findall(txt):
                         report.add_issue(

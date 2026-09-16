@@ -1,0 +1,48 @@
+locale: id
+name: "Bahasa Indonesia (Formal Enterprise)"
+
+reference_slides:
+  cover:
+    tracker: "KOLATERAL TATA KELOLA & BLUEPRINT REFERENSI ENTERPRISE"
+    title: "KOLATERAL TATA KELOLA & BLUEPRINT REFERENSI ENTERPRISE"
+    subtitle: "Matriks Tata Kelola Proyek Permanen, Pengendalian Ruang Lingkup & Arsitektur Solusi"
+    prepared_for: "DISIAPKAN UNTUK"
+    engagement_partner: "MITRA PELAKSANA"
+    client_sublabel: "Komite Pengarah Proyek & Sponsor Eksekutif"
+    vendor_sublabel: "Pimpinan Praktik Data & AI Modernization"
+    strictly_confidential: "SANGAT RAHASIA"
+
+  governance_org:
+    tracker: "TATA KELOLA PROYEK | STRUKTUR ORGANISASI"
+    title: "Matriks Tata Kelola Gabungan Memastikan Kejelasan Eskalasi dan Kepemilikan Pengiriman"
+    subtitle: "Struktur proyek hierarkis menghubungkan komite pengarah eksekutif, pemimpin PMO, dan pod eksekusi khusus."
+    tier1_header: "TINGKAT 1: KOMITE PENGARAH BERSAMA (SPONSOR PROYEK)"
+    tier1_badge: "TATA KELOLA EKSEKUTIF"
+    client_pmo_badge: "PMO KLIEN"
+    vendor_pmo_badge: "PMO METRODATA"
+    client_stream: "ALUR KERJA BISNIS & IT KLIEN"
+    vendor_stream: "KONSULTASI & REKAYASA SISTEM METRODATA"
+
+  change_request:
+    tracker: "TATA KELOLA PROYEK | PENGENDALIAN RUANG LINGKUP"
+    title: "Prosedur Permohonan Perubahan Mengatur Penyesuaian Ruang Lingkup Melalui Gerbang Keputusan"
+    subtitle: "Alur kerja tata kelola 4 tahap berurutan dengan ambang batas eskalasi bertingkat dan persetujuan legal."
+    step_label: "TAHAP"
+    statuses:
+      submitted: "DIAJUKAN"
+      evaluated: "DIEVALUASI"
+      approved: "DISETUJUI"
+      implemented: "DIIMPLEMENTASIKAN"
+    checklist_label: "DAFTAR PERIKSA PROSEDURAL:"
+    artifact_label: "ARTEFAK KELUARAN:"
+    callout_header: "AMBANG BATAS ESKALASI PERMOHONAN PERUBAHAN & ATURAN TATA KELOLA"
+
+  platform_arch:
+    tracker: "BLUEPRINT PLATFORM TEKNOLOGI | SNOWFLAKE DATA CLOUD"
+    title: "Platform Terpadu Terkelola Penuh Mengeliminasi Silo Data di Lingkungan Multi-Cloud"
+    subtitle: "Cetak biru resmi platform Snowflake: penyimpanan terpisah, komputasi elastis, dan tata kelola Horizon."
+
+  data_pipeline:
+    tracker: "ARSITEKTUR SOLUSI | ALUR DATA END-TO-END"
+    title: "Alur Data Modern Memperlancar Ingesti Berkelanjutan ke Konsumsi Analitik Terkelola"
+    subtitle: "Aliran data resmi menyeluruh: sumber ERP/IoT transaksional ke inti Snowflake, virtual warehouse, dan kanal konsumsi."

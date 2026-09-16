@@ -1,0 +1,48 @@
+locale: en
+name: "English (Canonical Enterprise Reference)"
+
+reference_slides:
+  cover:
+    tracker: "ENTERPRISE BENCHMARK REFERENCE COLLATERAL"
+    title: "ENTERPRISE BENCHMARK REFERENCE COLLATERAL"
+    subtitle: "Permanent Project Governance Matrix, Scope Control & Solution Architecture Blueprints"
+    prepared_for: "PREPARED FOR"
+    engagement_partner: "ENGAGEMENT PARTNER"
+    client_sublabel: "Project Steering Committee & Sponsors"
+    vendor_sublabel: "Data & AI Practice Lead"
+    strictly_confidential: "STRICTLY CONFIDENTIAL"
+
+  governance_org:
+    tracker: "PROJECT GOVERNANCE | ORGANIZATIONAL STRUCTURE"
+    title: "Joint Dual-Pillar Governance Matrix Establishes Clear Escalation & Delivery Ownership"
+    subtitle: "Hierarchical project structure connects executive steering committees, PMO leads, and specialized execution pods."
+    tier1_header: "TIER 1: JOINT STEERING COMMITTEE (PROJECT SPONSORSHIP)"
+    tier1_badge: "EXECUTIVE GOVERNANCE"
+    client_pmo_badge: "CLIENT PMO"
+    vendor_pmo_badge: "METRODATA PMO"
+    client_stream: "CLIENT BUSINESS & IT WORKSTREAMS"
+    vendor_stream: "METRODATA CONSULTING & ENGINEERING"
+
+  change_request:
+    tracker: "PROJECT GOVERNANCE | SCOPE & CHANGE CONTROL"
+    title: "Structured Change Request Procedure Governs Scope Adjustments Through Defined Decision Gates"
+    subtitle: "Sequential 4-stage governance pipeline with bi-level escalation thresholds and auditable legal sign-offs."
+    step_label: "STEP"
+    statuses:
+      submitted: "SUBMITTED"
+      evaluated: "EVALUATED"
+      approved: "APPROVED"
+      implemented: "IMPLEMENTED"
+    checklist_label: "PROCEDURAL CHECKLIST:"
+    artifact_label: "OUTPUT ARTIFACT:"
+    callout_header: "CHANGE REQUEST ESCALATION THRESHOLDS & GOVERNANCE RULES"
+
+  platform_arch:
+    tracker: "TECHNOLOGY PLATFORM BLUEPRINT | SNOWFLAKE DATA CLOUD"
+    title: "Fully-Managed Unified Platform Eliminates Data Silos Across Multi-Cloud Environments"
+    subtitle: "Official Snowflake platform blueprint showing decoupled storage, elastic compute, and Horizon governance."
+
+  data_pipeline:
+    tracker: "SOLUTION ARCHITECTURE | END-TO-END DATA PIPELINE"
+    title: "Modern Data Pipeline Streamlines Continuous Ingestion into Governed Analytics Consumption"
+    subtitle: "Official end-to-end data flow: transactional ERP/IoT sources into Snowflake core, virtual warehouses, and delivery channels."

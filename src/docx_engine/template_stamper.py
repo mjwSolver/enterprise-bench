@@ -48,9 +48,24 @@ class TemplateStamper:
         Saves output to output_path and runs verification lint.
         """
         if isinstance(context, BaseModel):
-            ctx = context.model_dump()
+            if hasattr(context, "to_template_context"):
+                ctx = context.to_template_context()
+            else:
+                ctx = context.model_dump()
         else:
             ctx = dict(context)
+
+        # Auto-expand indexed attendee lists (e.g. for MoM templates)
+        if "client_attendees" in ctx and isinstance(ctx["client_attendees"], list):
+            for i in range(1, 11):
+                k = f"client_attendee_{i}"
+                if k not in ctx:
+                    ctx[k] = ctx["client_attendees"][i - 1] if i <= len(ctx["client_attendees"]) else ""
+        if "vendor_attendees" in ctx and isinstance(ctx["vendor_attendees"], list):
+            for i in range(1, 11):
+                k = f"vendor_attendee_{i}"
+                if k not in ctx:
+                    ctx[k] = ctx["vendor_attendees"][i - 1] if i <= len(ctx["vendor_attendees"]) else ""
 
         # Check if context requests an on-the-fly Mermaid diagram
         if "_mermaid_diagrams" in ctx and isinstance(ctx["_mermaid_diagrams"], dict):
@@ -62,6 +77,21 @@ class TemplateStamper:
                         ctx[key] = InlineImage(self.doc, str(res["png"]), width=Inches(5.5))
             except Exception as e:
                 print(f"[Warning] Diagram compilation failed for Word doc: {e}")
+
+        # Handle logo placeholders (e.g. client_logo, vendor_logo)
+        for logo_key in ["client_logo", "vendor_logo"]:
+            if logo_key in ctx:
+                val = ctx[logo_key]
+                if val and isinstance(val, (str, Path)):
+                    img_path = Path(val)
+                    if img_path.exists() and img_path.suffix.lower() in [".png", ".jpg", ".jpeg"]:
+                        try:
+                            ctx[logo_key] = InlineImage(self.doc, str(img_path), width=Inches(1.8))
+                        except Exception as e:
+                            print(f"[Warning] Failed to insert {logo_key} image: {e}")
+            else:
+                if logo_key == "client_logo":
+                    ctx[logo_key] = "[ CLIENT LOGO ]"
 
         # Render with Jinja2 engine
         self.doc.render(ctx)

@@ -17,6 +17,12 @@ from src.docx_engine.document_linter import (
     LintReport,
     lint_document,
 )
+from src.docx_engine.spec_compiler import (
+    SpecCompiler,
+    SpecMetadata,
+    compile_markdown_to_docx,
+    compile_spec_directory,
+)
 
 __all__ = [
     "TemplateStamper",
@@ -29,4 +35,9 @@ __all__ = [
     "LintIssue",
     "LintReport",
     "lint_document",
+    "SpecCompiler",
+    "SpecMetadata",
+    "compile_markdown_to_docx",
+    "compile_spec_directory",
 ]
+
