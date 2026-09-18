@@ -10,12 +10,14 @@ import re
 import math
 import hashlib
 import logging
+import platform
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Union, Tuple, List, Dict, Any
 from io import BytesIO
 
 import requests
-from PIL import Image, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFilter, ImageOps, ImageFont
 
 from .icon_engine import normalize_color
 
@@ -686,4 +688,490 @@ def substitute_presentation_images(
     prs.save(str(out_path))
 
     return count, out_path
+
+
+# -----------------------------------------------------------------------------
+# Browser Mockup & Window Chrome Container Subsystem
+# -----------------------------------------------------------------------------
+
+def _get_system_font(
+    font_name: Optional[str] = None,
+    size_px: int = 16,
+    bold: bool = False,
+    mono: bool = False,
+) -> ImageFont.ImageFont:
+    """Locate crisp system font on macOS/Linux/Windows with sensible fallbacks."""
+    system = platform.system()
+    candidates: List[str] = []
+
+    if font_name and os.path.exists(font_name):
+        candidates.append(font_name)
+
+    if system == "Darwin":
+        if mono:
+            candidates.extend([
+                "/System/Library/Fonts/Menlo.ttc",
+                "/System/Library/Fonts/SFMono-Regular.otf",
+                "/System/Library/Fonts/Supplemental/Courier New.ttf",
+            ])
+        elif bold:
+            candidates.extend([
+                "/System/Library/Fonts/Helvetica.ttc",
+                "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+                "/System/Library/Fonts/Supplemental/Arial.ttf",
+                "/System/Library/Fonts/SFCompact.ttf",
+                "/System/Library/Fonts/SFNS.ttf",
+            ])
+        else:
+            candidates.extend([
+                "/System/Library/Fonts/Helvetica.ttc",
+                "/System/Library/Fonts/Supplemental/Arial.ttf",
+                "/System/Library/Fonts/SFCompact.ttf",
+                "/System/Library/Fonts/SFNS.ttf",
+            ])
+    elif system == "Linux":
+        if mono:
+            candidates.extend([
+                "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+            ])
+        elif bold:
+            candidates.extend([
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+            ])
+        else:
+            candidates.extend([
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+            ])
+    elif system == "Windows":
+        windir = os.environ.get("WINDIR", "C:\\Windows")
+        if mono:
+            candidates.extend([
+                os.path.join(windir, "Fonts", "consola.ttf"),
+                os.path.join(windir, "Fonts", "cour.ttf"),
+            ])
+        elif bold:
+            candidates.extend([
+                os.path.join(windir, "Fonts", "arialbd.ttf"),
+                os.path.join(windir, "Fonts", "segoeuib.ttf"),
+            ])
+        else:
+            candidates.extend([
+                os.path.join(windir, "Fonts", "arial.ttf"),
+                os.path.join(windir, "Fonts", "segoeui.ttf"),
+            ])
+
+    for font_path in candidates:
+        if os.path.exists(font_path):
+            try:
+                if font_path.endswith(".ttc"):
+                    return ImageFont.truetype(font_path, size_px, index=1 if bold else 0)
+                return ImageFont.truetype(font_path, size_px)
+            except Exception:
+                continue
+
+    try:
+        return ImageFont.load_default()
+    except Exception:
+        return ImageFont.load_default()
+
+
+def _hex_to_rgba(hex_color: Union[str, Tuple[int, ...]], alpha: int = 255) -> Tuple[int, int, int, int]:
+    """Converts hex or rgb(a) color into an RGBA 4-tuple."""
+    if isinstance(hex_color, (tuple, list)):
+        if len(hex_color) == 4:
+            return (int(hex_color[0]), int(hex_color[1]), int(hex_color[2]), int(hex_color[3]))
+        return (int(hex_color[0]), int(hex_color[1]), int(hex_color[2]), alpha)
+    norm = normalize_color(hex_color)
+    r = int(norm[1:3], 16)
+    g = int(norm[3:5], 16)
+    b = int(norm[5:7], 16)
+    return (r, g, b, alpha)
+
+
+@dataclass
+class TelemetryBadge:
+    """Bottom-anchored telemetry badge data container."""
+    label: str
+    icon: Optional[str] = None
+    status: str = "neutral"
+
+    @classmethod
+    def from_raw(cls, item: Union[str, Dict[str, Any], TelemetryBadge]) -> TelemetryBadge:
+        """Parses telemetry badge from string, dict, or existing instance."""
+        if isinstance(item, cls):
+            return item
+        if isinstance(item, dict):
+            return cls(
+                label=item.get("label", item.get("text", "")),
+                icon=item.get("icon"),
+                status=item.get("status", "neutral"),
+            )
+        raw_str = str(item).strip()
+        parts = raw_str.split(" ", 1)
+        if len(parts) == 2 and any(ord(char) > 0x2000 for char in parts[0]):
+            return cls(label=parts[1].strip(), icon=parts[0].strip())
+        return cls(label=raw_str)
+
+
+@dataclass
+class BrowserMockupConfig:
+    """Configuration options for high-fidelity macOS browser mockup container."""
+    url: str = "https://finance.snowflakecomputing.com/streamlit/app"
+    title: Optional[str] = None
+    theme_mode: str = "light"  # "light" or "dark"
+    header_fill: Optional[str] = None
+    header_height_in: float = 0.32
+    traffic_lights: bool = True
+    traffic_light_diameter_in: float = 0.10
+    traffic_light_colors: Tuple[str, str, str] = ("#EF4444", "#F59E0B", "#10B981")
+    traffic_light_borders: Tuple[str, str, str] = ("#DC2626", "#D97706", "#059669")
+    url_pill: bool = True
+    url_pill_height_in: float = 0.20
+    url_pill_fill: Optional[str] = None
+    url_pill_border: Optional[str] = None
+    secure_badge: bool = True
+    target_dpi: int = 300  # Strictly enforced >= 200 DPI
+    target_width_in: float = 8.0
+    aspect_ratio: Optional[str] = "16:9"  # "16:9", "16:10", "4:3", None (preserve)
+    corner_radius: int = 16
+    hairline_border: bool = True
+    border_color: Optional[str] = None
+    border_width: int = 1
+    shadow: bool = True
+    shadow_blur: int = 24
+    shadow_offset: Tuple[int, int] = (0, 10)
+    shadow_color: Union[str, Tuple[int, int, int, int]] = (15, 23, 42, 45)
+    telemetry_badges: Optional[List[Union[str, Dict[str, Any], TelemetryBadge]]] = None
+    telemetry_footer_height_in: float = 0.32
+    telemetry_fill: Optional[str] = None
+    autocrop_taskbar: bool = False
+
+
+class BrowserMockupContainer:
+    """
+    Subsystem for framing raw enterprise UI screenshots inside a high-DPI
+    macOS-style desktop browser container with traffic lights, URL pill,
+    optional telemetry badges, hairline border, and ambient shadow.
+    """
+
+    def __init__(
+        self,
+        config: Optional[BrowserMockupConfig] = None,
+        **kwargs: Any,
+    ):
+        if config is not None:
+            self.config = config
+        else:
+            self.config = BrowserMockupConfig(**kwargs)
+
+        # Enforce minimum 200 DPI target per architecture standard
+        if self.config.target_dpi < 200:
+            logger.info(f"Elevating target DPI from {self.config.target_dpi} to 200 (mandatory floor)")
+            self.config.target_dpi = 200
+
+    def _render_header(self, content_w: int, dpi: int) -> Image.Image:
+        """Renders macOS slate header bar with traffic lights and centered URL pill."""
+        is_dark = self.config.theme_mode.lower() == "dark"
+        hdr_fill_hex = self.config.header_fill or ("#1E293B" if is_dark else "#F1F5F9")
+        pill_fill_hex = self.config.url_pill_fill or ("#0F172A" if is_dark else "#FFFFFF")
+        pill_border_hex = self.config.url_pill_border or ("#334155" if is_dark else "#CBD5E1")
+        pill_text_hex = "#94A3B8" if is_dark else "#64748B"
+        divider_hex = "#334155" if is_dark else "#E2E8F0"
+
+        header_h = max(24, int(round(self.config.header_height_in * dpi)))
+        header_img = Image.new("RGBA", (content_w, header_h), _hex_to_rgba(hdr_fill_hex))
+        draw = ImageDraw.Draw(header_img)
+
+        # 1. Traffic light control dots
+        dot_d = max(6, int(round(self.config.traffic_light_diameter_in * dpi)))
+        dot_gap = max(4, int(round(0.04 * dpi)))
+        dot_x0 = max(14, int(round(0.14 * dpi)))
+        dot_y0 = (header_h - dot_d) // 2
+
+        if self.config.traffic_lights:
+            for i, (fill_col, border_col) in enumerate(zip(self.config.traffic_light_colors, self.config.traffic_light_borders)):
+                cx = dot_x0 + i * (dot_d + dot_gap)
+                draw.ellipse(
+                    [cx, dot_y0, cx + dot_d, dot_y0 + dot_d],
+                    fill=_hex_to_rgba(fill_col),
+                    outline=_hex_to_rgba(border_col),
+                    width=1,
+                )
+
+        # 2. Centered URL / Title Pill
+        if self.config.url_pill:
+            pill_h = max(16, int(round(self.config.url_pill_height_in * dpi)))
+            min_margin = dot_x0 + 3 * dot_d + 3 * dot_gap + int(round(0.12 * dpi))
+            max_pill_w = content_w - 2 * min_margin
+            pill_w = max(int(round(content_w * 0.40)), min(int(round(content_w * 0.58)), max_pill_w))
+            pill_x0 = (content_w - pill_w) // 2
+            pill_y0 = (header_h - pill_h) // 2
+            pill_rad = pill_h // 2
+
+            draw.rounded_rectangle(
+                [pill_x0, pill_y0, pill_x0 + pill_w, pill_y0 + pill_h],
+                radius=pill_rad,
+                fill=_hex_to_rgba(pill_fill_hex),
+                outline=_hex_to_rgba(pill_border_hex),
+                width=max(1, int(round(dpi / 300.0))),
+            )
+
+            # Security lock glyph and URL string inside pill
+            font_sz = max(9, int(round(pill_h * 0.42)))
+            font = _get_system_font(size_px=font_sz, mono=True)
+
+            cur_x = pill_x0 + int(round(pill_h * 0.38))
+            if self.config.secure_badge:
+                lock_w = max(7, int(round(font_sz * 0.65)))
+                lock_h = max(9, int(round(font_sz * 0.85)))
+                lock_x = cur_x
+                lock_y = (header_h - lock_h) // 2
+                lock_col = _hex_to_rgba("#10B981" if not is_dark else "#34D399")
+                # Lock shackle
+                draw.arc(
+                    [lock_x + 2, lock_y, lock_x + lock_w - 2, lock_y + int(lock_h * 0.62)],
+                    start=180,
+                    end=0,
+                    fill=lock_col,
+                    width=max(1, int(round(dpi / 300.0))),
+                )
+                # Lock body
+                draw.rounded_rectangle(
+                    [lock_x, lock_y + int(lock_h * 0.44), lock_x + lock_w, lock_y + lock_h],
+                    radius=2,
+                    fill=lock_col,
+                )
+                cur_x += lock_w + int(round(0.06 * dpi))
+
+            display_url = self.config.url or self.config.title or "https://enterprise.internal"
+            max_text_w = (pill_x0 + pill_w - int(round(pill_h * 0.38))) - cur_x
+
+            # Truncate text with ellipsis if it exceeds pill width
+            bbox = font.getbbox(display_url)
+            txt_w = bbox[2] - bbox[0]
+            txt_h = bbox[3] - bbox[1]
+
+            if txt_w > max_text_w:
+                truncated = display_url
+                while truncated and (font.getbbox(truncated + "…")[2] - font.getbbox(truncated + "…")[0]) > max_text_w:
+                    truncated = truncated[:-1]
+                display_url = truncated + "…"
+                bbox = font.getbbox(display_url)
+                txt_w = bbox[2] - bbox[0]
+                txt_h = bbox[3] - bbox[1]
+
+            text_y = pill_y0 + (pill_h - txt_h) // 2 - bbox[1]
+            draw.text((cur_x, text_y), display_url, font=font, fill=_hex_to_rgba(pill_text_hex))
+
+        # Bottom subtle divider line
+        draw.line([(0, header_h - 1), (content_w, header_h - 1)], fill=_hex_to_rgba(divider_hex), width=1)
+        return header_img
+
+    def _render_footer(self, content_w: int, dpi: int) -> Optional[Image.Image]:
+        """Renders bottom-anchored telemetry bar with status pills and metadata."""
+        if not self.config.telemetry_badges:
+            return None
+
+        is_dark = self.config.theme_mode.lower() == "dark"
+        footer_fill_hex = self.config.telemetry_fill or ("#0F172A" if is_dark else "#F8FAFC")
+        pill_fill_hex = "#1E293B" if is_dark else "#FFFFFF"
+        pill_border_hex = "#334155" if is_dark else "#E2E8F0"
+        text_hex = "#E2E8F0" if is_dark else "#334155"
+        divider_hex = "#334155" if is_dark else "#E2E8F0"
+
+        footer_h = max(26, int(round(self.config.telemetry_footer_height_in * dpi)))
+        footer_img = Image.new("RGBA", (content_w, footer_h), _hex_to_rgba(footer_fill_hex))
+        draw = ImageDraw.Draw(footer_img)
+
+        # Top hairline divider
+        draw.line([(0, 0), (content_w, 0)], fill=_hex_to_rgba(divider_hex), width=1)
+
+        badges = [TelemetryBadge.from_raw(b) for b in self.config.telemetry_badges]
+        if not badges:
+            return footer_img
+
+        badge_h = max(18, int(round(footer_h * 0.62)))
+        badge_y0 = (footer_h - badge_h) // 2
+        badge_font_sz = max(9, int(round(badge_h * 0.44)))
+        font = _get_system_font(size_px=badge_font_sz, bold=False)
+
+        # Pre-calculate pill widths
+        pill_data: List[Tuple[str, int, int]] = []
+        pill_gap = int(round(0.08 * dpi))
+        h_pad = int(round(badge_h * 0.45))
+
+        for b in badges:
+            text = f"{b.icon} {b.label}" if b.icon else b.label
+            bbox = font.getbbox(text)
+            tw = bbox[2] - bbox[0]
+            pw = tw + h_pad * 2
+            pill_data.append((text, pw, tw))
+
+        total_pills_w = sum(p[1] for p in pill_data) + pill_gap * (len(pill_data) - 1)
+        start_x = max(int(round(0.12 * dpi)), (content_w - total_pills_w) // 2)
+
+        cur_x = start_x
+        for text, pw, tw in pill_data:
+            draw.rounded_rectangle(
+                [cur_x, badge_y0, cur_x + pw, badge_y0 + badge_h],
+                radius=badge_h // 2,
+                fill=_hex_to_rgba(pill_fill_hex),
+                outline=_hex_to_rgba(pill_border_hex),
+                width=max(1, int(round(dpi / 300.0))),
+            )
+            bbox = font.getbbox(text)
+            txt_h = bbox[3] - bbox[1]
+            tx = cur_x + h_pad
+            ty = badge_y0 + (badge_h - txt_h) // 2 - bbox[1]
+            draw.text((tx, ty), text, font=font, fill=_hex_to_rgba(text_hex))
+            cur_x += pw + pill_gap
+
+        return footer_img
+
+    def _process_content(self, image_input: Union[Image.Image, str, Path], content_w: int) -> Image.Image:
+        """Scales and crops screenshot using high-DPI Lanczos resampling."""
+        if isinstance(image_input, (str, Path)):
+            img = Image.open(str(image_input)).convert("RGBA")
+        else:
+            img = image_input.convert("RGBA")
+
+        # Autocrop bottom OS taskbar if enabled
+        if self.config.autocrop_taskbar:
+            w, h = img.size
+            taskbar_crop = int(round(h * 0.045))
+            if taskbar_crop > 0 and h > taskbar_crop:
+                img = img.crop((0, 0, w, h - taskbar_crop))
+
+        # Crop to target aspect ratio if specified
+        ar = self.config.aspect_ratio
+        if ar and str(ar).lower() not in ("none", "preserve", "original", ""):
+            cropped = crop_aspect_ratio(img, aspect_ratio=ar)
+        else:
+            cropped = img
+
+        # Enforce high-DPI Lanczos resampling to match target width
+        orig_w, orig_h = cropped.size
+        scale = content_w / float(orig_w)
+        content_h = max(1, int(round(orig_h * scale)))
+
+        return cropped.resize((content_w, content_h), Image.Resampling.LANCZOS)
+
+    def frame(
+        self,
+        image_input: Union[Image.Image, str, Path],
+        output_path: Optional[Union[str, Path]] = None,
+    ) -> Image.Image:
+        """
+        Frames the provided interface screenshot inside the window container:
+        1. Resamples screenshot with high-DPI Lanczos scaling (>= 200 DPI).
+        2. Renders macOS window chrome with traffic lights and centered URL pill.
+        3. Renders bottom telemetry badges if configured.
+        4. Smoothly composites into a single window canvas with rounded corners.
+        5. Applies hairline border and ambient drop shadow.
+        6. Saves to output_path if provided.
+        """
+        dpi = max(200, self.config.target_dpi)
+        content_w = int(round(self.config.target_width_in * dpi))
+
+        # 1. Prepare sub-components
+        header_img = self._render_header(content_w=content_w, dpi=dpi)
+        content_img = self._process_content(image_input=image_input, content_w=content_w)
+        footer_img = self._render_footer(content_w=content_w, dpi=dpi)
+
+        header_h = header_img.height
+        content_h = content_img.height
+        footer_h = footer_img.height if footer_img else 0
+        total_h = header_h + content_h + footer_h
+
+        # 2. Window composite assembly
+        window = Image.new("RGBA", (content_w, total_h), (0, 0, 0, 0))
+        window.paste(header_img, (0, 0))
+        window.paste(content_img, (0, header_h))
+        if footer_img:
+            window.paste(footer_img, (0, header_h + content_h))
+
+        # 3. Outer window rounded corners (4x supersampled mask)
+        rad = max(0, int(round(self.config.corner_radius * (dpi / 300.0))))
+        if rad > 0:
+            window = apply_rounded_corners(window, radius=rad)
+
+        # 4. Subtle hairline border
+        if self.config.hairline_border:
+            b_color = self.config.border_color or ("#CBD5E1" if self.config.theme_mode == "light" else "#334155")
+            b_width = max(1, int(round(self.config.border_width * (dpi / 300.0))))
+            window = apply_border(window, border_width=b_width, border_color=b_color, radius=rad)
+
+        # 5. Ambient drop shadow
+        if self.config.shadow:
+            s_blur = int(round(self.config.shadow_blur * (dpi / 300.0)))
+            s_ox = int(round(self.config.shadow_offset[0] * (dpi / 300.0)))
+            s_oy = int(round(self.config.shadow_offset[1] * (dpi / 300.0)))
+            final_img = apply_drop_shadow(
+                window,
+                offset=(s_ox, s_oy),
+                blur=s_blur,
+                shadow_color=self.config.shadow_color,
+            )
+        else:
+            final_img = window
+
+        # 6. Save to disk if requested
+        if output_path:
+            out_p = Path(output_path)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            final_img.save(str(out_p), format="PNG", dpi=(dpi, dpi))
+
+        return final_img
+
+
+def frame_browser_mockup(
+    image_input: Union[Image.Image, str, Path],
+    url: str = "https://finance.snowflakecomputing.com/streamlit/app",
+    title: Optional[str] = None,
+    theme_mode: str = "light",
+    target_dpi: int = 300,
+    target_width_in: float = 8.0,
+    aspect_ratio: Optional[str] = "16:9",
+    corner_radius: int = 16,
+    hairline_border: bool = True,
+    border_color: Optional[str] = None,
+    border_width: int = 1,
+    shadow: bool = True,
+    shadow_blur: int = 24,
+    shadow_offset: Tuple[int, int] = (0, 10),
+    telemetry_badges: Optional[List[Union[str, Dict[str, Any], TelemetryBadge]]] = None,
+    autocrop_taskbar: bool = False,
+    output_path: Optional[Union[str, Path]] = None,
+    **kwargs: Any,
+) -> Image.Image:
+    """
+    Presentation-grade convenience function for framing interface captures in a
+    macOS browser container.
+    """
+    config = BrowserMockupConfig(
+        url=url,
+        title=title,
+        theme_mode=theme_mode,
+        target_dpi=target_dpi,
+        target_width_in=target_width_in,
+        aspect_ratio=aspect_ratio,
+        corner_radius=corner_radius,
+        hairline_border=hairline_border,
+        border_color=border_color,
+        border_width=border_width,
+        shadow=shadow,
+        shadow_blur=shadow_blur,
+        shadow_offset=shadow_offset,
+        telemetry_badges=telemetry_badges,
+        autocrop_taskbar=autocrop_taskbar,
+        **kwargs,
+    )
+    container = BrowserMockupContainer(config=config)
+    return container.frame(image_input=image_input, output_path=output_path)
+
 

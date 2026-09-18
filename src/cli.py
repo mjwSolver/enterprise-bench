@@ -434,6 +434,106 @@ def check_ppt_resources(
         rprint("[green]✓ All registered presentation resources are verified and ready.[/green]")
 
 
+@ppt_app.command("frame-mockup")
+def frame_mockup_cli(
+    input_image: Optional[str] = typer.Option(None, "--input", "-i", help="Path to input screenshot image (defaults to pitch deck sample if omitted)"),
+    output_image: Optional[str] = typer.Option(None, "--output", "-o", help="Path to save framed mockup PNG"),
+    url: str = typer.Option("https://finance.snowflakecomputing.com/streamlit/app", "--url", "-u", help="URL displayed in browser pill"),
+    title: Optional[str] = typer.Option(None, "--title", "-t", help="Window title"),
+    theme: str = typer.Option("light", "--theme", help="Browser chrome theme: 'light' or 'dark'"),
+    dpi: int = typer.Option(300, "--dpi", help="Target DPI scaling (minimum 200)"),
+    width_in: float = typer.Option(8.0, "--width-in", "-w", help="Target mockup width in inches on slide"),
+    aspect_ratio: Optional[str] = typer.Option("16:9", "--aspect-ratio", "-a", help="Content aspect ratio crop (16:9, 16:10, 4:3, preserve)"),
+    badges: Optional[str] = typer.Option(None, "--badges", "-b", help="Comma-separated telemetry badges (e.g. 'Snowflake AI,Real-Time Ingestion')"),
+    shadow: bool = typer.Option(True, "--shadow/--no-shadow", help="Include ambient elevated drop shadow"),
+    border: bool = typer.Option(True, "--border/--no-border", help="Include subtle hairline border"),
+    open_image: bool = typer.Option(False, "--open", help="Open generated mockup in desktop Preview application"),
+) -> None:
+    """Frame raw enterprise UI screenshots inside a high-DPI macOS desktop browser mockup."""
+    import subprocess
+    from src.ppt_engine.image_engine import frame_browser_mockup, ImageEngine
+
+    # 1. Resolve source image
+    src_input: Union[Path, Any]
+    src_label: str
+    if input_image:
+        inp_p = Path(input_image)
+        if not inp_p.exists():
+            rprint(f"[red]Error:[/red] Input screenshot not found: {input_image}")
+            raise typer.Exit(code=1)
+        src_input = inp_p
+        src_label = str(inp_p)
+    else:
+        # Check standard template preview samples
+        candidates = [
+            OUTPUT_DIR / "template_previews" / "pitch_deck" / "slide_20.png",
+            OUTPUT_DIR / "template_previews" / "pitch_deck" / "slide_28.png",
+            OUTPUT_DIR / "template_previews" / "pitch_deck" / "slide_29.png",
+        ]
+        found_candidate = None
+        for c in candidates:
+            if c.exists():
+                found_candidate = c
+                break
+
+        if found_candidate:
+            src_input = found_candidate
+            src_label = f"Auto-detected sample ({found_candidate.name})"
+        else:
+            # Fallback to procedural high-res UI card
+            img_engine = ImageEngine()
+            src_input = img_engine.generate_procedural_3d_card(title="Analytics Platform")
+            src_label = "Procedural Analytics UI Visual"
+
+    # 2. Resolve destination path
+    if output_image:
+        out_path = Path(output_image)
+    else:
+        stem = src_input.stem if isinstance(src_input, Path) else "procedural"
+        out_path = OUTPUT_DIR / "mockups" / f"{stem}_mockup_{theme}.png"
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # 3. Parse telemetry badges
+    if badges is not None:
+        parsed_badges = [b.strip() for b in badges.split(",") if b.strip()]
+    else:
+        parsed_badges = [
+            "🏷️ Snowflake Cortex AI Engine",
+            "⚡ Real-Time Ingestion",
+            "📊 Daily Reconciled",
+        ]
+
+    # 4. Generate framed mockup
+    rprint(f"[cyan]ℹ Framing browser mockup:[/cyan] [bold]{src_label}[/bold]")
+    rprint(f"[dim]  • Chrome: {theme.upper()} | URL: {url} | Target DPI: {dpi} (w={width_in}\")[/dim]")
+
+    framed_img = frame_browser_mockup(
+        image_input=src_input,
+        url=url,
+        title=title,
+        theme_mode=theme,
+        target_dpi=dpi,
+        target_width_in=width_in,
+        aspect_ratio=aspect_ratio,
+        hairline_border=border,
+        shadow=shadow,
+        telemetry_badges=parsed_badges,
+        output_path=out_path,
+    )
+
+    rprint(f"[green]✓ Browser mockup generated ({framed_img.width}×{framed_img.height} px, {dpi} DPI):[/green] [bold]{out_path}[/bold]")
+
+    # 5. Native desktop preview
+    if open_image:
+        cmd = f'open -a "Preview" "{out_path.resolve()}"'
+        rprint(f"[cyan]ℹ Launching desktop Preview:[/cyan] [bold]{out_path.name}[/bold]")
+        subprocess.run(cmd, shell=True)
+    else:
+        rprint(f'[dim]Tip: View in Preview via desktop review: `open -a "Preview" "{out_path}"`[/dim]')
+
+
+
 # ============================================================================
 # Document Commands (bench doc ...)
 # ============================================================================

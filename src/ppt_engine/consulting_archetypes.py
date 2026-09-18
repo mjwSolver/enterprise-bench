@@ -3194,6 +3194,183 @@ def build_equity_corporate_tree_slide(
 
 
 # ============================================================================
+# 11. High-Fidelity Browser Mockup & Window Chrome Container Slide Archetype
+# ============================================================================
+
+def build_browser_mockup_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "System Architecture & Interface Validation",
+    action_title: str = "Modernized Analytics Platform Eliminates ERP Latency and Siloed Data Exports",
+    subtitle: Optional[str] = "High-fidelity interface preview running directly on Snowflake Cortex AI and Streamlit serving tiers.",
+    screenshot_path: Optional[Union[str, Path]] = None,
+    url: str = "https://finance.snowflakecomputing.com/streamlit/app",
+    telemetry_badges: Optional[List[str]] = None,
+    theme_mode: str = "light",
+    aspect_ratio: Optional[str] = "16:9",
+    target_dpi: int = 300,
+    takeaways_title: str = "KEY OBSERVATIONS & DRIVERS",
+    takeaways: Optional[List[Dict[str, Any]]] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    output_temp_dir: Optional[Path] = None,
+) -> Any:
+    """
+    Renders an executive presentation slide featuring a high-DPI browser mockup container
+    on the left (w=7.60") paired with structured observation cards on the right (w=3.88").
+    """
+    from src.ppt_engine.image_engine import frame_browser_mockup, ImageEngine
+
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+
+    # 1. Resolve source image or generate high-fidelity fallback
+    if screenshot_path and Path(screenshot_path).exists():
+        src_img: Union[str, Path, Image.Image] = Path(screenshot_path)
+    else:
+        engine = ImageEngine()
+        src_img = engine.generate_procedural_3d_card(
+            title="Enterprise Analytics Platform",
+            primary_color=theme.get_color("primary"),
+            accent_color=theme.get_color("accent"),
+        )
+
+    # 2. Render Mockup Container
+    if telemetry_badges is None:
+        telemetry_badges = [
+            "🏷️ Snowflake Cortex AI",
+            "⚡ Real-Time Ingestion",
+            "📊 Daily Reconciled",
+        ]
+
+    save_dir = Path(output_temp_dir) if output_temp_dir else Path("output/mockups")
+    save_dir.mkdir(parents=True, exist_ok=True)
+    temp_mockup_path = save_dir / f"slide_mockup_{current_idx}_{theme_mode}.png"
+
+    frame_browser_mockup(
+        image_input=src_img,
+        url=url,
+        theme_mode=theme_mode,
+        target_dpi=target_dpi,
+        target_width_in=7.6,
+        aspect_ratio=aspect_ratio,
+        telemetry_badges=telemetry_badges,
+        output_path=temp_mockup_path,
+    )
+
+    # 3. Add Framed Mockup Image Picture to Slide
+    mockup_x = Inches(0.80)
+    mockup_y = Inches(1.85)
+    mockup_w = Inches(7.60)
+    slide.shapes.add_picture(str(temp_mockup_path), mockup_x, mockup_y, width=mockup_w)
+
+    # 4. Right Column: Structured Takeaways & Observation Cards
+    right_x = Inches(8.65)
+    right_w = Inches(3.88)
+    right_y = Inches(1.85)
+
+    if takeaways is None:
+        takeaways = [
+            {
+                "title": "Continuous Data Ingestion",
+                "body": "Replaces 12-hour nightly batch jobs with Snowpipe micro-batching, delivering sub-minute analytical readiness.",
+                "tag": "LATENCY REDUCTION",
+                "tag_color": "accent",
+            },
+            {
+                "title": "Automated Dynamic Masking",
+                "body": "Role-based access control (RBAC) masks sensitive enterprise PII without requiring manual spreadsheet scrubbers.",
+                "tag": "SECURITY & AUDIT",
+                "tag_color": "secondary",
+            },
+            {
+                "title": "Executive Self-Service Serving",
+                "body": "Streamlit app gives finance leadership real-time margin drill-downs without waiting for IT ticket resolution.",
+                "tag": "BUSINESS AGILITY",
+                "tag_color": "primary",
+            },
+        ]
+
+    # Render Right Column Section Header Badge
+    hdr_h = Inches(0.32)
+    h_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x, right_y, right_w, hdr_h)
+    h_card.shadow.inherit = False
+    h_card.fill.solid()
+    h_card.fill.fore_color.rgb = theme.get_rgb("primary")
+    h_card.line.fill.background()
+
+    tf_h = h_card.text_frame
+    tf_h.word_wrap = True
+    tf_h.margin_left = Inches(0.12)
+    tf_h.margin_top = Inches(0.06)
+    p_h = tf_h.paragraphs[0]
+    p_h.text = takeaways_title.upper()
+    p_h.font.name = theme.font_family_header
+    p_h.font.size = Pt(9.5)
+    p_h.font.bold = True
+    p_h.font.color.rgb = RGBColor(255, 255, 255)
+
+    # Stack observation cards
+    card_gap = Inches(0.14)
+    num_cards = len(takeaways)
+    total_card_space = Inches(4.35)
+    card_h = (total_card_space - (num_cards - 1) * card_gap) / max(1, num_cards)
+
+    cur_card_y = right_y + hdr_h + Inches(0.12)
+    for t_item in takeaways:
+        accent_key = t_item.get("tag_color", "accent")
+        accent_rgb = theme.get_rgb(accent_key) if accent_key in ("primary", "secondary", "accent") else theme.get_rgb("accent")
+        c_card, _ = add_card_with_top_stripe(
+            slide=slide,
+            theme=theme,
+            left=right_x,
+            top=cur_card_y,
+            width=right_w,
+            height=card_h,
+            accent_rgb=accent_rgb,
+            stripe_height_in=0.035,
+        )
+        tf_c = c_card.text_frame
+        tf_c.word_wrap = True
+        tf_c.margin_left = Inches(0.16)
+        tf_c.margin_right = Inches(0.16)
+        tf_c.margin_top = Inches(0.10)
+        tf_c.margin_bottom = Inches(0.08)
+
+        # Tag
+        p_tag = tf_c.paragraphs[0]
+        p_tag.text = t_item.get("tag", "OBSERVATION").upper()
+        p_tag.font.name = theme.font_family_header
+        p_tag.font.size = Pt(8.5)
+        p_tag.font.bold = True
+        p_tag.font.color.rgb = accent_rgb
+
+        # Title
+        p_tit = tf_c.add_paragraph()
+        p_tit.text = t_item.get("title", "")
+        p_tit.font.name = theme.font_family_header
+        p_tit.font.size = Pt(11.0)
+        p_tit.font.bold = True
+        p_tit.font.color.rgb = theme.get_rgb("primary")
+        p_tit.space_before = Pt(3)
+
+        # Body
+        p_bod = tf_c.add_paragraph()
+        p_bod.text = t_item.get("body", "")
+        p_bod.font.name = theme.font_family
+        p_bod.font.size = Pt(9.5)
+        p_bod.font.color.rgb = theme.get_rgb("secondary")
+        p_bod.space_before = Pt(3)
+
+        cur_card_y += card_h + card_gap
+
+    # 5. Slide Footer
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
+
+
+# ============================================================================
 # 12. High-Level Consulting Archetype Deck Generator
 # ============================================================================
 
@@ -3455,6 +3632,39 @@ class ConsultingDeckBuilder:
             action_title=action_title,
             subtitle=subtitle,
             tree_data=tree_data,
+            current_idx=idx,
+            total_slides=idx,
+        )
+
+    def add_browser_mockup_slide(
+        self,
+        tracker: str = "System Architecture & Interface Validation",
+        action_title: str = "Modernized Analytics Platform Eliminates ERP Latency and Siloed Data Exports",
+        subtitle: Optional[str] = "High-fidelity interface preview running directly on Snowflake Cortex AI and Streamlit serving tiers.",
+        screenshot_path: Optional[Union[str, Path]] = None,
+        url: str = "https://finance.snowflakecomputing.com/streamlit/app",
+        telemetry_badges: Optional[List[str]] = None,
+        theme_mode: str = "light",
+        aspect_ratio: Optional[str] = "16:9",
+        target_dpi: int = 300,
+        takeaways_title: str = "KEY OBSERVATIONS & DRIVERS",
+        takeaways: Optional[List[Dict[str, Any]]] = None,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_browser_mockup_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            screenshot_path=screenshot_path,
+            url=url,
+            telemetry_badges=telemetry_badges,
+            theme_mode=theme_mode,
+            aspect_ratio=aspect_ratio,
+            target_dpi=target_dpi,
+            takeaways_title=takeaways_title,
+            takeaways=takeaways,
             current_idx=idx,
             total_slides=idx,
         )
