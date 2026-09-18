@@ -72,6 +72,9 @@ docs/
 * [**`localization_and_bilingual_deck_subsystem.md`**](backlog/localization_and_bilingual_deck_subsystem.md): Indonesian/English dual-language string catalogs and layout adaptations.
 * [**`pitch_deck_screenshot_modernization.md`**](backlog/pitch_deck_screenshot_modernization.md): High-fidelity UI mockups and screenshot frames in pitch decks.
 * [**`slide_design_variety.md`**](backlog/slide_design_variety.md): Archetype expansion (case study split screens, quote cards, timeline tracks).
+* [**`sprint_17_security_and_performance_quickwins.md`**](backlog/sprint_17_security_and_performance_quickwins.md): Sprint 17 Runbook: P0 security hardening, ReDoS, XXE, and O(2^V) diagram path optimization.
+* [**`sprint_18_change_request_cli_and_closeout.md`**](backlog/sprint_18_change_request_cli_and_closeout.md): Sprint 18 Runbook: Change Request CLI (`bench cr file`), closeout checklists, and bilingual expansion.
+* [**`sprint_19_diagram_pipeline_and_contracts.md`**](backlog/sprint_19_diagram_pipeline_and_contracts.md): Sprint 19 Runbook: Draw.io data URI embedding, unit space conversions, and Pydantic boundaries.
 * [**`template_variable_and_slug_consolidation.md`**](backlog/template_variable_and_slug_consolidation.md): Unified slug catalog and pre-commit PII audit specifications.
 
 ### 3. Session Handovers (`docs/handovers/`)
@@ -79,5 +82,6 @@ docs/
 * [**`2026-09-15_presentation_modernization.md`**](handovers/2026-09-15_presentation_modernization.md): Slide containment, chapter divider archetype, and asset resolution handover.
 * [**`2026-09-16_universal_deliverable_recreation.md`**](handovers/2026-09-16_universal_deliverable_recreation.md): Deliverable recreation Milestones 13–15, financial XLSX suite, and PII linter.
 * [**`2026-09-16_slide3_corporate_equity_tree.md`**](handovers/2026-09-16_slide3_corporate_equity_tree.md): Task delegation brief for the multi-tier corporate shareholding and equity tree archetype.
+* [**`2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md`**](handovers/2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md): Platform upgrade and security hardening master audit.
 * [**`2026-09-18_localization_and_bilingual_subsystems.md`**](handovers/2026-09-18_localization_and_bilingual_subsystems.md): Dual-catalog localization, hybrid translation engine, and paired reference decks.
 

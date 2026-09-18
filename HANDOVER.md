@@ -33,6 +33,7 @@ Progress: `[██████████] 100%` (Tier 1–5 Master Deliverable
 
 ## 3. Transition Briefings Archive (`docs/handovers/`)
 
+- [`2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md`](docs/handovers/2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md): **PLATFORM AUDIT** — Security hardening, O(2^V) diagram fixes, API contract debt, and 38-template roadmap.
 - [`2026-09-18_localization_and_bilingual_subsystems.md`](docs/handovers/2026-09-18_localization_and_bilingual_subsystems.md): Milestone 17 (Dual catalogs, hybrid translation, paired reference decks).
 - [`2026-09-16_universal_deliverable_recreation.md`](docs/handovers/2026-09-16_universal_deliverable_recreation.md): Milestones 12–16 (S-curves, XLSX suite, legal stamping, modular specs).
 - [`2026-09-16_slide3_corporate_equity_tree.md`](docs/handovers/2026-09-16_slide3_corporate_equity_tree.md): Forensic data & layout spec for Slide 3 Corporate Equity Tree.
@@ -43,10 +44,14 @@ Progress: `[██████████] 100%` (Tier 1–5 Master Deliverable
 
 ## 4. Immediate Next Backlog
 
-1. **Slide 3 Corporate Equity Tree Archetype (`src/ppt_engine/reference_slides.py`):**
+1. **Sprint 17 (P0 Security Hardening & Performance Quick-Wins):**
+   - Runbook: [`docs/backlog/sprint_17_security_and_performance_quickwins.md`](docs/backlog/sprint_17_security_and_performance_quickwins.md)
+   - Scope: ReDoS protection, OpenXML XXE defenses, O(2^V) diagram path optimization, and path traversal guards.
+2. **Sprint 18 (Change Request CLI & BAST Closeout):**
+   - Runbook: [`docs/backlog/sprint_18_change_request_cli_and_closeout.md`](docs/backlog/sprint_18_change_request_cli_and_closeout.md)
+   - Scope: `bench cr file`, closeout checklist generation, bilingual translation expansion.
+3. **Sprint 19 (Diagram Pipeline & Strict Contracts):**
+   - Runbook: [`docs/backlog/sprint_19_diagram_pipeline_and_contracts.md`](docs/backlog/sprint_19_diagram_pipeline_and_contracts.md)
+   - Scope: Draw.io data URI embedder, unit space conversions, and Pydantic boundary validation.
+4. **Slide 3 Corporate Equity Tree Archetype (`src/ppt_engine/reference_slides.py`):**
    - Implement `EquityTreeData` tree layout for Metrodata 4-subsidiary structure.
-2. **Presentation Imagery Archetypes & Logo Lockups:**
-   - Standardize template image placeholder zones (Section 5 of [`docs/backlog/slide_design_variety.md`](docs/backlog/slide_design_variety.md)).
-   - Implement dual client/vendor logo lockups on cover slides and header banners.
-3. **Template Variable & Slug Consolidation:**
-   - Enforce [`docs/backlog/template_variable_and_slug_consolidation.md`](docs/backlog/template_variable_and_slug_consolidation.md) across remaining deliverables.
