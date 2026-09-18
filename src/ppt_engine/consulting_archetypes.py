@@ -1390,6 +1390,10 @@ def build_cover_slide(
     product_logo_path: Optional[Union[str, Path]] = None,
     client_sublabel: str = "Steering Committee & Executive Sponsors",
     vendor_sublabel: str = "Data & AI Modernization Practice",
+    prepared_for_label: str = "PREPARED FOR",
+    engagement_partner_label: str = "ENGAGEMENT PARTNER",
+    date_classification_label: str = "DATE & CLASSIFICATION",
+    confidential_label: str = "STRICTLY CONFIDENTIAL",
 ) -> Any:
     """
     Renders a modern, unboxed executive cover slide respecting AGENTS.md conventions:
@@ -1615,7 +1619,7 @@ def build_cover_slide(
     tf_c1.margin_left = tf_c1.margin_right = tf_c1.margin_top = tf_c1.margin_bottom = 0
 
     p1_lbl = tf_c1.paragraphs[0]
-    p1_lbl.text = "PREPARED FOR"
+    p1_lbl.text = prepared_for_label
     p1_lbl.font.name = theme.font_family_header
     p1_lbl.font.size = Pt(10.0)
     p1_lbl.font.bold = True
@@ -1643,7 +1647,7 @@ def build_cover_slide(
     tf_c2.margin_left = tf_c2.margin_right = tf_c2.margin_top = tf_c2.margin_bottom = 0
 
     p2_lbl = tf_c2.paragraphs[0]
-    p2_lbl.text = "ENGAGEMENT PARTNER"
+    p2_lbl.text = engagement_partner_label
     p2_lbl.font.name = theme.font_family_header
     p2_lbl.font.size = Pt(10.0)
     p2_lbl.font.bold = True
@@ -1671,7 +1675,7 @@ def build_cover_slide(
     tf_c3.margin_left = tf_c3.margin_right = tf_c3.margin_top = tf_c3.margin_bottom = 0
 
     p3_lbl = tf_c3.paragraphs[0]
-    p3_lbl.text = "DATE & CLASSIFICATION"
+    p3_lbl.text = date_classification_label
     p3_lbl.font.name = theme.font_family_header
     p3_lbl.font.size = Pt(10.0)
     p3_lbl.font.bold = True
@@ -1686,7 +1690,7 @@ def build_cover_slide(
     p3_val.space_before = Pt(2)
 
     p3_sub = tf_c3.add_paragraph()
-    p3_sub.text = "STRICTLY CONFIDENTIAL"
+    p3_sub.text = confidential_label
     p3_sub.font.name = theme.font_family
     p3_sub.font.size = Pt(10.5)
     p3_sub.font.bold = True
@@ -1715,6 +1719,8 @@ def build_hero_cover_slide(
     product_logo_path: Optional[Union[str, Path]] = None,
     client_sublabel: str = "Steering Committee & Executive Sponsors",
     vendor_sublabel: str = "Data & AI Modernization Practice",
+    prepared_for_label: str = "PREPARED FOR",
+    engagement_partner_label: str = "ENGAGEMENT PARTNER",
 ) -> Any:
     """
     Renders a cinematic top-half photo hero cover slide respecting AGENTS.md conventions:
@@ -1887,7 +1893,7 @@ def build_hero_cover_slide(
     tf_c1.word_wrap = True
     tf_c1.margin_left = tf_c1.margin_right = tf_c1.margin_top = tf_c1.margin_bottom = 0
     p1_lbl = tf_c1.paragraphs[0]
-    p1_lbl.text = "PREPARED FOR"
+    p1_lbl.text = prepared_for_label
     p1_lbl.font.name = theme.font_family_header
     p1_lbl.font.size = Pt(9.0)
     p1_lbl.font.bold = True
@@ -1914,7 +1920,7 @@ def build_hero_cover_slide(
     tf_c2.word_wrap = True
     tf_c2.margin_left = tf_c2.margin_right = tf_c2.margin_top = tf_c2.margin_bottom = 0
     p2_lbl = tf_c2.paragraphs[0]
-    p2_lbl.text = "ENGAGEMENT PARTNER"
+    p2_lbl.text = engagement_partner_label
     p2_lbl.font.name = theme.font_family_header
     p2_lbl.font.size = Pt(9.0)
     p2_lbl.font.bold = True

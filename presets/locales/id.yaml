@@ -1,6 +1,17 @@
 locale: id
 name: "Bahasa Indonesia (Formal Enterprise)"
 
+common:
+  prepared_for: "DISIAPKAN UNTUK"
+  engagement_partner: "MITRA PELAKSANA"
+  date_classification: "TANGGAL & KLASIFIKASI"
+  strictly_confidential: "SANGAT RAHASIA"
+  confidential_notice: "Grup Strategi Enterprise  |  Rahasia & Terbatas"
+  step: "TAHAP"
+  owner: "PENANGGUNG JAWAB:"
+  procedural_checklist: "DAFTAR PERIKSA PROSEDURAL:"
+  output_artifact: "ARTEFAK KELUARAN:"
+
 reference_slides:
   cover:
     tracker: "KOLATERAL TATA KELOLA & BLUEPRINT REFERENSI ENTERPRISE"
@@ -8,6 +19,7 @@ reference_slides:
     subtitle: "Matriks Tata Kelola Proyek Permanen, Pengendalian Ruang Lingkup & Arsitektur Solusi"
     prepared_for: "DISIAPKAN UNTUK"
     engagement_partner: "MITRA PELAKSANA"
+    date_classification: "TANGGAL & KLASIFIKASI"
     client_sublabel: "Komite Pengarah Proyek & Sponsor Eksekutif"
     vendor_sublabel: "Pimpinan Praktik Data & AI Modernization"
     strictly_confidential: "SANGAT RAHASIA"
@@ -18,24 +30,123 @@ reference_slides:
     subtitle: "Struktur proyek hierarkis menghubungkan komite pengarah eksekutif, pemimpin PMO, dan pod eksekusi khusus."
     tier1_header: "TINGKAT 1: KOMITE PENGARAH BERSAMA (SPONSOR PROYEK)"
     tier1_badge: "TATA KELOLA EKSEKUTIF"
+    tier1_client_sponsors_label: "Sponsor {client_name}:"
+    tier1_client_sponsors_desc: "Kepemimpinan Eksekutif / C-Level (Visi strategis, otorisasi anggaran, persetujuan gerbang tahap)"
+    tier1_vendor_leadership_label: "Pimpinan {vendor_name}:"
+    tier1_vendor_leadership_desc: "Direktur & Partner Praktik Konsultasi (Jaminan pengiriman, pengawasan SLA eksekutif)"
     client_pmo_badge: "PMO KLIEN"
     vendor_pmo_badge: "PMO METRODATA"
     client_stream: "ALUR KERJA BISNIS & IT KLIEN"
     vendor_stream: "KONSULTASI & REKAYASA SISTEM METRODATA"
+    client_pm:
+      title: "Manajer Proyek {client_name}"
+      bullets:
+        - "Memfasilitasi akses bisnis, persetujuan kebutuhan, dan penjadwalan UAT."
+        - "Mengelola komunikasi pemangku kepentingan internal dan kesiapan gerbang tahap."
+        - "Titik eskalasi utama untuk persetujuan tata kelola data lintas departemen."
+    vendor_pm:
+      title: "Manajer & Pimpinan Proyek {vendor_name}"
+      bullets:
+        - "Mendorong ritme pengiriman harian, backlog sprint, dan pelacakan pencapaian."
+        - "Memelihara log RAID, kurva-S progres mingguan, dan Permohonan Perubahan formal."
+        - "Mengoordinasikan arsitek Snowflake, rekayasawan data, dan spesialis analitik/AI."
+    pods:
+      bpo:
+        title: "Pemilik Proses Bisnis (BPO)"
+        badge: "BPO KLIEN"
+        bullets:
+          - "Memvalidasi formula dan logika KPI bisnis."
+          - "Menyediakan data input acuan awal."
+          - "Menjalankan skenario pengujian fungsional UAT."
+          - "Menyetujui dan menandatangani hasil penerimaan pengguna."
+      it:
+        title: "Pimpinan IT & Infrastruktur"
+        badge: "IT KLIEN"
+        bullets:
+          - "Menyediakan jaringan, VPN & konfigurasi VPC."
+          - "Mengonfigurasi enterprise IAM / SSO."
+          - "Mengotorisasi ekstraksi data sumber ERP/DB."
+          - "Meninjau kepatuhan dan keamanan siber."
+      engineering:
+        title: "Pimpinan Platform Snowflake"
+        badge: "REKAYASA SISTEM"
+        bullets:
+          - "Menyebarkan DDL & skema database Snowflake."
+          - "Membangun alur transformasi data dengan dbt."
+          - "Mengonfigurasi RBAC & penyembunyian data dinamis."
+          - "Mengoptimalkan komputasi virtual warehouse."
+      analytics:
+        title: "Spesialis Analitik & AI"
+        badge: "ANALITIK / BI"
+        bullets:
+          - "Membangun portal eksekutif berbasis Streamlit."
+          - "Mengembangkan model data semantik."
+          - "Mengimplementasikan pipeline ML/Cortex AI."
+          - "Melaksanakan transfer pengetahuan teknis komprehensif."
 
   change_request:
     tracker: "TATA KELOLA PROYEK | PENGENDALIAN RUANG LINGKUP"
     title: "Prosedur Permohonan Perubahan Mengatur Penyesuaian Ruang Lingkup Melalui Gerbang Keputusan"
     subtitle: "Alur kerja tata kelola 4 tahap berurutan dengan ambang batas eskalasi bertingkat dan persetujuan legal."
     step_label: "TAHAP"
+    owner_label: "PENANGGUNG JAWAB:"
+    checklist_label: "DAFTAR PERIKSA PROSEDURAL:"
+    artifact_label: "ARTEFAK KELUARAN:"
     statuses:
       submitted: "DIAJUKAN"
       evaluated: "DIEVALUASI"
       approved: "DISETUJUI"
       implemented: "DIIMPLEMENTASIKAN"
-    checklist_label: "DAFTAR PERIKSA PROSEDURAL:"
-    artifact_label: "ARTEFAK KELUARAN:"
-    callout_header: "AMBANG BATAS ESKALASI PERMOHONAN PERUBAHAN & ATURAN TATA KELOLA"
+    phases:
+      step1:
+        step_num: "1"
+        title: "Identifikasi & Pengajuan"
+        actor: "BPO / PIMPINAN KLIEN"
+        desc: "Kebutuhan atau perubahan lingkup baru diidentifikasi dari kebutuhan bisnis atau arsitektur."
+        actions:
+          - "Menyusun Formulir Permohonan Perubahan resmi."
+          - "Menentukan justifikasi bisnis & tujuan perubahan."
+          - "Mendaftarkan ke dalam antrean penerimaan PMO."
+        artifact: "4.4_Change_Request_Form.docx"
+        status: "DIAJUKAN"
+      step2:
+        step_num: "2"
+        title: "Penilaian Dampak & Estimasi Hari-Kerja"
+        actor: "TIM TEKNIS METRODATA"
+        desc: "Arsitek pengiriman mengevaluasi kompleksitas teknis, kebutuhan hari-kerja, dan dampak jadwal."
+        actions:
+          - "Mengestimasi kebutuhan hari-kerja per peran."
+          - "Memodelkan variansi jadwal & kurva-S proyek."
+          - "Menentukan eksposur risiko dan estimasi biaya."
+        artifact: "CR_Scoping_and_Mandays.xlsx"
+        status: "DIEVALUASI"
+      step3:
+        step_num: "3"
+        title: "Gerbang Keputusan Bertingkat"
+        actor: "PMO & KOMITE PENGARAH"
+        desc: "Gerbang ambang batas bertingkat mencegah pembengkakan anggaran dan keterlambatan proyek."
+        actions:
+          - "Jalur A: < 5 Hari-Kerja -> Persetujuan PMO."
+          - "Jalur B: ≥ 5 Hari-Kerja -> Tinjauan Komite Pengarah."
+          - "Keputusan: Disetujui / Ditunda / Ditolak."
+        artifact: "4.4_Change_Log_Ledger.xlsx"
+        status: "DISETUJUI"
+      step4:
+        step_num: "4"
+        title: "Penyesuaian Kontrak & Implementasi"
+        actor: "POD IMPLEMENTASI & PMO LEGAL"
+        desc: "Ruang lingkup yang disetujui dimasukkan ke dalam sprint pengembangan dan deliverable kontrak."
+        actions:
+          - "Menandatangani BAST Permohonan Perubahan resmi."
+          - "Memperbarui jadwal acuan proyek di PPM."
+          - "Mengimplementasikan fitur ke sprint target."
+        artifact: "BAST_Change_Request.docx"
+        status: "DIIMPLEMENTASIKAN"
+    callout:
+      header: "AMBANG BATAS ESKALASI PERMOHONAN PERUBAHAN & ATURAN TATA KELOLA"
+      bullets:
+        - "Gerbang Cepat Tingkat 1 (Persetujuan Bersama PMO): Penyesuaian lingkup dalam batas kontingensi (< 5 hari-kerja) tanpa dampak pada tanggal pencapaian. Dicatat dalam Log Perubahan tanpa adendum komersial."
+        - "Gerbang Eskalasi Tingkat 2 (Komite Pengarah Bersama): Perubahan yang berdampak pada nilai kontrak, tanggal penyelesaian acuan, atau topologi arsitektur. Memerlukan adendum BAST CR resmi yang ditandatangani sponsor eksekutif."
 
   platform_arch:
     tracker: "BLUEPRINT PLATFORM TEKNOLOGI | SNOWFLAKE DATA CLOUD"
@@ -46,3 +157,33 @@ reference_slides:
     tracker: "ARSITEKTUR SOLUSI | ALUR DATA END-TO-END"
     title: "Alur Data Modern Memperlancar Ingesti Berkelanjutan ke Konsumsi Analitik Terkelola"
     subtitle: "Aliran data resmi menyeluruh: sumber ERP/IoT transaksional ke inti Snowflake, virtual warehouse, dan kanal konsumsi."
+
+  corporate_equity_tree:
+    tracker: "TATA KELOLA KORPORASI | STRUKTUR KEPEMILIKAN SAHAM"
+    title: "Grup Metrodata Mengoperasikan Anak Perusahaan Bertingkat dan Usaha Patungan Khusus"
+    subtitle: "PT Metrodata Electronics Tbk (MTDL) memegang kendali kepemilikan saham pada entitas distribusi TIK, solusi, dan konsultasi digital utama."
+    parent_subtitle: "Perusahaan Induk & Investasi Publik Terdaftar"
+    footnote: "*) Menunjukkan persentase kepemilikan saham legal per acuan PMO terbaru."
+
+glossary:
+  project_governance: "Tata Kelola Proyek"
+  organizational_structure: "Struktur Organisasi & Eskalasi"
+  joint_steering_committee: "Komite Pengarah Bersama (Steering Committee)"
+  steering_committee: "Komite Pengarah (Steering Committee)"
+  project_sponsorship: "Sponsor Eksekutif Proyek"
+  pmo: "Kantor Manajemen Proyek (PMO)"
+  bpo: "Pemilik Proses Bisnis (BPO)"
+  scope_change_control: "Pengendalian Ruang Lingkup & Perubahan"
+  change_request: "Permohonan Perubahan Lingkup (CR)"
+  identification_request: "Tahap 1: Identifikasi & Pengajuan"
+  impact_manday_scoping: "Tahap 2: Penilaian Dampak & Estimasi Hari-Kerja"
+  bi_level_decision_gate: "Tahap 3: Gerbang Keputusan Bertingkat"
+  contract_baseline_build: "Tahap 4: Penyesuaian Kontrak & Implementasi"
+  submitted: "Diajukan"
+  evaluated: "Dievaluasi"
+  approved: "Disetujui"
+  implemented: "Diimplementasikan"
+  output_artifact: "Artefak Keluaran"
+  procedural_checklist: "Daftar Periksa Prosedural"
+  escalation_thresholds: "Ambang Batas Eskalasi & Aturan Tata Kelola"
+  handover_acceptance_certificate: "Berita Acara Serah Terima (BAST)"

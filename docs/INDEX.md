@@ -61,6 +61,7 @@ docs/
 * [**`drawio_icon_system_architecture.md`**](specs/drawio_icon_system_architecture.md): Vector tech iconography, Lucide glyph integration, and color tinting pipeline.
 * [**`ingress_bus_routing_architecture.md`**](specs/ingress_bus_routing_architecture.md): Shared trunk-line bus architecture for clean multi-source event streaming diagrams.
 * [**`lifecycle_architecture.md`**](specs/lifecycle_architecture.md): Sequence diagrams, SIT/UAT quality gates, and FSD-to-TSD document lifecycle transitions.
+* [**`localization_and_bilingual_subsystem.md`**](specs/localization_and_bilingual_subsystem.md): Dual catalogs (en/id), hybrid phrase translation, and deck localization.
 * [**`manual_identity_guide.md`**](specs/manual_identity_guide.md): Visual identity tokens, Metrodata brand standards, and color usage.
 * [**`master_deliverable_recreation_plan.md`**](specs/master_deliverable_recreation_plan.md): Master strategy for recreating the 38 real-world enterprise consulting templates across 5 delivery tiers.
 * [**`openxml_purging_and_cleansing.md`**](specs/openxml_purging_and_cleansing.md): Zero-corruption comment, highlight, tracked revision, and author profile stripping for `.docx`.
@@ -78,4 +79,5 @@ docs/
 * [**`2026-09-15_presentation_modernization.md`**](handovers/2026-09-15_presentation_modernization.md): Slide containment, chapter divider archetype, and asset resolution handover.
 * [**`2026-09-16_universal_deliverable_recreation.md`**](handovers/2026-09-16_universal_deliverable_recreation.md): Deliverable recreation Milestones 13–15, financial XLSX suite, and PII linter.
 * [**`2026-09-16_slide3_corporate_equity_tree.md`**](handovers/2026-09-16_slide3_corporate_equity_tree.md): Task delegation brief for the multi-tier corporate shareholding and equity tree archetype.
+* [**`2026-09-18_localization_and_bilingual_subsystems.md`**](handovers/2026-09-18_localization_and_bilingual_subsystems.md): Dual-catalog localization, hybrid translation engine, and paired reference decks.
 

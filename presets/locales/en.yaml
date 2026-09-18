@@ -1,6 +1,17 @@
 locale: en
 name: "English (Canonical Enterprise Reference)"
 
+common:
+  prepared_for: "PREPARED FOR"
+  engagement_partner: "ENGAGEMENT PARTNER"
+  date_classification: "DATE & CLASSIFICATION"
+  strictly_confidential: "STRICTLY CONFIDENTIAL"
+  confidential_notice: "Enterprise Strategy Group  |  Confidential & Proprietary"
+  step: "STEP"
+  owner: "OWNER:"
+  procedural_checklist: "PROCEDURAL CHECKLIST:"
+  output_artifact: "OUTPUT ARTIFACT:"
+
 reference_slides:
   cover:
     tracker: "ENTERPRISE BENCHMARK REFERENCE COLLATERAL"
@@ -8,6 +19,7 @@ reference_slides:
     subtitle: "Permanent Project Governance Matrix, Scope Control & Solution Architecture Blueprints"
     prepared_for: "PREPARED FOR"
     engagement_partner: "ENGAGEMENT PARTNER"
+    date_classification: "DATE & CLASSIFICATION"
     client_sublabel: "Project Steering Committee & Sponsors"
     vendor_sublabel: "Data & AI Practice Lead"
     strictly_confidential: "STRICTLY CONFIDENTIAL"
@@ -18,24 +30,123 @@ reference_slides:
     subtitle: "Hierarchical project structure connects executive steering committees, PMO leads, and specialized execution pods."
     tier1_header: "TIER 1: JOINT STEERING COMMITTEE (PROJECT SPONSORSHIP)"
     tier1_badge: "EXECUTIVE GOVERNANCE"
+    tier1_client_sponsors_label: "{client_name} Sponsors:"
+    tier1_client_sponsors_desc: "C-Level Leadership (Strategic vision, budget authorization, stage-gate sign-offs)"
+    tier1_vendor_leadership_label: "{vendor_name} Leadership:"
+    tier1_vendor_leadership_desc: "Consulting Practice Director & Partner (Delivery assurance, executive SLA oversight)"
     client_pmo_badge: "CLIENT PMO"
     vendor_pmo_badge: "METRODATA PMO"
     client_stream: "CLIENT BUSINESS & IT WORKSTREAMS"
     vendor_stream: "METRODATA CONSULTING & ENGINEERING"
+    client_pm:
+      title: "{client_name} Project Manager"
+      bullets:
+        - "Facilitates business access, requirements sign-off, and UAT scheduling."
+        - "Manages internal stakeholder communications and stage-gate readiness."
+        - "Primary escalation point for cross-department data governance approvals."
+    vendor_pm:
+      title: "{vendor_name} Project Manager & Lead"
+      bullets:
+        - "Drives daily delivery cadence, sprint backlogs, and milestone tracking."
+        - "Maintains RAID logs, weekly progress S-curves, and formal Change Requests."
+        - "Coordinates specialized Snowflake architects, engineers, and data scientists."
+    pods:
+      bpo:
+        title: "Business Process Owners"
+        badge: "CLIENT BPO"
+        bullets:
+          - "Validates KPI formulas and logic."
+          - "Provides baseline data inputs."
+          - "Executes functional UAT test cases."
+          - "Signs off user acceptance results."
+      it:
+        title: "IT & Infrastructure Lead"
+        badge: "CLIENT IT"
+        bullets:
+          - "Provisions network, VPN & VPC."
+          - "Configures enterprise IAM / SSO."
+          - "Authorizes source ERP/DB extracts."
+          - "Reviews security and compliance."
+      engineering:
+        title: "Snowflake Platform Lead"
+        badge: "ENGINEERING"
+        bullets:
+          - "Deploys Snowflake DDL & schemas."
+          - "Builds dbt transformation pipelines."
+          - "Configures RBAC & data masking."
+          - "Optimizes virtual warehouse compute."
+      analytics:
+        title: "Analytics & AI Specialists"
+        badge: "ANALYTICS / BI"
+        bullets:
+          - "Builds Streamlit executive portals."
+          - "Develops semantic data models."
+          - "Implements ML/Cortex AI pipelines."
+          - "Conducts technical knowledge transfer."
 
   change_request:
     tracker: "PROJECT GOVERNANCE | SCOPE & CHANGE CONTROL"
     title: "Structured Change Request Procedure Governs Scope Adjustments Through Defined Decision Gates"
     subtitle: "Sequential 4-stage governance pipeline with bi-level escalation thresholds and auditable legal sign-offs."
     step_label: "STEP"
+    owner_label: "OWNER:"
+    checklist_label: "PROCEDURAL CHECKLIST:"
+    artifact_label: "OUTPUT ARTIFACT:"
     statuses:
       submitted: "SUBMITTED"
       evaluated: "EVALUATED"
       approved: "APPROVED"
       implemented: "IMPLEMENTED"
-    checklist_label: "PROCEDURAL CHECKLIST:"
-    artifact_label: "OUTPUT ARTIFACT:"
-    callout_header: "CHANGE REQUEST ESCALATION THRESHOLDS & GOVERNANCE RULES"
+    phases:
+      step1:
+        step_num: "1"
+        title: "Identification & Request"
+        actor: "CLIENT BPO / LEAD"
+        desc: "New scope item or change identified from business need or architectural shift."
+        actions:
+          - "Draft formal Change Request Form."
+          - "Define business rationale & objectives."
+          - "Register in PMO intake queue."
+        artifact: "4.4_Change_Request_Form.docx"
+        status: "SUBMITTED"
+      step2:
+        step_num: "2"
+        title: "Impact & Manday Scoping"
+        actor: "METRODATA TECH TEAM"
+        desc: "Delivery architects evaluate technical complexity, manday effort, and timeline impact."
+        actions:
+          - "Estimate required mandays by role."
+          - "Model schedule & S-curve variance."
+          - "Determine risk & cost exposure."
+        artifact: "CR_Scoping_and_Mandays.xlsx"
+        status: "EVALUATED"
+      step3:
+        step_num: "3"
+        title: "Bi-Level Decision Gate"
+        actor: "PMO & STEERING COMMITTEE"
+        desc: "Bifurcated threshold gateway prevents budget creep and uncontrolled slippage."
+        actions:
+          - "Path A: < 5 Mandays -> PMO Approval."
+          - "Path B: ≥ 5 Mandays -> SteerCo Review."
+          - "Outcome: Approved / Deferred / Rejected."
+        artifact: "4.4_Change_Log_Ledger.xlsx"
+        status: "APPROVED"
+      step4:
+        step_num: "4"
+        title: "Contract Baseline & Build"
+        actor: "DELIVERY POD & LEGAL PMO"
+        desc: "Approved scope incorporated into development sprints and contractual deliverables."
+        actions:
+          - "Execute formal BAST Change Request."
+          - "Re-baseline project schedule in PPM."
+          - "Deploy feature into target sprint."
+        artifact: "BAST_Change_Request.docx"
+        status: "IMPLEMENTED"
+    callout:
+      header: "CHANGE REQUEST ESCALATION THRESHOLDS & GOVERNANCE RULES"
+      bullets:
+        - "Fast-Track Level 1 Gate (PMO Joint Sign-Off): Scope adjustments within contingency buffers (< 5 mandays) with zero impact on milestone delivery dates. Recorded in Change Log without commercial addendum."
+        - "Escalated Level 2 Gate (Joint Steering Committee): Any change impacting contract value, baseline completion dates, or architecture topology. Requires formal BAST CR addendum signed by C-level sponsors."
 
   platform_arch:
     tracker: "TECHNOLOGY PLATFORM BLUEPRINT | SNOWFLAKE DATA CLOUD"
@@ -46,3 +157,33 @@ reference_slides:
     tracker: "SOLUTION ARCHITECTURE | END-TO-END DATA PIPELINE"
     title: "Modern Data Pipeline Streamlines Continuous Ingestion into Governed Analytics Consumption"
     subtitle: "Official end-to-end data flow: transactional ERP/IoT sources into Snowflake core, virtual warehouses, and delivery channels."
+
+  corporate_equity_tree:
+    tracker: "CORPORATE GOVERNANCE | EQUITY STRUCTURE"
+    title: "Metrodata Group Operates Multi-Tier Operating Subsidiaries and Specialized JVs"
+    subtitle: "PT Metrodata Electronics Tbk (MTDL) maintains controlling equity across core ICT distribution, solutions, and digital consulting entities."
+    parent_subtitle: "Holding & Listed Investment Company"
+    footnote: "*) Reflects legal equity shareholding percentages as of latest PMO baseline."
+
+glossary:
+  project_governance: "Project Governance"
+  organizational_structure: "Organizational Structure"
+  joint_steering_committee: "Joint Steering Committee"
+  steering_committee: "Steering Committee"
+  project_sponsorship: "Project Sponsorship"
+  pmo: "Project Management Office (PMO)"
+  bpo: "Business Process Owners (BPO)"
+  scope_change_control: "Scope & Change Control"
+  change_request: "Change Request (CR)"
+  identification_request: "Identification & Request"
+  impact_manday_scoping: "Impact & Manday Scoping"
+  bi_level_decision_gate: "Bi-Level Decision Gate"
+  contract_baseline_build: "Contract Baseline & Build"
+  submitted: "Submitted"
+  evaluated: "Evaluated"
+  approved: "Approved"
+  implemented: "Implemented"
+  output_artifact: "Output Artifact"
+  procedural_checklist: "Procedural Checklist"
+  escalation_thresholds: "Escalation Thresholds"
+  handover_acceptance_certificate: "Handover Acceptance Certificate (BAST)"

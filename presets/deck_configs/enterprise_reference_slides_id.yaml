@@ -1,0 +1,49 @@
+deck_type: reference_slides
+theme: metrodata
+locale: id
+metadata:
+  project_name: "KOLATERAL ACUAN TOLOK UKUR ENTERPRISE"
+  client_name: "[CLIENT_COMPANY_NAME]"
+  vendor_name: "PT Metrodata Electronics Tbk"
+  product: "Snowflake AI Data Cloud"
+  date_str: "September 2026"
+  confidentiality: "[CLIENT_COMPANY_NAME] & Konsultasi Metrodata  |  Rahasia & Hak Milik"
+
+slides:
+  # Slide 1: Master Cover Slide (Cinematic Hero Plate)
+  - archetype: hero_cover
+    title: "KOLATERAL ACUAN TOLOK UKUR ENTERPRISE"
+    subtitle: "Matriks Tata Kelola Proyek Permanen, Pengendalian Ruang Lingkup & Cetak Biru Arsitektur Solusi"
+    client: "[CLIENT_COMPANY_NAME]"
+    vendor: "PT Metrodata Electronics Tbk"
+    product: "Snowflake AI Data Cloud"
+    date_str: "September 2026"
+    hero_image_path: "assets/images/hero/cloud_interchange_night.jpg"
+    hero_height: 3.65
+    scrim_alpha: 0.28
+
+  # Slide 2: Project Org Structure (Slide 33 reference)
+  - archetype: governance_org_structure
+    tracker: "TATA KELOLA PROYEK | STRUKTUR ORGANISASI"
+    title: "Matriks Tata Kelola Gabungan Memastikan Kejelasan Eskalasi dan Kepemilikan Pengiriman"
+    subtitle: "Struktur proyek hierarkis menghubungkan komite pengarah eksekutif, pimpinan PMO, dan tim pelaksana teknis."
+    client_name: "[CLIENT_COMPANY_NAME]"
+    vendor_name: "PT Metrodata Electronics Tbk"
+
+  # Slide 3: Change Request Procedure (Slide 35 reference)
+  - archetype: change_request_procedure
+    tracker: "TATA KELOLA PROYEK | PENGENDALIAN RUANG LINGKUP & PERUBAHAN"
+    title: "Prosedur Permohonan Perubahan Terstruktur Mengatur Penyesuaian Ruang Lingkup Melalui Gerbang Keputusan"
+    subtitle: "Alur tata kelola 4-tahap berurutan dengan ambang batas eskalasi bertingkat dan persetujuan legal yang dapat diaudit."
+
+  # Slide 4: Snowflake Platform Architecture (Slide 17 reference)
+  - archetype: snowflake_platform_architecture
+    tracker: "CETAK BIRU PLATFORM TEKNOLOGI | SNOWFLAKE DATA CLOUD"
+    title: "Platform Terpadu Terkelola Penuh Mengeliminasi Silo Data di Seluruh Lingkungan Multi-Cloud"
+    subtitle: "Cetak biru resmi platform Snowflake menampilkan pemisahan komputasi elastis, penyimpanan terpusat, dan tata kelola Horizon."
+
+  # Slide 5: Snowflake End-to-End Data Pipeline (Slide 18 reference)
+  - archetype: snowflake_data_pipeline
+    tracker: "ARSITEKTUR SOLUSI | ALUR DATA UJUNG-KE-UJUNG"
+    title: "Pipeline Data Modern Menyederhanakan Penyerapan Berkelanjutan ke Konsumsi Analitik Terkelola"
+    subtitle: "Aliran data ujung-ke-ujung resmi: sumber ERP/IoT transaksional ke inti Snowflake, virtual warehouse, dan kanal distribusi."

@@ -4,6 +4,22 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-09-18] - Localization & Bilingual Subsystem: Dual Catalogs (EN/ID), Hybrid Translation & Paired Reference Decks
+
+### Summary
+Delivered the Enterprise Localization and Bilingual Subsystem (`en` / `id`), enabling presentation collateral and consulting deliverables to seamlessly support canonical English and formal Indonesian enterprise governance vocabulary while preserving international cloud technology standards.
+
+### Milestones Delivered
+- **Milestone 17: Localization & Bilingual Subsystem (`en` / `id`):**
+  - **Static Dictionaries (`presets/locales/`):** Authored [`presets/locales/en.yaml`](../presets/locales/en.yaml) and [`presets/locales/id.yaml`](../presets/locales/id.yaml) covering UI metadata, consulting reference slides, process pipelines, and a bidirectional PMO glossary.
+  - **Core Locale Engine ([`src/core/locale_engine.py`](../src/core/locale_engine.py)):** Built zero-dependency `LocaleEngine` supporting cached loading, dot-notation key lookup, safe English fallback, dynamic placeholder interpolation, term translation, and regex-based hybrid sentence translation (`translate_hybrid`).
+  - **Presentation Engine Localization ([`src/ppt_engine/reference_slides.py`](../src/ppt_engine/reference_slides.py)):** Parameterized metadata labels across cover slides (`build_cover_slide`, `build_hero_cover_slide`) and wired `locale` through reference slide builders and `ReferenceDeckBuilder`.
+  - **Unified CLI Extension ([`src/cli.py`](../src/cli.py)):** Added `bench locale list`, `bench locale get`, and `bench locale translate` commands, plus `--locale / -l` override to `bench ppt build-deck`.
+  - **Paired Reference Master Decks:** Built `output/presentations/Enterprise_Reference_Master_Deck_EN.pptx` and `output/presentations/Enterprise_Reference_Master_Deck_ID.pptx` from declarative YAML configurations.
+  - Handover & Spec: [`docs/specs/localization_and_bilingual_subsystem.md`](specs/localization_and_bilingual_subsystem.md) and [`docs/handovers/2026-09-18_localization_and_bilingual_subsystems.md`](handovers/2026-09-18_localization_and_bilingual_subsystems.md).
+
+---
+
 ## [2026-09-16] - Universal Deliverable Recreation: Slide Geometry, Tier 3 Financial XLSX Suite, Tier 1 Legal DOCX & PII Audit Guardrail
 
 ### Summary

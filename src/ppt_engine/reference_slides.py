@@ -243,6 +243,7 @@ def build_governance_org_structure_slide(
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    locale: str = "en",
 ) -> Any:
     """
     Renders permanent reference Slide 33 as a true tree-like hierarchical org chart:
@@ -252,6 +253,17 @@ def build_governance_org_structure_slide(
       - Sub-Distribution Bus & Connecting Drop Lines
       - Base Nodes: 4 Functional Execution Pods
     """
+    from src.core.locale_engine import get_locale_engine
+    loc = get_locale_engine(locale)
+
+    if locale != "en":
+        if tracker == "PROJECT GOVERNANCE | ORGANIZATIONAL STRUCTURE":
+            tracker = loc.t("reference_slides.governance_org.tracker", tracker)
+        if action_title == "Joint Dual-Pillar Governance Matrix Establishes Clear Escalation & Delivery Ownership":
+            action_title = loc.t("reference_slides.governance_org.title", action_title)
+        if subtitle == "Hierarchical project structure connects executive steering committees, PMO leads, and specialized execution pods.":
+            subtitle = loc.t("reference_slides.governance_org.subtitle", subtitle)
+
     slide = add_slide_with_background(prs, theme)
     add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
@@ -277,7 +289,8 @@ def build_governance_org_structure_slide(
         accent_rgb=c_accent,
         bg_color=c_surface,
     )
-    _add_status_pill(slide, theme, sc_left + sc_width - Inches(2.20), sc_top + Inches(0.10), Inches(2.05), Inches(0.24), "EXECUTIVE GOVERNANCE", font_size_pt=8.0, override_color_key="accent")
+    t1_badge = loc.t("reference_slides.governance_org.tier1_badge", "EXECUTIVE GOVERNANCE")
+    _add_status_pill(slide, theme, sc_left + sc_width - Inches(2.20), sc_top + Inches(0.10), Inches(2.05), Inches(0.24), t1_badge, font_size_pt=8.0, override_color_key="accent")
 
     tb_sc = slide.shapes.add_textbox(sc_left + Inches(0.20), sc_top + Inches(0.10), sc_width - Inches(2.40), sc_height - Inches(0.15))
     tf_sc = tb_sc.text_frame
@@ -285,7 +298,7 @@ def build_governance_org_structure_slide(
     tf_sc.margin_left = tf_sc.margin_right = tf_sc.margin_top = tf_sc.margin_bottom = 0
 
     p_sc_header = tf_sc.paragraphs[0]
-    p_sc_header.text = "TIER 1: JOINT STEERING COMMITTEE (PROJECT SPONSORSHIP)"
+    p_sc_header.text = loc.t("reference_slides.governance_org.tier1_header", "TIER 1: JOINT STEERING COMMITTEE (PROJECT SPONSORSHIP)")
     p_sc_header.font.name = theme.font_family_header
     p_sc_header.font.size = Pt(10.5)
     p_sc_header.font.bold = True
@@ -294,13 +307,13 @@ def build_governance_org_structure_slide(
     p_sc1 = tf_sc.add_paragraph()
     p_sc1.space_before = Pt(2)
     r1 = p_sc1.add_run()
-    r1.text = f"{client_name} Sponsors: "
+    r1.text = loc.t("reference_slides.governance_org.tier1_client_sponsors_label", f"{client_name} Sponsors: ", client_name=client_name)
     r1.font.name = theme.font_family
     r1.font.size = Pt(9.0)
     r1.font.bold = True
     r1.font.color.rgb = c_primary
     r1_sub = p_sc1.add_run()
-    r1_sub.text = "C-Level Leadership (Strategic vision, budget authorization, stage-gate sign-offs)"
+    r1_sub.text = loc.t("reference_slides.governance_org.tier1_client_sponsors_desc", "C-Level Leadership (Strategic vision, budget authorization, stage-gate sign-offs)")
     r1_sub.font.name = theme.font_family
     r1_sub.font.size = Pt(8.5)
     r1_sub.font.color.rgb = c_secondary
@@ -308,13 +321,13 @@ def build_governance_org_structure_slide(
     p_sc2 = tf_sc.add_paragraph()
     p_sc2.space_before = Pt(1)
     r2 = p_sc2.add_run()
-    r2.text = f"{vendor_name} Leadership: "
+    r2.text = loc.t("reference_slides.governance_org.tier1_vendor_leadership_label", f"{vendor_name} Leadership: ", vendor_name=vendor_name)
     r2.font.name = theme.font_family
     r2.font.size = Pt(9.0)
     r2.font.bold = True
     r2.font.color.rgb = c_primary
     r2_sub = p_sc2.add_run()
-    r2_sub.text = "Consulting Practice Director & Partner (Delivery assurance, executive SLA oversight)"
+    r2_sub.text = loc.t("reference_slides.governance_org.tier1_vendor_leadership_desc", "Consulting Practice Director & Partner (Delivery assurance, executive SLA oversight)")
     r2_sub.font.name = theme.font_family
     r2_sub.font.size = Pt(8.5)
     r2_sub.font.color.rgb = c_secondary
@@ -322,17 +335,14 @@ def build_governance_org_structure_slide(
     # ------------------------------------------------------------------------
     # HIERARCHY TREE CONNECTOR LINES: TIER 1 -> TIER 2
     # ------------------------------------------------------------------------
-    # Vertical trunk dropping from Steering Committee bottom center
     center_x = Inches(6.666)
     bus_y1 = Inches(3.18)
     _draw_v_line(slide, center_x, sc_top + sc_height, bus_y1, c_line, width_pt=1.5)
 
-    # Horizontal bus line across Tier 2
     pm1_center_x = Inches(3.66)
     pm2_center_x = Inches(9.67)
     _draw_h_line(slide, pm1_center_x, pm2_center_x, bus_y1, c_line, width_pt=1.5)
 
-    # Vertical drops into Tier 2 cards
     pmo_top = Inches(3.40)
     _draw_v_line(slide, pm1_center_x, bus_y1, pmo_top, c_line, width_pt=1.5)
     _draw_v_line(slide, pm2_center_x, bus_y1, pmo_top, c_line, width_pt=1.5)
@@ -350,7 +360,8 @@ def build_governance_org_structure_slide(
         accent_rgb=c_accent_sec,
         bg_color=c_surface,
     )
-    _add_status_pill(slide, theme, pm1_left + pmo_width - Inches(1.35), pmo_top + Inches(0.10), Inches(1.15), Inches(0.22), "CLIENT PMO", font_size_pt=8.0, override_color_key="danger")
+    c_pmo_badge = loc.t("reference_slides.governance_org.client_pmo_badge", "CLIENT PMO")
+    _add_status_pill(slide, theme, pm1_left + pmo_width - Inches(1.35), pmo_top + Inches(0.10), Inches(1.15), Inches(0.22), c_pmo_badge, font_size_pt=8.0, override_color_key="danger")
 
     tb_pm1 = slide.shapes.add_textbox(pm1_left + Inches(0.20), pmo_top + Inches(0.10), pmo_width - Inches(1.60), pmo_height - Inches(0.18))
     tf_pm1 = tb_pm1.text_frame
@@ -358,15 +369,20 @@ def build_governance_org_structure_slide(
     tf_pm1.margin_left = tf_pm1.margin_right = tf_pm1.margin_top = tf_pm1.margin_bottom = 0
 
     p_pm1_h = tf_pm1.paragraphs[0]
-    p_pm1_h.text = f"{client_name} Project Manager"
+    p_pm1_h.text = loc.t("reference_slides.governance_org.client_pm.title", f"{client_name} Project Manager", client_name=client_name)
     p_pm1_h.font.name = theme.font_family_header
     p_pm1_h.font.size = Pt(11.0)
     p_pm1_h.font.bold = True
     p_pm1_h.font.color.rgb = c_primary
 
-    _add_bullet_paragraph(tf_pm1, "Facilitates business access, requirements sign-off, and UAT scheduling.", theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=3)
-    _add_bullet_paragraph(tf_pm1, "Manages internal stakeholder communications and stage-gate readiness.", theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=2)
-    _add_bullet_paragraph(tf_pm1, "Primary escalation point for cross-department data governance approvals.", theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=2)
+    c_pm_bullets = loc.get_list("reference_slides.governance_org.client_pm.bullets", [
+        "Facilitates business access, requirements sign-off, and UAT scheduling.",
+        "Manages internal stakeholder communications and stage-gate readiness.",
+        "Primary escalation point for cross-department data governance approvals.",
+    ])
+    for b_idx, b_text in enumerate(c_pm_bullets):
+        sb = 3 if b_idx == 0 else 2
+        _add_bullet_paragraph(tf_pm1, b_text, theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=sb)
 
     # Metrodata PM Card
     pm2_left = Inches(6.813)
@@ -375,7 +391,8 @@ def build_governance_org_structure_slide(
         accent_rgb=c_accent,
         bg_color=c_surface,
     )
-    _add_status_pill(slide, theme, pm2_left + pmo_width - Inches(1.50), pmo_top + Inches(0.10), Inches(1.30), Inches(0.22), "VENDOR PMO", font_size_pt=8.0, override_color_key="accent")
+    v_pmo_badge = loc.t("reference_slides.governance_org.vendor_pmo_badge", "VENDOR PMO")
+    _add_status_pill(slide, theme, pm2_left + pmo_width - Inches(1.50), pmo_top + Inches(0.10), Inches(1.30), Inches(0.22), v_pmo_badge, font_size_pt=8.0, override_color_key="accent")
 
     tb_pm2 = slide.shapes.add_textbox(pm2_left + Inches(0.20), pmo_top + Inches(0.10), pmo_width - Inches(1.75), pmo_height - Inches(0.18))
     tf_pm2 = tb_pm2.text_frame
@@ -383,15 +400,20 @@ def build_governance_org_structure_slide(
     tf_pm2.margin_left = tf_pm2.margin_right = tf_pm2.margin_top = tf_pm2.margin_bottom = 0
 
     p_pm2_h = tf_pm2.paragraphs[0]
-    p_pm2_h.text = f"{vendor_name} Project Manager & Lead"
+    p_pm2_h.text = loc.t("reference_slides.governance_org.vendor_pm.title", f"{vendor_name} Project Manager & Lead", vendor_name=vendor_name)
     p_pm2_h.font.name = theme.font_family_header
     p_pm2_h.font.size = Pt(11.0)
     p_pm2_h.font.bold = True
     p_pm2_h.font.color.rgb = c_primary
 
-    _add_bullet_paragraph(tf_pm2, "Drives daily delivery cadence, sprint backlogs, and milestone tracking.", theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=3)
-    _add_bullet_paragraph(tf_pm2, "Maintains RAID logs, weekly progress S-curves, and formal Change Requests.", theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=2)
-    _add_bullet_paragraph(tf_pm2, "Coordinates specialized Snowflake architects, engineers, and data scientists.", theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=2)
+    v_pm_bullets = loc.get_list("reference_slides.governance_org.vendor_pm.bullets", [
+        "Drives daily delivery cadence, sprint backlogs, and milestone tracking.",
+        "Maintains RAID logs, weekly progress S-curves, and formal Change Requests.",
+        "Coordinates specialized Snowflake architects, engineers, and data scientists.",
+    ])
+    for b_idx, b_text in enumerate(v_pm_bullets):
+        sb = 3 if b_idx == 0 else 2
+        _add_bullet_paragraph(tf_pm2, b_text, theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=sb)
 
     # ------------------------------------------------------------------------
     # HIERARCHY TREE CONNECTOR LINES: TIER 2 -> TIER 3
@@ -422,8 +444,9 @@ def build_governance_org_structure_slide(
     # ------------------------------------------------------------------------
     pod_height = Inches(1.72)
 
-    pods_data = [
+    default_pods = [
         {
+            "key": "bpo",
             "title": "Business Process Owners",
             "org": client_name,
             "badge": "CLIENT BPO",
@@ -437,6 +460,7 @@ def build_governance_org_structure_slide(
             ],
         },
         {
+            "key": "it",
             "title": "IT & Infrastructure Lead",
             "org": client_name,
             "badge": "CLIENT IT",
@@ -450,6 +474,7 @@ def build_governance_org_structure_slide(
             ],
         },
         {
+            "key": "engineering",
             "title": "Snowflake Platform Lead",
             "org": vendor_name,
             "badge": "ENGINEERING",
@@ -463,6 +488,7 @@ def build_governance_org_structure_slide(
             ],
         },
         {
+            "key": "analytics",
             "title": "Analytics & AI Specialists",
             "org": vendor_name,
             "badge": "ANALYTICS / BI",
@@ -476,6 +502,21 @@ def build_governance_org_structure_slide(
             ],
         },
     ]
+
+    pods_data = []
+    for dp in default_pods:
+        k = dp["key"]
+        p_title = loc.t(f"reference_slides.governance_org.pods.{k}.title", dp["title"])
+        p_badge = loc.t(f"reference_slides.governance_org.pods.{k}.badge", dp["badge"])
+        p_bullets = loc.get_list(f"reference_slides.governance_org.pods.{k}.bullets", dp["bullets"])
+        pods_data.append({
+            "title": p_title,
+            "org": dp["org"],
+            "badge": p_badge,
+            "badge_color": dp["badge_color"],
+            "stripe_color": dp["stripe_color"],
+            "bullets": p_bullets,
+        })
 
     for idx, pod in enumerate(pods_data):
         p_left = Inches(0.80) + idx * (pod_width + pod_gap)
@@ -508,7 +549,8 @@ def build_governance_org_structure_slide(
         for b_text in pod["bullets"]:
             _add_bullet_paragraph(tf_pod, b_text, theme.font_family, font_size_pt=8.0, font_color=c_secondary, space_before_pt=1.5)
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    resolved_notice = loc.t("common.confidential_notice", notice) if notice == "Enterprise Strategy Group  |  Confidential & Proprietary" else notice
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=resolved_notice)
     return slide
 
 
@@ -525,6 +567,7 @@ def build_change_request_procedure_slide(
     current_idx: int = 2,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    locale: str = "en",
 ) -> Any:
     """
     Renders permanent reference Slide 35 as an interconnected procedural flow:
@@ -533,6 +576,17 @@ def build_change_request_procedure_slide(
         Phase 3: Bifurcated Decision Gate (PMO Fast-Track vs Steering Committee) ->
         Phase 4: Contractual BAST & Deployment
     """
+    from src.core.locale_engine import get_locale_engine
+    loc = get_locale_engine(locale)
+
+    if locale != "en":
+        if tracker == "PROJECT GOVERNANCE | SCOPE & CHANGE CONTROL":
+            tracker = loc.t("reference_slides.change_request.tracker", tracker)
+        if action_title == "Structured Change Request Procedure Governs Scope Adjustments Through Defined Decision Gates":
+            action_title = loc.t("reference_slides.change_request.title", action_title)
+        if subtitle == "Sequential 4-stage governance pipeline with bi-level escalation thresholds and auditable legal sign-offs.":
+            subtitle = loc.t("reference_slides.change_request.subtitle", subtitle)
+
     slide = add_slide_with_background(prs, theme)
     add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
@@ -561,7 +615,12 @@ def build_change_request_procedure_slide(
     x_end = Inches(0.80) + 3 * (card_width + card_gap) + card_width / 2.0
     _draw_h_line(slide, x_start, x_end, sq_cy, theme.get_rgb("border"), width_pt=2.0)
 
-    phases = [
+    step_label = loc.t("reference_slides.change_request.step_label", "STEP")
+    owner_label = loc.t("reference_slides.change_request.owner_label", "OWNER:")
+    checklist_label = loc.t("reference_slides.change_request.checklist_label", "PROCEDURAL CHECKLIST:")
+    artifact_label = loc.t("reference_slides.change_request.artifact_label", "OUTPUT ARTIFACT:")
+
+    default_phases = [
         {
             "step_num": "1",
             "title": "Identification & Request",
@@ -616,6 +675,25 @@ def build_change_request_procedure_slide(
         },
     ]
 
+    phases = []
+    for idx, dph in enumerate(default_phases, start=1):
+        step_k = f"step{idx}"
+        ph_title = loc.t(f"reference_slides.change_request.phases.{step_k}.title", dph["title"])
+        ph_actor = loc.t(f"reference_slides.change_request.phases.{step_k}.actor", dph["actor"])
+        ph_desc = loc.t(f"reference_slides.change_request.phases.{step_k}.desc", dph["desc"])
+        ph_actions = loc.get_list(f"reference_slides.change_request.phases.{step_k}.actions", dph["actions"])
+        ph_artifact = loc.t(f"reference_slides.change_request.phases.{step_k}.artifact", dph["artifact"])
+        ph_status = loc.t(f"reference_slides.change_request.phases.{step_k}.status", dph["status"])
+        phases.append({
+            "step_num": str(idx),
+            "title": ph_title,
+            "actor": ph_actor,
+            "desc": ph_desc,
+            "actions": ph_actions,
+            "artifact": ph_artifact,
+            "status": ph_status,
+        })
+
     for idx, ph in enumerate(phases):
         c_left = Inches(0.80) + idx * (card_width + card_gap)
         c_center_x = c_left + card_width / 2.0
@@ -635,7 +713,7 @@ def build_change_request_procedure_slide(
         tf_sq.margin_left = tf_sq.margin_right = tf_sq.margin_top = tf_sq.margin_bottom = 0
 
         p_s1 = tf_sq.paragraphs[0]
-        p_s1.text = "STEP"
+        p_s1.text = step_label
         p_s1.alignment = PP_ALIGN.CENTER
         p_s1.font.name = theme.font_family_header
         p_s1.font.size = Pt(8.0)
@@ -696,7 +774,7 @@ def build_change_request_procedure_slide(
         p_title.font.color.rgb = c_primary
 
         p_actor = tf.add_paragraph()
-        p_actor.text = f"OWNER: {ph['actor']}"
+        p_actor.text = f"{owner_label} {ph['actor']}"
         p_actor.font.name = theme.font_family
         p_actor.font.size = Pt(7.5)
         p_actor.font.bold = True
@@ -711,7 +789,7 @@ def build_change_request_procedure_slide(
         p_desc.space_before = Pt(3)
 
         p_act_lbl = tf.add_paragraph()
-        p_act_lbl.text = "PROCEDURAL CHECKLIST:"
+        p_act_lbl.text = checklist_label
         p_act_lbl.font.name = theme.font_family
         p_act_lbl.font.size = Pt(7.0)
         p_act_lbl.font.bold = True
@@ -722,7 +800,7 @@ def build_change_request_procedure_slide(
             _add_bullet_paragraph(tf, act, theme.font_family, font_size_pt=7.5, font_color=c_secondary, space_before_pt=1.5)
 
         p_art = tf.add_paragraph()
-        p_art.text = "OUTPUT ARTIFACT:"
+        p_art.text = artifact_label
         p_art.font.name = theme.font_family
         p_art.font.size = Pt(7.0)
         p_art.font.bold = True
@@ -774,30 +852,35 @@ def build_change_request_procedure_slide(
     tf_bot.margin_left = tf_bot.margin_right = tf_bot.margin_top = tf_bot.margin_bottom = 0
 
     p_bh = tf_bot.paragraphs[0]
-    p_bh.text = "CHANGE REQUEST ESCALATION THRESHOLDS & GOVERNANCE RULES"
+    p_bh.text = loc.t(
+        "reference_slides.change_request.callout.header",
+        "CHANGE REQUEST ESCALATION THRESHOLDS & GOVERNANCE RULES",
+    )
     p_bh.font.name = theme.font_family_header
     p_bh.font.size = Pt(10.0)
     p_bh.font.bold = True
     p_bh.font.color.rgb = c_primary
 
-    _add_bullet_paragraph(
-        tf_bot,
-        "Fast-Track Level 1 Gate (PMO Joint Sign-Off): Scope adjustments within contingency buffers (< 5 mandays) with zero impact on milestone delivery dates. Recorded in Change Log without commercial addendum.",
-        theme.font_family,
-        font_size_pt=8.5,
-        font_color=c_secondary,
-        space_before_pt=3.0,
+    callout_bullets = loc.get_list(
+        "reference_slides.change_request.callout.bullets",
+        [
+            "Fast-Track Level 1 Gate (PMO Joint Sign-Off): Scope adjustments within contingency buffers (< 5 mandays) with zero impact on milestone delivery dates. Recorded in Change Log without commercial addendum.",
+            "Escalated Level 2 Gate (Joint Steering Committee): Any change impacting contract value, baseline completion dates, or architecture topology. Requires formal BAST CR addendum signed by C-level sponsors.",
+        ],
     )
-    _add_bullet_paragraph(
-        tf_bot,
-        "Escalated Level 2 Gate (Joint Steering Committee): Any change impacting contract value, baseline completion dates, or architecture topology. Requires formal BAST CR addendum signed by C-level sponsors.",
-        theme.font_family,
-        font_size_pt=8.5,
-        font_color=c_secondary,
-        space_before_pt=2.0,
-    )
+    for b_idx, b_txt in enumerate(callout_bullets):
+        sb = 3.0 if b_idx == 0 else 2.0
+        _add_bullet_paragraph(
+            tf_bot,
+            b_txt,
+            theme.font_family,
+            font_size_pt=8.5,
+            font_color=c_secondary,
+            space_before_pt=sb,
+        )
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    resolved_notice = loc.t("common.confidential_notice", notice) if notice == "Enterprise Strategy Group  |  Confidential & Proprietary" else notice
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=resolved_notice)
     return slide
 
 
@@ -814,11 +897,23 @@ def build_snowflake_platform_architecture_slide(
     current_idx: int = 3,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    locale: str = "en",
 ) -> Any:
     """
     Renders permanent reference Slide 17 by cleanly embedding the official,
     vector-rendered Snowflake Platform Architecture graphic under our standard consulting frame.
     """
+    from src.core.locale_engine import get_locale_engine
+    loc = get_locale_engine(locale)
+
+    if locale != "en":
+        if tracker == "TECHNOLOGY PLATFORM BLUEPRINT | SNOWFLAKE DATA CLOUD":
+            tracker = loc.t("reference_slides.platform_arch.tracker", tracker)
+        if action_title == "Fully-Managed Unified Platform Eliminates Data Silos Across Multi-Cloud Environments":
+            action_title = loc.t("reference_slides.platform_arch.title", action_title)
+        if subtitle == "Official Snowflake platform blueprint showing decoupled storage, elastic compute, and Horizon governance.":
+            subtitle = loc.t("reference_slides.platform_arch.subtitle", subtitle)
+
     slide = add_slide_with_background(prs, theme)
     add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
@@ -864,7 +959,8 @@ def build_snowflake_platform_architecture_slide(
     else:
         logger.warning(f"Official Snowflake graphic not found at: {OFFICIAL_SNOWFLAKE_PLATFORM_IMG}")
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    resolved_notice = loc.t("common.confidential_notice", notice) if notice == "Enterprise Strategy Group  |  Confidential & Proprietary" else notice
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=resolved_notice)
     return slide
 
 
@@ -881,11 +977,23 @@ def build_snowflake_data_pipeline_slide(
     current_idx: int = 4,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    locale: str = "en",
 ) -> Any:
     """
     Renders permanent reference Slide 18 by cleanly embedding the official
     Snowflake solution architecture dataflow graphic under our standard consulting frame.
     """
+    from src.core.locale_engine import get_locale_engine
+    loc = get_locale_engine(locale)
+
+    if locale != "en":
+        if tracker == "SOLUTION ARCHITECTURE | END-TO-END DATA PIPELINE":
+            tracker = loc.t("reference_slides.data_pipeline.tracker", tracker)
+        if action_title == "Modern Data Pipeline Streamlines Continuous Ingestion into Governed Analytics Consumption":
+            action_title = loc.t("reference_slides.data_pipeline.title", action_title)
+        if subtitle == "Official end-to-end data flow: transactional ERP/IoT sources into Snowflake core, virtual warehouses, and delivery channels.":
+            subtitle = loc.t("reference_slides.data_pipeline.subtitle", subtitle)
+
     slide = add_slide_with_background(prs, theme)
     add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
@@ -931,7 +1039,8 @@ def build_snowflake_data_pipeline_slide(
     else:
         logger.warning(f"Official Snowflake data flow graphic not found at: {OFFICIAL_SNOWFLAKE_FLOW_IMG}")
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    resolved_notice = loc.t("common.confidential_notice", notice) if notice == "Enterprise Strategy Group  |  Confidential & Proprietary" else notice
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=resolved_notice)
     return slide
 
 
@@ -953,8 +1062,8 @@ class ReferenceDeckBuilder:
 
     def add_cover(
         self,
-        title: str = "ENTERPRISE BENCHMARK REFERENCE SLIDES",
-        subtitle: str = "Permanent Engagement Governance & Snowflake Platform Architecture Blueprints",
+        title: Optional[str] = None,
+        subtitle: Optional[str] = None,
         client: str = "[CLIENT_COMPANY_NAME]",
         vendor: str = "PT Metrodata Electronics Tbk",
         product: str = "Snowflake AI Data Cloud",
@@ -962,64 +1071,98 @@ class ReferenceDeckBuilder:
         hero_image_path: Optional[Union[str, Path]] = None,
         **kwargs: Any,
     ) -> Any:
+        loc = self.loc_engine
+        title_res = title or loc.t("reference_slides.cover.title", "ENTERPRISE BENCHMARK REFERENCE SLIDES")
+        sub_res = subtitle or loc.t("reference_slides.cover.subtitle", "Permanent Engagement Governance & Snowflake Platform Architecture Blueprints")
+        tr_res = kwargs.pop("tracker", None) or loc.t("reference_slides.cover.tracker", "ENTERPRISE BENCHMARK REFERENCE COLLATERAL")
+        c_sub = kwargs.pop("client_sublabel", None) or loc.t("reference_slides.cover.client_sublabel", "Project Steering Committee & Sponsors")
+        v_sub = kwargs.pop("vendor_sublabel", None) or loc.t("reference_slides.cover.vendor_sublabel", "Data & AI Practice Lead")
+        prep_lbl = kwargs.pop("prepared_for_label", None) or loc.t("reference_slides.cover.prepared_for", "PREPARED FOR")
+        eng_lbl = kwargs.pop("engagement_partner_label", None) or loc.t("reference_slides.cover.engagement_partner", "ENGAGEMENT PARTNER")
+        date_lbl = kwargs.pop("date_classification_label", None) or loc.t("reference_slides.cover.date_classification", "DATE & CLASSIFICATION")
+        conf_lbl = kwargs.pop("confidential_label", None) or loc.t("reference_slides.cover.strictly_confidential", "STRICTLY CONFIDENTIAL")
+
         if hero_image_path is not None:
             return self.add_hero_cover(
-                title=title,
-                subtitle=subtitle,
+                title=title_res,
+                subtitle=sub_res,
                 client=client,
                 vendor=vendor,
                 product=product,
                 date_str=date_str,
+                tracker=tr_res,
                 hero_image_path=hero_image_path,
+                client_sublabel=c_sub,
+                vendor_sublabel=v_sub,
+                prepared_for_label=prep_lbl,
+                engagement_partner_label=eng_lbl,
                 **kwargs,
             )
         return build_cover_slide(
             prs=self.prs,
             theme=self.theme,
-            title=title,
-            subtitle=subtitle,
+            title=title_res,
+            subtitle=sub_res,
             client=client,
             vendor=vendor,
             product=product,
             date_str=date_str,
-            tracker="ENTERPRISE BENCHMARK REFERENCE COLLATERAL",
-            client_sublabel="Project Steering Committee & Sponsors",
-            vendor_sublabel="Data & AI Practice Lead",
+            tracker=tr_res,
+            client_sublabel=c_sub,
+            vendor_sublabel=v_sub,
+            prepared_for_label=prep_lbl,
+            engagement_partner_label=eng_lbl,
+            date_classification_label=date_lbl,
+            confidential_label=conf_lbl,
         )
 
     def add_hero_cover(
         self,
-        title: str = "ENTERPRISE BENCHMARK REFERENCE SLIDES",
-        subtitle: str = "Permanent Engagement Governance & Snowflake Platform Architecture Blueprints",
+        title: Optional[str] = None,
+        subtitle: Optional[str] = None,
         client: str = "[CLIENT_COMPANY_NAME]",
         vendor: str = "PT Metrodata Electronics Tbk",
         product: str = "Snowflake AI Data Cloud",
         date_str: str = "September 2026",
-        tracker: str = "ENTERPRISE BENCHMARK REFERENCE COLLATERAL",
+        tracker: Optional[str] = None,
         hero_image_path: Optional[Union[str, Path]] = None,
         hero_height: float = 3.65,
         scrim_alpha: float = 0.28,
         **kwargs: Any,
     ) -> Any:
+        loc = self.loc_engine
+        title_res = title or loc.t("reference_slides.cover.title", "ENTERPRISE BENCHMARK REFERENCE SLIDES")
+        sub_res = subtitle or loc.t("reference_slides.cover.subtitle", "Permanent Engagement Governance & Snowflake Platform Architecture Blueprints")
+        tr_res = tracker or loc.t("reference_slides.cover.tracker", "ENTERPRISE BENCHMARK REFERENCE COLLATERAL")
+        c_sub = kwargs.pop("client_sublabel", None) or loc.t("reference_slides.cover.client_sublabel", "Project Steering Committee & Sponsors")
+        v_sub = kwargs.pop("vendor_sublabel", None) or loc.t("reference_slides.cover.vendor_sublabel", "Data & AI Practice Lead")
+        prep_lbl = kwargs.pop("prepared_for_label", None) or loc.t("reference_slides.cover.prepared_for", "PREPARED FOR")
+        eng_lbl = kwargs.pop("engagement_partner_label", None) or loc.t("reference_slides.cover.engagement_partner", "ENGAGEMENT PARTNER")
+
         return build_hero_cover_slide(
             prs=self.prs,
             theme=self.theme,
-            title=title,
-            subtitle=subtitle,
+            title=title_res,
+            subtitle=sub_res,
             client=client,
             vendor=vendor,
             product=product,
             date_str=date_str,
-            tracker=tracker,
+            tracker=tr_res,
             hero_image_path=hero_image_path,
             hero_height=hero_height,
             scrim_alpha=scrim_alpha,
-            client_sublabel=kwargs.get("client_sublabel", "Project Steering Committee & Sponsors"),
-            vendor_sublabel=kwargs.get("vendor_sublabel", "Data & AI Practice Lead"),
+            client_sublabel=c_sub,
+            vendor_sublabel=v_sub,
+            prepared_for_label=prep_lbl,
+            engagement_partner_label=eng_lbl,
+            **kwargs,
         )
 
     def add_governance_org_structure(self, **kwargs: Any) -> Any:
         idx = len(self.prs.slides) + 1
+        if "locale" not in kwargs:
+            kwargs["locale"] = self.locale
         return build_governance_org_structure_slide(
             prs=self.prs,
             theme=self.theme,
@@ -1030,6 +1173,8 @@ class ReferenceDeckBuilder:
 
     def add_change_request_procedure(self, **kwargs: Any) -> Any:
         idx = len(self.prs.slides) + 1
+        if "locale" not in kwargs:
+            kwargs["locale"] = self.locale
         return build_change_request_procedure_slide(
             prs=self.prs,
             theme=self.theme,
@@ -1040,6 +1185,8 @@ class ReferenceDeckBuilder:
 
     def add_snowflake_platform_architecture(self, **kwargs: Any) -> Any:
         idx = len(self.prs.slides) + 1
+        if "locale" not in kwargs:
+            kwargs["locale"] = self.locale
         return build_snowflake_platform_architecture_slide(
             prs=self.prs,
             theme=self.theme,
@@ -1050,6 +1197,8 @@ class ReferenceDeckBuilder:
 
     def add_snowflake_data_pipeline(self, **kwargs: Any) -> Any:
         idx = len(self.prs.slides) + 1
+        if "locale" not in kwargs:
+            kwargs["locale"] = self.locale
         return build_snowflake_data_pipeline_slide(
             prs=self.prs,
             theme=self.theme,
@@ -1060,22 +1209,43 @@ class ReferenceDeckBuilder:
 
     def add_equity_corporate_tree(
         self,
-        tracker: str = "CORPORATE GOVERNANCE | EQUITY STRUCTURE",
-        action_title: str = "Metrodata Group Operates Multi-Tier Operating Subsidiaries and Specialized JVs",
-        subtitle: Optional[str] = "PT Metrodata Electronics Tbk (MTDL) maintains controlling equity across core ICT distribution, solutions, and digital consulting entities.",
+        tracker: Optional[str] = None,
+        action_title: Optional[str] = None,
+        subtitle: Optional[str] = None,
         tree_data: Optional[EquityTreeData] = None,
         **kwargs: Any,
     ) -> Any:
         idx = len(self.prs.slides) + 1
+        loc = self.loc_engine
+        t_tr = tracker or (loc.t("reference_slides.corporate_equity_tree.tracker") if self.locale != "en" else "CORPORATE GOVERNANCE | EQUITY STRUCTURE")
+        t_title = action_title or (loc.t("reference_slides.corporate_equity_tree.title") if self.locale != "en" else "Metrodata Group Operates Multi-Tier Operating Subsidiaries and Specialized JVs")
+        t_sub = subtitle or (loc.t("reference_slides.corporate_equity_tree.subtitle") if self.locale != "en" else "PT Metrodata Electronics Tbk (MTDL) maintains controlling equity across core ICT distribution, solutions, and digital consulting entities.")
+
+        if tree_data is not None:
+            if self.locale != "en":
+                if tree_data.parent_subtitle == "Holding & Listed Investment Company":
+                    tree_data.parent_subtitle = loc.t("reference_slides.corporate_equity_tree.parent_subtitle", tree_data.parent_subtitle)
+                if "latest PMO baseline" in str(tree_data.footnote):
+                    tree_data.footnote = loc.t("reference_slides.corporate_equity_tree.footnote", tree_data.footnote)
+        else:
+            if self.locale != "en":
+                from src.ppt_engine.consulting_archetypes import _default_equity_tree_data
+                tree_data = _default_equity_tree_data()
+                tree_data.parent_subtitle = loc.t("reference_slides.corporate_equity_tree.parent_subtitle", tree_data.parent_subtitle)
+                tree_data.footnote = loc.t("reference_slides.corporate_equity_tree.footnote", tree_data.footnote)
+
+        notice = kwargs.pop("notice", loc.t("common.confidential_notice", "Enterprise Strategy Group  |  Confidential & Proprietary"))
+
         return build_equity_corporate_tree_slide(
             prs=self.prs,
             theme=self.theme,
-            tracker=tracker,
-            action_title=action_title,
-            subtitle=subtitle,
+            tracker=t_tr,
+            action_title=t_title,
+            subtitle=t_sub,
             tree_data=tree_data,
             current_idx=idx,
             total_slides=idx,
+            notice=notice,
             **kwargs,
         )
 
@@ -1235,9 +1405,9 @@ class ReferenceDeckBuilder:
                     subtitle=t_sub,
                 )
             elif archetype in ("corporate_equity_tree", "equity_tree", "corporate_structure"):
-                t_tr = slide_cfg.get(f"tracker_{locale_name}") or slide_cfg.get("tracker", "CORPORATE GOVERNANCE | EQUITY STRUCTURE")
-                t_title = slide_cfg.get(f"title_{locale_name}") or slide_cfg.get("title", "Metrodata Group Operates Multi-Tier Operating Subsidiaries and Specialized JVs")
-                t_sub = slide_cfg.get(f"subtitle_{locale_name}") or slide_cfg.get("subtitle", "PT Metrodata Electronics Tbk (MTDL) maintains controlling equity across core ICT distribution, solutions, and digital consulting entities.")
+                t_tr = slide_cfg.get(f"tracker_{locale_name}") or (loc.t("reference_slides.corporate_equity_tree.tracker") if locale_name != "en" else slide_cfg.get("tracker", loc.t("reference_slides.corporate_equity_tree.tracker")))
+                t_title = slide_cfg.get(f"title_{locale_name}") or (loc.t("reference_slides.corporate_equity_tree.title") if locale_name != "en" else slide_cfg.get("title", loc.t("reference_slides.corporate_equity_tree.title")))
+                t_sub = slide_cfg.get(f"subtitle_{locale_name}") or (loc.t("reference_slides.corporate_equity_tree.subtitle") if locale_name != "en" else slide_cfg.get("subtitle", loc.t("reference_slides.corporate_equity_tree.subtitle")))
 
                 tree_cfg = slide_cfg.get("tree_data")
                 tree_data = None
@@ -1247,15 +1417,17 @@ class ReferenceDeckBuilder:
                     tree_data = EquityTreeData(
                         parent_company=tree_cfg.get("parent_company", "PT Metrodata Electronics Tbk"),
                         parent_ticker=tree_cfg.get("parent_ticker", "MTDL"),
-                        parent_subtitle=tree_cfg.get("parent_subtitle", "Holding & Listed Investment Company"),
+                        parent_subtitle=tree_cfg.get("parent_subtitle", loc.t("reference_slides.corporate_equity_tree.parent_subtitle", "Holding & Listed Investment Company") if locale_name != "en" else "Holding & Listed Investment Company"),
                         tier1_nodes=t1_nodes,
                         tier2_nodes=t2_nodes,
-                        footnote=tree_cfg.get("footnote", slide_cfg.get("footnote", "*) Reflects legal equity shareholding percentages as of latest PMO baseline.")),
+                        footnote=tree_cfg.get("footnote", slide_cfg.get("footnote", loc.t("reference_slides.corporate_equity_tree.footnote", "*) Reflects legal equity shareholding percentages as of latest PMO baseline.") if locale_name != "en" else "*) Reflects legal equity shareholding percentages as of latest PMO baseline.")),
                     )
                 elif "footnote" in slide_cfg:
                     from src.ppt_engine.consulting_archetypes import _default_equity_tree_data
                     tree_data = _default_equity_tree_data()
                     tree_data.footnote = slide_cfg["footnote"]
+                    if locale_name != "en":
+                        tree_data.parent_subtitle = loc.t("reference_slides.corporate_equity_tree.parent_subtitle", tree_data.parent_subtitle)
 
                 builder.add_equity_corporate_tree(
                     tracker=t_tr,
