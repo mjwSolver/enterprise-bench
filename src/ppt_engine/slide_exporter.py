@@ -10,6 +10,7 @@ Headless slide preview generator with multi-tier backend orchestration:
 
 from __future__ import annotations
 
+import functools
 import io
 import os
 import platform
@@ -50,8 +51,9 @@ def _hex_or_rgb_to_tuple(color: Any, default: Tuple[int, int, int] = (255, 255, 
     return default
 
 
+@functools.lru_cache(maxsize=128)
 def _get_system_font(font_name: Optional[str] = None, size_px: int = 16, bold: bool = False) -> ImageFont.ImageFont:
-    """Locate crisp system font on macOS/Linux/Windows with sensible fallbacks."""
+    """Locate crisp system font on macOS/Linux/Windows with sensible fallbacks (memoized)."""
     system = platform.system()
     candidates: List[str] = []
 

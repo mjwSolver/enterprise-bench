@@ -140,7 +140,7 @@ class XlsxHandler(BaseFormatHandler):
                         orig_val = val
                         new_val = orig_val
                         for target, replacement in sorted_replacements:
-                            if target in new_val:
+                            if target.lower() in new_val.lower():
                                 new_val = re.sub(re.escape(target), replacement, new_val, flags=re.IGNORECASE)
                         if new_val != orig_val:
                             cell.value = new_val
@@ -151,7 +151,7 @@ class XlsxHandler(BaseFormatHandler):
                         orig_c = cell.comment.text
                         new_c = orig_c
                         for target, replacement in sorted_replacements:
-                            if target in new_c:
+                            if target.lower() in new_c.lower():
                                 new_c = re.sub(re.escape(target), replacement, new_c, flags=re.IGNORECASE)
                         if new_c != orig_c:
                             cell.comment.text = new_c

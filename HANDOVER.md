@@ -17,6 +17,7 @@ Progress: `[██████████] 100%` (Tier 1–5 Master Deliverable
 - **Tier 4 (Consulting Presentations):** Reference slide suite, DirectWrite parity previews, BCG/McKinsey archetypes (`src/ppt_engine/`).
 - **Tier 5 (Architecture Diagramming):** Multi-page Draw.io engine (`DrawIOProject`), batch exporter (`bench diagram export-all`), and declarative YAML compiler (`bench diagram build-project` via `presets/diagrams/fsd_architecture.yaml`).
 - **Tier 6 (Localization & Bilingual Subsystems):** Canonical EN/ID YAML catalogs (`presets/locales/`), hybrid phrase translator (`src/core/locale_engine.py`), and paired reference master decks (`Enterprise_Reference_Master_Deck_EN.pptx`, `..._ID.pptx`).
+- **Tier 7 (Platform Hardening, CR CLI, Diagram Pipeline & Gantt Archetypes - Milestones 18–21):** Replaced `shell=True` command injection, $O(2^V)$ diagram ranking BFS, font `@lru_cache`, `bench cr file` (4 templates automated), `bench xlsx update-closeout`, on-demand Draw.io URI embedder (`src/core/diagram_uri.py`), unit conversions (`src/core/units.py`), Pydantic v2 schemas, Delivery Gantt, and Harvey Balls scorecard archetypes.
 
 ---
 
@@ -44,14 +45,10 @@ Progress: `[██████████] 100%` (Tier 1–5 Master Deliverable
 
 ## 4. Immediate Next Backlog
 
-1. **Sprint 17 (P0 Security Hardening & Performance Quick-Wins):**
-   - Runbook: [`docs/backlog/sprint_17_security_and_performance_quickwins.md`](docs/backlog/sprint_17_security_and_performance_quickwins.md)
-   - Scope: ReDoS protection, OpenXML XXE defenses, O(2^V) diagram path optimization, and path traversal guards.
-2. **Sprint 18 (Change Request CLI & BAST Closeout):**
-   - Runbook: [`docs/backlog/sprint_18_change_request_cli_and_closeout.md`](docs/backlog/sprint_18_change_request_cli_and_closeout.md)
-   - Scope: `bench cr file`, closeout checklist generation, bilingual translation expansion.
-3. **Sprint 19 (Diagram Pipeline & Strict Contracts):**
-   - Runbook: [`docs/backlog/sprint_19_diagram_pipeline_and_contracts.md`](docs/backlog/sprint_19_diagram_pipeline_and_contracts.md)
-   - Scope: Draw.io data URI embedder, unit space conversions, and Pydantic boundary validation.
-4. **Slide 3 Corporate Equity Tree Archetype (`src/ppt_engine/reference_slides.py`):**
-   - Implement `EquityTreeData` tree layout for Metrodata 4-subsidiary structure.
+1. **Presales Modernization Pitch Deck (`Modernize_Data_Platform_Pitch_Deck_Template.pptx`):**
+   - Automate 36-slide presales deck utilizing Delivery Gantt, Harvey Balls, and browser mockups.
+2. **Project Kick-off Presentation (`1.1_Project_Kick-off_Material_Template.pptx`):**
+   - Automate 19-slide kick-off deck with governance org structure, RACI matrices, and timeline gates.
+3. **UAT Briefing Presentation (`3.3_Sosialisasi_UAT_Template.pptx`):**
+   - Automate 15-slide bilingual UAT briefing deck for client business process owners.
+

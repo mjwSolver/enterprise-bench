@@ -121,6 +121,12 @@ def calculate_cloud_sizing(
     """
     cfg = config or CloudSizingConfig()
 
+    if len(cfg.warehouses) > 8:
+        raise ValueError(
+            f"Snowflake Cloud Sizing template supports maximum 8 warehouse configurations; "
+            f"received {len(cfg.warehouses)}. Please consolidate warehouse tiers."
+        )
+
     p = template_path or get_template_path("Cloud_Sizing_Calculator_Template.xlsx")
     if not p or not Path(p).exists():
         raise FileNotFoundError("Cloud_Sizing_Calculator_Template.xlsx template not found.")

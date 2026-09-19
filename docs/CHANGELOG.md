@@ -4,6 +4,33 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-09-19] - Sprints 17–20: Security Hardening, Change Request CLI, Diagram Pipeline & Consulting Archetypes
+
+### Summary
+Delivered a 4-sprint batch execution hardening engine security and performance, operationalizing Change Request governance and project closeouts via CLI, establishing an on-demand Draw.io and declarative diagram URI pipeline, centralizing OpenXML/DrawingML coordinate conversions, and introducing executive Delivery Gantt and Harvey Balls scorecard slide archetypes.
+
+### Milestones Delivered
+- **Milestone 18 (Sprint 17: Security Hardening & Engine Optimization):**
+  - **Command Injection Elimination ([`src/cli.py`](../src/cli.py)):** Replaced vulnerable `shell=True` subprocess calls in desktop PowerPoint review launchers with discrete parameter lists.
+  - **Diagram DAG Ranking Optimization ([`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py)):** Replaced $O(2^V)$ exponential DFS in `_assign_ranks` with Kahn's algorithm topological BFS ($O(V + E)$), preventing stack overflows and recursion errors on complex diamond topologies.
+  - **Font Cache Memoization ([`src/ppt_engine/slide_exporter.py`](../src/ppt_engine/slide_exporter.py)):** Decorated `_get_system_font` with `@functools.lru_cache(maxsize=128)`, eliminating thousands of disk I/O hits per presentation export.
+  - **PII Case-Insensitive Matching ([`src/core/pii/handlers/`](../src/core/pii/handlers/)):** Fixed case-sensitivity containment checks across `.docx`, `.pptx`, and `.xlsx` PII replacement handlers.
+- **Milestone 19 (Sprint 18: Change Request CLI & Project Closeout):**
+  - **Change Request CLI ([`src/cli.py`](../src/cli.py)):** Registered `bench cr file` command connected to `ChangeRequestProcessor`, automating 4 production master templates simultaneously (`Change_Request_Form.docx`, `Change_Log_Ledger.xlsx`, `CR_Scoping_and_Mandays.xlsx`, `BAST_Change_Request.docx`).
+  - **Closeout Checklist Gate ([`src/cli.py`](../src/cli.py)):** Added `bench xlsx update-closeout` updating deliverable sign-offs in `5.2_Project_Closeout_Checklist_Template.xlsx`.
+  - **Bilingual Governance Dictionaries ([`presets/locales/`](../presets/locales/)):** Expanded `en.yaml` and `id.yaml` with Change Request categories, approval statuses, and closeout sections.
+- **Milestone 20 (Sprint 19: Diagram Pipeline, Units & Strict Contracts):**
+  - **On-Demand Diagram URI Embedder ([`src/core/diagram_uri.py`](../src/core/diagram_uri.py)):** Built `resolve_diagram_uri` enabling `.drawio#Page` and `.yaml#Page` embedding directly within Markdown specifications and presentation asset resolution with automated disk caching.
+  - **Centralized Coordinate Conversions ([`src/core/units.py`](../src/core/units.py)):** Standardized unit multipliers (`EMU`, `Twips`, `1/8 pt`, `DrawingML Alpha`) and conversion functions across OpenXML, DrawingML, python-docx, and python-pptx.
+  - **Pydantic Schemas ([`src/xlsx_engine/schemas.py`](../src/xlsx_engine/schemas.py), [`src/docx_engine/schemas.py`](../src/docx_engine/schemas.py)):** Codified strict v2 schemas for S-Curve inputs, spreadsheet cell mappings, and document frontmatter metadata.
+  - **Silent Failure Elimination:** Added error tracking in `docx_purger.py`, warehouse size validation ($\le 8$) in `cloud_sizing.py`, and structured logging in `calculator_stamper.py`.
+- **Milestone 21 (Sprint 20: Visual Archetypes & Deck Builders):**
+  - **Delivery Gantt Timeline Archetype ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):** Implemented `build_timeline_gantt_slide` featuring calendar column axis (Weeks 1–12), workstream streams, duration bars, milestone diamonds, and a vertical "Current SPRINT" marker.
+  - **Harvey Balls Feature Scorecard Archetype ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):** Implemented `build_feature_matrix_slide` supporting Harvey Balls glyphs (`● ◐ ○`) and target platform highlighting.
+  - **Deck Builder Integration:** Added `add_timeline_gantt_slide` and `add_feature_matrix_slide` to `ConsultingDeckBuilder` and `ReferenceDeckBuilder`.
+
+---
+
 ## [2026-09-18] - Localization & Bilingual Subsystem: Dual Catalogs (EN/ID), Hybrid Translation & Paired Reference Decks
 
 ### Summary

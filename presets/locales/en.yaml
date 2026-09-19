@@ -187,3 +187,26 @@ glossary:
   procedural_checklist: "Procedural Checklist"
   escalation_thresholds: "Escalation Thresholds"
   handover_acceptance_certificate: "Handover Acceptance Certificate (BAST)"
+
+governance:
+  cr:
+    title: "Project Change Request"
+    categories:
+      scope: "Scope Change"
+      schedule: "Schedule Adjustment"
+      requirement: "Requirement Enhancement"
+      technical: "Technical Refactoring"
+      bug_fix: "Defect Remediation"
+    statuses:
+      submitted: "SUBMITTED"
+      under_review: "UNDER REVIEW"
+      approved: "APPROVED"
+      rejected: "REJECTED"
+      deferred: "DEFERRED"
+  closeout:
+    checklist_title: "Project Closeout & Handover Checklist"
+    sections:
+      deliverables: "1. Core Deliverables"
+      scope_verification: "2. Scope Verification"
+      operational_handover: "3. Operational Handover"
+

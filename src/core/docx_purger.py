@@ -17,7 +17,7 @@ import os
 import shutil
 import tempfile
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -35,6 +35,7 @@ class PurgeReport:
     revisions_removed: int = 0
     success: bool = True
     error_message: Optional[str] = None
+    errors: List[str] = field(default_factory=list)
 
 
 def purge_docx_elements(
@@ -81,8 +82,8 @@ def purge_docx_elements(
                     for child in list(root):
                         root.remove(child)
                     items_data[filename] = etree.tostring(root, xml_declaration=True, encoding="utf-8", standalone=True)
-                except Exception:
-                    pass
+                except Exception as err:
+                    report.errors.append(f"Failed processing {filename}: {err}")
 
             # 2. Clear people.xml (reviewer and contributor identity list)
             elif purge_comments and filename == "word/people.xml":
@@ -91,8 +92,8 @@ def purge_docx_elements(
                     for child in list(root):
                         root.remove(child)
                     items_data[filename] = etree.tostring(root, xml_declaration=True, encoding="utf-8", standalone=True)
-                except Exception:
-                    pass
+                except Exception as err:
+                    report.errors.append(f"Failed processing {filename}: {err}")
 
             # 3. Settings.xml: remove trackRevisions flag
             elif accept_revisions and filename == "word/settings.xml":
@@ -100,8 +101,8 @@ def purge_docx_elements(
                     root = etree.fromstring(data)
                     etree.strip_elements(root, f"{{{W_NS}}}trackRevisions", with_tail=False)
                     items_data[filename] = etree.tostring(root, xml_declaration=True, encoding="utf-8", standalone=True)
-                except Exception:
-                    pass
+                except Exception as err:
+                    report.errors.append(f"Failed processing {filename}: {err}")
 
             # 4. Document XMLs: headers, footers, and main body
             elif (
@@ -139,8 +140,8 @@ def purge_docx_elements(
                         etree.strip_elements(root, f"{{{W_NS}}}highlight", with_tail=False)
 
                     items_data[filename] = etree.tostring(root, xml_declaration=True, encoding="utf-8", standalone=True)
-                except Exception:
-                    pass
+                except Exception as err:
+                    report.errors.append(f"Failed processing {filename}: {err}")
 
         with zipfile.ZipFile(tmp_path, "w", compression=zipfile.ZIP_DEFLATED) as zout:
             for filename, data in items_data.items():

@@ -59,6 +59,7 @@ xlsx_app = typer.Typer(name="xlsx", help="Spreadsheet & Calculator Engine", no_a
 diagram_app = typer.Typer(name="diagram", help="Multi-Page Draw.io & Mermaid Diagram Engine", no_args_is_help=True)
 pii_app = typer.Typer(name="pii", help="Universal PII Sanitization & Slug Linter", no_args_is_help=True)
 locale_app = typer.Typer(name="locale", help="Bilingual & Hybrid Localization Engine", no_args_is_help=True)
+cr_app = typer.Typer(name="cr", help="Enterprise Change Request (CR) & Commercial Addendum Workflows", no_args_is_help=True)
 
 app.add_typer(ppt_app, name="ppt")
 app.add_typer(doc_app, name="doc")
@@ -66,6 +67,7 @@ app.add_typer(xlsx_app, name="xlsx")
 app.add_typer(diagram_app, name="diagram")
 app.add_typer(pii_app, name="pii")
 app.add_typer(locale_app, name="locale")
+app.add_typer(cr_app, name="cr")
 
 
 # ============================================================================
@@ -336,9 +338,12 @@ def build_ppt_deck(
     rprint(f"[green]✓ Generated consulting presentation ({total_slides} slides):[/green] [bold]{saved_file}[/bold]")
 
     if open_deck:
-        cmd = f'open -a "Microsoft PowerPoint" "{saved_file.resolve()}" && osascript -e \'tell application "Microsoft PowerPoint" to activate\''
         rprint(f"[cyan]ℹ Launching desktop PowerPoint:[/cyan] [bold]{saved_file.name}[/bold]")
-        subprocess.run(cmd, shell=True)
+        try:
+            subprocess.run(["open", "-a", "Microsoft PowerPoint", str(saved_file.resolve())], check=False)
+            subprocess.run(["osascript", "-e", 'tell application "Microsoft PowerPoint" to activate'], check=False)
+        except Exception as e:
+            rprint(f"[yellow]⚠ Could not activate Microsoft PowerPoint: {e}[/yellow]")
     else:
         rprint(f"[dim]Tip: View in PowerPoint via desktop review: `open -a \"Microsoft PowerPoint\" \"{saved_file}\"`[/dim]")
 
@@ -381,9 +386,12 @@ def replace_ppt_image(
     rprint(f"[green]✓ Substituted {count} image(s) -> created:[/green] [bold]{final_out}[/bold]")
 
     if open_deck:
-        cmd = f'open -a "Microsoft PowerPoint" "{final_out.resolve()}" && osascript -e \'tell application "Microsoft PowerPoint" to activate\''
         rprint(f"[cyan]ℹ Launching desktop PowerPoint:[/cyan] [bold]{final_out.name}[/bold]")
-        subprocess.run(cmd, shell=True)
+        try:
+            subprocess.run(["open", "-a", "Microsoft PowerPoint", str(final_out.resolve())], check=False)
+            subprocess.run(["osascript", "-e", 'tell application "Microsoft PowerPoint" to activate'], check=False)
+        except Exception as e:
+            rprint(f"[yellow]⚠ Could not activate Microsoft PowerPoint: {e}[/yellow]")
 
 
 @ppt_app.command("check-resources")
@@ -1046,6 +1054,26 @@ def sync_s_curve_cli(
     rprint(f"[green]✓ S-Curve Analysis tab with LineChart injected:[/green] [bold]{out_p}[/bold]")
 
 
+@xlsx_app.command("update-closeout")
+def update_closeout_cli(
+    item: str = typer.Option(..., "--item", "-i", help="Deliverable or checklist item name (substring match)"),
+    status: str = typer.Option("Delivered", "--status", "-s", help="Gate status: Delivered, Done, Yes, Partial, TBD"),
+    template: Optional[str] = typer.Option(None, "--template", "-t", help="Path to 5.2_Project_Closeout_Checklist_Template.xlsx"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .xlsx destination path"),
+) -> None:
+    """Update deliverable sign-off statuses in 5.2_Project_Closeout_Checklist_Template.xlsx."""
+    from src.xlsx_engine.ledger_models import update_closeout_checklist
+
+    updates = [{"item_name": item, "status": status}]
+    try:
+        out_p = update_closeout_checklist(updates=updates, template_path=template, output_path=output)
+        rprint(f"[green]✓ Closeout checklist updated:[/green] [bold]{out_p}[/bold]")
+        rprint(f"  Item: '{item}' -> Status: [bold cyan]{status}[/bold cyan]")
+    except Exception as e:
+        rprint(f"[red]Error updating closeout checklist:[/red] {e}")
+        raise typer.Exit(code=1)
+
+
 
 
 # ============================================================================
@@ -1418,6 +1446,54 @@ def translate_hybrid_cmd(
     result = engine.translate_hybrid(text)
     rprint(f"[bold cyan]Input:[/bold cyan]  {text}")
     rprint(f"[bold green]Output:[/bold green] {result}")
+
+
+# ============================================================================
+# Change Request Commands (bench cr ...)
+# ============================================================================
+
+@cr_app.command("file")
+def file_change_request_cli(
+    title: str = typer.Option(..., "--title", "-t", help="Title of the Change Request"),
+    requester: str = typer.Option(..., "--requester", "-r", help="Name and title of the CR requester"),
+    description: str = typer.Option(..., "--description", "-d", help="Detailed requirement description"),
+    scope_impact: str = typer.Option(..., "--scope", "-s", help="Impacted technical components / architecture"),
+    category: str = typer.Option("Scope", "--category", "-c", help="Category: Scope, Schedule, Requirement, Technical, Bug Fix"),
+    priority: str = typer.Option("High", "--priority", "-p", help="Priority: Low, Medium, High, Critical"),
+    department: str = typer.Option("Consolidated Accounting", "--dept", help="Requester business unit"),
+    schedule_days: int = typer.Option(15, "--days", help="Estimated schedule calendar days required"),
+    output_dir: Optional[str] = typer.Option(None, "--output-dir", "-o", help="Target output folder for CR package"),
+    project_id: str = typer.Option("TTI_Snowflake_Analytics", "--project", help="Project identifier"),
+) -> None:
+    """
+    Intake, model, and generate a complete Enterprise Change Request package:
+    1. Change_Request_Form.docx (governance & approval matrix)
+    2. Change_Log_Ledger.xlsx (appends registration record)
+    3. CR_Scoping_and_Mandays.xlsx (role effort & sizing)
+    4. BAST_Change_Request.docx (handover addendum)
+    """
+    from src.core.change_request import ChangeRequestProcessor, CRSubmission
+
+    processor = ChangeRequestProcessor(project_id=project_id)
+    submission = CRSubmission(
+        title=title,
+        requester=requester,
+        description=description,
+        scope_impact=scope_impact,
+        category=category,
+        priority=priority,
+        department=department,
+        schedule_days=schedule_days,
+    )
+
+    rprint(f"[cyan]ℹ Processing Change Request:[/cyan] [bold]{title}[/bold]")
+    res = processor.file_change_request(submission=submission, output_dir=output_dir)
+
+    rprint(f"[green]✓ Change Request filed successfully:[/green] [bold]CR-{res.cr_id}[/bold]")
+    rprint(f"  CR Form:          {res.cr_form_path}")
+    rprint(f"  Mandays Scoping:  {res.mandays_sheet_path}")
+    rprint(f"  BAST CR Draft:    {res.bast_draft_path}")
+    rprint(f"  Total Mandays:    {res.total_mandays} days")
 
 
 if __name__ == "__main__":

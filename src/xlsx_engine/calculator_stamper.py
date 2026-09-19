@@ -7,6 +7,7 @@ for Microsoft Excel (.xlsx) templates.
 
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -14,6 +15,8 @@ from typing import Any, Dict, List, Optional, Union
 import openpyxl
 
 from src.core.config import OUTPUT_DIR, get_template_path, validate_clean_path
+
+logger = logging.getLogger(__name__)
 
 
 class CalculatorStamper:
@@ -100,8 +103,8 @@ class CalculatorStamper:
                 for cell_ref, cell_val in val.items():
                     try:
                         ws[cell_ref] = cell_val
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning("Failed injecting value into %s cell %s: %s", ws.title, cell_ref, e)
                 continue
 
             # Coordinate with sheet prefix: "Sheet1!A1"
@@ -109,18 +112,19 @@ class CalculatorStamper:
                 sheet_part, cell_ref = key.split("!", 1)
                 sheet_part = sheet_part.strip("'\"")
                 if sheet_part in wb.sheetnames:
+                    ws = wb[sheet_part]
                     try:
-                        wb[sheet_part][cell_ref] = val
-                    except Exception:
-                        pass
+                        ws[cell_ref] = val
+                    except Exception as e:
+                        logger.warning("Failed injecting value into %s cell %s: %s", sheet_part, cell_ref, e)
                 continue
 
             # Direct cell coordinate on active sheet: "A1"
             if coord_regex.match(key):
                 try:
                     active_ws[key] = val
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed injecting value into active sheet cell %s: %s", key, e)
                 continue
 
         # 3. String placeholder scan for {{ key }} substitutions

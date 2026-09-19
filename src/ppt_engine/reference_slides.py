@@ -49,6 +49,8 @@ from pptx.util import Inches, Pt
 from src.ppt_engine.consulting_archetypes import (
     EquityEntityNode,
     EquityTreeData,
+    FeatureMatrixData,
+    GanttTimelineData,
     add_card,
     add_card_with_top_stripe,
     add_slide_footer,
@@ -56,7 +58,9 @@ from src.ppt_engine.consulting_archetypes import (
     add_slide_with_background,
     build_cover_slide,
     build_equity_corporate_tree_slide,
+    build_feature_matrix_slide,
     build_hero_cover_slide,
+    build_timeline_gantt_slide,
     create_presentation,
 )
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb
@@ -1243,6 +1247,62 @@ class ReferenceDeckBuilder:
             action_title=t_title,
             subtitle=t_sub,
             tree_data=tree_data,
+            current_idx=idx,
+            total_slides=idx,
+            notice=notice,
+            **kwargs,
+        )
+
+    def add_timeline_gantt(
+        self,
+        tracker: Optional[str] = None,
+        action_title: Optional[str] = None,
+        subtitle: Optional[str] = None,
+        gantt_data: Optional[GanttTimelineData] = None,
+        **kwargs: Any,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        loc = self.loc_engine
+        t_tr = tracker or "DELIVERY ROADMAP | PROJECT EXECUTION"
+        t_title = action_title or "Phased Execution Plan Ensures Iterative Milestone Realization Across 12 Weeks"
+        t_sub = subtitle or "Integrated schedule coordinating foundational lakehouse infrastructure, dbt transformations, and Streamlit delivery."
+        notice = kwargs.pop("notice", loc.t("common.confidential_notice", "Enterprise Strategy Group  |  Confidential & Proprietary"))
+
+        return build_timeline_gantt_slide(
+            prs_or_slide=self.prs,
+            theme=self.theme,
+            tracker=t_tr,
+            action_title=t_title,
+            subtitle=t_sub,
+            gantt_data=gantt_data,
+            current_idx=idx,
+            total_slides=idx,
+            notice=notice,
+            **kwargs,
+        )
+
+    def add_feature_matrix(
+        self,
+        tracker: Optional[str] = None,
+        action_title: Optional[str] = None,
+        subtitle: Optional[str] = None,
+        matrix_data: Optional[FeatureMatrixData] = None,
+        **kwargs: Any,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        loc = self.loc_engine
+        t_tr = tracker or "ARCHITECTURE EVALUATION | PLATFORM BENCHMARK"
+        t_title = action_title or "Snowflake AI Data Cloud Demonstrates Superior Capabilities Across Core Evaluation Criteria"
+        t_sub = subtitle or "Multi-dimensional comparative assessment evaluating compute elasticity, data governance, and native AI integration."
+        notice = kwargs.pop("notice", loc.t("common.confidential_notice", "Enterprise Strategy Group  |  Confidential & Proprietary"))
+
+        return build_feature_matrix_slide(
+            prs_or_slide=self.prs,
+            theme=self.theme,
+            tracker=t_tr,
+            action_title=t_title,
+            subtitle=t_sub,
+            matrix_data=matrix_data,
             current_idx=idx,
             total_slides=idx,
             notice=notice,

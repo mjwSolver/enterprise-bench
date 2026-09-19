@@ -187,6 +187,14 @@ class ResourceManager:
         """
         key_str = str(key_or_path)
 
+        # Check for Diagram URI syntax (.drawio#Page or .yaml#Page)
+        if "#" in key_str:
+            from src.core.diagram_uri import resolve_diagram_uri
+
+            resolved = resolve_diagram_uri(key_str, base_dir=self.root_dir)
+            if resolved and resolved.exists():
+                return resolved
+
         # 1. Check if key is registered
         if key_str in self._registry:
             spec = self._registry[key_str]

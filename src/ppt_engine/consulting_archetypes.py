@@ -3371,7 +3371,580 @@ def build_browser_mockup_slide(
 
 
 # ============================================================================
-# 12. High-Level Consulting Archetype Deck Generator
+# 12. Delivery Gantt & Roadmap Archetype
+# ============================================================================
+
+@dataclass
+class GanttTask:
+    """Represents a discrete task or milestone phase in a delivery timeline."""
+    name: str
+    start_period: float              # e.g., 1.0 (start of Week 1)
+    end_period: float                # e.g., 4.0 (end of Week 4)
+    progress_pct: float = 100.0      # 0 to 100%
+    status: str = "COMPLETED"        # COMPLETED, IN_PROGRESS, PLANNED, DELAYED
+    owner: Optional[str] = None
+    is_milestone: bool = False       # If True, renders as a milestone diamond marker
+
+@dataclass
+class GanttWorkstream:
+    """Represents a major functional delivery track / workstream."""
+    category: str                    # e.g., "Workstream 1: Ingestion & Core Lakehouse"
+    badge: str                       # e.g., "DATA PLATFORM"
+    accent_color: str = "primary"    # primary, secondary, accent, or hex
+    tasks: List[GanttTask] = field(default_factory=list)
+
+@dataclass
+class GanttTimelineData:
+    """Complete dataset for an executive consulting delivery roadmap."""
+    time_scale_label: str = "WEEKS"
+    total_periods: int = 12
+    period_labels: Optional[List[str]] = None
+    current_period_marker: Optional[float] = 6.0
+    workstreams: List[GanttWorkstream] = field(default_factory=list)
+    footnote: str = "*) Timeline reflects target PMO sprint velocity and scheduled governance gates."
+
+
+def _default_gantt_data() -> GanttTimelineData:
+    return GanttTimelineData(
+        time_scale_label="WEEKS",
+        total_periods=12,
+        period_labels=[f"W{i}" for i in range(1, 13)],
+        current_period_marker=6.0,
+        workstreams=[
+            GanttWorkstream(
+                category="Foundation & Ingestion",
+                badge="CORE LAKEHOUSE",
+                accent_color="primary",
+                tasks=[
+                    GanttTask("Snowflake Accounts & RBAC Setup", 1.0, 3.0, 100.0, "COMPLETED"),
+                    GanttTask("SAP & ERP CDC Ingestion Pipeline", 2.0, 5.0, 100.0, "COMPLETED"),
+                    GanttTask("Data Ingestion Gate", 5.0, 5.0, 100.0, "COMPLETED", is_milestone=True),
+                ],
+            ),
+            GanttWorkstream(
+                category="Transformation & Marts",
+                badge="DBT PIPELINES",
+                accent_color="accent",
+                tasks=[
+                    GanttTask("Silver Cleansing & Deduplication", 3.0, 7.0, 80.0, "IN_PROGRESS"),
+                    GanttTask("Gold Analytical Views & Marts", 5.0, 9.0, 20.0, "IN_PROGRESS"),
+                    GanttTask("Transformation Gate", 9.0, 9.0, 0.0, "PLANNED", is_milestone=True),
+                ],
+            ),
+            GanttWorkstream(
+                category="Serving & Executive BI",
+                badge="STREAMLIT & AI",
+                accent_color="secondary",
+                tasks=[
+                    GanttTask("Streamlit Dashboard Wireframes", 6.0, 8.0, 40.0, "IN_PROGRESS"),
+                    GanttTask("Cortex AI Copilot Integration", 8.0, 11.0, 0.0, "PLANNED"),
+                    GanttTask("SIT / UAT Acceptance Sign-off", 10.0, 12.0, 0.0, "PLANNED"),
+                    GanttTask("Production Go-Live (BAST)", 12.0, 12.0, 0.0, "PLANNED", is_milestone=True),
+                ],
+            ),
+        ],
+    )
+
+
+def build_timeline_gantt_slide(
+    prs_or_slide: Any,
+    theme: Optional[Theme] = None,
+    tracker: str = "DELIVERY ROADMAP | PROJECT EXECUTION",
+    action_title: str = "Phased Execution Plan Ensures Iterative Milestone Realization Across 12 Weeks",
+    subtitle: Optional[str] = "Integrated schedule coordinating foundational lakehouse infrastructure, dbt transformations, and Streamlit delivery.",
+    gantt_data: Optional[GanttTimelineData] = None,
+    current_idx: int = 4,
+    total_slides: int = 10,
+    notice: Optional[str] = None,
+) -> Any:
+    """
+    Renders an executive delivery Gantt timeline slide with calendar column axis,
+    workstream streams, duration bars, milestone diamonds, and current progress indicator.
+    """
+    if theme is None:
+        theme = get_theme("default")
+
+    if hasattr(prs_or_slide, "slides"):
+        slide = prs_or_slide.slides.add_slide(prs_or_slide.slide_layouts[6])
+    else:
+        slide = prs_or_slide
+
+    data = gantt_data or _default_gantt_data()
+
+    # 1. Background Fill
+    bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(7.50))
+    bg.fill.solid()
+    bg.fill.fore_color.rgb = theme.get_rgb("background")
+    bg.line.fill.background()
+
+    # 2. Unified Header Frame (AGENTS.md Zero Collision Rule)
+    add_slide_header(slide, theme, tracker=tracker, title=action_title, subtitle=subtitle)
+
+    # 3. Canvas Bounds
+    left_x = Inches(0.80)
+    grid_left = Inches(3.85)
+    grid_width = Inches(8.68)
+    header_y = Inches(1.85)
+    header_h = Inches(0.35)
+
+    num_periods = max(1, data.total_periods)
+    col_width = grid_width / num_periods
+
+    # Time Axis Header Bar
+    t_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, grid_left, header_y, grid_width, header_h)
+    t_bar.fill.solid()
+    t_bar.fill.fore_color.rgb = theme.get_rgb("primary")
+    t_bar.line.fill.background()
+
+    labels = data.period_labels or [f"P{i}" for i in range(1, num_periods + 1)]
+    for col_idx in range(num_periods):
+        col_x = grid_left + col_idx * col_width
+        tb = slide.shapes.add_textbox(col_x, header_y, col_width, header_h)
+        tf = tb.text_frame
+        tf.word_wrap = False
+        p = tf.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        lbl = labels[col_idx] if col_idx < len(labels) else f"P{col_idx + 1}"
+        p.text = lbl
+        p.font.name = theme.font_family_header
+        p.font.size = Pt(8.5)
+        p.font.bold = True
+        p.font.color.rgb = RGBColor(255, 255, 255)
+
+    # 4. Workstream Rows
+    row_top = header_y + header_h + Inches(0.12)
+    num_ws = len(data.workstreams)
+    avail_h = Inches(4.25)
+    row_gap = Inches(0.12)
+    row_h = (avail_h - (num_ws - 1) * row_gap) / max(1, num_ws)
+
+    status_colors = {
+        "COMPLETED": theme.get_rgb("primary"),
+        "IN_PROGRESS": theme.get_rgb("accent"),
+        "PLANNED": RGBColor(203, 213, 225),  # Slate-300
+        "DELAYED": RGBColor(220, 38, 38),     # Red-600
+    }
+
+    for ws_idx, ws in enumerate(data.workstreams):
+        cur_y = row_top + ws_idx * (row_h + row_gap)
+
+        # Left label container (Sharp Rectangle)
+        ws_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, cur_y, Inches(2.90), row_h)
+        ws_card.fill.solid()
+        ws_card.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        ws_card.line.color.rgb = RGBColor(226, 232, 240)
+        ws_card.line.width = Pt(1.0)
+
+        # Left accent stripe (Sharp Rectangle)
+        accent_key = ws.accent_color
+        acc_rgb = theme.get_rgb(accent_key) if accent_key in ("primary", "secondary", "accent") else theme.get_rgb("accent")
+        stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, cur_y, Inches(0.08), row_h)
+        stripe.fill.solid()
+        stripe.fill.fore_color.rgb = acc_rgb
+        stripe.line.fill.background()
+
+        tf_ws = ws_card.text_frame
+        tf_ws.word_wrap = True
+        tf_ws.margin_left = Inches(0.18)
+        tf_ws.margin_right = Inches(0.08)
+        tf_ws.margin_top = Inches(0.10)
+        p_badge = tf_ws.paragraphs[0]
+        p_badge.text = ws.badge.upper()
+        p_badge.font.name = theme.font_family_header
+        p_badge.font.size = Pt(7.5)
+        p_badge.font.bold = True
+        p_badge.font.color.rgb = acc_rgb
+
+        p_title = tf_ws.add_paragraph()
+        p_title.text = ws.category
+        p_title.font.name = theme.font_family_header
+        p_title.font.size = Pt(9.5)
+        p_title.font.bold = True
+        p_title.font.color.rgb = theme.get_rgb("primary")
+        p_title.space_before = Pt(2)
+
+        # Grid row background
+        row_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, grid_left, cur_y, grid_width, row_h)
+        row_bg.fill.solid()
+        row_bg.fill.fore_color.rgb = RGBColor(248, 250, 252) if ws_idx % 2 == 0 else RGBColor(255, 255, 255)
+        row_bg.line.color.rgb = RGBColor(226, 232, 240)
+        row_bg.line.width = Pt(0.75)
+
+        # Draw vertical grid column dividers inside row
+        for c_idx in range(1, num_periods):
+            cx = grid_left + c_idx * col_width
+            vline = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, cur_y, Pt(1), row_h)
+            vline.fill.solid()
+            vline.fill.fore_color.rgb = RGBColor(226, 232, 240)
+            vline.line.fill.background()
+
+        # Render tasks inside this workstream
+        num_tasks = len(ws.tasks)
+        if num_tasks > 0:
+            task_gap = Inches(0.04)
+            task_margin = Inches(0.06)
+            task_h = (row_h - 2 * task_margin - (num_tasks - 1) * task_gap) / num_tasks
+            task_h = max(Inches(0.20), min(Inches(0.32), task_h))
+
+            for t_idx, task in enumerate(ws.tasks):
+                ty = cur_y + task_margin + t_idx * (task_h + task_gap)
+                s_p = max(0.0, min(float(num_periods), task.start_period - 1.0))
+                e_p = max(s_p + 0.1, min(float(num_periods), task.end_period))
+                bar_x = grid_left + s_p * col_width
+                bar_w = max(Inches(0.18), (e_p - s_p) * col_width)
+
+                fill_rgb = status_colors.get(task.status, theme.get_rgb("primary"))
+
+                if task.is_milestone:
+                    # Milestone diamond marker
+                    diam_size = task_h * 1.15
+                    mx = bar_x + (bar_w - diam_size) / 2.0
+                    my = ty + (task_h - diam_size) / 2.0
+                    m_shape = slide.shapes.add_shape(MSO_SHAPE.DIAMOND, mx, my, diam_size, diam_size)
+                    m_shape.fill.solid()
+                    m_shape.fill.fore_color.rgb = theme.get_rgb("accent")
+                    m_shape.line.color.rgb = theme.get_rgb("primary")
+                    m_shape.line.width = Pt(1.5)
+
+                    # Label next to diamond
+                    tb_m = slide.shapes.add_textbox(mx + diam_size + Inches(0.05), ty - Inches(0.02), Inches(2.2), task_h)
+                    tf_m = tb_m.text_frame
+                    tf_m.word_wrap = True
+                    p_m = tf_m.paragraphs[0]
+                    p_m.text = task.name
+                    p_m.font.name = theme.font_family_header
+                    p_m.font.size = Pt(7.5)
+                    p_m.font.bold = True
+                    p_m.font.color.rgb = theme.get_rgb("primary")
+                else:
+                    # Task duration bar (Sharp Rectangle)
+                    t_shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bar_x, ty, bar_w, task_h)
+                    t_shape.fill.solid()
+                    t_shape.fill.fore_color.rgb = fill_rgb
+                    t_shape.line.color.rgb = RGBColor(255, 255, 255)
+                    t_shape.line.width = Pt(0.75)
+
+                    tf_t = t_shape.text_frame
+                    tf_t.word_wrap = False
+                    tf_t.margin_left = Inches(0.06)
+                    tf_t.margin_right = Inches(0.06)
+                    tf_t.margin_top = Inches(0.01)
+                    p_t = tf_t.paragraphs[0]
+                    p_t.text = task.name
+                    p_t.font.name = theme.font_family_header
+                    p_t.font.size = Pt(7.5)
+                    p_t.font.bold = True
+                    p_t.font.color.rgb = RGBColor(255, 255, 255) if task.status != "PLANNED" else theme.get_rgb("primary")
+
+    # 5. Current Period "TODAY / SPRINT" Indicator
+    if data.current_period_marker is not None and 0.0 <= data.current_period_marker <= float(num_periods):
+        marker_x = grid_left + (data.current_period_marker - 1.0) * col_width
+        total_grid_h = num_ws * (row_h + row_gap)
+        m_line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, marker_x, header_y, Pt(2), header_h + Inches(0.12) + total_grid_h)
+        m_line.fill.solid()
+        m_line.fill.fore_color.rgb = RGBColor(220, 38, 38)  # Crimson Red
+        m_line.line.fill.background()
+
+        # Marker tag on top
+        tag_w = Inches(0.85)
+        tag_h = Inches(0.22)
+        tag_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, marker_x - tag_w / 2.0, header_y - Inches(0.24), tag_w, tag_h)
+        tag_box.fill.solid()
+        tag_box.fill.fore_color.rgb = RGBColor(220, 38, 38)
+        tag_box.line.fill.background()
+        tf_tag = tag_box.text_frame
+        p_tag = tf_tag.paragraphs[0]
+        p_tag.alignment = PP_ALIGN.CENTER
+        p_tag.text = "CURRENT"
+        p_tag.font.name = theme.font_family_header
+        p_tag.font.size = Pt(7.0)
+        p_tag.font.bold = True
+        p_tag.font.color.rgb = RGBColor(255, 255, 255)
+
+    # 6. Bottom Legend & Footnote
+    legend_y = Inches(6.62)
+    legend_items = [
+        ("●", theme.get_rgb("primary"), "Completed Phase"),
+        ("●", theme.get_rgb("accent"), "Active / In-Progress"),
+        ("●", RGBColor(203, 213, 225), "Planned Baseline"),
+        ("◆", theme.get_rgb("accent"), "Key Milestone Gate"),
+    ]
+    cur_lx = left_x
+    for symbol, sym_color, sym_label in legend_items:
+        tb_leg = slide.shapes.add_textbox(cur_lx, legend_y, Inches(1.8), Inches(0.25))
+        tf_l = tb_leg.text_frame
+        p_l = tf_l.paragraphs[0]
+        r_sym = p_l.add_run()
+        r_sym.text = f"{symbol} "
+        r_sym.font.name = theme.font_family_header
+        r_sym.font.size = Pt(9.0)
+        r_sym.font.bold = True
+        r_sym.font.color.rgb = sym_color
+
+        r_lbl = p_l.add_run()
+        r_lbl.text = sym_label
+        r_lbl.font.name = theme.font_family
+        r_lbl.font.size = Pt(8.0)
+        r_lbl.font.color.rgb = theme.get_rgb("secondary")
+        cur_lx += Inches(1.75)
+
+    if data.footnote:
+        tb_fn = slide.shapes.add_textbox(grid_left, legend_y, grid_width, Inches(0.25))
+        tf_fn = tb_fn.text_frame
+        p_fn = tf_fn.paragraphs[0]
+        p_fn.alignment = PP_ALIGN.RIGHT
+        p_fn.text = data.footnote
+        p_fn.font.name = theme.font_family
+        p_fn.font.size = Pt(7.5)
+        p_fn.font.italic = True
+        p_fn.font.color.rgb = RGBColor(148, 163, 184)
+
+    # 7. Slide Footer
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
+
+
+# ============================================================================
+# 13. Feature Evaluation Matrix & Harvey Balls Archetype
+# ============================================================================
+
+@dataclass
+class FeatureScorecardRow:
+    """Represents an evaluation criterion row in a comparison matrix."""
+    category: str
+    criteria: str
+    scores: Dict[str, str]           # platform -> "FULL", "HALF", "EMPTY", "N/A" or glyphs "●", "◐", "○"
+    business_impact: str = "HIGH"
+
+@dataclass
+class FeatureMatrixData:
+    """Dataset for an executive platform scorecard with Harvey Balls."""
+    columns: List[str] = field(default_factory=list)
+    rows: List[FeatureScorecardRow] = field(default_factory=list)
+    recommendation_badge: str = "RECOMMENDED ARCHITECTURE"
+    recommended_column: str = "Snowflake Data Cloud"
+    footnote: str = "Harvey Balls: ● Full Native Support | ◐ Partial / Requires Extension | ○ Complex / Unsupported"
+
+
+def _default_feature_matrix_data() -> FeatureMatrixData:
+    return FeatureMatrixData(
+        columns=["Snowflake Data Cloud", "AWS Redshift Serverless", "Google BigQuery"],
+        recommended_column="Snowflake Data Cloud",
+        rows=[
+            FeatureScorecardRow(
+                category="Storage & Compute",
+                criteria="Decoupled Multi-Cluster Compute Scaling",
+                scores={"Snowflake Data Cloud": "●", "AWS Redshift Serverless": "◐", "Google BigQuery": "●"},
+                business_impact="CRITICAL",
+            ),
+            FeatureScorecardRow(
+                category="Data Sharing",
+                criteria="Secure Direct Cross-Region Data Sharing",
+                scores={"Snowflake Data Cloud": "●", "AWS Redshift Serverless": "◐", "Google BigQuery": "○"},
+                business_impact="HIGH",
+            ),
+            FeatureScorecardRow(
+                category="Data Governance",
+                criteria="Unified Dynamic Masking & Horizon Governance",
+                scores={"Snowflake Data Cloud": "●", "AWS Redshift Serverless": "○", "Google BigQuery": "◐"},
+                business_impact="CRITICAL",
+            ),
+            FeatureScorecardRow(
+                category="AI & Semantic Layer",
+                criteria="Native Streamlit & Cortex LLM Integration",
+                scores={"Snowflake Data Cloud": "●", "AWS Redshift Serverless": "○", "Google BigQuery": "◐"},
+                business_impact="HIGH",
+            ),
+            FeatureScorecardRow(
+                category="Cost Efficiency",
+                criteria="Per-Second Elastic Warehouse Auto-Suspend",
+                scores={"Snowflake Data Cloud": "●", "AWS Redshift Serverless": "◐", "Google BigQuery": "◐"},
+                business_impact="MEDIUM",
+            ),
+        ],
+    )
+
+
+def build_feature_matrix_slide(
+    prs_or_slide: Any,
+    theme: Optional[Theme] = None,
+    tracker: str = "ARCHITECTURE EVALUATION | PLATFORM BENCHMARK",
+    action_title: str = "Snowflake AI Data Cloud Demonstrates Superior Capabilities Across Core Evaluation Criteria",
+    subtitle: Optional[str] = "Multi-dimensional comparative assessment evaluating compute elasticity, data governance, and native AI integration.",
+    matrix_data: Optional[FeatureMatrixData] = None,
+    current_idx: int = 5,
+    total_slides: int = 10,
+    notice: Optional[str] = None,
+) -> Any:
+    """
+    Renders an executive feature evaluation matrix slide utilizing Harvey Balls glyphs
+    (●, ◐, ○) and highlighting the recommended platform choice.
+    """
+    if theme is None:
+        theme = get_theme("default")
+
+    if hasattr(prs_or_slide, "slides"):
+        slide = prs_or_slide.slides.add_slide(prs_or_slide.slide_layouts[6])
+    else:
+        slide = prs_or_slide
+
+    data = matrix_data or _default_feature_matrix_data()
+
+    # 1. Background Fill
+    bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(7.50))
+    bg.fill.solid()
+    bg.fill.fore_color.rgb = theme.get_rgb("background")
+    bg.line.fill.background()
+
+    # 2. Unified Header Frame
+    add_slide_header(slide, theme, tracker=tracker, title=action_title, subtitle=subtitle)
+
+    # 3. Canvas Table Layout Bounds
+    table_left = Inches(0.80)
+    table_top = Inches(1.85)
+    table_w = Inches(11.733)
+    hdr_h = Inches(0.42)
+    row_h = Inches(0.70)
+
+    platforms = data.columns
+    cat_w = Inches(2.20)
+    crit_w = Inches(3.30)
+    impact_w = Inches(1.233)
+    plat_w = (table_w - cat_w - crit_w - impact_w) / max(1, len(platforms))
+
+    # Header Row (Sharp Rectangle)
+    hdr_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_left, table_top, table_w, hdr_h)
+    hdr_bg.fill.solid()
+    hdr_bg.fill.fore_color.rgb = theme.get_rgb("primary")
+    hdr_bg.line.fill.background()
+
+    # Header cell labels
+    def _add_hdr_txt(x: Inches, w: Inches, text: str, align=PP_ALIGN.LEFT, is_rec: bool = False):
+        tb = slide.shapes.add_textbox(x, table_top, w, hdr_h)
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.margin_top = Inches(0.08)
+        p = tf.paragraphs[0]
+        p.alignment = align
+        p.text = text
+        p.font.name = theme.font_family_header
+        p.font.size = Pt(8.5)
+        p.font.bold = True
+        p.font.color.rgb = theme.get_rgb("accent") if is_rec else RGBColor(255, 255, 255)
+
+    _add_hdr_txt(table_left + Inches(0.12), cat_w - Inches(0.12), "DOMAIN / CATEGORY")
+    _add_hdr_txt(table_left + cat_w + Inches(0.10), crit_w - Inches(0.10), "EVALUATION CRITERIA")
+
+    for p_idx, plat in enumerate(platforms):
+        px = table_left + cat_w + crit_w + p_idx * plat_w
+        is_rec = (plat == data.recommended_column)
+        _add_hdr_txt(px, plat_w, plat.upper(), align=PP_ALIGN.CENTER, is_rec=is_rec)
+
+    _add_hdr_txt(table_left + cat_w + crit_w + len(platforms) * plat_w, impact_w, "IMPACT", align=PP_ALIGN.CENTER)
+
+    # 4. Rows
+    harvey_glyph_map = {
+        "FULL": "●",
+        "●": "●",
+        "HALF": "◐",
+        "◐": "◐",
+        "EMPTY": "○",
+        "○": "○",
+        "N/A": "-",
+    }
+
+    cur_y = table_top + hdr_h + Inches(0.06)
+    for r_idx, row in enumerate(data.rows):
+        # Row card container (Sharp Rectangle)
+        rc = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_left, cur_y, table_w, row_h)
+        rc.fill.solid()
+        rc.fill.fore_color.rgb = RGBColor(255, 255, 255) if r_idx % 2 == 0 else RGBColor(248, 250, 252)
+        rc.line.color.rgb = RGBColor(226, 232, 240)
+        rc.line.width = Pt(0.75)
+
+        # Category cell
+        tb_cat = slide.shapes.add_textbox(table_left + Inches(0.12), cur_y + Inches(0.12), cat_w - Inches(0.18), row_h - Inches(0.20))
+        tf_cat = tb_cat.text_frame
+        tf_cat.word_wrap = True
+        p_c = tf_cat.paragraphs[0]
+        p_c.text = row.category
+        p_c.font.name = theme.font_family_header
+        p_c.font.size = Pt(9.0)
+        p_c.font.bold = True
+        p_c.font.color.rgb = theme.get_rgb("primary")
+
+        # Criteria cell
+        tb_crit = slide.shapes.add_textbox(table_left + cat_w + Inches(0.10), cur_y + Inches(0.12), crit_w - Inches(0.20), row_h - Inches(0.20))
+        tf_crit = tb_crit.text_frame
+        tf_crit.word_wrap = True
+        p_cr = tf_crit.paragraphs[0]
+        p_cr.text = row.criteria
+        p_cr.font.name = theme.font_family
+        p_cr.font.size = Pt(9.5)
+        p_cr.font.color.rgb = theme.get_rgb("secondary")
+
+        # Platform scores
+        for p_idx, plat in enumerate(platforms):
+            px = table_left + cat_w + crit_w + p_idx * plat_w
+            score_raw = row.scores.get(plat, "○")
+            glyph = harvey_glyph_map.get(score_raw.upper() if isinstance(score_raw, str) else "", "○")
+
+            is_rec = (plat == data.recommended_column)
+            if is_rec:
+                col_hl = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, px + Inches(0.04), cur_y + Inches(0.04), plat_w - Inches(0.08), row_h - Inches(0.08))
+                col_hl.fill.solid()
+                col_hl.fill.fore_color.rgb = RGBColor(241, 245, 249)
+                col_hl.line.fill.background()
+
+            tb_sc = slide.shapes.add_textbox(px, cur_y + Inches(0.14), plat_w, Inches(0.35))
+            tf_sc = tb_sc.text_frame
+            p_s = tf_sc.paragraphs[0]
+            p_s.alignment = PP_ALIGN.CENTER
+            p_s.text = glyph
+            p_s.font.name = theme.font_family_header
+            p_s.font.size = Pt(16.0)
+            p_s.font.bold = True
+            if glyph == "●":
+                p_s.font.color.rgb = RGBColor(16, 185, 129) if is_rec else theme.get_rgb("primary")
+            elif glyph == "◐":
+                p_s.font.color.rgb = RGBColor(245, 158, 11)  # Amber
+            else:
+                p_s.font.color.rgb = RGBColor(148, 163, 184)  # Slate-400
+
+        # Impact Badge
+        tb_imp = slide.shapes.add_textbox(table_left + cat_w + crit_w + len(platforms) * plat_w, cur_y + Inches(0.16), impact_w, Inches(0.35))
+        tf_imp = tb_imp.text_frame
+        p_im = tf_imp.paragraphs[0]
+        p_im.alignment = PP_ALIGN.CENTER
+        p_im.text = row.business_impact.upper()
+        p_im.font.name = theme.font_family_header
+        p_im.font.size = Pt(8.0)
+        p_im.font.bold = True
+        if row.business_impact.upper() in ("CRITICAL", "HIGH"):
+            p_im.font.color.rgb = RGBColor(220, 38, 38)
+        else:
+            p_im.font.color.rgb = theme.get_rgb("accent")
+
+        cur_y += row_h + Inches(0.06)
+
+    # 5. Recommendation callout & Footnote
+    foot_y = cur_y + Inches(0.15)
+    tb_fn = slide.shapes.add_textbox(table_left, foot_y, table_w, Inches(0.30))
+    tf_fn = tb_fn.text_frame
+    p_fn = tf_fn.paragraphs[0]
+    p_fn.text = data.footnote
+    p_fn.font.name = theme.font_family
+    p_fn.font.size = Pt(8.0)
+    p_fn.font.italic = True
+    p_fn.font.color.rgb = RGBColor(100, 116, 139)
+
+    # 6. Slide Footer
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
+
+
+# ============================================================================
+# 14. High-Level Consulting Archetype Deck Generator
 # ============================================================================
 
 class ConsultingDeckBuilder:
@@ -3665,6 +4238,44 @@ class ConsultingDeckBuilder:
             target_dpi=target_dpi,
             takeaways_title=takeaways_title,
             takeaways=takeaways,
+            current_idx=idx,
+            total_slides=idx,
+        )
+
+    def add_timeline_gantt_slide(
+        self,
+        tracker: str = "DELIVERY ROADMAP | PROJECT EXECUTION",
+        action_title: str = "Phased Execution Plan Ensures Iterative Milestone Realization Across 12 Weeks",
+        subtitle: Optional[str] = "Integrated schedule coordinating foundational lakehouse infrastructure, dbt transformations, and Streamlit delivery.",
+        gantt_data: Optional[GanttTimelineData] = None,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_timeline_gantt_slide(
+            prs_or_slide=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            gantt_data=gantt_data,
+            current_idx=idx,
+            total_slides=idx,
+        )
+
+    def add_feature_matrix_slide(
+        self,
+        tracker: str = "ARCHITECTURE EVALUATION | PLATFORM BENCHMARK",
+        action_title: str = "Snowflake AI Data Cloud Demonstrates Superior Capabilities Across Core Evaluation Criteria",
+        subtitle: Optional[str] = "Multi-dimensional comparative assessment evaluating compute elasticity, data governance, and native AI integration.",
+        matrix_data: Optional[FeatureMatrixData] = None,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_feature_matrix_slide(
+            prs_or_slide=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            matrix_data=matrix_data,
             current_idx=idx,
             total_slides=idx,
         )

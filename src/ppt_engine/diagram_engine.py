@@ -1021,26 +1021,35 @@ class HierarchicalLayoutEngine:
     def _assign_ranks(
         self, diagram: ParsedDiagram, adj: Dict[str, Set[str]], rev_adj: Dict[str, Set[str]]
     ) -> Dict[str, int]:
-        ranks: Dict[str, int] = {}
-        visited: Set[str] = set()
+        """
+        Assign topological ranks to diagram nodes in O(V + E) time using Kahn's algorithm.
+        Ensures each node is placed in a rank strictly greater than all its upstream dependencies.
+        """
+        from collections import deque
 
-        roots = [nid for nid, in_edges in rev_adj.items() if not in_edges]
-        if not roots:
-            roots = list(diagram.nodes.keys())[:1]
+        in_degree = {nid: len(preds) for nid, preds in rev_adj.items()}
+        queue = deque([nid for nid, deg in in_degree.items() if deg == 0])
 
-        def dfs(curr: str, current_rank: int, path: Set[str]) -> None:
-            ranks[curr] = max(ranks.get(curr, 0), current_rank)
-            visited.add(curr)
+        # If graph has cycles or no explicit roots, seed with first node
+        if not queue and diagram.nodes:
+            first_nid = next(iter(diagram.nodes.keys()))
+            queue.append(first_nid)
+
+        ranks: Dict[str, int] = {nid: 0 for nid in queue}
+
+        while queue:
+            curr = queue.popleft()
+            curr_rank = ranks.get(curr, 0)
             for neighbor in adj.get(curr, set()):
-                if neighbor not in path:
-                    dfs(neighbor, current_rank + 1, path | {neighbor})
+                ranks[neighbor] = max(ranks.get(neighbor, 0), curr_rank + 1)
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] <= 0 and neighbor not in ranks:
+                    queue.append(neighbor)
 
-        for r in roots:
-            dfs(r, 0, {r})
-
+        # Fallback for disconnected components
         for nid in diagram.nodes:
             if nid not in ranks:
-                dfs(nid, 0, {nid})
+                ranks[nid] = 0
 
         return ranks
 

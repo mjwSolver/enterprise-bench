@@ -546,8 +546,13 @@ class SpecCompiler:
                 path_obj = self.base_dir / path_obj
             elif (Path.cwd() / path_obj).exists():
                 path_obj = Path.cwd() / path_obj
-            elif Path(path_obj).exists():
-                path_obj = Path(path_obj)
+        # Check for Diagram URI syntax (e.g. .drawio#Page or .yaml#Page)
+        str_path = str(image_path)
+        if "#" in str_path:
+            from src.core.diagram_uri import resolve_diagram_uri
+            resolved = resolve_diagram_uri(str_path, base_dir=self.base_dir)
+            if resolved and resolved.exists():
+                path_obj = resolved
 
         if not path_obj.exists():
             self.add_callout_alert(f"Image not found: {image_path}", alert_type="WARNING")

@@ -187,3 +187,26 @@ glossary:
   procedural_checklist: "Daftar Periksa Prosedural"
   escalation_thresholds: "Ambang Batas Eskalasi & Aturan Tata Kelola"
   handover_acceptance_certificate: "Berita Acara Serah Terima (BAST)"
+
+governance:
+  cr:
+    title: "Permohonan Perubahan Proyek (CR)"
+    categories:
+      scope: "Perubahan Ruang Lingkup"
+      schedule: "Penyesuaian Jadwal"
+      requirement: "Penyempurnaan Kebutuhan"
+      technical: "Refaktorisasi Teknis"
+      bug_fix: "Perbaikan Cacat Sistem"
+    statuses:
+      submitted: "DIAJUKAN"
+      under_review: "SEDANG DITELAAH"
+      approved: "DISETUJUI"
+      rejected: "DITOLAK"
+      deferred: "DITUNDA"
+  closeout:
+    checklist_title: "Daftar Periksa Penutupan & Serah Terima Proyek"
+    sections:
+      deliverables: "1. Hasil Akhir (Deliverables)"
+      scope_verification: "2. Verifikasi Ruang Lingkup"
+      operational_handover: "3. Serah Terima Operasional"
+

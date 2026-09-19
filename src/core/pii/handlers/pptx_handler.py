@@ -149,7 +149,7 @@ class PptxHandler(BaseFormatHandler):
                 orig = run.text
                 new_val = orig
                 for target, replacement in sorted_replacements:
-                    if target in new_val:
+                    if target.lower() in new_val.lower():
                         new_val = re.sub(re.escape(target), replacement, new_val, flags=re.IGNORECASE)
                 if new_val != orig:
                     run.text = new_val
