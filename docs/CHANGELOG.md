@@ -28,6 +28,7 @@ Delivered a 4-sprint batch execution hardening engine security and performance, 
   - **Delivery Gantt Timeline Archetype ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):** Implemented `build_timeline_gantt_slide` featuring calendar column axis (Weeks 1–12), workstream streams, duration bars, milestone diamonds, and a vertical "Current SPRINT" marker.
   - **Harvey Balls Feature Scorecard Archetype ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):** Implemented `build_feature_matrix_slide` supporting Harvey Balls glyphs (`● ◐ ○`) and target platform highlighting.
   - **Deck Builder Integration:** Added `add_timeline_gantt_slide` and `add_feature_matrix_slide` to `ConsultingDeckBuilder` and `ReferenceDeckBuilder`.
+  - Reference Handover: [`docs/handovers/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md`](handovers/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md)
 
 ---
 

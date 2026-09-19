@@ -9,21 +9,26 @@ This directory contains the central documentation, architectural blueprints, sub
 ```text
 docs/
 ├── INDEX.md               # This master navigation index
-├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–16+)
+├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–21+)
 │
 ├── handovers/             # Historical sprint and session handover briefings
 │   ├── 2026-09-11_cli_skills_refactoring.md
 │   ├── 2026-09-15_presentation_modernization.md
 │   ├── 2026-09-16_universal_deliverable_recreation.md
-│   └── 2026-09-16_slide3_corporate_equity_tree.md
+│   ├── 2026-09-16_slide3_corporate_equity_tree.md
+│   ├── 2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md
+│   ├── 2026-09-18_localization_and_bilingual_subsystems.md
+│   └── 2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
+│   ├── adaptive_documentation_scout_protocol.md
 │   ├── adr_drawio_pipeline_vs_mcp.md
 │   ├── change_request_subsystem.md
 │   ├── drawio_edge_routing_and_collision_prevention.md
 │   ├── drawio_icon_system_architecture.md
 │   ├── ingress_bus_routing_architecture.md
 │   ├── lifecycle_architecture.md
+│   ├── localization_and_bilingual_subsystem.md
 │   ├── manual_identity_guide.md
 │   ├── master_deliverable_recreation_plan.md
 │   └── openxml_purging_and_cleansing.md
@@ -34,6 +39,10 @@ docs/
     ├── localization_and_bilingual_deck_subsystem.md
     ├── pitch_deck_screenshot_modernization.md
     ├── slide_design_variety.md
+    ├── sprint_17_security_and_performance_quickwins.md
+    ├── sprint_18_change_request_cli_and_closeout.md
+    ├── sprint_19_diagram_pipeline_and_contracts.md
+    ├── sprint_20_visual_archetypes_and_deck_builders.md
     └── template_variable_and_slug_consolidation.md
 ```
 
@@ -55,6 +64,7 @@ docs/
 ## 📚 Master Index
 
 ### 1. Active Specifications & Architecture Runbooks (`docs/specs/`)
+* [**`adaptive_documentation_scout_protocol.md`**](specs/adaptive_documentation_scout_protocol.md): 5-stage automated closeout procedure, dynamic topology scouting, and subagent delegation runbook.
 * [**`adr_drawio_pipeline_vs_mcp.md`**](specs/adr_drawio_pipeline_vs_mcp.md): Architecture Decision Record on Draw.io headless export pipeline vs MCP.
 * [**`change_request_subsystem.md`**](specs/change_request_subsystem.md): Operational guide to the enterprise Change Request workflow, commercial addendums, and case studies.
 * [**`drawio_edge_routing_and_collision_prevention.md`**](specs/drawio_edge_routing_and_collision_prevention.md): Dynamic port directionality, vertical obstacle bypass, and inter-column gutter routing.
@@ -85,4 +95,5 @@ docs/
 * [**`2026-09-16_slide3_corporate_equity_tree.md`**](handovers/2026-09-16_slide3_corporate_equity_tree.md): Task delegation brief for the multi-tier corporate shareholding and equity tree archetype.
 * [**`2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md`**](handovers/2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md): Platform upgrade and security hardening master audit.
 * [**`2026-09-18_localization_and_bilingual_subsystems.md`**](handovers/2026-09-18_localization_and_bilingual_subsystems.md): Dual-catalog localization, hybrid translation engine, and paired reference decks.
+* [**`2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md`**](handovers/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md): Sprints 17–20 closeout (Milestones 18–21), security fixes, CR CLI, diagram URI pipeline, and Gantt/Harvey Balls archetypes.
 

@@ -36,38 +36,51 @@ During development and sprint cycles:
 
 ---
 
-## 🧰 MANDATORY PRE-FLIGHT: SPECIALIZED LOCAL SKILLS
+## 🧰 MANDATORY PRE-FLIGHT: SPECIALIZED LOCAL & GLOBAL SKILLS
 
-> **DIRECTIVE: REVIEW LOCAL SKILLS BEFORE ACTING ON CREATIVE CAPACITY**
+> **DIRECTIVE: REVIEW SPECIALIZED SKILLS BEFORE ACTING ON CREATIVE CAPACITY**
 
-Before generating code, authoring new deliverables, designing presentations, or creating custom templates from scratch, **agents must check and activate existing specialized skills**. Future agents generally follow one of two core directions: **Operational (producing deliverables with existing tools)** or **Development (extending and maintaining the engine platform)**.
+Before generating code, authoring new deliverables, designing presentations, or creating custom templates from scratch, **agents must check and activate existing specialized skills**. Primary skills index (`.agents/skills/`, symlinked via `skills/` and `.skills/`, plus global admin skills):
 
-### Primary Skills Index (`.agents/skills/`, symlinked via `skills/` and `.skills/`):
-
-#### 🚀 Track A: Operational Workflows (Building Deliverables with Existing Tools)
+#### Track A: Operational Workflows (Building Deliverables with Existing Tools)
 1. **`enterprise-bench-ops`** ([`skills/enterprise-bench-ops/SKILL.md`](skills/enterprise-bench-ops/SKILL.md)):
    - **Target Role:** Deliverable Producer, Engagement PMO, Solutions Consultant.
-   - **When to check:** Whenever tasked with stamping contracts, drafting FSD/TSD specs, generating status decks, filling BAST milestones, or running the `bench` CLI.
-   - **Key Protocol:** Enforces stage-gate validity via [`LIFECYCLE.md`](LIFECYCLE.md) and requires locating the 38 production-ready master templates in `clean_workspace/` via [`CATALOG.md`](CATALOG.md) before generation.
+   - **When to check:** Whenever tasked with stamping contracts, drafting FSD/TSD specs, generating status decks, filling BAST milestones, or running the bench CLI.
+   - **Key Protocol:** Enforces stage-gate validity via LIFECYCLE.md and requires locating the 38 production-ready master templates in clean_workspace/ via CATALOG.md before generation.
 
-#### 🛠 Track B: Development & Engine Engineering (Extending the Platform)
+#### Track B: Platform & Engine Engineering (Extending Infrastructure)
 2. **`enterprise-bench-dev`** ([`skills/enterprise-bench-dev/SKILL.md`](skills/enterprise-bench-dev/SKILL.md)):
    - **Target Role:** Core Platform Engineer, Engine Developer, Python Maintainer.
-   - **When to check:** Whenever tasked with modifying `src/docx_engine` (OpenXML tables, Jinja2 stamping), `src/ppt_engine` (visual cards, collision logic), `src/xlsx_engine` (calculators, S-curves), `src/core` (schemas, PII regex), or `src/cli.py`.
-   - **Key Protocol:** Strictly enforces the **ZERO INTERMEDIATE UNIT TESTING** guardrail, environment execution via `uv`, and architectural separation of concerns.
+   - **When to check:** Whenever tasked with modifying src/docx_engine (OpenXML tables, Jinja2 stamping), src/ppt_engine (visual cards, collision logic), src/xlsx_engine (calculators, S-curves), src/core (schemas, PII regex), or src/cli.py.
+   - **Key Protocol:** Strictly enforces the ZERO INTERMEDIATE UNIT TESTING guardrail, environment execution via uv, and architectural separation of concerns.
 
-#### 🎨 Specialized Presentation Sub-Skills (Visual Design)
-3. **`presentation-maker`** ([`skills/presentation-maker/SKILL.md`](skills/presentation-maker/SKILL.md)):
-   - **When to check:** Building, styling, or automating PowerPoint decks (`python-pptx`). Provides consulting frameworks (McKinsey/BCG), executive visual card archetypes, typography rules, and collision prevention.
-4. **`slide-image-prompter`** ([`skills/slide-image-prompter/SKILL.md`](skills/slide-image-prompter/SKILL.md)):
-   - **When to check:** Generating high-fidelity AI visual prompts for presentation backgrounds, custom infographics, or full-slide concept diagrams.
-
-#### 🖥 Track C: Desktop Review & Fast Turnaround (Local App Launching)
-5. **`local-app-preview`** ([`skills/local-app-preview/SKILL.md`](skills/local-app-preview/SKILL.md)):
+#### Track C: Desktop Review & Fast Turnaround (Local App Launching)
+3. **`local-app-preview`** ([`skills/local-app-preview/SKILL.md`](skills/local-app-preview/SKILL.md)):
    - **Target Role:** Review Coordinator, Enterprise Consultant, Pair Programming Assistant.
-   - **When to check:** Whenever tasked with opening or previewing Word (`.docx`), Excel (`.xlsx`), PowerPoint (`.pptx`), PDF, or diagram (`.drawio`, `.png`) deliverables on the user's local machine, or proactively suggesting desktop reviews to accelerate feedback.
+   - **When to check:** Whenever tasked with opening or previewing Word (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF, or diagram (.drawio, .png) deliverables on the user's local machine, or proactively suggesting desktop reviews to accelerate feedback.
+   - **Key Protocol:** Uses open -a and osascript to focus application windows without blocking subshells.
 
-**First Action Protocol:** Identify whether your goal is **Operational (Track A)**, **Development (Track B)**, or **Review & Preview (Track C)** and **inspect the corresponding skill file first** before proceeding.
+#### Track D: Administrative, Checkpoint & Subagent Delegation
+4. **`session-checkpoint`** ([`~/.gemini/config/skills/session-checkpoint/SKILL.md`](~/.gemini/config/skills/session-checkpoint/SKILL.md)):
+   - **Target Role:** Session Architect, Cognitive Phase-Shift Gatekeeper.
+   - **When to check:** Wrapping up milestones, finishing intensive research/brainstorming, or when task complexity warrants clean-slate execution across files.
+   - **Key Protocol:** Generates copy-paste resume prompt adhering strictly to the standard session handover schema.
+5. **`setup-agents`** ([`skills/setup-agents/SKILL.md`](skills/setup-agents/SKILL.md)):
+   - **Target Role:** Repository Administrator, Multi-Agent Architect, Pair Programming Coordinator.
+   - **When to check:** Initializing or updating repository operating contracts, harvesting skills, setting up subagent delegation patterns, or maintaining AGENTS.md.
+   - **Key Protocol:** Enforces <= 80 line budget for pre-flight indexes, cognitive separation of concerns, and universal discovery hierarchy.
+
+#### Track E: Presentation & Visual Design Systems
+6. **`presentation-maker`** ([`skills/presentation-maker/SKILL.md`](skills/presentation-maker/SKILL.md)):
+   - **Target Role:** Slide Designer, Deck Automation Engineer.
+   - **When to check:** Building, styling, or automating PowerPoint decks (python-pptx). Provides consulting frameworks (McKinsey/BCG), executive visual card archetypes, typography rules, and collision prevention.
+   - **Key Protocol:** Enforces sharp top stripes on containers, unified title/subtitle flow, and balanced multi-column aspect ratios.
+7. **`slide-image-prompter`** ([`skills/slide-image-prompter/SKILL.md`](skills/slide-image-prompter/SKILL.md)):
+   - **Target Role:** Visual Prompt Engineer, Presentation Concept Designer.
+   - **When to check:** Generating high-fidelity AI visual prompts for presentation backgrounds, custom infographics, or full-slide concept diagrams.
+   - **Key Protocol:** Specifies aspect ratio, visual weight, negative space, and lighting conditions.
+
+**First Action Protocol:** Identify whether your goal is **Operational (Track A)**, **Development (Track B)**, **Review & Preview (Track C)**, **Administrative (Track D)**, or **Design (Track E)** and **inspect the corresponding skill file first** before proceeding.
 
 ---
 
@@ -105,6 +118,18 @@ Before generating code, authoring new deliverables, designing presentations, or 
   - **`docs/specs/`:** Permanent architectural reference runbooks, subsystem guides, and ADRs (e.g. OpenXML purging, Draw.io routing, Ingress Bus). Never prefix architectural specs with `HANDOVER_`.
   - **`docs/backlog/`:** Future sprint proposals, uncurated designs, and draft roadmaps.
 * Index reference: Always check [`docs/INDEX.md`](docs/INDEX.md) for master cataloging.
+
+### 🤖 Subagent Delegation Protocol: Cognitive Separation of Concerns
+* **Zero In-Situ Administrative Bookkeeping:** Main agents engaged in active coding, feature implementation, refactoring, or bug triaging experience cognitive context fatigue. They must **NEVER** perform manual end-of-sprint documentation bookkeeping, changelog updates, or index cross-referencing in the same exhausted session.
+* **Mandatory Subagent Delegation Gate:** Upon milestone completion or sprint wrap-up, primary agents MUST invoke a dedicated, fresh subagent running the `Adaptive Documentation Scout` protocol:
+  ```python
+  invoke_subagent(
+      TypeName="self",
+      Role="Adaptive Documentation Scout",
+      Prompt="Execute end-of-sprint closeout for [Sprint/Milestone identifier]... Scout docs topology, author transition briefing, reconcile INDEX and CHANGELOG, update HANDOVER.md (<= 80 lines), and verify links."
+  )
+  ```
+* **Scope of Subagent:** The subagent dynamically scouts repository doc topology without hardcoded paths, authors transition briefings in `docs/handovers/`, reconciles `docs/INDEX.md` and `docs/CHANGELOG.md`, updates the root `HANDOVER.md` pointer ($\le 80$ lines), and validates relative markdown links.
 
 ### 🧹 Git Commit & Push Hygiene: Scratch Directory & Multi-Agent Greenlight Protocol
 * **Pre-Commit/Pre-Push Scratch Inspection:** Prior to staging, committing, or pushing to remote origin, agents must inspect if a runtime or temporary scratch directory (`scratch/`) exists in the workspace.

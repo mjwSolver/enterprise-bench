@@ -23,6 +23,7 @@ Progress: `[██████████] 100%` (Tier 1–5 Master Deliverable
 
 ## 2. Key Architecture Pointers (`docs/specs/`)
 
+- [**Adaptive Documentation Scout**](docs/specs/adaptive_documentation_scout_protocol.md): Subagent protocol, dynamic topology scouting & 5-stage closeout gate.
 - [**Localization & Bilingual Subsystem**](docs/specs/localization_and_bilingual_subsystem.md): Dual EN/ID catalogs, hybrid phrase translation & localized decks.
 - [**Master Deliverable Recreation Plan**](docs/specs/master_deliverable_recreation_plan.md): 5-tier roadmap across 38 master templates.
 - [**OpenXML Document Purging**](docs/specs/openxml_purging_and_cleansing.md): Comment, highlight, and revision stripping.
@@ -34,6 +35,7 @@ Progress: `[██████████] 100%` (Tier 1–5 Master Deliverable
 
 ## 3. Transition Briefings Archive (`docs/handovers/`)
 
+- [`2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md`](docs/handovers/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md): Milestones 18–21 (Security hardening, CR CLI, diagram URI & contracts, Gantt archetypes).
 - [`2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md`](docs/handovers/2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md): **PLATFORM AUDIT** — Security hardening, O(2^V) diagram fixes, API contract debt, and 38-template roadmap.
 - [`2026-09-18_localization_and_bilingual_subsystems.md`](docs/handovers/2026-09-18_localization_and_bilingual_subsystems.md): Milestone 17 (Dual catalogs, hybrid translation, paired reference decks).
 - [`2026-09-16_universal_deliverable_recreation.md`](docs/handovers/2026-09-16_universal_deliverable_recreation.md): Milestones 12–16 (S-curves, XLSX suite, legal stamping, modular specs).
