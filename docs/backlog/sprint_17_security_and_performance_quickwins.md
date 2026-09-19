@@ -1,6 +1,7 @@
 # Sprint 17 Implementation Runbook: Security Hardening & Performance Quick-Wins
 
 > **Sprint:** 17  
+> **Status:** ✅ **COMPLETED** (2026-09-19T11:43:35+07:00 | Commit `7785eeb`)  
 > **Target Subsystems:** `src/cli.py`, `src/ppt_engine/`, `src/core/pii/`  
 > **Estimated Execution Time:** ~20 minutes  
 > **Operating Guardrail:** [`AGENTS.md`](../../AGENTS.md) (Strict **ZERO INTERMEDIATE UNIT TESTING**).
@@ -152,8 +153,8 @@ uv run bench doc sanitize --input clean_workspace/projects/TTI_Snowflake_Analyti
 
 ## 4. Definition of Done Checklist
 
-- [ ] `shell=True` removed from `src/cli.py:339` and `src/cli.py:384`.
-- [ ] `_assign_ranks` in `diagram_engine.py` converted to Kahn's topological BFS.
-- [ ] `@functools.lru_cache(maxsize=128)` added to `_get_system_font` in `slide_exporter.py`.
-- [ ] `target.lower() in new_val.lower()` applied across `docx_handler.py`, `pptx_handler.py`, and `xlsx_handler.py`.
-- [ ] Static py_compile and CLI smoke verification completed with zero errors.
+- [x] `shell=True` removed from `src/cli.py:339` and `src/cli.py:384`.
+- [x] `_assign_ranks` in `diagram_engine.py` converted to Kahn's topological BFS.
+- [x] `@functools.lru_cache(maxsize=128)` added to `_get_system_font` in `slide_exporter.py`.
+- [x] `target.lower() in new_val.lower()` applied across `docx_handler.py`, `pptx_handler.py`, and `xlsx_handler.py`.
+- [x] Static py_compile and CLI smoke verification completed with zero errors.

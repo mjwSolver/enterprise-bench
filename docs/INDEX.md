@@ -72,10 +72,10 @@ docs/
 * [**`localization_and_bilingual_deck_subsystem.md`**](backlog/localization_and_bilingual_deck_subsystem.md): Indonesian/English dual-language string catalogs and layout adaptations.
 * [**`pitch_deck_screenshot_modernization.md`**](backlog/pitch_deck_screenshot_modernization.md): High-fidelity UI mockups and screenshot frames in pitch decks.
 * [**`slide_design_variety.md`**](backlog/slide_design_variety.md): Archetype expansion (case study split screens, quote cards, timeline tracks).
-* [**`sprint_17_security_and_performance_quickwins.md`**](backlog/sprint_17_security_and_performance_quickwins.md): Sprint 17 Runbook: P0 security hardening, ReDoS, XXE, and O(2^V) diagram path optimization.
-* [**`sprint_18_change_request_cli_and_closeout.md`**](backlog/sprint_18_change_request_cli_and_closeout.md): Sprint 18 Runbook: Change Request CLI (`bench cr file`), closeout checklists, and bilingual expansion.
-* [**`sprint_19_diagram_pipeline_and_contracts.md`**](backlog/sprint_19_diagram_pipeline_and_contracts.md): Sprint 19 Runbook: Draw.io data URI embedding, unit space conversions, and Pydantic boundaries.
-* [**`sprint_20_visual_archetypes_and_deck_builders.md`**](backlog/sprint_20_visual_archetypes_and_deck_builders.md): Sprint 20 Runbook: Delivery Gantt roadmap archetype and Harvey Balls feature scorecard.
+* [**`sprint_17_security_and_performance_quickwins.md`**](backlog/sprint_17_security_and_performance_quickwins.md) `[COMPLETED - 2026-09-19]`: Sprint 17 Runbook: P0 security hardening, ReDoS, XXE, and O(2^V) diagram path optimization.
+* [**`sprint_18_change_request_cli_and_closeout.md`**](backlog/sprint_18_change_request_cli_and_closeout.md) `[COMPLETED - 2026-09-19]`: Sprint 18 Runbook: Change Request CLI (`bench cr file`), closeout checklists, and bilingual expansion.
+* [**`sprint_19_diagram_pipeline_and_contracts.md`**](backlog/sprint_19_diagram_pipeline_and_contracts.md) `[COMPLETED - 2026-09-19]`: Sprint 19 Runbook: Draw.io data URI embedding, unit space conversions, and Pydantic boundaries.
+* [**`sprint_20_visual_archetypes_and_deck_builders.md`**](backlog/sprint_20_visual_archetypes_and_deck_builders.md) `[COMPLETED - 2026-09-19]`: Sprint 20 Runbook: Delivery Gantt roadmap archetype and Harvey Balls feature scorecard.
 * [**`template_variable_and_slug_consolidation.md`**](backlog/template_variable_and_slug_consolidation.md): Unified slug catalog and pre-commit PII audit specifications.
 
 ### 3. Session Handovers (`docs/handovers/`)

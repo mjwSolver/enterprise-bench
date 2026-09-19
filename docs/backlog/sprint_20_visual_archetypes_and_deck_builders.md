@@ -1,6 +1,7 @@
 # Sprint 20 Implementation Runbook: Visual Archetypes & Deck Builders
 
 > **Sprint:** 20  
+> **Status:** ✅ **COMPLETED** (2026-09-19T11:43:35+07:00 | Commit `7785eeb`)  
 > **Target Subsystems:** `src/ppt_engine/consulting_archetypes.py`, `src/ppt_engine/reference_slides.py`  
 > **Operating Guardrail:** [`AGENTS.md`](../../AGENTS.md) (Strict **ZERO INTERMEDIATE UNIT TESTING**).
 

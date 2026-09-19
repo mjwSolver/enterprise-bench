@@ -1,6 +1,7 @@
 # Sprint 18 Implementation Runbook: Change Request Subsystem CLI & Closeout Gate
 
 > **Sprint:** 18  
+> **Status:** ✅ **COMPLETED** (2026-09-19T11:43:35+07:00 | Commit `7785eeb`)  
 > **Target Subsystems:** `src/cli.py`, `src/core/change_request.py`, `src/xlsx_engine/ledger_models.py`, `presets/locales/`  
 > **Estimated Execution Time:** ~30 minutes  
 > **Operating Guardrail:** [`AGENTS.md`](../../AGENTS.md) (Strict **ZERO INTERMEDIATE UNIT TESTING**).
@@ -194,8 +195,8 @@ ls -lh output/test_cr_sprint18/
 
 ## 4. Definition of Done Checklist
 
-- [ ] `cr_app` sub-application and `file` command registered in `src/cli.py`.
-- [ ] `update-closeout` command registered under `xlsx_app` in `src/cli.py`.
-- [ ] `presets/locales/en.yaml` and `id.yaml` updated with governance CR entries.
-- [ ] Smoke run `bench cr file` creates all 4 deliverable documents without errors.
-- [ ] Closeout checklist update runs cleanly against template.
+- [x] `cr_app` sub-application and `file` command registered in `src/cli.py`.
+- [x] `update-closeout` command registered under `xlsx_app` in `src/cli.py`.
+- [x] `presets/locales/en.yaml` and `id.yaml` updated with governance CR entries.
+- [x] Smoke run `bench cr file` creates all 4 deliverable documents without errors.
+- [x] Closeout checklist update runs cleanly against template.
