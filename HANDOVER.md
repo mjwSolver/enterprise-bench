@@ -10,6 +10,9 @@
 ## 1. Active Platform Status & Completed Milestones
 
 Progress: `[██████████] 100%` (Tier 1–5 Master Deliverable Automation Complete)
+- **Engine / Agent Status:** `Agent Reviewed & Validated (Static QA Passed)`
+- **User Review Status:** `PENDING USER DESKTOP REVIEW / Awaiting User Verification`
+- **Deliverables Awaiting User QA:** `1.1` Kickoff, `4.2` Weekly Progress, `5.1` Project Closing, and `CR_07` Change Request Suite.
 
 - **Tier 1 (Legal DOCX Stamping):** Deterministic Jinja2/docxtpl stamping, attendee auto-expansion, OpenXML styling.
 - **Tier 2 (Modular Spec Compiler):** Multi-chapter Markdown to DOCX compiler with callout alerts, tables, frontmatter, and high-DPI image/diagram embeds (`src/docx_engine/spec_compiler.py`).
@@ -61,6 +64,7 @@ Progress: `[██████████] 100%` (Tier 1–5 Master Deliverable
 
 ## 4. Immediate Next Backlog
 
-1. **End-to-End Orchestrated Deliverable Lifecycle:** Chaining Kick-off (`1.1`) $\rightarrow$ Specs (FSD/TSD) $\rightarrow$ S-Curves $\rightarrow$ UAT (`3.4`) $\rightarrow$ Weekly (`4.2`) $\rightarrow$ BAST 1/2 $\rightarrow$ Closing Deck (`5.1`) with cross-cutting `EngagementContext`.
-2. **Operational Deployment Rundown & Technical Manuals:** Automate cutover checklist (`3.7_Rundown_Deployment_Template.xlsx`) and operational manuals (`3.6.1_User_Guide_Template.docx`, `3.6.2_Admin_Guide_Template.docx`).
+1. **User Desktop Verification & Visual QA (Awaiting User Sign-off):** Perform native desktop review (`open -a`) on updated artifacts: `output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx`, `output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized.pptx`, `output/presentations/5.1_Project_Closing_Deck_Modernized.pptx`, and `output/NGL_Snowflake_Analytics/change_requests/CR_07/`.
+2. **End-to-End Orchestrated Deliverable Lifecycle:** Chaining Kick-off (`1.1`) $\rightarrow$ Specs (FSD/TSD) $\rightarrow$ S-Curves $\rightarrow$ UAT (`3.4`) $\rightarrow$ Weekly (`4.2`) $\rightarrow$ BAST 1/2 $\rightarrow$ Closing Deck (`5.1`) with cross-cutting `EngagementContext`.
+3. **Operational Deployment Rundown & Technical Manuals:** Automate cutover checklist (`3.7_Rundown_Deployment_Template.xlsx`) and operational manuals (`3.6.1_User_Guide_Template.docx`, `3.6.2_Admin_Guide_Template.docx`).
 
