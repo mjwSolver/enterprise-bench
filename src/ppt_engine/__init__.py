@@ -26,6 +26,9 @@ from .consulting_archetypes import (
     ProcessChevronStep,
     SplitHeroBlock,
     GapDimensionData,
+    TechLogoItem,
+    CardGridItem,
+    BadgeMatrixSection,
     create_presentation,
     add_slide_with_background,
     add_slide_header,
@@ -41,6 +44,15 @@ from .consulting_archetypes import (
     build_chevron_process_slide,
     build_split_hero_slide,
     build_gap_analysis_slide,
+    build_tech_logo_grid_slide,
+    build_card_grid_slide,
+    build_badge_matrix_slide,
+    build_iceberg_concept_slide,
+    AgendaItem,
+    build_agenda_slide,
+    TableColumnDef,
+    build_table_slide,
+    build_thank_you_slide,
 )
 from .resource_manager import (
     ResourceSpec,
@@ -50,6 +62,7 @@ from .resource_manager import (
     check_resources,
 )
 from .weekly_progress_deck import WeeklyProgressDeckBuilder
+from .closing_deck import ClosingDeckBuilder
 from .reference_slides import (
     ReferenceDeckBuilder,
     build_governance_org_structure_slide,
@@ -59,6 +72,7 @@ from .reference_slides import (
 )
 
 __all__ = [
+    "ClosingDeckBuilder",
     "ReferenceDeckBuilder",
     "WeeklyProgressDeckBuilder",
     "build_governance_org_structure_slide",
@@ -100,6 +114,15 @@ __all__ = [
     "build_chevron_process_slide",
     "build_split_hero_slide",
     "build_gap_analysis_slide",
+    "build_tech_logo_grid_slide",
+    "build_card_grid_slide",
+    "build_badge_matrix_slide",
+    "build_iceberg_concept_slide",
+    "AgendaItem",
+    "build_agenda_slide",
+    "TableColumnDef",
+    "build_table_slide",
+    "build_thank_you_slide",
     "ResourceSpec",
     "ResourceManager",
     "get_resource_manager",

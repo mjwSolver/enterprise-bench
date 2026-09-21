@@ -28,6 +28,7 @@ Strictly enforces:
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from pathlib import Path
@@ -52,6 +53,104 @@ from src.ppt_engine.consulting_archetypes import (
     create_presentation,
 )
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb
+
+logger = logging.getLogger(__name__)
+
+
+def generate_s_curve_chart_image(
+    points: List[Any],
+    output_path: Union[str, Path],
+    theme: Optional[Theme] = None,
+    title: str = "Cumulative S-Curve Progression (Weekly Intervals)",
+) -> Path:
+    """
+    Renders a high-DPI (200 DPI) consulting S-curve chart from cumulative progression points.
+    Matches corporate color palette (Planned: #0052CC, Actual: #10B981, Variance: #EF4444).
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    out_p = Path(output_path)
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+
+    fig, ax = plt.subplots(figsize=(6.8, 3.0), dpi=200, facecolor="#FFFFFF")
+    ax.set_facecolor("#F8FAFC")
+
+    periods = [getattr(p, "period", str(p)).split(" ")[0] for p in points]
+    planned = [getattr(p, "planned_pct", 0.0) * 100 for p in points]
+    actuals = [
+        getattr(p, "actual_pct", None) * 100
+        if getattr(p, "actual_pct", None) is not None
+        else None
+        for p in points
+    ]
+
+    actual_x = [i for i, v in enumerate(actuals) if v is not None]
+    actual_y = [v for v in actuals if v is not None]
+
+    # Primary Line: Planned Baseline (PV)
+    ax.plot(
+        range(len(periods)),
+        planned,
+        color="#0052CC",
+        linewidth=2.5,
+        marker="o",
+        markersize=4,
+        label="Planned Baseline (PV)",
+        zorder=3,
+    )
+
+    # Secondary Line: Actual Progress (EV)
+    if actual_x:
+        ax.plot(
+            actual_x,
+            actual_y,
+            color="#10B981",
+            linewidth=2.8,
+            marker="s",
+            markersize=5,
+            label="Actual Progress (EV)",
+            zorder=4,
+        )
+        planned_slice = [planned[i] for i in actual_x]
+        ax.fill_between(
+            actual_x,
+            actual_y,
+            planned_slice,
+            color="#EF4444",
+            alpha=0.18,
+            label="Schedule Variance (SV)",
+            zorder=2,
+        )
+
+    ax.set_ylim(0, 105)
+    ax.set_ylabel("Progress (%)", fontsize=9, fontweight="bold", color="#1E293B")
+    ax.set_title(title, fontsize=10, fontweight="bold", color="#0F172A", pad=8)
+    ax.grid(True, linestyle="--", alpha=0.5, color="#CBD5E1", zorder=1)
+
+    step = max(1, len(periods) // 10)
+    tick_indices = list(range(0, len(periods), step))
+    if (len(periods) - 1) not in tick_indices:
+        tick_indices.append(len(periods) - 1)
+    ax.set_xticks(tick_indices)
+    ax.set_xticklabels([periods[i] for i in tick_indices], fontsize=8, color="#475569")
+    ax.tick_params(colors="#475569", labelsize=8)
+
+    for spine in ax.spines.values():
+        spine.set_color("#E2E8F0")
+
+    ax.legend(
+        loc="upper left",
+        fontsize=8,
+        framealpha=0.95,
+        facecolor="#FFFFFF",
+        edgecolor="#E2E8F0",
+    )
+    plt.tight_layout()
+    fig.savefig(str(out_p), dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return out_p
 
 
 def _add_status_pill(
@@ -648,8 +747,11 @@ class WeeklyProgressDeckBuilder:
         _add_bullet_paragraph(ltf, "Penyesuaian jadwal asesmen ke tanggal 09 Jan 2000 telah disepakati bersama user.", self.theme.font_family, 11.0, self.theme.get_rgb("secondary"), 6.0)
         _add_bullet_paragraph(ltf, "Tidak ada pergeseran target Go-Live (13 Mar 2000) maupun final BAST (27 Mar 2000).", self.theme.font_family, 11.0, self.theme.get_rgb("secondary"), 6.0)
 
-        # Right Card: Phase Rows
+        # Right Card: Phase Rows or Embedded S-Curve Chart
         right_x = Inches(0.80) + left_w + Inches(0.25)
+        chart_path = d.get("chart_image")
+        right_title = "CUMULATIVE S-CURVE & SCHEDULE VARIANCE" if chart_path else "DELIVERY PHASE EXECUTION PROGRESS"
+
         right_card, _ = add_card_with_top_stripe(
             slide,
             self.theme,
@@ -668,66 +770,79 @@ class WeeklyProgressDeckBuilder:
         rtf.word_wrap = True
         rtf.margin_left = rtf.margin_right = rtf.margin_top = rtf.margin_bottom = 0
         rp1 = rtf.paragraphs[0]
-        rp1.text = "DELIVERY PHASE EXECUTION PROGRESS"
+        rp1.text = right_title
         rp1.font.name = self.theme.font_family_header
         rp1.font.size = Pt(11.0)
         rp1.font.bold = True
         rp1.font.color.rgb = self.theme.get_rgb("accent_secondary")
 
-        phases = d.get("phases", [
-            {"phase": "Phase 1: Project Initiation & Charter", "planned": "100%", "actual": "100%", "status": "COMPLETED"},
-            {"phase": "Phase 2: Architecture & FSD Assessment", "planned": "90%", "actual": "85%", "status": "IN PROGRESS"},
-            {"phase": "Phase 3: Cloud Platform Setup & Staging", "planned": "25%", "actual": "25%", "status": "ON TRACK"},
-            {"phase": "Phase 4: Data Modeling & ETL Pipelines", "planned": "0%", "actual": "0%", "status": "PLANNED"},
-            {"phase": "Phase 5: SIT, UAT & Go-Live Cutover", "planned": "0%", "actual": "0%", "status": "PLANNED"},
-        ])
-
-        row_y_start = bottom_y + Inches(0.55)
-        phase_row_h = Inches(0.48)
-        gap_pr = Inches(0.06)
-
-        for p_idx, ph in enumerate(phases):
-            pry = row_y_start + p_idx * (phase_row_h + gap_pr)
-            pr_card = add_card(
-                slide,
-                self.theme,
-                right_x + Inches(0.15),
-                pry,
-                right_w - Inches(0.30),
-                phase_row_h,
-                bg_color=self.theme.get_rgb("surface_muted") if p_idx % 2 == 0 else self.theme.get_rgb("surface"),
-                border_color=self.theme.get_rgb("border"),
-                force_rectangle=True,
+        if chart_path and Path(chart_path).exists():
+            chart_x = right_x + Inches(0.15)
+            chart_y = bottom_y + Inches(0.55)
+            chart_w = right_w - Inches(0.30)
+            chart_h = bottom_h - Inches(0.70)
+            slide.shapes.add_picture(
+                str(chart_path),
+                chart_x,
+                chart_y,
+                width=chart_w,
+                height=chart_h,
             )
+        else:
+            phases = d.get("phases", [
+                {"phase": "Phase 1: Project Initiation & Charter", "planned": "100%", "actual": "100%", "status": "COMPLETED"},
+                {"phase": "Phase 2: Architecture & FSD Assessment", "planned": "90%", "actual": "85%", "status": "IN PROGRESS"},
+                {"phase": "Phase 3: Cloud Platform Setup & Staging", "planned": "25%", "actual": "25%", "status": "ON TRACK"},
+                {"phase": "Phase 4: Data Modeling & ETL Pipelines", "planned": "0%", "actual": "0%", "status": "PLANNED"},
+                {"phase": "Phase 5: SIT, UAT & Go-Live Cutover", "planned": "0%", "actual": "0%", "status": "PLANNED"},
+            ])
 
-            ptb = slide.shapes.add_textbox(right_x + Inches(0.25), pry + Inches(0.08), right_w - Inches(1.80), phase_row_h - Inches(0.16))
-            ptf = ptb.text_frame
-            ptf.word_wrap = True
-            ptf.margin_left = ptf.margin_right = ptf.margin_top = ptf.margin_bottom = 0
+            row_y_start = bottom_y + Inches(0.55)
+            phase_row_h = Inches(0.48)
+            gap_pr = Inches(0.06)
 
-            pp0 = ptf.paragraphs[0]
-            pp0.text = ph.get("phase", "")
-            pp0.font.name = self.theme.font_family_header
-            pp0.font.size = Pt(10.5)
-            pp0.font.bold = True
-            pp0.font.color.rgb = self.theme.get_rgb("primary")
+            for p_idx, ph in enumerate(phases):
+                pry = row_y_start + p_idx * (phase_row_h + gap_pr)
+                pr_card = add_card(
+                    slide,
+                    self.theme,
+                    right_x + Inches(0.15),
+                    pry,
+                    right_w - Inches(0.30),
+                    phase_row_h,
+                    bg_color=self.theme.get_rgb("surface_muted") if p_idx % 2 == 0 else self.theme.get_rgb("surface"),
+                    border_color=self.theme.get_rgb("border"),
+                    force_rectangle=True,
+                )
 
-            pp_m = ptf.add_paragraph()
-            pp_m.text = f"Planned: {ph.get('planned', '0%')}   |   Actual: {ph.get('actual', '0%')}"
-            pp_m.font.name = self.theme.font_family
-            pp_m.font.size = Pt(9.5)
-            pp_m.font.color.rgb = self.theme.get_rgb("secondary")
+                ptb = slide.shapes.add_textbox(right_x + Inches(0.25), pry + Inches(0.08), right_w - Inches(1.80), phase_row_h - Inches(0.16))
+                ptf = ptb.text_frame
+                ptf.word_wrap = True
+                ptf.margin_left = ptf.margin_right = ptf.margin_top = ptf.margin_bottom = 0
 
-            _add_status_pill(
-                slide=slide,
-                theme=self.theme,
-                left=right_x + right_w - Inches(1.45),
-                top=pry + Inches(0.10),
-                width=Inches(1.20),
-                height=Inches(0.28),
-                status=ph.get("status", "ON TRACK"),
-                font_size_pt=8.5,
-            )
+                pp0 = ptf.paragraphs[0]
+                pp0.text = ph.get("phase", "")
+                pp0.font.name = self.theme.font_family_header
+                pp0.font.size = Pt(10.5)
+                pp0.font.bold = True
+                pp0.font.color.rgb = self.theme.get_rgb("primary")
+
+                pp_m = ptf.add_paragraph()
+                pp_m.text = f"Planned: {ph.get('planned', '0%')}   |   Actual: {ph.get('actual', '0%')}"
+                pp_m.font.name = self.theme.font_family
+                pp_m.font.size = Pt(9.5)
+                pp_m.font.color.rgb = self.theme.get_rgb("secondary")
+
+                _add_status_pill(
+                    slide=slide,
+                    theme=self.theme,
+                    left=right_x + right_w - Inches(1.45),
+                    top=pry + Inches(0.10),
+                    width=Inches(1.20),
+                    height=Inches(0.28),
+                    status=ph.get("status", "ON TRACK"),
+                    font_size_pt=8.5,
+                )
 
         add_slide_footer(slide, self.theme, current_idx=idx, total_slides=11, notice=self.metadata.get("confidentiality", "Confidential"))
         return slide
@@ -1004,20 +1119,23 @@ class WeeklyProgressDeckBuilder:
         )
 
         milestones = d.get("milestones", [
-            {"num": "01", "name": "Kick-off Meeting", "target_date": "16 Dec 1999", "actual_date": "16 Dec 1999", "status": "COMPLETED"},
-            {"num": "02", "name": "Functional Specification Document (FSD) Sign-off", "target_date": "02 Jan 2000", "actual_date": "19 Jan 2000", "status": "RESCHEDULED"},
-            {"num": "03", "name": "Cloud Platform Subscription Started", "target_date": "02 Jan 2000", "actual_date": "02 Jan 2000", "status": "COMPLETED"},
-            {"num": "04", "name": "Core Data Pipeline Development Complete", "target_date": "13 Feb 2000", "actual_date": "13 Feb 2000", "status": "ON TRACK"},
-            {"num": "05", "name": "System Integration Testing (SIT) Sign-off", "target_date": "20 Feb 2000", "actual_date": "20 Feb 2000", "status": "ON TRACK"},
-            {"num": "06", "name": "User Acceptance Testing (UAT) Sign-off", "target_date": "06 Mar 2000", "actual_date": "06 Mar 2000", "status": "ON TRACK"},
-            {"num": "07", "name": "Go-Live & Production Cutover", "target_date": "13 Mar 2000", "actual_date": "13 Mar 2000", "status": "ON TRACK"},
-            {"num": "08", "name": "Project Closing & Handover (BAST Final)", "target_date": "27 Mar 2000", "actual_date": "27 Mar 2000", "status": "ON TRACK"},
+            {"num": "01", "name": "Kick-off Meeting", "target_date": "16 Dec 2025", "actual_date": "16 Dec 2025", "status": "COMPLETED"},
+            {"num": "02", "name": "Functional Specification Document (FSD) Sign-off", "target_date": "02 Jan 2026", "actual_date": "19 Jan 2026", "status": "RESCHEDULED"},
+            {"num": "03", "name": "Cloud Platform Subscription Started", "target_date": "02 Jan 2026", "actual_date": "02 Jan 2026", "status": "COMPLETED"},
+            {"num": "04", "name": "Core Data Pipeline Development Complete", "target_date": "13 Feb 2026", "actual_date": "13 Feb 2026", "status": "ON TRACK"},
+            {"num": "05", "name": "System Integration Testing (SIT) Sign-off", "target_date": "24 Feb 2026", "actual_date": "24 Feb 2026", "status": "ON TRACK"},
+            {"num": "06", "name": "User Acceptance Testing (UAT) Sign-off", "target_date": "31 Mar 2026", "actual_date": "31 Mar 2026", "status": "ON TRACK"},
+            {"num": "07", "name": "Go-Live & Production Cutover", "target_date": "01 Apr 2026", "actual_date": "01 Apr 2026", "status": "ON TRACK"},
+            {"num": "08", "name": "Technical Specification Document (TSD) Sign-off", "target_date": "08 Apr 2026", "actual_date": "08 Apr 2026", "status": "ON TRACK"},
+            {"num": "09", "name": "Knowledge Transfer Complete", "target_date": "16 Apr 2026", "actual_date": "16 Apr 2026", "status": "ON TRACK"},
+            {"num": "10", "name": "2-Months Guarantee Period Complete", "target_date": "02 Jun 2026", "actual_date": "02 Jun 2026", "status": "ON TRACK"},
+            {"num": "11", "name": "Project Closing & Handover (BAST Final)", "target_date": "02 Jun 2026", "actual_date": "02 Jun 2026", "status": "ON TRACK"},
         ])
 
         start_x = Inches(0.80)
         total_w = Inches(11.733)
         header_y = Inches(1.60)
-        header_h = Inches(0.42)
+        header_h = Inches(0.40)
 
         # Header Band Card
         hdr_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, header_y, total_w, header_h)
@@ -1050,8 +1168,30 @@ class WeeklyProgressDeckBuilder:
             cur_x += width
 
         row_y = header_y + header_h + Inches(0.08)
-        row_h = Inches(0.46)
-        row_gap = Inches(0.07)
+        n_rows = len(milestones)
+        max_bottom_y = Inches(6.82)
+        available_h = max_bottom_y - row_y
+
+        if n_rows <= 8:
+            row_h = Inches(0.46)
+            row_gap = Inches(0.07)
+            font_no_pt = 11.5
+            font_desc_pt = 11.0
+            font_date_pt = 10.5
+            font_act_pt = 11.0
+            font_pill_pt = 9.0
+            pill_h = Inches(0.28)
+            pad_top = Inches(0.08)
+        else:
+            row_gap = Inches(0.04)
+            row_h = (available_h - row_gap * (n_rows - 1)) / n_rows
+            font_no_pt = 10.0 if n_rows >= 11 else 10.5
+            font_desc_pt = 9.5 if n_rows >= 11 else 10.0
+            font_date_pt = 9.0 if n_rows >= 11 else 9.5
+            font_act_pt = 9.5 if n_rows >= 11 else 10.0
+            font_pill_pt = 8.0 if n_rows >= 11 else 8.5
+            pill_h = Inches(0.24) if n_rows >= 11 else Inches(0.26)
+            pad_top = Inches(0.05)
 
         for r_idx, m in enumerate(milestones):
             cur_ry = row_y + r_idx * (row_h + row_gap)
@@ -1070,7 +1210,7 @@ class WeeklyProgressDeckBuilder:
 
             # Col 0: Number
             x0 = start_x
-            tb0 = slide.shapes.add_textbox(x0, cur_ry + Inches(0.08), Inches(0.70), row_h - Inches(0.16))
+            tb0 = slide.shapes.add_textbox(x0, cur_ry + pad_top, Inches(0.70), row_h - pad_top * 2)
             tf0 = tb0.text_frame
             tf0.word_wrap = False
             tf0.margin_left = tf0.margin_right = tf0.margin_top = tf0.margin_bottom = 0
@@ -1078,26 +1218,26 @@ class WeeklyProgressDeckBuilder:
             p0.text = str(m.get("num", f"{r_idx+1:02d}"))
             p0.alignment = PP_ALIGN.CENTER
             p0.font.name = self.theme.font_family_header
-            p0.font.size = Pt(11.5)
+            p0.font.size = Pt(font_no_pt)
             p0.font.bold = True
             p0.font.color.rgb = self.theme.get_rgb("accent")
 
             # Col 1: Milestone Name
             x1 = x0 + Inches(0.70)
-            tb1 = slide.shapes.add_textbox(x1, cur_ry + Inches(0.08), Inches(5.00), row_h - Inches(0.16))
+            tb1 = slide.shapes.add_textbox(x1, cur_ry + pad_top, Inches(5.00), row_h - pad_top * 2)
             tf1 = tb1.text_frame
             tf1.word_wrap = True
             tf1.margin_left = tf1.margin_right = tf1.margin_top = tf1.margin_bottom = 0
             p1 = tf1.paragraphs[0]
             p1.text = m.get("name", "")
             p1.font.name = self.theme.font_family
-            p1.font.size = Pt(11.0)
+            p1.font.size = Pt(font_desc_pt)
             p1.font.bold = True
             p1.font.color.rgb = self.theme.get_rgb("primary")
 
             # Col 2: Baseline Target
             x2 = x1 + Inches(5.00)
-            tb2 = slide.shapes.add_textbox(x2, cur_ry + Inches(0.08), Inches(1.90), row_h - Inches(0.16))
+            tb2 = slide.shapes.add_textbox(x2, cur_ry + pad_top, Inches(1.90), row_h - pad_top * 2)
             tf2 = tb2.text_frame
             tf2.word_wrap = False
             tf2.margin_left = tf2.margin_right = tf2.margin_top = tf2.margin_bottom = 0
@@ -1105,12 +1245,12 @@ class WeeklyProgressDeckBuilder:
             p2.text = m.get("target_date", "")
             p2.alignment = PP_ALIGN.CENTER
             p2.font.name = self.theme.font_family
-            p2.font.size = Pt(10.5)
+            p2.font.size = Pt(font_date_pt)
             p2.font.color.rgb = self.theme.get_rgb("secondary")
 
             # Col 3: Actual / Projected
             x3 = x2 + Inches(1.90)
-            tb3 = slide.shapes.add_textbox(x3, cur_ry + Inches(0.08), Inches(2.05), row_h - Inches(0.16))
+            tb3 = slide.shapes.add_textbox(x3, cur_ry + pad_top, Inches(2.05), row_h - pad_top * 2)
             tf3 = tb3.text_frame
             tf3.word_wrap = False
             tf3.margin_left = tf3.margin_right = tf3.margin_top = tf3.margin_bottom = 0
@@ -1118,14 +1258,13 @@ class WeeklyProgressDeckBuilder:
             p3.text = m.get("actual_date", "")
             p3.alignment = PP_ALIGN.CENTER
             p3.font.name = self.theme.font_family
-            p3.font.size = Pt(11.0)
+            p3.font.size = Pt(font_act_pt)
             p3.font.bold = True
             p3.font.color.rgb = self.theme.get_rgb("primary")
 
             # Col 4: Rounded Status Badge Pill
             x4 = x3 + Inches(2.05)
             pill_w = Inches(1.60)
-            pill_h = Inches(0.28)
             pill_x = x4 + (Inches(2.083) - pill_w) / 2
             pill_y = cur_ry + (row_h - pill_h) / 2
             _add_status_pill(
@@ -1136,7 +1275,7 @@ class WeeklyProgressDeckBuilder:
                 width=pill_w,
                 height=pill_h,
                 status=m.get("status", "ON TRACK"),
-                font_size_pt=9.0,
+                font_size_pt=font_pill_pt,
             )
 
         add_slide_footer(slide, self.theme, current_idx=idx, total_slides=11, notice=self.metadata.get("confidentiality", "Confidential"))
@@ -1654,6 +1793,220 @@ class WeeklyProgressDeckBuilder:
         return slide
 
     # -------------------------------------------------------------------------
+    # Spreadsheet Synchronization Engine
+    # -------------------------------------------------------------------------
+    def sync_with_spreadsheets(
+        self,
+        timeline_path: Optional[Union[str, Path]] = None,
+        risk_path: Optional[Union[str, Path]] = None,
+        issue_path: Optional[Union[str, Path]] = None,
+        chart_mode: bool = False,
+        chart_output_dir: Optional[Union[str, Path]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Synchronizes deck specification directly with project XLSX spreadsheets:
+          - Timeline & S-Curve (4.2_Weekly_Progress_Timeline_Update_Template.xlsx):
+            Extracts active period, planned %, actual %, variance %, overall health,
+            SPI, delivery phase progress rows, and optionally renders high-DPI S-Curve line chart.
+          - Risk Register (4.5_Risk_Register_Template.xlsx):
+            Extracts active project risks, probability/impact meters, mitigations, and owners.
+          - Issue Log (4.6_Issue_Log_Template.xlsx):
+            Extracts active issues, severity, root cause, schedule impact, and action plans.
+        """
+        sync_results: Dict[str, Any] = {
+            "timeline_synced": False,
+            "s_curve_chart_generated": False,
+            "risks_synced": False,
+            "issues_synced": False,
+        }
+
+        # 1. Timeline & S-Curve Sync
+        t_path = (
+            timeline_path
+            or self.config.get("spreadsheets", {}).get("timeline")
+            or "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Timeline_Update_Template.xlsx"
+        )
+        if t_path and Path(t_path).exists():
+            try:
+                import openpyxl
+                from src.xlsx_engine.timeline_aggregator import TimelineAggregator
+
+                agg = TimelineAggregator(t_path)
+                analysis = agg.extract_s_curve()
+
+                # Find overall_progress slide spec
+                for s in self.config.get("slides", []):
+                    if s.get("archetype") == "overall_progress":
+                        planned_str = f"{(analysis.current_planned_pct or 0.0) * 100:.1f}%"
+                        actual_str = f"{(analysis.current_actual_pct or 0.0) * 100:.1f}%"
+                        var_str = f"{(analysis.current_variance_pct or 0.0):+.1f}%"
+                        health_status = analysis.overall_health or "ON TRACK"
+
+                        s["kpis"] = [
+                            {"label": "Planned Progress", "value": planned_str, "subtext": f"Baseline Target {analysis.current_period or ''}".strip(), "status": "PLANNED"},
+                            {"label": "Actual Progress", "value": actual_str, "subtext": "Cumulative Completed", "status": health_status if health_status in ("COMPLETED", "ON TRACK") else "ON TRACK"},
+                            {"label": "Schedule Variance", "value": var_str, "subtext": "Tolerance: +/- 2.0%", "status": "ON TRACK" if (analysis.current_variance_pct or 0.0) >= 0 else "AT RISK"},
+                            {"label": "Overall Health", "value": health_status, "subtext": f"SPI: {analysis.spi:.3f} (Go-Live protected)", "status": health_status},
+                        ]
+
+                        # Check chart mode or config flag
+                        should_chart = chart_mode or s.get("show_chart") or self.config.get("chart_mode", False)
+                        if should_chart:
+                            c_dir = Path(chart_output_dir or "output/presentations/charts")
+                            c_dir.mkdir(parents=True, exist_ok=True)
+                            c_path = c_dir / "s_curve_weekly.png"
+                            generate_s_curve_chart_image(analysis.points, c_path, self.theme)
+                            s["chart_image"] = str(c_path)
+                            sync_results["s_curve_chart_generated"] = True
+                            sync_results["chart_path"] = str(c_path)
+
+                        # Extract Phase 1 to Phase 5 rows
+                        wb = openpyxl.load_workbook(str(t_path), data_only=True)
+                        ws = wb.active
+                        phase_rows_map = [
+                            (6, "Phase 1: Project Initiation & Charter"),
+                            (33, "Phase 2: Architecture & FSD Assessment"),
+                            (57, "Phase 3: Cloud Platform Setup & Staging"),
+                            (105, "Phase 4: Data Modeling & ETL Pipelines"),
+                            (132, "Phase 5: SIT, UAT & Go-Live Cutover"),
+                        ]
+                        extracted_phases = []
+                        for r_num, phase_title in phase_rows_map:
+                            p_vals = [ws.cell(r_num, col).value for col in range(5, ws.max_column + 1)]
+                            a_vals = [ws.cell(r_num + 1, col).value for col in range(5, ws.max_column + 1)]
+                            p_sum = sum(v for v in p_vals if isinstance(v, (int, float)))
+                            a_sum = sum(v for v in a_vals if isinstance(v, (int, float)))
+                            pct = (a_sum / p_sum * 100) if p_sum > 0 else 0.0
+                            status_p = "COMPLETED" if pct >= 99.9 else ("IN PROGRESS" if pct > 0 else "PLANNED")
+                            extracted_phases.append({
+                                "phase": phase_title,
+                                "planned": "100%" if pct >= 99.9 else f"{min(100.0, p_sum):.0f}%",
+                                "actual": f"{pct:.0f}%",
+                                "status": status_p,
+                            })
+                        wb.close()
+                        if extracted_phases and not s.get("phases"):
+                            s["phases"] = extracted_phases
+
+                sync_results["timeline_synced"] = True
+                sync_results["current_period"] = analysis.current_period
+                sync_results["planned_pct"] = analysis.current_planned_pct
+                sync_results["actual_pct"] = analysis.current_actual_pct
+                sync_results["variance_pct"] = analysis.current_variance_pct
+            except Exception as e:
+                logger.warning(f"Error synchronizing with timeline spreadsheet {t_path}: {e}")
+
+        # 2. Risk Register Sync
+        r_path = (
+            risk_path
+            or self.config.get("spreadsheets", {}).get("risks")
+            or "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.5_Risk_Register_Template.xlsx"
+        )
+        if r_path and Path(r_path).exists():
+            try:
+                import openpyxl
+                wb_r = openpyxl.load_workbook(str(r_path), data_only=True)
+                ws_r = wb_r["Risk Register"]
+                raw_risks = []
+                for r in range(4, ws_r.max_row + 1):
+                    title_val = ws_r.cell(r, 4).value
+                    if not title_val:
+                        continue
+                    raw_risks.append({
+                        "id": f"R-{len(raw_risks)+1:02d}",
+                        "title": str(title_val).strip().rstrip("."),
+                        "description": str(ws_r.cell(r, 5).value or "").strip(),
+                        "impact": str(ws_r.cell(r, 6).value or "").strip(),
+                        "category": str(ws_r.cell(r, 7).value or "").strip(),
+                        "owner": str(ws_r.cell(r, 8).value or "Project Manager").strip(),
+                        "probability": str(ws_r.cell(r, 9).value or "Medium").strip(),
+                        "impact_level": str(ws_r.cell(r, 10).value or "Medium").strip(),
+                        "status": str(ws_r.cell(r, 11).value or "Open").strip(),
+                        "mitigations": [m.strip().lstrip("þ*•- o\t") for m in str(ws_r.cell(r, 12).value or "").split("\n") if m.strip()],
+                        "contingency": str(ws_r.cell(r, 13).value or "").strip().replace("\n", " ").lstrip("*•- "),
+                    })
+                wb_r.close()
+
+                if raw_risks:
+                    for s in self.config.get("slides", []):
+                        if s.get("archetype") == "risk_register":
+                            if not s.get("risk_tiers"):
+                                tiers = []
+                                tier_configs = [
+                                    ("CRITICAL / OCCURRED", "danger", "zap"),
+                                    ("MANAGED / HIGH IMPACT", "warning", "shield-check"),
+                                    ("MONITORED / DATA QUALITY", "accent", "target"),
+                                ]
+                                for idx_rk, rk in enumerate(raw_risks[:3]):
+                                    t_name, t_color, t_icon = tier_configs[idx_rk % 3]
+                                    prob_b = 3 if "high" in rk["probability"].lower() else (2 if "med" in rk["probability"].lower() else 1)
+                                    imp_b = 3 if "high" in rk["impact_level"].lower() else (2 if "med" in rk["impact_level"].lower() else 1)
+                                    tiers.append({
+                                        "tier_name": t_name,
+                                        "accent_color": t_color,
+                                        "icon_name": t_icon,
+                                        "risk_id": rk["id"],
+                                        "title": rk["title"],
+                                        "prob_label": f"PROBABILITY: {rk['probability'].upper()}",
+                                        "prob_boxes": prob_b,
+                                        "impact_label": f"IMPACT: {rk['impact_level'].upper()}",
+                                        "impact_boxes": imp_b,
+                                        "description": rk["description"][:120] + "..." if len(rk["description"]) > 120 else rk["description"],
+                                        "mitigations": rk["mitigations"][:3] or ["Review berkala terhadap baseline."],
+                                        "contingency": rk["contingency"][:140] if rk["contingency"] else "Lakukan eskalasi ke Steering Committee.",
+                                        "owner": rk["owner"],
+                                    })
+                                s["risk_tiers"] = tiers
+                    sync_results["risks_synced"] = True
+                    sync_results["risk_count"] = len(raw_risks)
+            except Exception as e:
+                logger.warning(f"Error synchronizing with risk register {r_path}: {e}")
+
+        # 3. Issue Log Sync
+        i_path = (
+            issue_path
+            or self.config.get("spreadsheets", {}).get("issues")
+            or "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.6_Issue_Log_Template.xlsx"
+        )
+        if i_path and Path(i_path).exists():
+            try:
+                import openpyxl
+                wb_i = openpyxl.load_workbook(str(i_path), data_only=True)
+                ws_i = wb_i["Issue Log"]
+                raw_issues = []
+                for r in range(4, ws_i.max_row + 1):
+                    title_val = ws_i.cell(r, 4).value
+                    if not title_val:
+                        continue
+                    dt_val = ws_i.cell(r, 3).value
+                    dt_str = str(dt_val)[:10] if dt_val else "02-Jan-00"
+                    raw_issues.append({
+                        "id": f"ISSUE-{len(raw_issues)+1:02d}",
+                        "date": dt_str,
+                        "title": str(title_val).strip(),
+                        "owner": str(ws_i.cell(r, 7).value or "Project Manager").strip(),
+                        "severity": str(ws_i.cell(r, 10).value or "Medium").strip(),
+                        "status": str(ws_i.cell(r, 11).value or "Open").strip(),
+                        "root_cause": str(ws_i.cell(r, 12).value or "").strip().replace("\n", " "),
+                        "impact": str(ws_i.cell(r, 13).value or "").strip().replace("\n", " "),
+                        "action_plan": str(ws_i.cell(r, 14).value or "").strip().replace("\n", " "),
+                        "target_date": "19-Jan-2026",
+                    })
+                wb_i.close()
+
+                if raw_issues:
+                    for s in self.config.get("slides", []):
+                        if s.get("archetype") == "issue_log":
+                            if not s.get("issues"):
+                                s["issues"] = raw_issues
+                    sync_results["issues_synced"] = True
+                    sync_results["issue_count"] = len(raw_issues)
+            except Exception as e:
+                logger.warning(f"Error synchronizing with issue log {i_path}: {e}")
+
+        return sync_results
+
+    # -------------------------------------------------------------------------
     # Master Assembly
     # -------------------------------------------------------------------------
     def build_all(self) -> Presentation:
@@ -1722,9 +2075,19 @@ class WeeklyProgressDeckBuilder:
                             else:
                                 paragraph.text = new_page_str
 
-    def save(self, output_path: Union[str, Path]) -> Path:
-        """Synchronizes pagination and saves presentation deck."""
+    def save(
+        self,
+        output_path: Union[str, Path],
+        engagement_context: Optional[Any] = None,
+    ) -> Path:
+        """Synchronizes pagination, optionally substitutes slugs, and saves presentation deck."""
         self.update_pagination()
+        if engagement_context:
+            try:
+                from src.core.slug_registry import substitute_slugs_in_presentation
+                substitute_slugs_in_presentation(self.prs, engagement_context)
+            except Exception as e:
+                logger.warning(f"Failed to substitute slugs in presentation: {e}")
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)
         self.prs.save(str(p))

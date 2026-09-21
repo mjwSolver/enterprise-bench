@@ -1,0 +1,881 @@
+# ==============================================================================
+# PROJECT KICK-OFF PRESENTATION — MASTER DECLARATIVE SPECIFICATION
+# ==============================================================================
+# Project: Toyota Tsusho Data Application for Financial Analytics with Snowflake
+# Deliverable: 1.1_Project_Kick-off_Material_Template.pptx (19 Slides Modernized)
+# Client: PT Toyota Tsusho Indonesia (TTI)
+# Implementation Partner: PT Mitra Integrasi Informatika (MII) / Metrodata
+# Architecture: Declarative Consulting Deck Builder (PitchDeckBuilder)
+# ==============================================================================
+
+deck_type: kickoff_deck
+
+metadata:
+  client_name: "PT Toyota Tsusho Indonesia"
+  vendor_name: "PT Mitra Integrasi Informatika"
+  product: "Snowflake AI Data Cloud & Streamlit"
+  date_str: "16 December 2025"
+  confidentiality: "PT Toyota Tsusho Indonesia & PT Mitra Integrasi Informatika  |  Strictly Confidential"
+  division_tagline: "PT Mitra Integrasi Informatika  |  Data & AI Modernization Practice"
+
+slides:
+  # ----------------------------------------------------------------------------
+  # Slide 01: Hero Cover Slide
+  # ----------------------------------------------------------------------------
+  - archetype: hero_cover
+    tracker: "ENTERPRISE FINANCIAL ANALYTICS | PROJECT INITIATION"
+    title: "DATA APPLICATION FOR FINANCIAL ANALYTICS WITH SNOWFLAKE"
+    subtitle: "Project Kick-off Meeting, Governance Alignment & Phased Implementation Roadmap"
+    client: "PT Toyota Tsusho Indonesia"
+    vendor: "PT Mitra Integrasi Informatika"
+    product: "Snowflake AI Data Cloud"
+    date_str: "16 December 2025"
+    prepared_for_label: "PREPARED FOR"
+    engagement_partner_label: "IMPLEMENTATION PARTNER"
+    client_sublabel: "Executive Leadership & Financial Steering Committee"
+    vendor_sublabel: "Presented by Agus Suhanto, Project Manager, MII"
+
+  # ----------------------------------------------------------------------------
+  # Slide 02: Agenda / Table of Contents
+  # ----------------------------------------------------------------------------
+  - archetype: agenda
+    tracker: "PROJECT INITIATION | EXECUTIVE AGENDA"
+    title: "Comprehensive Kick-off Alignment Across Governance, Architecture & Delivery Gates"
+    subtitle: "Structured discussion topics ensuring bilateral consensus on scope, timelines, responsibilities, and operational procedures."
+    columns: 2
+    items:
+      - num: "01"
+        title: "Latar Belakang"
+        description: "Business context, current financial reporting challenges, and modernization drivers."
+      - num: "02"
+        title: "Tujuan Proyek"
+        description: "Centralized data platform, automated processing, and interactive analytics objectives."
+      - num: "03"
+        title: "Stakeholders & Roles"
+        description: "Core responsibilities across Customer (TTI), Consultant (MII), and Principal (Snowflake)."
+      - num: "04"
+        title: "Tim Project"
+        description: "Joint dual-pillar governance, steering committee sponsors, PMO, and technical execution pods."
+      - num: "05"
+        title: "Ruang Lingkup"
+        description: "7 delivery workstreams: Initiation, Development, Testing, Handover, Go-Live, PMO, Snowflake."
+      - num: "06"
+        title: "Deliverables"
+        description: "Contractual deliverables, architecture specs, test evidence, and acceptance sign-offs."
+      - num: "07"
+        title: "Asumsi Proyek"
+        description: "Operational assumptions, SAP export formats, monthly loading schedules, and boundaries."
+      - num: "08"
+        title: "Arsitektur To-Be"
+        description: "Target architecture: monthly staging, Snowflake Data Cloud, and Streamlit analytics UI."
+      - num: "09"
+        title: "Timeline High Level"
+        description: "5-stage execution horizons spanning December 2025 through June 2026."
+      - num: "10"
+        title: "Timeline Detail"
+        description: "Comprehensive 24-week delivery Gantt chart across workstream critical paths."
+      - num: "11"
+        title: "Milestone Proyek"
+        description: "11 stage-gate milestone commitments and contractual sign-off dates."
+      - num: "12"
+        title: "Prerequisite"
+        description: "Environmental readiness, NDA execution, developer access, and collaborative tooling."
+      - num: "13"
+        title: "Communication & Collaboration"
+        description: "Governance cadences, weekly status checkpoints, and communication channels."
+      - num: "14"
+        title: "Risiko & Mitigasi"
+        description: "Active risk register, scope containment, contingency actions, and designated owners."
+      - num: "15"
+        title: "Prosedur Change Request"
+        description: "Formal 4-stage change management procedure with bi-level escalation thresholds."
+      - num: "16"
+        title: "Q&A & Diskusi Terbuka"
+        description: "Executive alignment forum for stakeholder inquiries, clarifications, and approval."
+
+  # ----------------------------------------------------------------------------
+  # Slide 03: 1. Latar Belakang (Gap Analysis / Problem Framing)
+  # ----------------------------------------------------------------------------
+  - archetype: gap_analysis
+    tracker: "LATAR BELAKANG | CURRENT SITUATION VS. NEED"
+    title: "Modernizing Financial Data Architecture Eliminates Legacy Reporting Friction"
+    subtitle: "Evaluating existing constraints against target capabilities to deliver fast, accurate, and governed financial intelligence."
+    as_is_header: "CURRENT SITUATION (AS-IS)"
+    to_be_header: "TARGET STRATEGIC NEED (TO-BE)"
+    dimensions:
+      - dimension: "REPORTING ARCHITECTURE"
+        as_is: "Pelaporan keuangan masih mengandalkan sistem SAP ERP legacy dan proses spreadsheet manual yang rentan kelambatan data."
+        to_be: "Platform data terpusat berbasis Snowflake AI Data Cloud sebagai single source of truth keuangan terkelola."
+      - dimension: "DISTRIBUTION & ACCESS"
+        as_is: "Distribusi laporan belum sepenuhnya efisien, tersilo dalam file lokal, serta memerlukan re-entry data berulang."
+        to_be: "Akses insight keuangan yang cepat, interaktif, dan aman melalui web aplikasi Streamlit terintegrasi."
+      - dimension: "INSIGHT VELOCITY"
+        as_is: "Insight keuangan belum tersedia secara tepat waktu untuk mendukung evaluasi varians dan keputusan strategis bisnis."
+        to_be: "Pemrosesan data performa tinggi mendukung analisis Sales, Gross Profit, Opex, dan TVA ROIC secara on-demand."
+
+  # ----------------------------------------------------------------------------
+  # Slide 04: 2. Tujuan (Project Objectives)
+  # ----------------------------------------------------------------------------
+  - archetype: card_grid
+    tracker: "TUJUAN PROYEK | STRATEGIC OBJECTIVES"
+    title: "Five Strategic Objectives Guide the Financial Analytics Modernization Journey"
+    subtitle: "Decoupled cloud architecture establishes unified governance, eliminates manual latency, and powers interactive financial discovery."
+    columns: 3
+    items:
+      - title: "Centralized Data Platform"
+        subtitle: "Snowflake Data Cloud Foundation"
+        icon: "database"
+        badge: "CORE PLATFORM"
+        accent_key: "accent"
+        bullets:
+          - "Menyediakan platform data terpusat berbasis Snowflake sebagai sumber data keuangan konsisten."
+          - "Menjamin integritas dan validitas data lintas divisi finansial Toyota Tsusho."
+          - "Mendukung skalabilitas compute dan storage elastis tanpa overhead operasional."
+      - title: "Simplified Data Processing"
+        subtitle: "Automated ETL & Modeling"
+        icon: "cpu"
+        badge: "EFFICIENCY"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Menyederhanakan dan meningkatkan proses pengolahan serta transformasi data keuangan."
+          - "Mengurangi kompleksitas komputasi agregasi bulanan dengan semantic modeling."
+          - "Mempercepat siklus closing pelaporan keuangan secara signifikan."
+      - title: "Legacy Risk De-risking"
+        subtitle: "Process Automation"
+        icon: "shield-check"
+        badge: "RELIABILITY"
+        accent_key: "accent_teal"
+        bullets:
+          - "Mengurangi ketergantungan pada proses manual dan spreadsheet lokal yang tersebar."
+          - "Memitigasi risiko human-error dalam formula kalkulasi dan rekapitulasi data."
+          - "Meningkatkan kontrol audit dan transparansi histori perubahan data."
+      - title: "Interactive Executive UI"
+        subtitle: "Streamlit Analytical Application"
+        icon: "layout-dashboard"
+        badge: "USER EXPERIENCE"
+        accent_key: "accent"
+        bullets:
+          - "Menyediakan pelaporan keuangan yang lebih cepat, interaktif, dan mudah diakses user."
+          - "Mendukung kemampuan multi-dimensional slicing, dicing, dan eksplorasi data."
+          - "Menyediakan mekanisme input dan edit data terkontrol langsung ke Snowflake."
+      - title: "Cross-Functional Governance"
+        subtitle: "Standardized Business Logic"
+        icon: "target"
+        badge: "GOVERNANCE"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Mendukung konsistensi perhitungan KPI dan tata kelola data lintas fungsi bisnis."
+          - "Menyelaraskan kamus data (data dictionary) antar departemen finansial."
+          - "Memfasilitasi pengambilan keputusan berbasis insight data analitik presisi."
+
+  # ----------------------------------------------------------------------------
+  # Slide 05: 3. Stakeholder & Role
+  # ----------------------------------------------------------------------------
+  - archetype: card_grid
+    tracker: "STAKEHOLDER GOVERNANCE | ROLES & RESPONSIBILITIES"
+    title: "Three Key Entities Form the Bilateral Engagement Governance Ecosystem"
+    subtitle: "Clear demarcation of accountabilities between Client Sponsors, Implementation Partner, and Technology Principal."
+    columns: 3
+    items:
+      - title: "PT Toyota Tsusho Indonesia"
+        subtitle: "Customer & Business Process Owners"
+        icon: "users"
+        badge: "CLIENT / SPONSOR"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Provides business requirements, KPI definitions, and source data access."
+          - "Provides Snowflake cloud subscription environment for Development via PT MII."
+          - "Conducts User Acceptance Testing (UAT) and validates functional calculations."
+          - "Holds final acceptance sign-off authority and production Go-Live decision."
+      - title: "PT Mitra Integrasi Informatika"
+        subtitle: "Local Implementation Partner & Consultant"
+        icon: "briefcase"
+        badge: "DELIVERY PARTNER"
+        accent_key: "accent"
+        bullets:
+          - "Provides dedicated project management (PMP), coordination, and quality governance."
+          - "Performs technical assessment, architecture design, and data pipeline modeling."
+          - "Develops Streamlit financial application and automated upload mechanisms."
+          - "Executes System Integration Testing (SIT) and coordinates UAT defect triage."
+          - "Executes production deployment, 2-week warranty support, and knowledge transfer."
+      - title: "Snowflake Inc."
+        subtitle: "Technology Platform Principal"
+        icon: "cloud"
+        badge: "TECHNOLOGY PRINCIPAL"
+        accent_key: "accent_teal"
+        bullets:
+          - "Provides Tier-2 engineering support for Snowflake Data Cloud infrastructure."
+          - "Guarantees platform high availability, data resilience, and encryption SLAs."
+          - "Provides architectural guidance, platform best practices, and escalations."
+
+  # ----------------------------------------------------------------------------
+  # Slide 06: 4. Tim Project (Project Organization Structure & RACI)
+  # ----------------------------------------------------------------------------
+  - archetype: governance_org_structure
+    tracker: "TIM PROYEK | JOINT GOVERNANCE & RACI MATRIX"
+    title: "Joint Dual-Pillar Governance Matrix Establishes Clear Escalation & Delivery Ownership"
+    subtitle: "Hierarchical project structure connects executive steering committees, PMO leads, and specialized execution pods."
+    client_name: "PT Toyota Tsusho Indonesia"
+    vendor_name: "PT Mitra Integrasi Informatika"
+    tier1_client_text: "Tadahiko Onaka (TTI SteerCo), Mulyanah (TTI Project Advisor)  |  Executive budget authorization & strategic sign-offs"
+    tier1_vendor_text: "Arif Nanda A. (MII SteerCo), Dian Eka Kusumawati & Ho Herly (Account Managers), Lucky & Herman (Presales)"
+    client_pm_title: "Fredric Retanubun - TTI Project Manager"
+    client_pm_bullets:
+      - "Facilitates internal business access, data extracts, and UAT scheduling."
+      - "Coordinates cross-functional reviews across Finance, Accounting, and IT."
+      - "Primary client escalation gate for stage-gate approvals and sign-offs."
+    vendor_pm_title: "Agus Suhanto - MII Project Manager"
+    vendor_pm_bullets:
+      - "Drives daily delivery cadence, sprint backlog, and milestone tracking."
+      - "Maintains RAID logs, weekly progress S-curves, and formal Change Requests."
+      - "Coordinates specialized Snowflake architects, engineers, and data scientists."
+    pods:
+      - title: "Business Process Owners"
+        org: "PT Toyota Tsusho Indonesia"
+        badge: "TTI BUSINESS"
+        badge_color: "danger"
+        stripe_color: "accent_secondary"
+        bullets:
+          - "Andri Agusman, Agung Rachman, Anisah Pratiwi."
+          - "Debby Lutfi Adrianto, Andri Setiawan, Mfikri Farraswan."
+          - "Validates formulas (Sales, Opex, Margin, ROIC)."
+          - "Executes UAT testing scenarios and signs off acceptance."
+      - title: "IT & System Operations"
+        org: "PT Toyota Tsusho Indonesia"
+        badge: "TTI IT & OPS"
+        badge_color: "danger"
+        stripe_color: "accent_secondary"
+        bullets:
+          - "Fais Praditya, Dini Lianto, Abdul Fitdila."
+          - "Rakha Wardhana, Yayako Fujita."
+          - "Provisions network, VPN, and SAP CSV export access."
+          - "Validates enterprise security and compliance standards."
+      - title: "Data & Lakehouse Engineering"
+        org: "PT Mitra Integrasi Informatika"
+        badge: "ENGINEERING"
+        badge_color: "accent"
+        stripe_color: "accent"
+        bullets:
+          - "Vicko Bhayyu (Technical Lead)."
+          - "Willyam Saputra (Data Engineer)."
+          - "Deploys Snowflake schema models, RBAC, and storage."
+          - "Builds automated staging upload ingestion pipelines."
+      - title: "Analytics & Streamlit Apps"
+        org: "PT Mitra Integrasi Informatika"
+        badge: "STREAMLIT / AI"
+        badge_color: "accent"
+        stripe_color: "accent"
+        bullets:
+          - "Golden Ray Vistanu (Snowflake Streamlit Specialist)."
+          - "Marcel Jeremy Wiradinata (Data Scientist)."
+          - "Builds 8 interactive Streamlit financial pages."
+          - "Conducts user training and technical knowledge transfer."
+
+  # ----------------------------------------------------------------------------
+  # Slide 07: 5. Ruang Lingkup (Scope of Work)
+  # ----------------------------------------------------------------------------
+  - archetype: card_grid
+    tracker: "RUANG LINGKUP | SCOPE OF WORK WORKSTREAMS"
+    title: "Seven Workstreams Deliver End-to-End Financial Analytics Modernization"
+    subtitle: "Comprehensive scope spanning initiation, Streamlit development across 8 financial modules, rigorous testing, and operational handover."
+    columns: 4
+    items:
+      - title: "Initiation & Planning"
+        subtitle: "Workstream 01"
+        icon: "clipboard-list"
+        badge: "PHASE 1"
+        accent_key: "accent"
+        bullets:
+          - "Comprehensive business requirements assessment & gap analysis."
+          - "Technical architecture and data model design."
+          - "Project management planning and kickoff governance alignment."
+          - "Authoring and formal sign-off of Functional Specification Document (FSD)."
+      - title: "Streamlit Development"
+        subtitle: "Workstream 02"
+        icon: "layout-dashboard"
+        badge: "PHASE 2"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Develop Streamlit Application containing 8 core analysis modules:"
+          - "Sales, Gross Profit, Opex, Profit Before Tax, Summary Page."
+          - "TVA ROIC, AR Overdue Analysis, and Stock Aging Dashboard."
+          - "Develop monthly CSV/Excel upload mechanism with schema validation."
+      - title: "Testing & Quality Assurance"
+        subtitle: "Workstream 03"
+        icon: "check-circle"
+        badge: "PHASE 3"
+        accent_key: "accent_teal"
+        bullets:
+          - "Testing script and test case scenario development."
+          - "System Integration Testing (SIT) execution and technical sign-off."
+          - "User Acceptance Testing (UAT) coordination with 1x revision cycle."
+          - "Defect triage, remediation tracking, and formal UAT sign-off."
+      - title: "Operational Handover"
+        subtitle: "Workstream 04"
+        icon: "book-open"
+        badge: "PHASE 4"
+        accent_key: "accent"
+        bullets:
+          - "Comprehensive knowledge transfer materials and admin manuals."
+          - "User training sessions for financial business process owners."
+          - "Formal Berita Acara Transfer Knowledge (BAST KT) execution."
+      - title: "Go-Live & Hypercare Support"
+        subtitle: "Workstream 05"
+        icon: "rocket"
+        badge: "PHASE 5"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Production cutover execution and deployment verification."
+          - "Complete Technical Specification Document (TSD) documentation."
+          - "Two (2) weeks dedicated post-go-live warranty support period."
+          - "Project closure document and BAST Final execution."
+      - title: "Project Management"
+        subtitle: "Workstream 06"
+        icon: "gauge"
+        badge: "CROSS-CUTTING"
+        accent_key: "accent_teal"
+        bullets:
+          - "Continuous plan, coordinate, control, and monitor governance."
+          - "Weekly progress reporting and S-curve schedule tracking."
+          - "Active maintenance of Risks, Issues, and Change Request logs."
+          - "Meeting coordination, minutes distribution, and action item follow-up."
+      - title: "Snowflake Subscription"
+        subtitle: "Workstream 07"
+        icon: "cloud"
+        badge: "INFRASTRUCTURE"
+        accent_key: "accent"
+        bullets:
+          - "Provision and configure Snowflake cloud data platform subscription."
+          - "Environment activation aligned from the start of Development phase."
+          - "Role-based access control (RBAC) and security configuration."
+
+  # ----------------------------------------------------------------------------
+  # Slide 08: 6. Deliverables (Key Deliverables by Lifecycle Phase)
+  # ----------------------------------------------------------------------------
+  - archetype: card_grid
+    tracker: "DELIVERABLES | CONTRACTUAL ARTIFACTS & SIGN-OFFS"
+    title: "Contractual Deliverables Mapped Systematically Across Project Lifecycle Phases"
+    subtitle: "High-integrity documentation and code artifacts submitted for formal review and stage-gate sign-offs."
+    columns: 4
+    items:
+      - title: "Initiation / Planning"
+        subtitle: "Phase 1 Artifacts"
+        icon: "file-text"
+        badge: "STAGE GATE"
+        accent_key: "accent"
+        bullets:
+          - "Project Kick-off presentation materials."
+          - "Formal Project Charter."
+          - "Project Management Plan (PMP)."
+          - "Functional Specification Document (FSD) signed-off."
+      - title: "Development Phase"
+        subtitle: "Phase 2 Artifacts"
+        icon: "code"
+        badge: "TECHNICAL"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Streamlit financial analytics application source code."
+          - "Snowflake DDL scripts, staging tables, and views."
+          - "CSV/Excel monthly upload data mechanism."
+          - "Technical Specification Document (TSD) draft."
+      - title: "Testing Phase"
+        subtitle: "Phase 3 Artifacts"
+        icon: "shield-alert"
+        badge: "VERIFICATION"
+        accent_key: "accent_teal"
+        bullets:
+          - "Comprehensive Test Scenarios and Test Cases."
+          - "System Integration Test (SIT) document signed-off."
+          - "User Acceptance Test (UAT) document signed-off."
+          - "Defect resolution log and sign-off approval matrix."
+      - title: "Operational Handover"
+        subtitle: "Phase 4 Artifacts"
+        icon: "award"
+        badge: "OPERATIONAL"
+        accent_key: "accent"
+        bullets:
+          - "Knowledge transfer slide presentations."
+          - "Streamlit user manual and system admin runbook."
+          - "Berita Acara Transfer Knowledge (signed-off)."
+      - title: "Go-Live, Support & Closing"
+        subtitle: "Phase 5 Artifacts"
+        icon: "check-check"
+        badge: "ACCEPTANCE"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Berita Acara Go-Live (signed-off)."
+          - "Berita Acara 2-Weeks Guarantee Period (signed-off)."
+          - "Final Technical Specification Document (TSD)."
+          - "Project Closure Document (BAST Final)."
+      - title: "Project Management"
+        subtitle: "Governance Artifacts"
+        icon: "layers"
+        badge: "GOVERNANCE"
+        accent_key: "accent_teal"
+        bullets:
+          - "Weekly Progress Reports and S-Curves."
+          - "Risks & Issues Register (RAID log)."
+          - "Formal Change Request (CR) Log."
+          - "Steering Committee and checkpoint Meeting Minutes."
+      - title: "Snowflake Subscription"
+        subtitle: "Cloud Environment"
+        icon: "cloud-lightning"
+        badge: "TENANT SETUP"
+        accent_key: "accent"
+        bullets:
+          - "Snowflake subscription provisioning verification."
+          - "Virtual warehouse compute sizing configuration."
+          - "Database security and user access attestation."
+
+  # ----------------------------------------------------------------------------
+  # Slide 09: 7. Asumsi (Project Assumptions & Boundaries)
+  # ----------------------------------------------------------------------------
+  - archetype: card_grid
+    tracker: "ASUMSI PROYEK | GOVERNANCE & TECHNICAL BOUNDARIES"
+    title: "Project Assumptions Establish Clear Operating Conditions and Technical Baselines"
+    subtitle: "Essential baseline agreements governing collaboration protocols, source data readiness, and change management procedures."
+    columns: 4
+    items:
+      - title: "Remote Collaboration"
+        subtitle: "Operational Model"
+        icon: "monitor"
+        badge: "OPERATIONAL"
+        accent_key: "accent"
+        bullets:
+          - "Proyek dilaksanakan dengan model kolaborasi jarak jauh (remote/hybrid)."
+          - "Koordinasi teknis via MS Teams dan dedicated communication channels."
+          - "Sesi tatap muka (onsite) dijadwalkan untuk milestone meeting penting."
+      - title: "SAP Source Data"
+        subtitle: "Extraction Format"
+        icon: "file-spreadsheet"
+        badge: "SOURCE DATA"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Data utama berasal dari sistem SAP ERP yang diekspor ke Excel/CSV."
+          - "Format kolom, tipe data, dan header disepakati bersama dalam FSD."
+          - "Tim TTI bertanggung jawab memastikan kelengkapan data hasil ekspor SAP."
+      - title: "Monthly Upload Cadence"
+        subtitle: "Data Ingestion Schedule"
+        icon: "calendar-clock"
+        badge: "INGESTION"
+        accent_key: "accent_teal"
+        bullets:
+          - "Data bulanan akan diunggah oleh tim Toyota Tsusho sesuai jadwal closing."
+          - "Aplikasi Streamlit menyediakan halaman upload validasi skema."
+          - "Jadwal upload dikoordinasikan sesuai target pelaporan bulanan."
+      - title: "Application Scope Focus"
+        subtitle: "Boundary Definition"
+        icon: "target"
+        badge: "SCOPE"
+        accent_key: "accent"
+        bullets:
+          - "Lingkup awal fokus pada aplikasi analitik dan pelaporan interaktif."
+          - "Tidak mencakup otomatisasi integrasi pipeline end-to-end langsung ke SAP."
+          - "Perluasan konektor data otomatis dapat direncanakan pada fase berikutnya."
+      - title: "Streamlit UI Interface"
+        subtitle: "Frontend Architecture"
+        icon: "layout"
+        badge: "UI / UX"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Streamlit digunakan sebagai media interface utama aplikasi dan visualisasi."
+          - "Mendukung eksplorasi data, filter multi-dimensi, dan pelaporan tabular."
+          - "Mendukung fitur input dan edit data terkontrol ke Snowflake."
+      - title: "KPI Logic Freezing"
+        subtitle: "Business Rules"
+        icon: "lock"
+        badge: "GOVERNANCE"
+        accent_key: "accent_teal"
+        bullets:
+          - "Definisi KPI dan logika bisnis digali dan dikunci dalam fase Planning."
+          - "Dokumen FSD menjadi acuan tunggal formula kalkulasi analitik finansial."
+          - "Perubahan logika pasca-FSD memerlukan evaluasi dampak formal."
+      - title: "Formal Change Control"
+        subtitle: "Change Request Procedure"
+        icon: "git-pull-request"
+        badge: "CHANGE CONTROL"
+        accent_key: "accent"
+        bullets:
+          - "Perubahan kebutuhan atau sumber data baru mengikuti prosedur Change Request."
+          - "Evaluasi dampak terhadap jadwal dan biaya diserahkan ke SteerCo."
+          - "CR yang disetujui dituangkan dalam addendum kontrak resmi."
+
+  # ----------------------------------------------------------------------------
+  # Slide 10: 8. Arsitektur To-be (Target Architecture)
+  # ----------------------------------------------------------------------------
+  - archetype: snowflake_data_pipeline
+    tracker: "ARSITEKTUR TO-BE | TARGET PLATFORM ARCHITECTURE"
+    title: "Modern Financial Analytics Architecture Decouples Ingestion, Storage, and Serving"
+    subtitle: "End-to-end pipeline connecting SAP ERP CSV exports to Snowflake Data Cloud, dimensional marts, and interactive Streamlit applications."
+
+  # ----------------------------------------------------------------------------
+  # Slide 11: 9. Timeline High Level (Phased Delivery Schedule)
+  # ----------------------------------------------------------------------------
+  - archetype: chevron_process
+    tracker: "TIMELINE HIGH LEVEL | PHASED EXECUTION ROADMAP"
+    title: "Phased Delivery Roadmap Structured Across Five Sequential Execution Horizons"
+    subtitle: "Controlled stage-gate progression ensures iterative value realization from kick-off through production warranty."
+    steps:
+      - phase_number: "01"
+        title: "Initiation & Planning"
+        subtitle: "Dec 2025"
+        status: "COMPLETED"
+        accent_key: "accent"
+        deliverables:
+          - "Project Kick-off Meeting & Team Onboarding."
+          - "Business requirements assessment & analysis."
+          - "Functional Specification Document (FSD) sign-off."
+          - "Project Charter & Management Plan approval."
+      - phase_number: "02"
+        title: "Analytics Development"
+        subtitle: "02 Jan – 13 Feb 2026"
+        status: "IN_PROGRESS"
+        accent_key: "accent_secondary"
+        deliverables:
+          - "Snowflake subscription environment provisioned."
+          - "Data modeling & dimensional staging tables."
+          - "Development of 8 Streamlit financial modules."
+          - "Monthly CSV/Excel upload validation mechanism."
+      - phase_number: "03"
+        title: "Testing & Quality Assurance"
+        subtitle: "18 Feb – 31 Mar 2026"
+        status: "PLANNED"
+        accent_key: "accent_teal"
+        deliverables:
+          - "System Integration Testing (SIT) sign-off."
+          - "User Acceptance Testing (UAT) with 1x revision cycle."
+          - "Defect remediation and performance tuning."
+          - "Formal UAT sign-off approval matrix."
+      - phase_number: "04"
+        title: "Production Cutover & Go-Live"
+        subtitle: "01 Apr 2026"
+        status: "PLANNED"
+        accent_key: "accent"
+        deliverables:
+          - "Production deployment & cutover execution."
+          - "Final system operational verification."
+          - "Berita Acara Go-Live formal sign-off."
+          - "Initiation of 2-week warranty period."
+      - phase_number: "05"
+        title: "Hypercare Warranty & Closing"
+        subtitle: "02 Apr – 02 Jun 2026"
+        status: "PLANNED"
+        accent_key: "accent_secondary"
+        deliverables:
+          - "Technical Specification Document (TSD) sign-off."
+          - "Comprehensive Knowledge Transfer sessions (BAST KT)."
+          - "Two (2) weeks warranty hypercare completion."
+          - "Project Closure Document & BAST Final execution."
+
+  # ----------------------------------------------------------------------------
+  # Slide 12: 10. Timeline Detail (Execution Gantt Chart)
+  # ----------------------------------------------------------------------------
+  - archetype: timeline_gantt
+    tracker: "TIMELINE DETAIL | PROJECT EXECUTION GANTT"
+    title: "24-Week Detailed Execution Schedule Coordinates Delivery Critical Path"
+    subtitle: "Comprehensive activity breakdown spanning initiation, data pipeline engineering, Streamlit analytics, and warranty closure."
+    gantt_data:
+      time_scale_label: "WEEKS"
+      total_periods: 24
+      period_labels:
+        - "W01"
+        - "W02"
+        - "W03"
+        - "W04"
+        - "W05"
+        - "W06"
+        - "W07"
+        - "W08"
+        - "W09"
+        - "W10"
+        - "W11"
+        - "W12"
+        - "W13"
+        - "W14"
+        - "W15"
+        - "W16"
+        - "W17"
+        - "W18"
+        - "W19"
+        - "W20"
+        - "W21"
+        - "W22"
+        - "W23"
+        - "W24"
+      current_period_marker: 1.0
+      footnote: "*) Detailed schedule tracks PMO sprint milestones; critical path items require prompt bilateral sign-offs."
+      workstreams:
+        - category: "Initiation & Planning"
+          badge: "PLANNING"
+          accent_color: "primary"
+          tasks:
+            - name: "Kick-off Meeting & Governance Setup"
+              start_period: 1.0
+              end_period: 1.0
+              progress_pct: 100.0
+              status: "COMPLETED"
+              is_milestone: true
+            - name: "Assessment, Requirements & FSD Drafting"
+              start_period: 1.0
+              end_period: 3.0
+              progress_pct: 70.0
+              status: "IN_PROGRESS"
+            - name: "FSD Sign-off Gate"
+              start_period: 3.0
+              end_period: 3.0
+              progress_pct: 0.0
+              status: "PLANNED"
+              is_milestone: true
+        - category: "Platform & Streamlit Development"
+          badge: "DEVELOPMENT"
+          accent_color: "accent"
+          tasks:
+            - name: "Snowflake Environment Provisioning"
+              start_period: 3.0
+              end_period: 4.0
+              progress_pct: 0.0
+              status: "PLANNED"
+            - name: "Data Modeling & Staging Pipeline"
+              start_period: 3.0
+              end_period: 7.0
+              progress_pct: 0.0
+              status: "PLANNED"
+            - name: "Streamlit 8 Financial Modules Development"
+              start_period: 4.0
+              end_period: 9.0
+              progress_pct: 0.0
+              status: "PLANNED"
+            - name: "Monthly CSV Upload Mechanism"
+              start_period: 6.0
+              end_period: 9.0
+              progress_pct: 0.0
+              status: "PLANNED"
+        - category: "Testing & User Acceptance"
+          badge: "TESTING"
+          accent_color: "secondary"
+          tasks:
+            - name: "System Integration Testing (SIT)"
+              start_period: 9.0
+              end_period: 11.0
+              progress_pct: 0.0
+              status: "PLANNED"
+            - name: "SIT Sign-off Gate"
+              start_period: 11.0
+              end_period: 11.0
+              progress_pct: 0.0
+              status: "PLANNED"
+              is_milestone: true
+            - name: "User Acceptance Testing (UAT - 1x Rev)"
+              start_period: 11.0
+              end_period: 15.0
+              progress_pct: 0.0
+              status: "PLANNED"
+            - name: "UAT Sign-off Gate"
+              start_period: 15.0
+              end_period: 15.0
+              progress_pct: 0.0
+              status: "PLANNED"
+              is_milestone: true
+        - category: "Go-Live, Handover & Hypercare"
+          badge: "CUTOVER & SUPPORT"
+          accent_color: "accent_secondary"
+          tasks:
+            - name: "Production Deployment & Go-Live (BAST)"
+              start_period: 16.0
+              end_period: 16.0
+              progress_pct: 0.0
+              status: "PLANNED"
+              is_milestone: true
+            - name: "TSD Sign-off & Documentation"
+              start_period: 16.0
+              end_period: 17.0
+              progress_pct: 0.0
+              status: "PLANNED"
+            - name: "Knowledge Transfer Sessions (BAST KT)"
+              start_period: 17.0
+              end_period: 18.0
+              progress_pct: 0.0
+              status: "PLANNED"
+            - name: "Two (2) Weeks Warranty Hypercare"
+              start_period: 16.0
+              end_period: 18.0
+              progress_pct: 0.0
+              status: "PLANNED"
+            - name: "Final Project Closure & Acceptance"
+              start_period: 24.0
+              end_period: 24.0
+              progress_pct: 0.0
+              status: "PLANNED"
+              is_milestone: true
+
+  # ----------------------------------------------------------------------------
+  # Slide 13: 11. Milestone (Stage-Gate Acceptance Milestones Table)
+  # ----------------------------------------------------------------------------
+  - archetype: table
+    tracker: "STATUS MILESTONE | CONTRACTUAL STAGE-GATE REGISTER"
+    title: "Eleven Stage-Gate Milestones Govern Project Execution and Acceptance Sign-offs"
+    subtitle: "Formal verification gates connecting contractual commitments to verified technical deliverables."
+    footnote: "*) All dates reflect baseline commitments; timeline adjustments require formal Steering Committee approval."
+    columns:
+      - header: "No."
+        width: 0.70
+        align: "CENTER"
+        is_index: true
+      - header: "Milestone Description"
+        width: 5.40
+        align: "LEFT"
+      - header: "Target Baseline Date"
+        width: 2.10
+        align: "CENTER"
+      - header: "Delivery Status"
+        width: 1.90
+        align: "CENTER"
+        is_status: true
+      - header: "Sign-off Authority"
+        width: 1.633
+        align: "CENTER"
+    rows:
+      - ["01", "Project Kick-off Meeting & Team Alignment", "16 Dec 2025", "COMPLETED", "Joint PMO"]
+      - ["02", "Functional Specification Document (FSD) Sign-off", "02 Jan 2026", "CRITICAL GATE", "TTI SteerCo"]
+      - ["03", "Snowflake Subscription Environment Provisioned", "02 Jan 2026", "INFRASTRUCTURE", "MII Lead"]
+      - ["04", "Streamlit Application & Modeling Development Complete", "13 Feb 2026", "DEVELOPMENT", "MII PM"]
+      - ["05", "System Integration Testing (SIT) Result Sign-off", "24 Feb 2026", "TESTING", "MII Lead"]
+      - ["06", "User Acceptance Testing (UAT) Result Sign-off", "31 Mar 2026", "CRITICAL GATE", "TTI BPO"]
+      - ["07", "Production Cutover & Official Go-Live", "01 Apr 2026", "CRITICAL GATE", "TTI SteerCo"]
+      - ["08", "Technical Specification Document (TSD) Sign-off", "08 Apr 2026", "DOCUMENTATION", "Joint PMO"]
+      - ["09", "Knowledge Transfer & User Training Complete", "16 Apr 2026", "HANDOVER", "TTI Team"]
+      - ["10", "Two-Month Operational Guarantee Period Complete", "02 Jun 2026", "WARRANTY", "Joint PMO"]
+      - ["11", "Final Project Closure & BAST Final Sign-off", "02 Jun 2026", "CRITICAL GATE", "SteerCo Leadership"]
+
+  # ----------------------------------------------------------------------------
+  # Slide 14: 12. Prerequisite (Project Readiness & Environmental Setup Table)
+  # ----------------------------------------------------------------------------
+  - archetype: table
+    tracker: "PREREQUISITE | PROJECT READINESS & ONBOARDING"
+    title: "Project Prerequisites Ensure Seamless Operational and Environmental Readiness"
+    subtitle: "Essential onboarding items spanning contractual legalities, developer workstations, and collaboration channels."
+    footnote: "*) Prerequisite completion is monitored weekly by the PMO to eliminate operational blockers."
+    columns:
+      - header: "No."
+        width: 0.70
+        align: "CENTER"
+        is_index: true
+      - header: "Prerequisite Item"
+        width: 3.80
+        align: "LEFT"
+      - header: "Provider"
+        width: 1.60
+        align: "CENTER"
+      - header: "Person in Charge (PIC)"
+        width: 2.00
+        align: "LEFT"
+      - header: "Readiness Status"
+        width: 1.80
+        align: "CENTER"
+        is_status: true
+      - header: "Governance Notes"
+        width: 1.833
+        align: "LEFT"
+    rows:
+      - ["01", "Mutual Non-Disclosure Agreement (NDA)", "PT MII / TTI", "Dian Eka Kusumawati", "IN PROGRESS", "Final bilateral legal execution"]
+      - ["02", "Developer Laptops & Security Clearance", "PT MII", "All PIC / Consultants", "COMPLETE", "Hardware & security tools ready"]
+      - ["03", "WhatsApp Group & Microsoft Teams Channels", "PT MII", "Lucky / PMO", "COMPLETE", "Coordination channels active"]
+      - ["04", "SharePoint Document Collaboration Repository", "PT MII", "Agus Suhanto (PM)", "COMPLETE", "Artifact workspace provisioned"]
+
+  # ----------------------------------------------------------------------------
+  # Slide 15: 13. Communication & Collaboration (Governance Cadence Table)
+  # ----------------------------------------------------------------------------
+  - archetype: table
+    tracker: "KOMUNIKASI & KOLABORASI | GOVERNANCE CADENCE MATRIX"
+    title: "Structured Communication Cadence Ensures Transparent Stakeholder Alignment"
+    subtitle: "Defined interaction channels, frequencies, and participant matrices for technical and executive governance."
+    footnote: "*) Meeting minutes and agreed action items are distributed to SharePoint within 24 hours of session completion."
+    columns:
+      - header: "No."
+        width: 0.70
+        align: "CENTER"
+        is_index: true
+      - header: "Communication Forum"
+        width: 3.20
+        align: "LEFT"
+      - header: "Cadence & Frequency"
+        width: 2.00
+        align: "CENTER"
+      - header: "Media & Channel"
+        width: 2.80
+        align: "LEFT"
+      - header: "Target Audience & Participants"
+        width: 3.033
+        align: "LEFT"
+    rows:
+      - ["01", "Weekly Progress Checkpoint", "Weekly (or As Needed)", "1st: Onsite  |  2nd: Online MS Teams", "Joint Project Team & PMO Leads"]
+      - ["02", "Steering Committee Review Meeting", "Milestone Gates / As Needed", "1st: Online  |  2nd: Onsite if Escalated", "Steering Committee Leadership (TTI & MII)"]
+      - ["03", "Central Document Repository", "Daily Active Access", "Enterprise SharePoint (Provided by MII)", "All Project Stakeholders & Core Team"]
+      - ["04", "Operational Ad-Hoc Coordination", "Daily Continuous", "Corporate Email, Phone, Teams & WhatsApp", "All Project Stakeholders"]
+
+  # ----------------------------------------------------------------------------
+  # Slide 16: 14. Risiko & Mitigasi (Risk Register & Contingency Planning Table)
+  # ----------------------------------------------------------------------------
+  - archetype: table
+    tracker: "RISIKO & MITIGASI | RISK REGISTER & CONTINGENCY CONTROLS"
+    title: "Proactive Risk Governance Controls Safeguard Baseline Scope and Schedules"
+    subtitle: "Structured mitigation protocols and contingency plans for scope deviations, change requests, and data readiness."
+    footnote: "*) Risk register is reviewed during weekly PMO checkpoints and escalated to SteerCo upon threshold breach."
+    columns:
+      - header: "No."
+        width: 0.60
+        align: "CENTER"
+        is_index: true
+      - header: "Risk Category & Description"
+        width: 3.60
+        align: "LEFT"
+      - header: "Preventive Mitigation Strategy"
+        width: 3.40
+        align: "LEFT"
+      - header: "Contingency Action Plan"
+        width: 2.60
+        align: "LEFT"
+      - header: "Risk Owner"
+        width: 1.533
+        align: "CENTER"
+    rows:
+      - ["01", "Requirement Risk: Risiko penambahan fitur baru pada fase asesmen (planning) yang membuat estimasi timeline proyek bertambah.", "Stick pada requirement baseline; lakukan prioritisasi use case ketat (MoSCoW); rencanakan implementasi fitur sekunder pada fase berikutnya.", "Rebaseline timeline dan alokasi tim jika usulan penambahan fitur disetujui formal di level Steering Committee.", "Agus Suhanto (PM)"]
+      - ["02", "Change Risk: Permintaan perubahan spesifikasi sepanjang proyek berjalan setelah baseline disetujui bersama dalam dokumen FSD.", "Sosialisasikan batas ruang lingkup FSD baseline; tegakkan disiplin delivery; lakukan asesmen dampak teknis dan biaya sebelum persetujuan.", "Sesuaikan permintaan perubahan dengan prosedur Change Request resmi melalui addendum kontrak.", "Agus Suhanto (PM)"]
+      - ["03", "Data Readiness Risk: Potensi ketidaksesuaian format ekspor CSV dari modul SAP ERP atau keterlambatan penyediaan data bulanan.", "Tetapkan template data dictionary terstandarisasi sejak awal planning; lakukan validasi skema awal pada environment staging.", "Fokus pemrosesan pada mandatory attributes; eskalasi ketidaksesuaian format langsung ke PIC IT Toyota Tsusho.", "Vicko Bhayyu (Tech Lead)"]
+
+  # ----------------------------------------------------------------------------
+  # Slide 17: 15. Prosedur Change Requests (Scope & Change Control Procedure)
+  # ----------------------------------------------------------------------------
+  - archetype: change_request_procedure
+    tracker: "PROSEDUR CHANGE REQUEST | SCOPE & CHANGE CONTROL"
+    title: "Structured Change Request Procedure Governs Scope Adjustments Through Defined Decision Gates"
+    subtitle: "Sequential 4-stage governance pipeline with bi-level escalation thresholds and auditable legal sign-offs."
+
+  # ----------------------------------------------------------------------------
+  # Slide 18: 16. Q&A (Executive Discussion & Questions)
+  # ----------------------------------------------------------------------------
+  - archetype: chapter_divider
+    tracker: "SESI DISKUSI | QUESTIONS & EXECUTIVE ALIGNMENT"
+    headline: "Questions & Executive Alignment Discussion"
+    subtitle: "Open forum for stakeholder inquiries, technical clarifications, and formal kick-off endorsement."
+    division_tagline: "PT Toyota Tsusho Indonesia  |  PT Mitra Integrasi Informatika"
+
+  # ----------------------------------------------------------------------------
+  # Slide 19: Closing / Thank You Slide
+  # ----------------------------------------------------------------------------
+  - archetype: thank_you
+    tracker: "ENGAGEMENT WRAP-UP | THANK YOU"
+    title: "Terima Kasih"
+    subtitle: "Partnering to accelerate financial data intelligence and analytics velocity with Snowflake Data Cloud."
+    company: "PT Mitra Integrasi Informatika  |  PT Metrodata Electronics Tbk"
+    office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
+    contacts:
+      - name: "Agus Suhanto"
+        role: "Project Manager, MII"
+        email: "agus.suhanto@mii.co.id"
+      - name: "Dian Eka Kusumawati"
+        role: "Account Manager, MII"
+        email: "dian.eka@mii.co.id"
+      - name: "Vicko Bhayyu"
+        role: "Technical Lead, MII"
+        email: "vicko.bhayyu@mii.co.id"

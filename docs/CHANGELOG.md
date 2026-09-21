@@ -4,6 +4,170 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-09-21] - Milestone 27: Automated Project Closing Deck Modernization (9 Slides)
+
+### Summary
+Delivered the end-to-end automated generation, dynamic spreadsheet synchronization, and consulting modernization of the 9-slide Project Closing & Maintenance Transition Presentation (`5.1_Project_Closing_Deck_Modernized.pptx`), completing the full presentation suite across the TTI Snowflake Analytics engagement. Audited production deliverable `clean_workspace/projects/TTI_Snowflake_Analytics/06_closing/5.1_Project_Closing_Deck_Template.pptx` (9 slides) and companion closeout workbook `5.2_Project_Closeout_Checklist_Template.xlsx` (19 deliverables, 7 scope items, 8 closeout gates, repository download links, archive passwords, and CSS survey links), replacing the legacy Slide 5 placeholder with a high-impact executive sign-off dashboard. Engineered `ClosingDeckBuilder` in `src/ppt_engine/closing_deck.py` enforcing sharp rectangular card geometry (`MSO_SHAPE.RECTANGLE`), unified title/subtitle text flow (`space_before = Pt(10)`), clean typographic metadata on cover (zero boxed containers, no cover footer/pagination), and safe pagination thresholding (`top >= Inches(6.8)`). Built `sync_with_spreadsheets` for automated ingestion from the closeout workbook, authored the 383-line master declarative specification in `presets/deck_configs/closing_deck.yaml`, expanded `bench ppt build-deck` in `src/cli.py` with `--checklist` and closing deck aliases, exported `ClosingDeckBuilder` in `src/ppt_engine/__init__.py`, and verified presentation and 9-slide preview artifacts in `output/presentations/`.
+
+### Milestones Delivered
+- **Milestone 27: Automated Project Closing Deck Modernization:**
+  - **Forensic Deliverable & Spreadsheet Audit ([`clean_workspace/.../5.1_Project_Closing_Deck_Template.pptx`](../clean_workspace/projects/TTI_Snowflake_Analytics/06_closing/5.1_Project_Closing_Deck_Template.pptx)):**
+    - Audited 9-slide production master template and identified empty legacy placeholder on Slide 5 ("Please refer to and walkthrough the companion Excel document").
+    - Audited companion workbook [`clean_workspace/.../5.2_Project_Closeout_Checklist_Template.xlsx`](../clean_workspace/projects/TTI_Snowflake_Analytics/06_closing/5.2_Project_Closeout_Checklist_Template.xlsx) mapping 19 deliverables across 4 categories, 7 scope workstreams, 8 verification gates, Google Drive archive link, password, and CSS survey link.
+    - Transformed Slide 5 into an executive sign-off matrix paired with credential access cards.
+  - **Presentation Engine Architecture ([`src/ppt_engine/closing_deck.py`](../src/ppt_engine/closing_deck.py)):**
+    - Built `ClosingDeckBuilder` assembling the complete 9-slide consulting presentation suite:
+      - Slide 01: Hero cover typography, authentic dual vertical brand stripes (1 Red : 2 Blue ratio), clean typographic metadata columns (`PREPARED FOR` / `ENGAGEMENT PARTNER`), zero cover footers.
+      - Slide 02: 6 numbered consulting agenda cards (`01`–`06`) in a balanced $2 \times 3$ grid.
+      - Slide 03: 6 capability cards detailing delivered phases with `[DONE]` and `[DELIVERED]` status pills.
+      - Slide 04: Top KPI summary bar (19 / 19 Deliverables, 8 Modules, SIT & UAT, BAST 1 & 2) + 4 category columns inventorying all 19 contractual deliverables with non-wrapping format badges (`[DOCX]`, `[PPTX]`, `[XLSX]`, `[CODE]`) and status pills.
+      - Slide 05: Dynamic 8-gate closeout verification matrix with theme-resolved status pills + secure Google Drive package download card (with password pill `[ Metrodata2026! ]`) and CSS survey link card.
+      - Slide 06: 3-metric KPI bar (30 Mandays, 0.5 Manday unit, 100% Rollover) + 3 deep-dive pillar cards (Capacity Metering, Rollover & Terms, Supported Scope).
+      - Slide 07: 4-step horizontal process lifecycle connected by native vector right arrows (`MSO_SHAPE.RIGHT_ARROW`) + designated technical leads (Adam Nevriyanto & Vicko Bhayyu) and official communication channels / SLA targets.
+      - Slide 08: 3 large delivery cards for Monthly Usage Recaps, Developer Timesheets, and Technical / CR Documentation.
+      - Slide 09: Corporate closing slide with dual vertical brand stripes, leadership contacts, and corporate office address.
+    - Exported in [`src/ppt_engine/__init__.py`](../src/ppt_engine/__init__.py).
+  - **Dynamic Spreadsheet Ingestion Pipeline ([`src/ppt_engine/closing_deck.py`](../src/ppt_engine/closing_deck.py)):**
+    - Implemented `sync_with_spreadsheets` in `ClosingDeckBuilder` extracting 19 contractual deliverables, 7 scope workstreams, 8 checklist verification gates, deliverable download URLs, extraction passwords, and CSS survey links directly from `5.2_Project_Closeout_Checklist_Template.xlsx`.
+  - **Pagination & Geometric Guardrails ([`src/ppt_engine/closing_deck.py`](../src/ppt_engine/closing_deck.py)):**
+    - Enforced `MSO_SHAPE.RECTANGLE` on all container cards and top accent stripes, preventing corner protruding artifacts and distortion.
+    - Structured Action Titles and Subtitles within a single unified text frame using `space_before = Pt(10)` to eliminate coordinate collisions.
+    - Implemented coordinate thresholding in `update_pagination()` (`shape.top >= Inches(6.8)`), strictly preventing body metric badges ("19 / 19") from being mutated by footer page number matching.
+  - **Master Declarative Deck Configuration ([`presets/deck_configs/closing_deck.yaml`](../presets/deck_configs/closing_deck.yaml)):**
+    - Authored a 383-line declarative YAML specification orchestrating all 9 slides with metadata, spreadsheet bindings, and consulting narratives.
+  - **Unified CLI Expansion ([`src/cli.py`](../src/cli.py)):**
+    - Added `--checklist` option in `bench ppt build-deck` and registered deck aliases `closing_deck`, `project_closing`, `closing`, and `maintenance_transition`.
+  - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):**
+    - Generated modernized presentation [`output/presentations/5.1_Project_Closing_Deck_Modernized.pptx`](../output/presentations/5.1_Project_Closing_Deck_Modernized.pptx) (9 slides, 3.2 MB).
+    - Rendered 9 high-resolution PNG slide preview images in [`output/presentations/previews/closing/`](../output/presentations/previews/closing/) (`slide_01.png` through `slide_09.png`).
+  - Reference Handover: [`docs/handovers/2026-09-21_project_closing_deck_modernization.md`](handovers/2026-09-21_project_closing_deck_modernization.md)
+
+---
+
+## [2026-09-20] - Milestone 26: Automated Weekly Progress Report Deck Modernization (11 Slides)
+
+### Summary
+Delivered the end-to-end automated generation, dynamic milestone scaling, and consulting modernization of the 11-slide Weekly Progress Report Presentation (`4.2_Weekly_Progress_Report_Deck_Modernized.pptx` and `4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx`). Analyzed production deliverable `clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Report_Deck_Template.pptx` aligning all 11 contractual milestones and real-world RAID register data. Modernized `build_milestone_status` in `src/ppt_engine/weekly_progress_deck.py` with dynamic row height and gap calculation, fitting all 11 contractual milestones cleanly above the slide footer ($Y \le 6.82''$) without collision. Built `generate_s_curve_chart_image` rendering high-DPI (200 DPI) consulting S-curve charts directly from `TimelineAggregator` progression points, upgraded `build_overall_progress` to support a dual layout mode (phase execution progress rows or embedded S-curve chart), built `sync_with_spreadsheets` for automated ingestion from timeline, risk register, and issue log spreadsheets, updated `presets/deck_configs/weekly_progress.yaml` with the complete 11-milestone register, and enhanced `bench ppt build-deck` in `src/cli.py` with `--sync-xlsx` (`-sx`), `--chart-mode`, and spreadsheet override flags.
+
+### Milestones Delivered
+- **Milestone 26: Automated Weekly Progress Report Deck Modernization:**
+  - **Forensic Deliverable Analysis ([`clean_workspace/.../4.2_Weekly_Progress_Report_Deck_Template.pptx`](../clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Report_Deck_Template.pptx)):**
+    - Identified all 11 contractual milestones on Slide 7 (Kick-off, FSD, Cloud Subscription, Development, SIT, UAT, Go-live, TSD, Knowledge Transfer, 2-Months Guarantee, Project Closure) and mapped real-world RAID log schemas across `4.5_Risk_Register_Template.xlsx` and `4.6_Issue_Log_Template.xlsx`.
+  - **Dynamic Milestone Scaling Engine ([`src/ppt_engine/weekly_progress_deck.py`](../src/ppt_engine/weekly_progress_deck.py)):**
+    - Implemented dynamic row height and gap budgeting in `build_milestone_status`, scaling row geometry, padding, and typography ($10\text{pt}$ numbering, $9.5\text{pt}$ description, $9\text{pt}$ dates, $8\text{pt}$ status pills with $0.24''$ height) to fit all 11 milestones cleanly above the footer divider ($Y \le 6.82''$) with zero collision.
+  - **Consulting S-Curve Line Chart Generator ([`src/ppt_engine/weekly_progress_deck.py`](../src/ppt_engine/weekly_progress_deck.py)):**
+    - Built `generate_s_curve_chart_image` rendering high-DPI (200 DPI) consulting S-curve charts from `TimelineAggregator` cumulative progress points (Planned Baseline `#0052CC`, Actual Progress `#10B981`, Schedule Variance fill `#EF4444`) saved to `output/presentations/charts/s_curve_weekly.png`.
+    - Upgraded `build_overall_progress` with dual layout architecture: either detailed delivery phase execution progress rows or high-DPI cumulative S-curve charts.
+  - **Dynamic Spreadsheet Ingestion Pipeline ([`src/ppt_engine/weekly_progress_deck.py`](../src/ppt_engine/weekly_progress_deck.py)):**
+    - Implemented `sync_with_spreadsheets` in `WeeklyProgressDeckBuilder`, enabling automated synchronization with `4.2_Weekly_Progress_Timeline_Update_Template.xlsx` (KPIs, SPI, phase completion percentages), `4.5_Risk_Register_Template.xlsx` (active risk cards with 3-box probability/impact meters), and `4.6_Issue_Log_Template.xlsx` (active issue resolution plans).
+    - Added `EngagementContext` client slug substitution support in `WeeklyProgressDeckBuilder.save`.
+  - **Master Declarative Deck Configuration ([`presets/deck_configs/weekly_progress.yaml`](../presets/deck_configs/weekly_progress.yaml)):**
+    - Updated Slide 7 to all 11 contractual milestones matching real-world project target and actual dates.
+    - Added `spreadsheets` configuration mapping default spreadsheet paths for automated synchronization.
+  - **Unified CLI Expansion ([`src/cli.py`](../src/cli.py)):**
+    - Enhanced `bench ppt build-deck` with `--sync-xlsx` (`-sx`), `--chart-mode`, `--timeline`, `--risks`, and `--issues` flags, routing through `WeeklyProgressDeckBuilder`.
+  - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):**
+    - Generated modernized presentation [`output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized.pptx`](../output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized.pptx) (11 slides, 3.2 MB).
+    - Generated chart-embedded presentation [`output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx`](../output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx) (11 slides, 3.3 MB).
+    - Generated high-DPI S-Curve line chart [`output/presentations/charts/s_curve_weekly.png`](../output/presentations/charts/s_curve_weekly.png).
+    - Rendered 22 slide preview images in [`output/presentations/previews/weekly/`](../output/presentations/previews/weekly/) and [`output/presentations/previews/weekly_chart/`](../output/presentations/previews/weekly_chart/).
+  - Reference Handover: [`docs/handovers/2026-09-20_weekly_progress_report_deck_modernization.md`](handovers/2026-09-20_weekly_progress_report_deck_modernization.md)
+
+---
+
+## [2026-09-20] - Milestone 25: Automated UAT Briefing Presentation Modernization (25 Slides)
+
+### Summary
+Delivered the end-to-end automated generation and consulting modernization of the 25-slide Bilingual User Acceptance Testing (UAT) Briefing Presentation (`3.4_Sosialisasi_UAT_Briefing_Modernized.pptx`), establishing a deterministic, brand-compliant presentation pipeline for client testing onboarding. Conducted deep forensic analysis of `clean_workspace/projects/TTI_Snowflake_Analytics/04_executing/3.4_Sosialisasi_UAT_Briefing_Template.pptx` uncovering 25 full slides (correcting the preliminary 15-slide catalog estimate), codified the comprehensive 922-line master specification in `presets/deck_configs/uat_briefing.yaml`, enhanced `src/ppt_engine/consulting_archetypes.py` with independent bullet list formatting in `build_browser_mockup_slide`, calibrated precision typography advance (`font.getlength`) and soft breaks in `src/ppt_engine/slide_exporter.py`, normalized Gantt models and added `app_walkthrough` aliases in `src/ppt_engine/pitch_deck.py`, routed UAT deck types in `src/cli.py`, and verified presentation and 25-slide preview artifacts in `output/presentations/`.
+
+### Milestones Delivered
+- **Milestone 25: Automated UAT Briefing Presentation Modernization:**
+  - **Forensic Template Analysis ([`clean_workspace/.../3.4_Sosialisasi_UAT_Briefing_Template.pptx`](../clean_workspace/projects/TTI_Snowflake_Analytics/04_executing/3.4_Sosialisasi_UAT_Briefing_Template.pptx)):**
+    - Uncovered that the production master template comprises 25 full slides (1 cover, 1 agenda, 7 testing/governance framework slides, 1 chapter transition divider, 14 live application UI walkthrough slides, and 1 closing slide), expanding the preliminary 15-slide catalog scope into an exhaustive enterprise testing guide.
+  - **Master Declarative Deck Configuration ([`presets/deck_configs/uat_briefing.yaml`](../presets/deck_configs/uat_briefing.yaml)):**
+    - Codified a 922-line master specification orchestrating all 25 slides: hero cover, 2-column numbered agenda, UAT objectives, analytical scope, 6-week delivery Gantt, execution ground rules, defect triage workflows, defect severity & SLA matrix, exit criteria & sign-off gates, dark scrim chapter divider, 14 browser mockup application walkthroughs, and closing Q&A.
+  - **Consulting Archetype List Formatting ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):**
+    - Enhanced `build_browser_mockup_slide` observation cards to detect and iterate structured bullet lists (`list`), applying individual bullet typography, spacing, and colors to eliminate unformatted string blobs.
+  - **Slide Exporter Precision Typography ([`src/ppt_engine/slide_exporter.py`](../src/ppt_engine/slide_exporter.py)):**
+    - Switched text token advance measurement from bounding box (`getbbox`) to FreeType advance width (`font.getlength`), resolving whitespace under-calculation and adjacent word overlapping.
+    - Added soft-break sanitization in `_wrap_text` handling vertical tabs (`\x0b`) and carriage returns (`\r`).
+  - **Pitch Deck Builder Enhancements ([`src/ppt_engine/pitch_deck.py`](../src/ppt_engine/pitch_deck.py)):**
+    - Implemented dictionary normalization in `timeline_gantt` deserialization (`name` $\rightarrow$ `category`, `accent_key` $\rightarrow$ `accent_color`, `total_weeks` $\rightarrow$ `total_periods`, `duration_weeks` conversion).
+    - Registered archetype aliases `app_walkthrough`, `window_mockup`, `app_mockup`, and `module_walkthrough` routing to `build_browser_mockup_slide`.
+    - Added parameter aliases supporting `screenshot_path`, `screenshot`, or `image_path`.
+  - **CLI Deck Type Routing ([`src/cli.py`](../src/cli.py)):**
+    - Added `uat_briefing`, `uat_deck`, `sosialisasi_uat`, and `uat` aliases in `bench ppt build-deck` routing directly to `PitchDeckBuilder`.
+  - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):**
+    - Generated modernized 25-slide presentation [`output/presentations/3.4_Sosialisasi_UAT_Briefing_Modernized.pptx`](../output/presentations/3.4_Sosialisasi_UAT_Briefing_Modernized.pptx).
+    - Rendered 25 high-resolution slide preview images in [`output/presentations/previews/uat/`](../output/presentations/previews/uat/) (`slide_01.png` through `slide_25.png`).
+  - Reference Handover: [`docs/handovers/2026-09-20_uat_briefing_presentation_modernization.md`](handovers/2026-09-20_uat_briefing_presentation_modernization.md)
+
+---
+
+## [2026-09-19] - Milestone 24: Automated Project Kick-off Presentation Modernization (19 Slides)
+
+### Summary
+Delivered the end-to-end automated generation and consulting modernization of the 19-slide Project Kick-off Presentation (`1.1_Project_Kick-off_Material_Modernized.pptx`), creating a deterministic, reusable presentation pipeline for stakeholder initiation meetings. Engineered three new consulting archetypes (`AgendaItem` / `build_agenda_slide`, `TableColumnDef` / `build_table_slide` with automated status pills and alternating fills, `build_thank_you_slide` with dual brand vertical stripes and contact cards) in `src/ppt_engine/consulting_archetypes.py`, extended `build_governance_org_structure_slide` in `src/ppt_engine/reference_slides.py` with parameter overrides, enhanced `PitchDeckBuilder` in `src/ppt_engine/pitch_deck.py` with slide dispatchers and nested Gantt deserialization, added CLI deck-type aliases in `src/cli.py`, codified the 882-line master YAML in `presets/deck_configs/kickoff_presentation.yaml`, and produced presentation and 19-slide preview artifacts in `output/presentations/`.
+
+### Milestones Delivered
+- **Milestone 24: Automated Project Kick-off Presentation Modernization:**
+  - **Consulting Slide Archetypes ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):**
+    - `AgendaItem` & `build_agenda_slide`: Balanced multi-column executive agenda/table of contents slide with sharp rectangular card geometry (`MSO_SHAPE.RECTANGLE`), left number boxes (`01`, `02`), bold titles, and optional descriptions.
+    - `TableColumnDef` & `build_table_slide`: Vector card-based consulting matrix with solid primary header band, proportional column scaling, alternating row fills (`surface` / `surface_muted`), automated status pills (`COMPLETE`, `ON TRACK`, `CRITICAL GATE`, `SIGNED-OFF`, etc.), and footnotes.
+    - `build_thank_you_slide`: Corporate closing slide with Metrodata dual vertical brand stripes (1 red : 2 blue ratio), 36pt title, tracker breadcrumb, contact cards with top accent stripes, and company entity/office address footer.
+  - **Reference Slide Parameter Overrides ([`src/ppt_engine/reference_slides.py`](../src/ppt_engine/reference_slides.py)):**
+    - Parameterized `build_governance_org_structure_slide` with `tier1_client_text`, `tier1_vendor_text`, `client_pm_title`, `vendor_pm_title`, `client_pm_bullets`, `vendor_pm_bullets`, and custom `pods` list, enabling client-specific org tree customization while preserving locale translation fallbacks.
+  - **Pitch Deck Builder Enhancements ([`src/ppt_engine/pitch_deck.py`](../src/ppt_engine/pitch_deck.py)):**
+    - Implemented dispatchers for `agenda`, `table`, `thank_you`, and forwarded governance parameters.
+    - Fixed nested dictionary deserialization for `timeline_gantt` slides into `GanttTimelineData`, `GanttWorkstream`, and `GanttTask` models.
+    - Synchronized slide footers and pagination across slides 02–19 (`02 / 19` through `19 / 19`) while preserving clean cover typography on Slide 01.
+  - **CLI Enhancements ([`src/cli.py`](../src/cli.py)):**
+    - Added deck-type aliases (`kickoff_deck`, `kickoff`, `project_kickoff`, `declarative`) routing directly to `PitchDeckBuilder` in `bench ppt build-deck`.
+  - **Master Declarative Deck Configuration ([`presets/deck_configs/kickoff_presentation.yaml`](../presets/deck_configs/kickoff_presentation.yaml)):**
+    - Codified all 19 slides (background gap analysis, project objectives, stakeholder roles, RACI tree, workstreams, deliverables, assumptions, To-Be architecture, phased timelines, 24-week delivery Gantt, milestone register, prerequisites, communication cadences, risk register, CR procedure, Q&A, and closing).
+  - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):**
+    - Generated modernized presentation [`output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx`](../output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx) (3.17 MB, 19 slides).
+    - Rendered 19 high-fidelity PNG slide preview images in [`output/presentations/previews/kickoff/`](../output/presentations/previews/kickoff/) (`slide_01.png` through `slide_19.png`).
+  - Reference Handover: [`docs/handovers/2026-09-19_project_kickoff_presentation_modernization.md`](handovers/2026-09-19_project_kickoff_presentation_modernization.md)
+
+---
+
+## [2026-09-19] - Milestone 23: Automated Presales Consulting Pitch Deck Modernization (36 Slides)
+
+### Summary
+Delivered the end-to-end automated generation and consulting modernization of the 36-slide Presales Modernization Pitch Deck (`Modernize_Data_Platform_Pitch_Deck_Modernized.pptx`), transforming legacy slide collateral into a structured, deterministic presentation pipeline. Engineered `PitchDeckBuilder` in `src/ppt_engine/pitch_deck.py`, added four new executive consulting archetypes (`TechLogoItem`, `CardGridItem`, `BadgeMatrixSection`, `build_iceberg_concept_slide`, `build_tech_logo_grid_slide`, `build_card_grid_slide`, `build_badge_matrix_slide`) in `src/ppt_engine/consulting_archetypes.py`, codified the 36-slide master declarative specification in `presets/deck_configs/presales_pitch_deck.yaml`, expanded the unified CLI with `bench ppt build-deck` (`--config`, `--slides`, `--theme`, `--context`), and generated full verification presentation and headless preview artifacts in `output/presentations/`.
+
+### Milestones Delivered
+- **Milestone 23: Automated Presales Consulting Pitch Deck Modernization:**
+  - **Pitch Deck Builder Subsystem ([`src/ppt_engine/pitch_deck.py`](../src/ppt_engine/pitch_deck.py)):** Implemented `PitchDeckBuilder` to encapsulate complete deck lifecycle management: declarative YAML ingestion, archetype dispatching across 15+ slide types, post-processing footer pagination (`update_pagination` synchronizing `02 / 36` to `36 / 36` with zero pagination on Slide 1), and dynamic client slug substitution (`EngagementContext`).
+  - **Consulting Slide Archetypes ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):**
+    - `TechLogoItem` & `build_tech_logo_grid_slide`: Standardized multi-column partner technology grids with sharp rectangular card geometry (`MSO_SHAPE.RECTANGLE`), flush top accent stripes, status pills (`CORE PLATFORM`, `MODELING`, `STORAGE`), aspect-ratio-preserved emblem slots, and structured descriptions.
+    - `CardGridItem` & `build_card_grid_slide`: Configurable $N \times M$ capability grid (Metrodata 8 Pillars, Data & AI Portfolio) with harmonized Lucide icons, top accent stripes, bulleted descriptions, and status badges.
+    - `BadgeMatrixSection` & `build_badge_matrix_slide`: Tiered partner credential and certification matrix with category header bars, badge count labels (`TIER 1 STATUS`, `CERTIFIED PRACTICE`), and structured competency items.
+    - `build_iceberg_concept_slide`: High-impact consulting metaphor splitting canvas into an Above the Waterline container (Visible 15% Business Interface: dashboards, Streamlit apps, GenAI) and a Below the Waterline container (Subsurface 85% Data Platform Foundation: lakehouse, CDC, dbt modeling, RBAC, DAGs, FinOps) alongside executive strategic rationale callouts.
+  - **Master Declarative Deck Configuration ([`presets/deck_configs/presales_pitch_deck.yaml`](../presets/deck_configs/presales_pitch_deck.yaml)):** Authored a 900-line declarative specification mapping all 36 slides across Phase 1 (Company Profile, Portfolio & Core Snowflake) and Phase 2 (Challenges, Target Architecture, Scope & Governance) with complete headlines, subtitles, trackers, metrics, and parameters.
+  - **Unified CLI Expansion ([`src/cli.py`](../src/cli.py)):** Enhanced `bench ppt build-deck` with `--config`, `--slides`, `--theme`, and `--context` options, routing `presales_pitch_deck` configurations directly through `PitchDeckBuilder`.
+  - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):** Generated full 36-slide deck [`output/presentations/Modernize_Data_Platform_Pitch_Deck_Modernized.pptx`](../output/presentations/Modernize_Data_Platform_Pitch_Deck_Modernized.pptx) (4.8 MB), 18-slide slice [`output/presentations/presales_pitch_deck_phase1.pptx`](../output/presentations/presales_pitch_deck_phase1.pptx) (3.6 MB), and 36 headless slide preview images in [`output/presentations/previews/`](../output/presentations/previews/).
+  - Reference Handover: [`docs/handovers/2026-09-19_presales_pitch_deck_modernization.md`](handovers/2026-09-19_presales_pitch_deck_modernization.md)
+
+---
+
+## [2026-09-19] - Milestone 22: Presentation & Diagram Visual Harmonization and DirectWrite Preview Parity
+
+### Summary
+Delivered cross-cutting visual harmonization across presentation archetypes, diagramming engines, and slide preview generation. Expanded `IconEngine` with canonical brand color resolution and universal SVG dynamic recoloring, established `add_card_with_harmonized_icon` and synchronized brand icons across BCG, McKinsey, and Balanced Scorecard archetypes, added semantic role binding and base64 data URI safety in `DiagramEngine`, calibrated DirectWrite typography metrics (0.915 kerning factor, 1.18x line height) in `PurePythonSlideRenderer`, and extended the CLI with direct YAML diagram exports and `bench ppt export-preview`.
+
+### Milestones Delivered
+- **Milestone 22: Presentation & Diagram Visual Harmonization and DirectWrite Preview Parity:**
+  - **Brand Color Resolution & Dynamic Recoloring ([`src/ppt_engine/icon_engine.py`](../src/ppt_engine/icon_engine.py)):** Codified `CANONICAL_ENTERPRISE_COLORS` and implemented `resolve_brand_color(color, theme=None)` for theme tokens (`accent`, `primary`, `secondary`, `accent_teal`, `danger`, `surface`, etc.). Upgraded `recolor_svg` to dynamically tint both stroke and fill vectors across quoted attributes and inline CSS styles.
+  - **Consulting Archetype Harmonization ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):** Built `add_card_with_harmonized_icon` enforcing sharp rectangular geometry (`MSO_SHAPE.RECTANGLE`), flush top accent stripes, and dynamically tinted brand icons. Upgraded BCG 3 Horizons, McKinsey Cascade, and Balanced Scorecard archetypes with synchronized semantic icons and color palettes.
+  - **Diagram Engine Semantic Roles & Base64 Data URIs ([`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py)):** Implemented `apply_node_icons` to bind semantic palette roles to card strokes and icon tints. Added native base64 data URI `<image xlink:href="..."/>` rendering, fixed semicolon splitting in `mxgraph_to_ast` via `__B64SEP__`, and normalized thin outline strokes to $\ge 1.75\text{px}$.
+  - **DirectWrite Typography Calibration ([`src/ppt_engine/slide_exporter.py`](../src/ppt_engine/slide_exporter.py)):** Calibrated font metric kerning with a `0.915` width factor, reduced line height multiplier to $1.18\times$, and adjusted paragraph spacing to $2.0\text{pt}$, completely eliminating artificial line wraps and vertical text bloat in Pillow preview images.
+  - **Unified CLI Extensions ([`src/cli.py`](../src/cli.py)):** Enabled direct `.yaml` specification support in `bench diagram export` and `bench diagram export-all`, and introduced `bench ppt export-preview` for rapid presentation inspection.
+  - Reference Handover: [`docs/handovers/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md`](handovers/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md)
+
+---
+
 ## [2026-09-19] - Sprints 17–20: Security Hardening, Change Request CLI, Diagram Pipeline & Consulting Archetypes
 
 ### Summary

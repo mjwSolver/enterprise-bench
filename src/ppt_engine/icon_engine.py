@@ -58,13 +58,94 @@ FALLBACK_SVGS = {
 }
 
 
-def normalize_color(color: Union[str, Tuple[int, int, int], Tuple[int, int, int, int]]) -> str:
+CANONICAL_ENTERPRISE_COLORS: Dict[str, str] = {
+    "accent": "#2563EB",
+    "primary": "#0F172A",
+    "secondary": "#475569",
+    "muted": "#94A3B8",
+    "accent_primary": "#2563EB",
+    "accent_secondary": "#0284C7",
+    "accent_teal": "#0F766E",
+    "teal": "#0F766E",
+    "success": "#10B981",
+    "warning": "#F59E0B",
+    "danger": "#EF4444",
+    "error": "#EF4444",
+    "info": "#3B82F6",
+    "surface": "#F8FAFC",
+    "surface_muted": "#F1F5F9",
+    "background": "#FFFFFF",
+    "border": "#E2E8F0",
+    "brand_primary": "#2563EB",
+    "brand_secondary": "#0284C7",
+    "brand_teal": "#0F766E",
+    "blue": "#2563EB",
+    "red": "#EF4444",
+    "green": "#10B981",
+    "amber": "#F59E0B",
+    "orange": "#F97316",
+    "cyan": "#06B6D4",
+    "purple": "#8B5CF6",
+    "indigo": "#6366F1",
+    "slate": "#64748B",
+    "gray": "#6B7280",
+    "grey": "#6B7280",
+    "black": "#000000",
+    "white": "#FFFFFF",
+}
+
+
+def resolve_brand_color(color: Union[str, Any], theme: Optional[Any] = None) -> str:
+    """
+    Resolves a color name or theme token (e.g. 'accent', 'danger', 'primary')
+    to a canonical 6-digit hex string (#RRGGBB).
+    If a Theme instance or dict is provided, queries the theme's palette.
+    Otherwise, resolves against canonical enterprise brand defaults.
+    """
+    if not isinstance(color, str):
+        return normalize_color(color)
+
+    clean = color.strip()
+
+    # If it's already hex or rgb format, let normalize_color handle it
+    if clean.startswith("#") or clean.startswith("rgb") or (len(clean) in (3, 6) and re.fullmatch(r"[0-9a-fA-F]+", clean)):
+        return normalize_color(clean)
+
+    key = clean.lower()
+
+    # 1. Resolve against provided theme
+    if theme is not None:
+        if hasattr(theme, "get_hex"):
+            val = theme.get_hex(key, default="")
+            if val and val != "#000000":
+                return val
+            if val == "#000000" and key in ("black", "dark"):
+                return val
+        elif isinstance(theme, dict):
+            if key in theme:
+                return normalize_color(theme[key])
+            palette = theme.get("palette", {})
+            if isinstance(palette, dict) and key in palette:
+                return normalize_color(palette[key])
+
+    # 2. Resolve against canonical enterprise colors
+    if key in CANONICAL_ENTERPRISE_COLORS:
+        return CANONICAL_ENTERPRISE_COLORS[key]
+
+    return "#000000"
+
+
+def normalize_color(
+    color: Union[str, Tuple[int, int, int], Tuple[int, int, int, int], Any],
+    theme: Optional[Any] = None,
+) -> str:
     """
     Normalizes any color specification into a standard uppercase 6-character HEX string (#RRGGBB).
     Supports:
       - '#2563EB', '#fff', '2563EB'
       - (37, 99, 235) or (37, 99, 235, 255)
       - 'rgb(37, 99, 235)'
+      - Semantic theme tokens: 'accent', 'danger', 'warning', 'primary', etc.
     """
     if isinstance(color, (tuple, list)):
         r, g, b = int(color[0]), int(color[1]), int(color[2])
@@ -91,24 +172,35 @@ def normalize_color(color: Union[str, Tuple[int, int, int], Tuple[int, int, int,
     if re.fullmatch(r"[0-9a-fA-F]{6}", hex_str):
         return f"#{hex_str.upper()}"
 
+    # Check semantic brand / theme color
+    resolved = resolve_brand_color(color_str, theme=theme)
+    if resolved:
+        return resolved
+
     return "#000000"
 
 
-def recolor_svg(svg_content: str, color: Union[str, Tuple[int, ...]], stroke_width: Optional[float] = None) -> str:
+def recolor_svg(
+    svg_content: str,
+    color: Union[str, Tuple[int, ...]],
+    stroke_width: Optional[float] = None,
+    theme: Optional[Any] = None,
+) -> str:
     """
     Dynamically recolors an SVG string with the specified Brand HEX/RGB color.
     Intelligently preserves outline vs fill geometry:
     - Stroke-based icons (e.g., Lucide, Feather, Tabler) maintain fill="none" and have their stroke colored.
     - Fill-based icons (e.g., Material Design) have their fill colored.
-    - Replaces 'currentColor', default black/grey values, and uncolored paths.
+    - Replaces 'currentColor', prior baked hex colors, RGB strings, and uncolored elements.
     """
-    hex_color = normalize_color(color)
+    hex_color = normalize_color(color, theme=theme)
     svg = svg_content.strip()
 
     # Determine if the icon is predominantly stroke-based or fill-based
     is_stroke_based = bool(
         'stroke="currentColor"' in svg
         or 'stroke=' in svg
+        or 'stroke:' in svg
         or 'fill="none"' in svg
         or 'fill:none' in svg
     )
@@ -121,28 +213,47 @@ def recolor_svg(svg_content: str, color: Union[str, Tuple[int, ...]], stroke_wid
 
     if is_stroke_based:
         # Stroke-based icon: ensure stroke is tinted, preserve fill="none"
-        # If stroke attribute exists, recolor non-'none' strokes
-        def replace_stroke(match: re.Match) -> str:
-            val = match.group(1).strip()
-            if val.lower() == "none" or val.lower() == "transparent":
-                return 'stroke="none"'
-            return f'stroke="{hex_color}"'
+        def replace_stroke_attr(match: re.Match) -> str:
+            quote = match.group(1)
+            val = match.group(2).strip()
+            if val.lower() in ("none", "transparent"):
+                return f'stroke={quote}none{quote}'
+            return f'stroke={quote}{hex_color}{quote}'
 
-        svg = re.sub(r'stroke="([^"]+)"', replace_stroke, svg, flags=re.IGNORECASE)
+        # Replace stroke="..." and stroke='...'
+        svg = re.sub(r'stroke=(["\'])([^"\']+)\1', replace_stroke_attr, svg, flags=re.IGNORECASE)
+
+        # Replace stroke in inline CSS style="..."
+        def replace_stroke_style(match: re.Match) -> str:
+            val = match.group(1).strip()
+            if val.lower() in ("none", "transparent"):
+                return "stroke: none"
+            return f"stroke: {hex_color}"
+
+        svg = re.sub(r'stroke:\s*([^;"]+)', replace_stroke_style, svg, flags=re.IGNORECASE)
 
         # If root svg or path doesn't have stroke, inject stroke into <svg> tag
-        if 'stroke="' not in svg:
+        if 'stroke=' not in svg and 'stroke:' not in svg:
             svg = re.sub(r'(<svg\b[^>]*)(>)', rf'\1 stroke="{hex_color}"\2', svg, count=1)
     else:
         # Fill-based icon: recolor fills that are not "none" or transparent
-        def replace_fill(match: re.Match) -> str:
-            val = match.group(1).strip()
-            if val.lower() == "none" or val.lower() == "transparent":
-                return 'fill="none"'
-            return f'fill="{hex_color}"'
+        def replace_fill_attr(match: re.Match) -> str:
+            quote = match.group(1)
+            val = match.group(2).strip()
+            if val.lower() in ("none", "transparent"):
+                return f'fill={quote}none{quote}'
+            return f'fill={quote}{hex_color}{quote}'
 
-        if 'fill="' in svg:
-            svg = re.sub(r'fill="([^"]+)"', replace_fill, svg, flags=re.IGNORECASE)
+        if 'fill=' in svg or 'fill:' in svg:
+            svg = re.sub(r'fill=(["\'])([^"\']+)\1', replace_fill_attr, svg, flags=re.IGNORECASE)
+
+            def replace_fill_style(match: re.Match) -> str:
+                val = match.group(1).strip()
+                if val.lower() in ("none", "transparent"):
+                    return "fill: none"
+                return f"fill: {hex_color}"
+
+            svg = re.sub(r'fill:\s*([^;"]+)', replace_fill_style, svg, flags=re.IGNORECASE)
         else:
             # If no fill specified anywhere, inject fill into root <svg>
             svg = re.sub(r'(<svg\b[^>]*)(>)', rf'\1 fill="{hex_color}"\2', svg, count=1)
@@ -150,7 +261,7 @@ def recolor_svg(svg_content: str, color: Union[str, Tuple[int, ...]], stroke_wid
     # Optional stroke-width override
     if stroke_width is not None:
         if 'stroke-width=' in svg:
-            svg = re.sub(r'stroke-width="[^"]+"', f'stroke-width="{stroke_width}"', svg)
+            svg = re.sub(r'stroke-width=(["\'])[^"\']+\1', f'stroke-width="{stroke_width}"', svg)
         else:
             svg = re.sub(r'(<svg\b[^>]*)(>)', rf'\1 stroke-width="{stroke_width}"\2', svg, count=1)
 
@@ -348,6 +459,7 @@ class IconEngine:
         identifier: str,
         color: Optional[Union[str, Tuple[int, ...]]] = None,
         use_cache: bool = True,
+        theme: Optional[Any] = None,
     ) -> str:
         """
         Fetches the raw SVG for an icon identifier. If color is provided, recolors it.
@@ -385,7 +497,7 @@ class IconEngine:
 
         # 4. Apply dynamic brand recoloring if requested
         if color and svg_content:
-            svg_content = recolor_svg(svg_content, color)
+            svg_content = recolor_svg(svg_content, color, theme=theme)
 
         return svg_content or FALLBACK_SVGS["default"]
 
@@ -398,17 +510,18 @@ class IconEngine:
         badge_bg: Optional[Union[str, Tuple[int, ...]]] = None,
         badge_radius: int = 0,
         save_svg: bool = False,
+        theme: Optional[Any] = None,
     ) -> Path:
         """
         End-to-end icon retrieval, dynamic tinting, and high-res PNG export.
         Returns the Path to the generated PNG file (or output_path).
         """
         prefix, name = self._parse_icon_identifier(identifier)
-        svg = self.fetch_svg(identifier, color=color)
+        svg = self.fetch_svg(identifier, color=color, theme=theme)
 
         # Default destination path if not supplied
         if output_path is None:
-            color_suffix = f"_{normalize_color(color).lstrip('#')}" if color else ""
+            color_suffix = f"_{normalize_color(color, theme=theme).lstrip('#')}" if color else ""
             out_file = self.cache_dir / prefix / f"{name}{color_suffix}.png"
         else:
             out_file = Path(output_path)
@@ -445,6 +558,7 @@ def get_brand_icon(
     badge_bg: Optional[Union[str, Tuple[int, ...]]] = None,
     badge_radius: int = 0,
     save_svg: bool = True,
+    theme: Optional[Any] = None,
 ) -> Path:
     return _default_engine.get_icon(
         identifier=identifier,
@@ -454,4 +568,5 @@ def get_brand_icon(
         badge_bg=badge_bg,
         badge_radius=badge_radius,
         save_svg=save_svg,
+        theme=theme,
     )

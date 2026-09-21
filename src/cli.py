@@ -294,6 +294,13 @@ def build_ppt_deck(
     open_deck: bool = typer.Option(False, "--open", help="Open generated presentation on desktop via Microsoft PowerPoint"),
     context_file: Optional[str] = typer.Option(None, "--context", "-ctx", help="Path to JSON/YAML engagement context file for slug replacement"),
     locale: Optional[str] = typer.Option(None, "--locale", "-l", help="Locale override for bilingual decks (e.g. en, id)"),
+    slides: Optional[int] = typer.Option(None, "--slides", "-s", help="Limit number of slides to generate (e.g. 18 for Phase 1)"),
+    sync_xlsx: bool = typer.Option(False, "--sync-xlsx", "-sx", help="Synchronize presentation data directly with project spreadsheets (S-curve, RAID logs)"),
+    timeline: Optional[str] = typer.Option(None, "--timeline", help="Override timeline spreadsheet path for weekly deck"),
+    risks: Optional[str] = typer.Option(None, "--risks", help="Override risk register spreadsheet path for weekly deck"),
+    issues: Optional[str] = typer.Option(None, "--issues", help="Override issue log spreadsheet path for weekly deck"),
+    checklist: Optional[str] = typer.Option(None, "--checklist", help="Override closeout checklist spreadsheet path for closing deck"),
+    chart_mode: bool = typer.Option(False, "--chart-mode", help="Embed high-DPI S-Curve line chart on Slide 4"),
 ) -> None:
     """Build a multi-slide executive consulting presentation deck from a YAML specification."""
     import subprocess
@@ -321,18 +328,65 @@ def build_ppt_deck(
 
     rprint(f"[cyan]ℹ Building presentation deck:[/cyan] [bold]{deck_type}[/bold] from [bold]{config_path.name}[/bold]")
 
-    if deck_type in ("reference_slides", "reference_deck"):
+    if deck_type in (
+        "presales_pitch_deck",
+        "pitch_deck",
+        "modernize_data_platform",
+        "kickoff_deck",
+        "kickoff",
+        "project_kickoff",
+        "declarative",
+        "uat_briefing",
+        "uat_deck",
+        "sosialisasi_uat",
+        "uat",
+    ):
+        from src.ppt_engine.pitch_deck import PitchDeckBuilder
+        builder = PitchDeckBuilder.from_yaml(config_path, theme_override=theme)
+        builder.build_all(slide_limit=slides)
+        saved_file = builder.save(out_path, engagement_context=engagement_ctx)
+    elif deck_type in ("reference_slides", "reference_deck"):
         from src.ppt_engine.reference_slides import ReferenceDeckBuilder
         builder = ReferenceDeckBuilder.from_yaml(config_path, theme_override=theme, locale_override=locale)
         saved_file = builder.save(out_path, engagement_context=engagement_ctx)
-    elif deck_type == "weekly_progress":
+    elif deck_type in ("weekly_progress", "weekly_deck", "progress_deck"):
         builder = WeeklyProgressDeckBuilder.from_yaml(config_path, theme_override=theme)
+        if sync_xlsx or config_data.get("sync_xlsx") or "spreadsheets" in config_data:
+            rprint("[cyan]ℹ Synchronizing with project spreadsheets (Timeline S-Curve, Risk Register, Issue Log)...[/cyan]")
+            sync_info = builder.sync_with_spreadsheets(
+                timeline_path=timeline,
+                risk_path=risks,
+                issue_path=issues,
+                chart_mode=chart_mode or config_data.get("chart_mode", False),
+            )
+            if sync_info.get("timeline_synced"):
+                rprint(f"  [dim]• S-Curve period: {sync_info.get('current_period')} (Variance: {sync_info.get('variance_pct', 0.0):+.1f}%)[/dim]")
+            if sync_info.get("s_curve_chart_generated"):
+                rprint(f"  [dim]• S-Curve chart rendered: {sync_info.get('chart_path')}[/dim]")
+            if sync_info.get("risks_synced"):
+                rprint(f"  [dim]• Risks parsed: {sync_info.get('risk_count', 0)} active risks[/dim]")
+            if sync_info.get("issues_synced"):
+                rprint(f"  [dim]• Issues parsed: {sync_info.get('issue_count', 0)} active issues[/dim]")
         builder.build_all()
-        saved_file = builder.save(out_path)
+        saved_file = builder.save(out_path, engagement_context=engagement_ctx)
+    elif deck_type in ("closing_deck", "project_closing", "closing", "maintenance_transition"):
+        from src.ppt_engine.closing_deck import ClosingDeckBuilder
+        builder = ClosingDeckBuilder.from_yaml(config_path, theme_override=theme)
+        if sync_xlsx or config_data.get("sync_xlsx") or "spreadsheets" in config_data:
+            rprint("[cyan]ℹ Synchronizing with project closeout checklist spreadsheet...[/cyan]")
+            sync_info = builder.sync_with_spreadsheets(checklist_path=checklist)
+            if sync_info.get("checklist_synced"):
+                rprint(f"  [dim]• Closeout checklist gates: {sync_info.get('checklist_count', 0)} verification items[/dim]")
+            if sync_info.get("deliverables_synced"):
+                rprint(f"  [dim]• Contractual deliverables: {sync_info.get('deliverables_count', 0)} inventory items[/dim]")
+            if sync_info.get("download_link"):
+                rprint(f"  [dim]• Deliverables download URL: {sync_info.get('download_link')[:45]}...[/dim]")
+        builder.build_all()
+        saved_file = builder.save(out_path, engagement_context=engagement_ctx)
     else:
         builder = WeeklyProgressDeckBuilder.from_yaml(config_path, theme_override=theme)
         builder.build_all()
-        saved_file = builder.save(out_path)
+        saved_file = builder.save(out_path, engagement_context=engagement_ctx)
 
     total_slides = len(builder.prs.slides)
     rprint(f"[green]✓ Generated consulting presentation ({total_slides} slides):[/green] [bold]{saved_file}[/bold]")
@@ -539,6 +593,39 @@ def frame_mockup_cli(
         subprocess.run(cmd, shell=True)
     else:
         rprint(f'[dim]Tip: View in Preview via desktop review: `open -a "Preview" "{out_path}"`[/dim]')
+
+
+@ppt_app.command("export-preview")
+def export_preview_cli(
+    pptx_path: str = typer.Option(..., "--pptx", "-p", help="Path to PowerPoint .pptx file"),
+    output_dir: Optional[str] = typer.Option(None, "--output", "-o", help="Output directory for slide preview PNGs"),
+    backend: str = typer.Option("python", "--backend", "-b", help="Exporter backend: 'python' (headless Pillow), 'keynote', 'powerpoint', 'libreoffice', or 'auto'"),
+    dpi: int = typer.Option(150, "--dpi", help="DPI resolution for rendered slides"),
+    open_first: bool = typer.Option(False, "--open", help="Open first slide preview in macOS Preview"),
+) -> None:
+    """Export PowerPoint presentation slides to crisp preview PNG images."""
+    import subprocess
+    from src.ppt_engine.slide_exporter import export_deck_to_images
+
+    p_in = Path(pptx_path)
+    if not p_in.exists():
+        rprint(f"[red]Error:[/red] PowerPoint file not found: {pptx_path}")
+        raise typer.Exit(code=1)
+
+    out_dir = Path(output_dir) if output_dir else p_in.parent / "previews"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    rprint(f"[cyan]ℹ Exporting slide previews ({backend} backend, {dpi} DPI):[/cyan] [bold]{p_in}[/bold]")
+    images = export_deck_to_images(p_in, output_dir=out_dir, backend=backend, dpi=dpi)
+
+    rprint(f"[green]✓ Exported {len(images)} slide preview(s) to:[/green] [bold]{out_dir}[/bold]")
+    for img in images:
+        rprint(f"  • {img.name}")
+
+    if open_first and images:
+        cmd = f'open -a "Preview" "{images[0].resolve()}"'
+        rprint(f"[cyan]ℹ Launching desktop Preview:[/cyan] [bold]{images[0].name}[/bold]")
+        subprocess.run(cmd, shell=True)
 
 
 
@@ -1154,7 +1241,7 @@ def add_diagram_page(
 
 @diagram_app.command("export")
 def export_diagram_page(
-    file: str = typer.Argument(..., help="Path to .drawio project file"),
+    file: str = typer.Argument(..., help="Path to .drawio project file or .yaml diagram specification"),
     page: str = typer.Option(..., "--page", "-p", help="Page name or 0-based page index to export"),
     output: str = typer.Option(..., "--output", "-o", help="Destination path for exported image (.png or .svg)"),
     format: str = typer.Option("png", "--format", help="Export format: 'png' or 'svg'"),
@@ -1163,7 +1250,7 @@ def export_diagram_page(
     transparent: bool = typer.Option(False, "--transparent", help="Export with transparent background (ideal for PPT slides)"),
     white_bg: bool = typer.Option(False, "--white-bg", help="Force solid pure white (#FFFFFF) background"),
 ) -> None:
-    """Export a specific diagram page from a multi-page Draw.io project to PNG or SVG."""
+    """Export a specific diagram page from a multi-page Draw.io project or YAML spec to PNG or SVG."""
     from src.ppt_engine.diagram_engine import DrawIOProject
 
     target = Path(file)
@@ -1171,7 +1258,11 @@ def export_diagram_page(
         rprint(f"[red]Error:[/red] File not found: {file}")
         raise typer.Exit(code=1)
 
-    proj = DrawIOProject.load(target)
+    if target.suffix.lower() in (".yaml", ".yml"):
+        proj = DrawIOProject.from_yaml(target)
+    else:
+        proj = DrawIOProject.load(target)
+
     page_ref = int(page) if page.isdigit() else page
     canvas_bg = "#FFFFFF" if white_bg else None
 
@@ -1193,7 +1284,7 @@ def export_diagram_page(
 
 @diagram_app.command("export-all")
 def export_all_diagram_pages(
-    file: str = typer.Argument(..., help="Path to .drawio project file"),
+    file: str = typer.Argument(..., help="Path to .drawio project file or .yaml diagram specification"),
     output_dir: str = typer.Option("output/diagrams", "--output-dir", "-o", help="Destination folder for exported images"),
     format: str = typer.Option("png", "--format", help="Export format: 'png' or 'svg'"),
     scale: float = typer.Option(3.0, "--scale", "-s", help="Rasterization scale/zoom factor for PNG"),
@@ -1201,7 +1292,7 @@ def export_all_diagram_pages(
     transparent: bool = typer.Option(False, "--transparent", help="Export with transparent background"),
     white_bg: bool = typer.Option(False, "--white-bg", help="Force solid pure white (#FFFFFF) background"),
 ) -> None:
-    """Export all diagram pages from a multi-page Draw.io project to individual PNG or SVG files."""
+    """Export all diagram pages from a multi-page Draw.io project or YAML spec to individual PNG or SVG files."""
     from src.ppt_engine.diagram_engine import DrawIOProject
 
     target = Path(file)
@@ -1209,7 +1300,10 @@ def export_all_diagram_pages(
         rprint(f"[red]Error:[/red] File not found: {file}")
         raise typer.Exit(code=1)
 
-    proj = DrawIOProject.load(target)
+    if target.suffix.lower() in (".yaml", ".yml"):
+        proj = DrawIOProject.from_yaml(target)
+    else:
+        proj = DrawIOProject.load(target)
     canvas_bg = "#FFFFFF" if white_bg else None
 
     try:

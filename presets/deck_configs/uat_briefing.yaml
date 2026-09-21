@@ -1,0 +1,921 @@
+# ==============================================================================
+# Master Declarative Configuration: Bilingual UAT Briefing Presentation
+# Project: Toyota Tsusho Indonesia (TTI) — Snowflake Financial Analytics
+# Deliverable: 3.4_Sosialisasi_UAT_Briefing_Modernized.pptx (25 Slides)
+# ==============================================================================
+
+deck_type: "uat_briefing"
+theme: "metrodata"
+
+metadata:
+  client_name: "PT Toyota Tsusho Indonesia"
+  vendor_name: "PT Mitra Integrasi Informatika"
+  product: "Snowflake Financial Analytics & Streamlit Application"
+  date_str: "20 Februari 2026"
+  confidentiality: "Engagement Management Office  |  Bilingual UAT Briefing & Validation Guide"
+
+slides:
+  # ----------------------------------------------------------------------------
+  # Slide 01: Master Cover (Hero Cover / Clean Typographic Columns)
+  # ----------------------------------------------------------------------------
+  - archetype: "hero_cover"
+    tracker: "PROJECT ENGAGEMENT | USER ACCEPTANCE TESTING (UAT)"
+    title: "Sosialisasi User Acceptance Testing (UAT)"
+    subtitle: "Data Application for Financial Analytics with Snowflake: Validasi Fungsional, Tata Kelola & Panduan Aplikasi"
+    client: "PT TOYOTA TSUSHO INDONESIA"
+    vendor: "PT MITRA INTEGRASI INFORMATIKA"
+    product: "Snowflake AI Data Cloud & Streamlit Analytics"
+    date_str: "20 Februari 2026"
+    hero_image_path: "assets/images/cabinet_aisle_stock.jpg"
+    hero_height: 3.65
+    scrim_alpha: 0.32
+
+  # ----------------------------------------------------------------------------
+  # Slide 02: Agenda (Structured 2-Column Numbered Cards)
+  # ----------------------------------------------------------------------------
+  - archetype: "agenda"
+    tracker: "AGENDA SOSIALISASI | STRUKTUR PEMBAHASAN UAT"
+    title: "Struktur Pembahasan Sosialisasi dan Pengujian Penerimaan Pengguna (UAT)"
+    subtitle: "Rangkaian agenda terstruktur untuk memastikan kesiapan end-to-end pengujian sistem dan tata kelola defect."
+    columns: 2
+    items:
+      - num: "01"
+        title: "Pendahuluan & Tujuan Strategis UAT"
+        description: "Definisi tahap akhir pengujian, sasaran pencapaian bisnis, dan pembagian peran pemangku kepentingan."
+        badge: "GOVERNANCE"
+        accent_key: "primary"
+      - num: "02"
+        title: "Ruang Lingkup Pengujian Analitik"
+        description: "Cakupan delapan modul fungsional keuangan yang siap divalidasi oleh pengguna akhir."
+        badge: "SCOPE"
+        accent_key: "accent"
+      - num: "03"
+        title: "Timeline & Jadwal Eksekusi UAT"
+        description: "Roadmap enam minggu mencakup siklus testing, periode perbaikan defect, dan cutover go-live."
+        badge: "ROADMAP"
+        accent_key: "secondary"
+      - num: "04"
+        title: "Testing Plan & Tata Tertib Eksekusi"
+        description: "Metodologi pengujian online, distribusi kredensial, panduan skenario, dan SLA resolusi bug."
+        badge: "PROTOCOL"
+        accent_key: "primary"
+      - num: "05"
+        title: "Environment Pengujian & Dataset Uji"
+        description: "Spesifikasi endpoint URL Snowflake Streamlit, kebijakan autentikasi MFA, dan periode data uji."
+        badge: "ENVIRONMENT"
+        accent_key: "accent"
+      - num: "06"
+        title: "Framework Skenario UAT (251 Test Cases)"
+        description: "Matriks distribusi skenario pengujian fungsional, formula kalkulasi, dan kontrol validasi data."
+        badge: "VERIFICATION"
+        accent_key: "secondary"
+      - num: "07"
+        title: "Defect Management & Penanganan Isu"
+        description: "Klasifikasi severity 4-tier, format pencatatan Defect Log, serta mekanisme Change Request."
+        badge: "DEFECT LOG"
+        accent_key: "primary"
+      - num: "08"
+        title: "Panduan Pengoperasian Aplikasi Streamlit"
+        description: "Walkthrough visual 14 modul analitik mencakup tata cara input variansi dan verifikasi kontrol."
+        badge: "WALKTHROUGH"
+        accent_key: "accent"
+
+  # ----------------------------------------------------------------------------
+  # Slide 03: Pendahuluan & Tujuan UAT (3-Pillar Capability Grid)
+  # ----------------------------------------------------------------------------
+  - archetype: "card_grid"
+    tracker: "PENDAHULUAN & TUJUAN | USER ACCEPTANCE TESTING (UAT)"
+    title: "Validasi Formal Memastikan Kesiapan Solusi Sebelum Operasional Production"
+    subtitle: "UAT memvalidasi kesesuaian sistem terhadap kebutuhan bisnis dan memastikan keandalan performa sebelum go-live."
+    columns: 3
+    items:
+      - title: "Definisi & Esensi UAT"
+        subtitle: "Tahap Akhir Pengujian Pengguna"
+        icon: "shield-check"
+        accent_key: "primary"
+        badge: "VALIDATION"
+        bullets:
+          - "Evaluasi formal oleh pemangku kepentingan bisnis sebelum deployment produksi resmi."
+          - "Memverifikasi akurasi kalkulasi variansi keuangan terhadap data laporan AO (Accounting Official)."
+          - "Menguji keandalan formulir interaktif input data pada aplikasi Streamlit Snowflake."
+          - "Menjamin integritas data saat transaksi tersimpan ke dalam database Snowflake."
+      - title: "Tiga Sasaran Strategis"
+        subtitle: "Kriteria Keberhasilan Implementasi"
+        icon: "target"
+        accent_key: "accent"
+        badge: "OBJECTIVES"
+        bullets:
+          - "1. Kesesuaian Kebutuhan: Menjamin aplikasi 100% memenuhi spesifikasi Functional Specification Document (FSD)."
+          - "2. Identifikasi & Resolusi Bug: Menangkap anomali kalkulasi dan defisiensi fungsional lebih awal."
+          - "3. Kesiapan Operasional: Memastikan seluruh pengguna dapat mengoperasikan sistem secara mandiri dan percaya diri."
+      - title: "Matriks Stakeholder UAT"
+        subtitle: "Kolaborasi Lintas Organisasi"
+        icon: "users"
+        accent_key: "secondary"
+        badge: "STAKEHOLDERS"
+        bullets:
+          - "Business Process Owners: Sales Department, Business Accounting, Consolidated Accounting."
+          - "IT Infrastructure & Governance: TTI IT Group mengawal kepatuhan akses dan otentikasi."
+          - "Vendor Implementation Team: MII Project Team mendampingi eksekusi dan memfasilitasi perbaikan defect."
+          - "Executive Steering Committee: Memberikan persetujuan akhir BAST pasca stabilitas tercapai."
+
+  # ----------------------------------------------------------------------------
+  # Slide 04: Ruang Lingkup UAT (8-Pillar Capability Grid)
+  # ----------------------------------------------------------------------------
+  - archetype: "card_grid"
+    tracker: "RUANG LINGKUP PENGUJIAN | CAKUPAN MODUL ANALITIK"
+    title: "Delapan Modul Analitik Keuangan Masuk ke Dalam Cakupan Validasi UAT"
+    subtitle: "Pengujian mencakup tampilan agregasi, formulir input variansi, kontrol balancing, dan dashboard eksekutif."
+    columns: 4
+    items:
+      - title: "1. Modul Sales"
+        subtitle: "Analisis Penjualan per Seksi"
+        icon: "trending-up"
+        accent_key: "primary"
+        badge: "CORE REVENUE"
+        bullets:
+          - "View 1: Tampilan variansi aktual vs budget per seksi (read-only)."
+          - "View 2: Input rincian analisis variansi berdasarkan item analisis."
+          - "View 3: Agregasi variansi grup berdasarkan item analisis."
+      - title: "2. Modul Gross Profit"
+        subtitle: "Analisis Laba Kotor & Marjin"
+        icon: "dollar-sign"
+        accent_key: "accent"
+        badge: "PROFITABILITY"
+        bullets:
+          - "View 1: Tampilan deviasi laba kotor per seksi operasional."
+          - "View 2: Input analisis rincian faktor pendorong laba kotor."
+          - "View 3: Rekapitulasi marjin laba kotor grup secara otomatis."
+      - title: "3. Modul Operating Profit"
+        subtitle: "Pengendalian Beban Operasional"
+        icon: "activity"
+        accent_key: "secondary"
+        badge: "OPEX CONTROL"
+        bullets:
+          - "Monitoring deviasi beban penjualan, umum, dan administrasi."
+          - "Input penjelasan deviasi biaya operasional terhadap target."
+          - "Rekonsiliasi otomatis marjin laba usaha per unit bisnis."
+      - title: "4. Modul Profit Before Tax"
+        subtitle: "Laba Sebelum Beban Pajak"
+        icon: "file-spreadsheet"
+        accent_key: "primary"
+        badge: "PBT METRICS"
+        bullets:
+          - "Analisis pendapatan dan beban di luar operasi (non-operating)."
+          - "Input penjelasan deviasi pencapaian laba sebelum pajak (PBT)."
+          - "Penyelarasan terhadap target keuangan konsolidasian."
+      - title: "5. Modul TVA & ROIC"
+        subtitle: "Penciptaan Nilai & Rasio Modal"
+        icon: "award"
+        accent_key: "accent"
+        badge: "CAPITAL EFFICIENCY"
+        bullets:
+          - "Perhitungan otomatis metrik Total Value Added (TVA) korporat."
+          - "Analisis rasio Return on Invested Capital (ROIC) per divisi."
+          - "Input evaluasi produktivitas aset dan efisiensi modal."
+      - title: "6. Modul AR Overdue"
+        subtitle: "Mitigasi Risiko Piutang Dagang"
+        icon: "clipboard-list"
+        accent_key: "secondary"
+        badge: "CREDIT RISK"
+        bullets:
+          - "Klasifikasi aging bucket piutang jatuh tempo (1-30, 31-60, >90)."
+          - "Pencatatan status penagihan dan rencana aksi tindak lanjut."
+          - "Monitoring eksposur kredit guna meminimalkan bad debt."
+      - title: "7. Modul Inventory Aging"
+        subtitle: "Perputaran Stok & Slow Moving"
+        icon: "layers"
+        accent_key: "primary"
+        badge: "STOCK HEALTH"
+        bullets:
+          - "Identifikasi stok barang yang mengendap melebihi batas wajar."
+          - "Input strategi likuidasi persediaan dan evaluasi provisi."
+          - "Optimasi perputaran inventori dan efisiensi modal kerja."
+      - title: "8. Summary Dashboard"
+        subtitle: "Executive View & Referensi"
+        icon: "layout-dashboard"
+        accent_key: "accent"
+        badge: "EXECUTIVE SUITE"
+        bullets:
+          - "Single pane of glass KPI keuangan bagi level manajemen."
+          - "Konfigurasi data referensi AO, pemetaan seksi, dan kurs."
+          - "Integritas pipeline data Snowflake berjalan terpadu."
+
+  # ----------------------------------------------------------------------------
+  # Slide 05: Timeline UAT (Vector Delivery Gantt Chart)
+  # ----------------------------------------------------------------------------
+  - archetype: "timeline_gantt"
+    tracker: "JADWAL PELAKSANAAN | ROADMAP PENGUJIAN UAT"
+    title: "Jadwal Terstruktur Enam Minggu Mengawal Siklus Pengujian Hingga Go-Live"
+    subtitle: "Pelaksanaan terbagi dalam dua siklus pengujian berantai, periode stabilisasi sistem, dan cutover produksi."
+    gantt_data:
+      total_weeks: 6
+      start_label: "20 Feb 2026"
+      end_label: "01 Apr 2026"
+      workstreams:
+        - name: "Phase 1: Persiapan & Sosialisasi"
+          accent_key: "primary"
+          tasks:
+            - name: "Sosialisasi UAT & Distribusi Akun Kredensial"
+              start_week: 1
+              duration_weeks: 1
+              status: "COMPLETED"
+        - name: "Phase 2: UAT Siklus 1 (Initial Run)"
+          accent_key: "accent"
+          tasks:
+            - name: "Eksekusi Pengujian Skenario oleh User (23-27 Feb)"
+              start_week: 1
+              duration_weeks: 1
+              status: "IN_PROGRESS"
+            - name: "Perbaikan Bugs & Patching oleh Tim MII (02-06 Mar)"
+              start_week: 2
+              duration_weeks: 1
+              status: "NOT_STARTED"
+        - name: "Phase 3: UAT Siklus 2 (Final Confirmation)"
+          accent_key: "secondary"
+          tasks:
+            - name: "Konfirmasi Perbaikan & Pengujian Regresi (09-13 Mar)"
+              start_week: 3
+              duration_weeks: 1
+              status: "NOT_STARTED"
+            - name: "Stabilisasi Sistem & Cutover Preparation (16-31 Mar)"
+              start_week: 4
+              duration_weeks: 2
+              status: "NOT_STARTED"
+        - name: "Phase 4: Go-Live & Project Handover"
+          accent_key: "primary"
+          tasks:
+            - name: "Penerbitan BAST & Production Deployment (01 Apr)"
+              start_week: 6
+              duration_weeks: 1
+              status: "NOT_STARTED"
+
+  # ----------------------------------------------------------------------------
+  # Slide 06: Testing Plan & Tata Tertib (4-Pillar Capability Grid)
+  # ----------------------------------------------------------------------------
+  - archetype: "card_grid"
+    tracker: "METODOLOGI & TATA TERTIB | TESTING PLAN UAT"
+    title: "Aturan Operasional Menjamin Ketertiban dan Akuntabilitas Eksekusi Pengujian"
+    subtitle: "Pedoman baku pelaksanaan testing daring, penanganan insiden, tata tertib komunikasi, dan eskalasi scope."
+    columns: 4
+    items:
+      - title: "1. Eksekusi Online & Pendampingan"
+        subtitle: "Testing Daring Terbimbing"
+        icon: "monitor"
+        accent_key: "primary"
+        badge: "ONLINE TESTING"
+        bullets:
+          - "Pengujian dilakukan mandiri oleh user melalui web browser (Google Chrome / Edge)."
+          - "Sesi pengujian didampingi langsung oleh konsultan teknis MII secara daring."
+          - "Tersedia kanal komunikasi harian (Teams / WA Group) untuk fast-response support."
+      - title: "2. Kredensial & Panduan Skenario"
+        subtitle: "Akses Terverifikasi"
+        icon: "lock"
+        accent_key: "accent"
+        badge: "TEST GUIDELINES"
+        bullets:
+          - "Username dan password pengujian disiapkan dan didistribusikan langsung oleh tim MII."
+          - "Dokumen Test Scenario disediakan sebagai panduan pengujian langkah demi langkah."
+          - "Data transaksi uji telah dipersiapkan lengkap di database staging Snowflake."
+      - title: "3. Manajemen Defect & Resolusi"
+        subtitle: "Penanganan Isu Terukur"
+        icon: "shield-alert"
+        accent_key: "secondary"
+        badge: "ISSUE MANAGEMENT"
+        bullets:
+          - "Setiap anomali atau kegagalan sistem wajib dicatat dalam dokumen Defect Log."
+          - "Bug kategori Critical / Major akan diperbaiki secara langsung (direct turnaround)."
+          - "Defect Medium / Cosmetic dituntaskan pada jadwal tahapan perbaikan berkala."
+      - title: "4. Tata Kelola Change Request"
+        subtitle: "Kendali Batasan Cakupan"
+        icon: "git-pull-request"
+        accent_key: "primary"
+        badge: "SCOPE CONTROL"
+        bullets:
+          - "Permintaan penambahan fitur baru di luar spesifikasi FSD dicatat dalam Change Log."
+          - "Setiap perubahan fitur wajib melalui prosedur formal Change Request (CR)."
+          - "Perubahan ruang lingkup dievaluasi dampaknya terhadap timeline dan komersial."
+
+  # ----------------------------------------------------------------------------
+  # Slide 07: Environment & Akses UAT (3-Pillar Capability Grid)
+  # ----------------------------------------------------------------------------
+  - archetype: "card_grid"
+    tracker: "INFRASTRUKTUR & DATA | ENVIRONMENT PENGUJIAN UAT"
+    title: "Arsitektur Pengujian Snowflake Menggunakan Dataset Riil dan Simulasi"
+    subtitle: "Spesifikasi endpoint aplikasi, manajemen otentikasi role-based, dan cakupan data uji terverifikasi."
+    columns: 3
+    items:
+      - title: "1. Endpoint Aplikasi Snowflake"
+        subtitle: "Streamlit Hosted Application"
+        icon: "cloud"
+        accent_key: "primary"
+        badge: "STREAMLIT URL"
+        bullets:
+          - "URL Resmi UAT: https://app.snowflake.com/streamlit/ap-southeast-3.aws/tn32366/#/apps/..."
+          - "Deployment cloud pada region AWS Jakarta (ap-southeast-3) menjamin latensi rendah."
+          - "Kompatibel penuh dengan peramban standar korporat (Google Chrome & Microsoft Edge)."
+          - "Konektivitas terenkripsi SSL/TLS 1.3 menjamin keamanan data transmisi."
+      - title: "2. Kredensial & Autentikasi MFA"
+        subtitle: "Role-Based Access Control (RBAC)"
+        icon: "shield-check"
+        accent_key: "accent"
+        badge: "SECURITY POLICY"
+        bullets:
+          - "Akun uji diterbitkan tim MII sesuai pembagian departemen dan wewenang pengguna."
+          - "Wajib melakukan reset password saat pertama kali login ke dalam sistem."
+          - "Wajib mengaktifkan Multi-Factor Authentication (MFA) via Passkey, Authenticator, atau Duo."
+          - "Akses menu dibatasi ketat sesuai hak akses role pengguna (Viewer vs Editor)."
+      - title: "3. Cakupan Dataset Pengujian"
+        subtitle: "Data Riil AO & Simulasi Akuntansi"
+        icon: "database"
+        accent_key: "secondary"
+        badge: "TEST DATASETS"
+        bullets:
+          - "Data AO: Periode historis 2025 YTD dan simulasi periode akuntansi 2026."
+          - "Data TVA & ROIC: Periode pembukuan 2025 YTD serta parameter simulasi 2026."
+          - "Data AR Overdue: Data transaksi berjalan periode November 2025 s/d Januari 2026."
+          - "Data Inventory Aging: Snapshot inventori gudang periode November 2025 s/d Januari 2026."
+
+  # ----------------------------------------------------------------------------
+  # Slide 08: Framework Skenario UAT (Vector Matrix Table)
+  # ----------------------------------------------------------------------------
+  - archetype: "table"
+    tracker: "SKENARIO PENGUJIAN | REKAPITULASI 251 TEST CASES"
+    title: "251 Skenario Pengujian Terstruktur Memvalidasi Seluruh Fungsi dan Kontrol"
+    subtitle: "Distribusi skenario pengujian komprehensif mengacu pada dokumen 3.4_UAT_Scenario_Template.docx."
+    columns:
+      - header: "No."
+        width: 0.8
+        is_index: true
+      - header: "Komponen / Modul Analitik"
+        width: 3.2
+      - header: "Cakupan Skenario Validasi & Pengujian"
+        width: 4.3
+      - header: "Jumlah Kasus"
+        width: 1.5
+        align: "CENTER"
+      - header: "Status Kesiapan"
+        width: 2.2
+        is_status: true
+    rows:
+      - ["1", "Otentikasi & Keamanan (RBAC)", "Validasi login Snowflake, aktivasi MFA, hak akses role Editor vs Viewer", "8 Skenario", "READY FOR TESTING"]
+      - ["2", "Perilaku Filter & Navigasi", "Filter tahun buku, bulan, dropdown seksi organisasi, responsivitas navigasi", "12 Skenario", "READY FOR TESTING"]
+      - ["3", "Modul Sales (View 1, 2, 3)", "Variansi aktual vs budget, input analisis variansi, check control sum, agregasi grup", "54 Skenario", "READY FOR TESTING"]
+      - ["4", "Modul Gross Profit (View 1, 2, 3)", "Deviasi marjin laba kotor, input rincian faktor bisnis, balancing check, rekapitulasi", "57 Skenario", "READY FOR TESTING"]
+      - ["5", "Modul Operating Profit (OP)", "Kompilasi variansi opex penjualan dan administrasi, input narasi penjelasan deviasi", "11 Skenario", "READY FOR TESTING"]
+      - ["6", "Modul Profit Before Tax (PBT)", "Evaluasi pos non-operasional, selisih kurs, input penjelasan variansi laba kotor", "21 Skenario", "READY FOR TESTING"]
+      - ["7", "Modul TVA & ROIC", "Formula Total Value Added, return on invested capital, validasi rasio per divisi", "7 Skenario", "READY FOR TESTING"]
+      - ["8", "Modul AR Overdue & Aging", "Pengelompokan bucket 30/60/90 hari, pencatatan status penagihan, mitigasi bad debt", "29 Skenario", "READY FOR TESTING"]
+      - ["9", "Modul Inventory Aging", "Deteksi barang slow-moving, input strategi likuidasi stok, kontrol valuasi inventori", "41 Skenario", "READY FOR TESTING"]
+      - ["10", "Fitur Upload Excel & Auto-Save", "Mekanisme pengunggahan file Excel massal, auto-save real-time, prompt konfirmasi hapus", "11 Skenario", "READY FOR TESTING"]
+    footnote: "* Total keseluruhan mencakup 251 test cases inti fungsional dan 262 kasus pengujian integritas/regresi non-fungsional."
+
+  # ----------------------------------------------------------------------------
+  # Slide 09: Defect Management & Penanganan Isu (Vector Matrix Table)
+  # ----------------------------------------------------------------------------
+  - archetype: "table"
+    tracker: "MANAJEMEN DEFECT | MATRIKS SEVERITY & SLA"
+    title: "Klasifikasi Tingkat Keparahan Defect Menetapkan Prioritas dan SLA Perbaikan"
+    subtitle: "Standar baku pencatatan dan eskalasi anomali sistem mengacu pada dokumen 3.6_Defect_List_Template.xlsx."
+    columns:
+      - header: "Tingkat Keparahan"
+        width: 2.2
+        is_status: true
+      - header: "Kriteria & Karakteristik Anomali Sistem"
+        width: 4.8
+      - header: "Target SLA Resolusi"
+        width: 2.5
+        align: "CENTER"
+      - header: "Jalur Penanganan & PIC"
+        width: 2.5
+    rows:
+      - ["1. CRITICAL", "Aplikasi crash, gagal login total, data corruption, atau error formula mendasar tanpa alternatif workaround.", "< 4 Jam Kerja", "Lead Architect & Tech Lead MII"]
+      - ["2. MAJOR", "Fitur utama tidak dapat berjalan atau salah agregasi, namun masih terdapat solusi workaround operasional sementara.", "< 24 Jam Kerja", "Senior Data Engineer MII"]
+      - ["3. MEDIUM", "Gangguan fungsional parsial, error validasi minor, atau ketidaksesuaian formatting angka yang tidak memblokir testing.", "Siklus Patch Tahap 2", "Software Engineer MII"]
+      - ["4. LOW / COSMETIC", "Pergeseran tata letak antarmuka, kesalahan ketik teks label (typo), atau inkonsistensi perataan visual.", "Final Release Cutover", "Front-end Developer MII"]
+    footnote: "* Seluruh temuan defect wajib dicatat lengkap dalam file Defect Log mencakup Test ID, langkah reproduksi, dan screenshot evidence."
+
+  # ----------------------------------------------------------------------------
+  # Slide 10: Chapter Divider (Panduan Singkat Aplikasi)
+  # ----------------------------------------------------------------------------
+  - archetype: "chapter_divider"
+    tracker: "PANDUAN SINGKAT APLIKASI | WALKTHROUGH FITUR"
+    headline: "Panduan Interaktif Pengoperasian Aplikasi Streamlit"
+    subtitle: "Langkah-langkah autentikasi login MFA, navigasi halaman utama, pengisian variansi, dan verifikasi kontrol data."
+    division_tagline: "PT Mitra Integrasi Informatika"
+    hero_image_path: "assets/images/datacenter_aisle_framed.png"
+
+  # ----------------------------------------------------------------------------
+  # Slide 11: Onboarding: Step-by-Step Login Pertama Kali & MFA (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "PANDUAN APLIKASI | AUTENTIKASI & MULTI-FACTOR LOGIN"
+    title: "Prosedur Akses Aplikasi dan Pemilihan Opsi Autentikasi Ganda (MFA)"
+    subtitle: "Snowflake mewajibkan aktivasi MFA pada saat login pertama kali guna mengamankan data finansial perusahaan."
+    screenshot_path: "assets/images/uat/snowflake_mfa_login.png"
+    url: "https://app.snowflake.com/streamlit/ap-southeast-3.aws/tn32366/#/apps/7vpfzkacwih7v5esxqox"
+    telemetry_badges:
+      - "🔐 Snowflake MFA Enforced"
+      - "⚡ Biometric Passkey"
+      - "🛡️ ISO 27001 Certified"
+    theme_mode: "light"
+    takeaways_title: "OPSI AUTENTIKASI GANDA (MFA)"
+    takeaways:
+      - title: "Opsi 1: Passkey Biometrik Device"
+        tag: "RECOMMENDED"
+        tag_color: "accent"
+        description:
+          - "Memanfaatkan sensor biometrik laptop (Windows Hello / Mac TouchID)."
+          - "Metode paling cepat dan aman tanpa perlu membuka aplikasi ponsel."
+          - "Tersimpan secara lokal dan aman pada chip keamanan perangkat."
+      - title: "Opsi 2: Mobile Authenticator App"
+        tag: "TOTP STANDARD"
+        tag_color: "primary"
+        description:
+          - "Menggunakan aplikasi Google Authenticator atau Microsoft Authenticator."
+          - "Pindai QR code sekali pada layar, lalu masukkan 6-digit kode verifikasi berkala."
+          - "Sangat cocok jika berpindah device komputasi kerja."
+      - title: "Opsi 3: Cisco Duo Security"
+        tag: "ENTERPRISE DUO"
+        tag_color: "secondary"
+        description:
+          - "Pilihan tepat jika perangkat ponsel Anda telah terpasang aplikasi Cisco Duo korporat."
+          - "Memberikan notifikasi push-approval instan untuk otorisasi akses login."
+
+  # ----------------------------------------------------------------------------
+  # Slide 12: Onboarding: Update Password & Landing Page Navigation (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "PANDUAN APLIKASI | RESET PASSWORD & NAVIGASI"
+    title: "Pembaruan Password Awal dan Navigasi Menu Dashboard Keuangan"
+    subtitle: "Pengguna wajib memperbarui kata sandi awal sebelum dapat menjelajahi modul analitik pada drawer sidebar."
+    screenshot_path: "assets/images/uat/streamlit_home_landing.png"
+    url: "https://app.snowflake.com/streamlit/ap-southeast-3.aws/tn32366/#/apps/7vpfzkacwih7v5esxqox"
+    telemetry_badges:
+      - "🔑 Mandatory Password Reset"
+      - "📑 Left Drawer Menu"
+      - "⚡ Streamlit Core"
+    theme_mode: "light"
+    takeaways_title: "LANGKAH NAVIGASI AWAL"
+    takeaways:
+      - title: "Kebijakan Keamanan Kata Sandi"
+        tag: "SECURITY POLICY"
+        tag_color: "primary"
+        description:
+          - "Password baru wajib memenuhi standar: minimal 8 karakter, huruf besar/kecil, angka, dan simbol unik."
+          - "Mencegah penggunaan password default untuk menjaga kerahasiaan data finansial."
+      - title: "Navigasi Sidebar Terpadu"
+        tag: "MENU ACCESS"
+        tag_color: "accent"
+        description:
+          - "Menu modul analitik terletak pada bilah navigasi sebelah kiri (drawer sidebar)."
+          - "Pengguna dapat berpindah antar modul analitik secara cepat sesuai wewenang role."
+      - title: "Session Timeout & Auto-Logout"
+        tag: "COMPLIANCE"
+        tag_color: "secondary"
+        description:
+          - "Sistem akan menutup sesi login secara otomatis jika terdeteksi idle selama 15 menit."
+          - "Mengamankan terminal komputer jika pengguna meninggalkan tempat kerja."
+
+  # ----------------------------------------------------------------------------
+  # Slide 13: Modul Sales — View 1: Variansi per Seksi (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL SALES | VIEW 1 — VARIANSI PER SECTION"
+    title: "Modul Sales View 1: Monitoring Variansi Penjualan per Seksi Operasional"
+    subtitle: "Menampilkan komparasi deviasi angka aktual terhadap budget penjualan per seksi bersumber resmi dari laporan AO."
+    screenshot_path: "assets/images/uat/module_sales_view1.png"
+    url: "https://app.snowflake.com/streamlit/sales/view1"
+    telemetry_badges:
+      - "📊 Read-Only View"
+      - "📑 Data Staging AO"
+      - "⚡ Real-Time Pipeline"
+    theme_mode: "light"
+    takeaways_title: "KARAKTERISTIK MODUL VIEW 1"
+    takeaways:
+      - title: "Sumber Data Resmi Accounting Official"
+        tag: "SOURCE INGESTION"
+        tag_color: "primary"
+        description:
+          - "Data penjualan aktual dan budget diambil langsung dari laporan resmi AO."
+          - "Pipeline staging Snowflake memperbarui angka secara konsisten dan terverifikasi."
+      - title: "Granularitas Data per Seksi"
+        tag: "ANALYTICAL DEPTH"
+        tag_color: "accent"
+        description:
+          - "Penyajian angka deviasi dipetakan per kode seksi dan divisi penjualan."
+          - "Memudahkan identifikasi performa seksi yang mengalami surplus maupun defisit."
+      - title: "Proteksi Data Bersifat Read-Only"
+        tag: "DATA GOVERNANCE"
+        tag_color: "secondary"
+        description:
+          - "Tampilan bersifat read-only untuk melindungi keaslian sumber data akuntansi."
+          - "Menjamin integritas data sebelum pengguna mengisi rincian analisis di View 2."
+
+  # ----------------------------------------------------------------------------
+  # Slide 14: Modul Sales — View 2: Input Rincian Analisis Variansi (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL SALES | VIEW 2 — INPUT ANALISIS VARIANSI"
+    title: "Modul Sales View 2: Input Interaktif Rincian Analisis Variansi Penjualan"
+    subtitle: "Formulir interaktif bagi pengguna untuk memasukkan faktor penyebab deviasi per seksi berdasarkan Analysis Item."
+    screenshot_path: "assets/images/uat/module_sales_view2.png"
+    url: "https://app.snowflake.com/streamlit/sales/view2"
+    telemetry_badges:
+      - "✍️ Interactive Data Entry"
+      - "⚖️ Check Control Sum"
+      - "💾 Auto-Save Active"
+    theme_mode: "light"
+    takeaways_title: "ALUR KERJA PENGINPUTAN"
+    takeaways:
+      - title: "Penginputan Berbasis Analysis Item"
+        tag: "INTERACTIVE INPUT"
+        tag_color: "accent"
+        description:
+          - "Pengguna memilih seksi dan mendistribusikan angka deviasi ke item analisis."
+          - "Setiap baris dilengkapi kolom catatan naratif untuk menjelaskan latar belakang deviasi."
+      - title: "Mekanisme Validasi Check Control"
+        tag: "INTEGRITY CHECK"
+        tag_color: "primary"
+        description:
+          - "Sistem menghitung formula kontrol: ∑ Expected Variance harus seimbang dengan View 1."
+          - "Indikator warna akan menyala merah jika terdapat selisih pembagian variansi."
+      - title: "Auto-Save Real-Time & Excel Upload"
+        tag: "USER ERGONOMICS"
+        tag_color: "secondary"
+        description:
+          - "Data tersimpan otomatis saat kursor berpindah sel (auto-save behavior)."
+          - "Disediakan tombol upload file Excel untuk pengisian data dalam jumlah besar."
+
+  # ----------------------------------------------------------------------------
+  # Slide 15: Modul Sales — View 3: Rekapitulasi per Analysis Item (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL SALES | VIEW 3 — REKAPITULASI ANALYSIS ITEM"
+    title: "Modul Sales View 3: Rekapitulasi Agregat Variansi per Analysis Item"
+    subtitle: "Menyajikan ringkasan konsolidasi deviasi penjualan yang dikelompokkan otomatis berdasarkan faktor analisis bisnis."
+    screenshot_path: "assets/images/uat/module_sales_view3.png"
+    url: "https://app.snowflake.com/streamlit/sales/view3"
+    telemetry_badges:
+      - "🔄 Auto-Aggregated"
+      - "📊 Group by Item"
+      - "📈 Executive Ready"
+    theme_mode: "light"
+    takeaways_title: "MANFAAT AGREGASI KONSOLIDASI"
+    takeaways:
+      - title: "Agregasi Otomatis dari View 2"
+        tag: "AUTOMATION"
+        tag_color: "primary"
+        description:
+          - "Angka pada View 3 dihitung otomatis dari rincian data yang diinput pada View 2."
+          - "Menghilangkan kebutuhan kalkulasi manual di spreadsheet yang rentan salah rumus."
+      - title: "Visibilitas Faktor Pendorong Penjualan"
+        tag: "BUSINESS INSIGHT"
+        tag_color: "accent"
+        description:
+          - "Manajemen dapat langsung melihat faktor pendorong variansi terbesar (harga, volume, kurs)."
+          - "Mendukung evaluasi cepat dalam penyusunan strategi pemasaran kuartal berikutnya."
+      - title: "Sinkronisasi Real-Time Tanpa Latensi"
+        tag: "HIGH PERFORMANCE"
+        tag_color: "secondary"
+        description:
+          - "Setiap perubahan data di View 2 langsung terefleksikan pada tabel View 3 seketika."
+          - "Menjamin keandalan data saat sesi rapat evaluasi kinerja bisnis berlangsung."
+
+  # ----------------------------------------------------------------------------
+  # Slide 16: Modul Gross Profit — View 1: Variansi Laba Kotor (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL GROSS PROFIT | VIEW 1 — VARIANSI LABA KOTOR"
+    title: "Modul Gross Profit View 1: Evaluasi Deviasi Marjin Laba Kotor per Seksi"
+    subtitle: "Monitoring deviasi margin laba kotor aktual terhadap target anggaran per unit bisnis berbasis data AO."
+    screenshot_path: "assets/images/uat/module_gp_view1.png"
+    url: "https://app.snowflake.com/streamlit/gross_profit/view1"
+    telemetry_badges:
+      - "💰 Gross Profit Monitor"
+      - "📊 Staging AO Ingestion"
+      - "📑 Section Breakdown"
+    theme_mode: "light"
+    takeaways_title: "POIN PENGUJIAN UTAMA"
+    takeaways:
+      - title: "Akurasi Baseline Marjin Finansial"
+        tag: "MARGIN ACCURACY"
+        tag_color: "primary"
+        description:
+          - "Memverifikasi kesesuaian nilai laba kotor aktual dan budget terhadap pembukuan AO."
+          - "Mengevaluasi selisih margin positif maupun deviasi defisit per divisi."
+      - title: "Granularitas Filter Multi-Dimensi"
+        tag: "FILTER LOGIC"
+        tag_color: "accent"
+        description:
+          - "Dukungan pemilihan periode tahun buku, kuartal, dan bulan akuntansi."
+          - "Filter responsif menampilkan metrik performa sesuai lingkup kewenangan pengguna."
+      - title: "Integritas Baseline Menuju View 2"
+        tag: "DATA CONTINUITY"
+        tag_color: "secondary"
+        description:
+          - "Angka baseline laba kotor di View 1 menjadi acuan mutlak pada check control View 2."
+          - "Menjamin tidak ada deviasi yang lolos tanpa penjelasan terperinci."
+
+  # ----------------------------------------------------------------------------
+  # Slide 17: Modul Gross Profit — View 2: Input Analisis Variansi (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL GROSS PROFIT | VIEW 2 — INPUT ANALISIS VARIANSI"
+    title: "Modul Gross Profit View 2: Penginputan Rincian Penyebab Variansi Marjin"
+    subtitle: "Formulir input rincian deviasi marjin laba kotor berdasarkan klasifikasi faktor pendorong dan formula kontrol."
+    screenshot_path: "assets/images/uat/module_gp_view2.png"
+    url: "https://app.snowflake.com/streamlit/gross_profit/view2"
+    telemetry_badges:
+      - "✍️ Margin Input Grid"
+      - "⚖️ Variance Balancing"
+      - "💾 Instant Sync"
+    theme_mode: "light"
+    takeaways_title: "PROSEDUR PENGUJIAN INPUT"
+    takeaways:
+      - title: "Rincian Faktor Laba Kotor"
+        tag: "VARIANCE BREAKDOWN"
+        tag_color: "accent"
+        description:
+          - "Input rincian variansi berdasarkan kenaikan harga pokok, fluktuasi biaya logistik, dan diskon."
+          - "Pengisian kolom deskriptif mendalam memberikan konteks bisnis kepada manajemen."
+      - title: "Kontrol Agregasi Otomatis"
+        tag: "CONTROL BALANCING"
+        tag_color: "primary"
+        description:
+          - "Formula validasi mengecek apakah total rincian sama dengan selisih laba kotor di View 1."
+          - "Mencegah kesalahan ketik angka atau ketidakseimbangan alokasi margin."
+      - title: "Ketahanan Validasi Input Data"
+        tag: "INPUT INTEGRITY"
+        tag_color: "secondary"
+        description:
+          - "Sistem memvalidasi tipe data numerik dan memunculkan peringatan jika format tidak sesuai."
+          - "Fitur prompt konfirmasi sebelum menghapus baris data analisis yang telah tersimpan."
+
+  # ----------------------------------------------------------------------------
+  # Slide 18: Modul Gross Profit — View 3: Rekapitulasi Grup Analisis (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL GROSS PROFIT | VIEW 3 — REKAPITULASI MARJIN"
+    title: "Modul Gross Profit View 3: Rekapitulasi Terkonsolidasi Grup Analisis Marjin"
+    subtitle: "Konsolidasi otomatis deviasi laba kotor per kategori item analisis untuk pelaporan eksekutif."
+    screenshot_path: "assets/images/uat/module_gp_view3.png"
+    url: "https://app.snowflake.com/streamlit/gross_profit/view3"
+    telemetry_badges:
+      - "🔄 Auto-Rollup View"
+      - "📊 Group Category"
+      - "📈 Audit Trail Ready"
+    theme_mode: "light"
+    takeaways_title: "PELAPORAN & AUDIT TRAIL"
+    takeaways:
+      - title: "Rollup Otomatis Tanpa Formula Manual"
+        tag: "AUTO ROLLUP"
+        tag_color: "primary"
+        description:
+          - "Mengelompokkan seluruh pos variansi laba kotor berdasarkan kategori utama."
+          - "Menghasilkan ringkasan akurat yang siap digunakan untuk presentasi manajerial."
+      - title: "Kemudahan Verifikasi Audit"
+        tag: "AUDITABILITY"
+        tag_color: "accent"
+        description:
+          - "Struktur tabel menyajikan relasi jelas antara angka rekapitulasi dan data input di View 2."
+          - "Memudahkan auditor internal menelusuri sumber pembentukan margin laba kotor."
+      - title: "Konsistensi Angka Finansial"
+        tag: "DATA QUALITY"
+        tag_color: "secondary"
+        description:
+          - "Tampilan bersifat read-only guna menjamin keutuhan laporan konsolidasi."
+          - "Nilai total terverifikasi identik terhadap laporan keuangan resmi perusahaan."
+
+  # ----------------------------------------------------------------------------
+  # Slide 19: Modul Operating Profit (Analisis Beban Operasional) (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL OPERATING PROFIT | ANALISIS BEBAN USAHA"
+    title: "Modul Operating Profit: Evaluasi Beban Operasional dan Input Penjelasan Variansi"
+    subtitle: "Menganalisis efisiensi biaya penjualan, umum, dan administrasi (OPEX) terhadap target kinerja operasional."
+    screenshot_path: "assets/images/uat/module_op.png"
+    url: "https://app.snowflake.com/streamlit/operating_profit"
+    telemetry_badges:
+      - "💼 OPEX Evaluation"
+      - "📉 Variance Commentary"
+      - "✍️ Interactive Form"
+    theme_mode: "light"
+    takeaways_title: "ASPEK PENGUJIAN OPERATING PROFIT"
+    takeaways:
+      - title: "Evaluasi Beban Penjualan & Administrasi"
+        tag: "COST MONITORING"
+        tag_color: "primary"
+        description:
+          - "Menyajikan deviasi biaya tenaga kerja, biaya sewa, pemasaran, dan utilitas kantor."
+          - "Memisahkan pos biaya langsung dan tidak langsung per departemen operasional."
+      - title: "Input Narasi Penjelasan Deviasi"
+        tag: "NARRATIVE INPUT"
+        tag_color: "accent"
+        description:
+          - "Formulir interaktif bagi staf akuntansi untuk mencatat penyebab efisiensi atau pemborosan biaya."
+          - "Penjelasan naratif tersimpan rapi sebagai dasar penyusunan laporan manajemen bulanan."
+      - title: "Kalkulasi Marjin Laba Usaha Otomatis"
+        tag: "AUTO CALCULATION"
+        tag_color: "secondary"
+        description:
+          - "Sistem memperhitungkan laba usaha dari pengurangan laba kotor dengan beban operasional."
+          - "Hasil perhitungan langsung tersinkronisasi ke modul Profit Before Tax (PBT)."
+
+  # ----------------------------------------------------------------------------
+  # Slide 20: Modul Profit Before Tax (Laba Sebelum Pajak) (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL PROFIT BEFORE TAX | REKONSILIASI LABA"
+    title: "Modul Profit Before Tax: Rekonsiliasi Pos Non-Operasional dan Provisi Pajak"
+    subtitle: "Analisis komparatif pencapaian laba sebelum pajak mencakup pos pendapatan dan beban non-operasional."
+    screenshot_path: "assets/images/uat/module_pbt.png"
+    url: "https://app.snowflake.com/streamlit/profit_before_tax"
+    telemetry_badges:
+      - "🏛️ PBT Reconciliation"
+      - "⚖️ Non-Operating Factors"
+      - "📑 Fiscal Ready"
+    theme_mode: "light"
+    takeaways_title: "KOMPONEN ANALISIS PBT"
+    takeaways:
+      - title: "Penangkapan Dampak Non-Operasional"
+        tag: "NON-OPERATING ITEMS"
+        tag_color: "primary"
+        description:
+          - "Merekam variansi pendapatan bunga bank, selisih kurs valas, dan beban pembiayaan pinjaman."
+          - "Memastikan pos di luar kegiatan bisnis inti terdokumentasi secara transparan."
+      - title: "Pencatatan Justifikasi Deviasi Laba"
+        tag: "VARIANCE JUSTIFICATION"
+        tag_color: "accent"
+        description:
+          - "Penyediaan input keterangan bagi analis keuangan untuk menjelaskan fluktuasi laba sebelum pajak."
+          - "Terkoneksi langsung dengan catatan laporan rekonsiliasi fiskal tahunan."
+      - title: "Audit Trail & Kepatuhan Korporat"
+        tag: "CORPORATE GOVERNANCE"
+        tag_color: "secondary"
+        description:
+          - "Riwayat pengisian data tercatat lengkap dengan identitas pengguna dan waktu modifikasi."
+          - "Memenuhi standar tata kelola kepatuhan audit internal PT Toyota Tsusho Indonesia."
+
+  # ----------------------------------------------------------------------------
+  # Slide 21: Modul AR Overdue (Analisis Piutang Jatuh Tempo) (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL AR OVERDUE | PENGENDALIAN PIUTANG"
+    title: "Modul Accounts Receivable (AR): Pengendalian Piutang dan Rencana Tindak Lanjut"
+    subtitle: "Identifikasi umur piutang dagang yang telah jatuh tempo, klasifikasi bucket, dan rencana aksi penagihan."
+    screenshot_path: "assets/images/uat/module_ar_overdue.png"
+    url: "https://app.snowflake.com/streamlit/ar_overdue"
+    telemetry_badges:
+      - "⏰ AR Overdue Tracking"
+      - "📊 Aging Classification"
+      - "🚨 Credit Exposure Risk"
+    theme_mode: "light"
+    takeaways_title: "MANAJEMEN RISIKO PIUTANG"
+    takeaways:
+      - title: "Klasifikasi Aging Bucket Piutang"
+        tag: "AGING BUCKETS"
+        tag_color: "accent"
+        description:
+          - "Pengelompokan faktur piutang berdasarkan keterlambatan: 1-30 hari, 31-60 hari, >90 hari."
+          - "Visualisasi status pembayaran memudahkan prioritasi penagihan tim finance."
+      - title: "Pencatatan Rencana Tindak Lanjut"
+        tag: "ACTION PLANS"
+        tag_color: "primary"
+        description:
+          - "Input interaktif status verifikasi debitur, alasan keterlambatan, dan estimasi tanggal bayar."
+          - "Mendukung koordinasi lintas fungsi antara tim sales dan tim credit control."
+      - title: "Mitigasi Risiko Piutang Macet"
+        tag: "RISK MITIGATION"
+        tag_color: "secondary"
+        description:
+          - "Deteksi dini pelanggan dengan eksposur kredit kritis untuk meminimalkan beban provisi kerugian."
+          - "Menjaga kesehatan arus kas dan likuiditas modal kerja perusahaan."
+
+  # ----------------------------------------------------------------------------
+  # Slide 22: Modul TVA & ROIC (Penciptaan Nilai Tambah) (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL TVA & ROIC | EFISIENSI MODAL"
+    title: "Modul TVA & ROIC: Evaluasi Penciptaan Nilai Tambah dan Produktivitas Modal"
+    subtitle: "Pengukuran efisiensi modal kerja dan tingkat pengembalian investasi (ROIC) mengacu pada standar korporat."
+    screenshot_path: "assets/images/uat/module_tva_roic.png"
+    url: "https://app.snowflake.com/streamlit/tva_roic"
+    telemetry_badges:
+      - "💎 Total Value Added"
+      - "📈 ROIC Calculation"
+      - "🎯 Capital Productivity"
+    theme_mode: "light"
+    takeaways_title: "METRIK EFISIENSI MODAL"
+    takeaways:
+      - title: "Kalkulasi Total Value Added (TVA)"
+        tag: "VALUE CREATION"
+        tag_color: "primary"
+        description:
+          - "Menghitung penciptaan nilai ekonomi riil di atas biaya modal yang digunakan."
+          - "Memperlihatkan kontribusi laba bersih terhadap penambahan nilai pemegang saham."
+      - title: "Analisis Rasio ROIC per Divisi"
+        tag: "CAPITAL EFFICIENCY"
+        tag_color: "accent"
+        description:
+          - "Formula otomatis mengukur Return on Invested Capital per unit usaha bisnis."
+          - "Menjadi parameter benchmarking efektivitas alokasi aset perusahaan."
+      - title: "Input Evaluasi Kinerja Strategis"
+        tag: "STRATEGIC REVIEW"
+        tag_color: "secondary"
+        description:
+          - "Pengguna memasukkan evaluasi komparatif pencapaian TVA terhadap target tahunan."
+          - "Memberikan gambaran strategis bagi jajaran direksi dalam evaluasi portofolio bisnis."
+
+  # ----------------------------------------------------------------------------
+  # Slide 23: Modul Inventory Aging (Umur Persediaan Barang) (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL INVENTORY AGING | MANAJEMEN PERSEDIAAN"
+    title: "Modul Inventory Aging: Monitoring Persediaan Mengendap dan Strategi Likuidasi"
+    subtitle: "Mendeteksi perputaran barang dagangan yang lambat (slow-moving) guna mencegah risiko penurunan nilai stok."
+    screenshot_path: "assets/images/uat/module_inventory_aging.png"
+    url: "https://app.snowflake.com/streamlit/inventory_aging"
+    telemetry_badges:
+      - "📦 Inventory Aging Log"
+      - "⏳ Slow-Moving Detection"
+      - "⚠️ Provisi Write-Off"
+    theme_mode: "light"
+    takeaways_title: "PENGENDALIAN PERSEDIAAN GUDANG"
+    takeaways:
+      - title: "Deteksi Dini Slow-Moving Inventory"
+        tag: "TURNOVER MONITOR"
+        tag_color: "accent"
+        description:
+          - "Identifikasi stok barang yang tertahan di gudang melampaui batas siklus normal."
+          - "Pemisahan kelompok barang berdasarkan usia penyimpanan di fasilitas logistik."
+      - title: "Pencatatan Strategi Likuidasi Stok"
+        tag: "ACTION STRATEGY"
+        tag_color: "primary"
+        description:
+          - "Input rencana aksi komersial (program diskon, bundling promosi, atau relokasi pelanggan)."
+          - "Membantu divisi sales mempercepat perputaran persediaan menjadi kas riil."
+      - title: "Pencegahan Risiko Write-Off Persediaan"
+        tag: "LOSS PREVENTION"
+        tag_color: "secondary"
+        description:
+          - "Mengurangi potensi kerugian penghapusan nilai persediaan akibat kerusakan atau keusangan."
+          - "Mengoptimalkan kapasitas ruang gudang dan memangkas biaya penyimpanan logistik."
+
+  # ----------------------------------------------------------------------------
+  # Slide 24: Modul Summary Dashboard & Referensi Data (Browser Mockup)
+  # ----------------------------------------------------------------------------
+  - archetype: "browser_mockup"
+    tracker: "MODUL SUMMARY DASHBOARD | EXECUTIVE KPI SUITE"
+    title: "Modul Executive Summary Dashboard: Konsolidasi Finansial & Data Referensi"
+    subtitle: "Penyajian holistik seluruh metrik analitik keuangan dalam single pane of glass serta manajemen data master AO."
+    screenshot_path: "assets/images/uat/module_dashboard.png"
+    url: "https://app.snowflake.com/streamlit/dashboard"
+    telemetry_badges:
+      - "👑 Executive View"
+      - "📊 Cross-Module Metrics"
+      - "🗄️ Master Reference Data"
+    theme_mode: "light"
+    takeaways_title: "KAPABILITAS DASHBOARD EKSEKUTIF"
+    takeaways:
+      - title: "Konsolidasi Lintas Modul Finansial"
+        tag: "EXECUTIVE INSIGHT"
+        tag_color: "primary"
+        description:
+          - "Menampilkan ringkasan eksekutif penjualan, laba kotor, OP, PBT, AR, dan inventori."
+          - "Dirancang khusus bagi jajaran manajemen puncak untuk pemantauan performa harian."
+      - title: "Manajemen Data Referensi AO"
+        tag: "MASTER DATA"
+        tag_color: "accent"
+        description:
+          - "Menu terpadu untuk mengelola data referensi kode seksi, struktur akun, dan kurs konversi."
+          - "Memastikan seluruh modul analitik merujuk pada standar data master yang seragam."
+      - title: "Performa Tinggi Snowflake AI Data Cloud"
+        tag: "CLOUD PERFORMANCE"
+        tag_color: "secondary"
+        description:
+          - "Optimalisasi engine virtual warehouse Snowflake menjamin pemrosesan grafik kilat."
+          - "Menyajikan visualisasi interaktif tanpa degradasi performa komputasi."
+
+  # ----------------------------------------------------------------------------
+  # Slide 25: Closing & Dukungan Teknis UAT (Thank You Archetype)
+  # ----------------------------------------------------------------------------
+  - archetype: "thank_you"
+    tracker: "DUKUNGAN TEKNIS & ESKALASI | THANK YOU"
+    title: "Terima Kasih & Selamat Menjalankan UAT"
+    subtitle: "Tim Konsultan MII Berkomitmen Penuh Mendampingi Keberhasilan Pengujian Penerimaan Pengguna."
+    company: "PT Mitra Integrasi Informatika  |  PT Toyota Tsusho Indonesia"
+    office: "APL Tower Lantai 37, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
+    contacts:
+      - name: "Agus Suhanto"
+        role: "Project Manager, PT Mitra Integrasi Informatika"
+        email: "agus.suhanto@mii.co.id"
+        phone: "+62 811-1234-5678"
+      - name: "UAT Technical Helpdesk"
+        role: "Dedicated Channel Teams & WhatsApp Support"
+        email: "support.snowflake@mii.co.id"
+        phone: "Jam Kerja: 08.30 – 17.30 WIB"
+      - name: "Daily Standup & Sync"
+        role: "Evaluasi Harian Defect Log & Progres UAT"
+        email: "Setiap Hari Kerja pukul 16.30 WIB"
+        phone: "Online via Microsoft Teams"

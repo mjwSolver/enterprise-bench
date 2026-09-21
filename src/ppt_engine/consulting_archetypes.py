@@ -24,6 +24,7 @@ typography scales, border weights, zero-margin text frames).
 
 from __future__ import annotations
 
+import logging
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -37,7 +38,16 @@ from pptx.oxml import parse_xml
 from pptx.util import Inches, Pt
 from PIL import Image
 
-from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb
+from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
+from src.ppt_engine.icon_engine import (
+    get_brand_icon,
+    normalize_color,
+    resolve_brand_color,
+    recolor_svg,
+    render_svg_to_png,
+)
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -76,13 +86,15 @@ def add_slide_header(
     slide: Any,
     theme: Theme,
     tracker: str,
-    action_title: str,
+    action_title: Optional[str] = None,
     subtitle: Optional[str] = None,
     tracker_color: Optional[RGBColor] = None,
+    title: Optional[str] = None,
 ) -> None:
     """Renders structured consulting header: Category Tracker, Action Headline, Subtitle."""
     thresholds = theme.typography_thresholds
     tracker_rgb = tracker_color or theme.get_rgb("accent")
+    resolved_title = action_title or title or ""
 
     # 1. Tracker Breadcrumb
     tb_tr = slide.shapes.add_textbox(Inches(0.8), Inches(0.40), Inches(11.733), Inches(0.26))
@@ -103,10 +115,10 @@ def add_slide_header(
     tf_h.margin_left = tf_h.margin_right = tf_h.margin_top = tf_h.margin_bottom = 0
 
     p_t = tf_h.paragraphs[0]
-    p_t.text = action_title
+    p_t.text = resolved_title
     p_t.font.name = theme.font_family_header
     base_title_pt = thresholds.get("action_title_pt", 18.0)
-    if len(action_title) > 60:
+    if len(resolved_title) > 60:
         base_title_pt = min(base_title_pt, 16.5)
     p_t.font.size = Pt(base_title_pt)
     p_t.font.bold = True
@@ -204,6 +216,138 @@ def add_card_with_top_stripe(
     return card, stripe
 
 
+def add_card_with_harmonized_icon(
+    slide: Any,
+    theme: Theme,
+    left: Inches,
+    top: Inches,
+    width: Inches,
+    height: Inches,
+    accent_color: Union[str, RGBColor, Tuple[int, ...]],
+    icon: Optional[Union[str, Path]] = None,
+    icon_size_in: float = 0.36,
+    icon_pos: Optional[Tuple[float, float]] = None,
+    has_badge_container: bool = False,
+    bg_color: Optional[RGBColor] = None,
+    border_color: Optional[RGBColor] = None,
+    border_width_pt: Optional[float] = None,
+    stripe_height_in: Optional[float] = None,
+) -> Tuple[Any, Any, Optional[Any]]:
+    """
+    Draws a sharp rectangular card container with an integrated flush top accent stripe
+    and a dynamically tinted icon perfectly color-harmonized with the accent color.
+
+    Guarantees:
+    1. Zero geometric distortion: Card container and top stripe are sharp MSO_SHAPE.RECTANGLE.
+    2. Color synchronization: Container top stripe, border/badge, and icon glyph all share
+       the exact same resolved brand accent color.
+    3. Graceful degradation: If icon retrieval fails or is None, returns (card, stripe, None).
+
+    Returns:
+        (card_shape, stripe_shape, icon_shape_or_badge)
+    """
+    # 1. Resolve accent color
+    if isinstance(accent_color, RGBColor):
+        accent_rgb = accent_color
+        accent_hex = rgb_to_hex(accent_color)
+    elif isinstance(accent_color, (tuple, list)):
+        accent_rgb = RGBColor(int(accent_color[0]), int(accent_color[1]), int(accent_color[2]))
+        accent_hex = normalize_color(accent_color, theme=theme)
+    else:
+        accent_hex = normalize_color(accent_color, theme=theme)
+        try:
+            accent_rgb = theme.get_rgb(accent_color)
+        except Exception:
+            accent_rgb = hex_to_rgb(accent_hex)
+
+    # 2. Draw card container and top accent stripe
+    card, stripe = add_card_with_top_stripe(
+        slide=slide,
+        theme=theme,
+        left=left,
+        top=top,
+        width=width,
+        height=height,
+        accent_rgb=accent_rgb,
+        bg_color=bg_color or theme.get_rgb("surface"),
+        border_color=border_color or theme.get_rgb("border"),
+        border_width_pt=border_width_pt,
+        stripe_height_in=stripe_height_in,
+    )
+
+    if not icon:
+        return card, stripe, None
+
+    # 3. Position calculation
+    dx_in, dy_in = icon_pos if icon_pos is not None else (0.20, 0.16)
+    icon_left = left + Inches(dx_in)
+    icon_top = top + Inches(dy_in)
+    icon_dim = Inches(icon_size_in)
+
+    # 4. Optional Badge Container behind the icon
+    badge_shape = None
+    if has_badge_container:
+        badge_pad = Inches(0.04)
+        badge_w = icon_dim + (badge_pad * 2)
+        badge_h = icon_dim + (badge_pad * 2)
+        badge_x = icon_left - badge_pad
+        badge_y = icon_top - badge_pad
+        badge_shape = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE,
+            badge_x,
+            badge_y,
+            badge_w,
+            badge_h,
+        )
+        badge_shape.shadow.inherit = False
+        badge_shape.fill.solid()
+        badge_shape.fill.fore_color.rgb = theme.get_rgb("surface_muted")
+        badge_shape.line.color.rgb = accent_rgb
+        badge_shape.line.width = Pt(1.0)
+
+    # 5. Resolve and dynamically tint the icon
+    icon_pic = None
+    try:
+        icon_path_to_use: Optional[Path] = None
+        icon_str = str(icon).strip()
+
+        p = Path(icon_str)
+        if p.exists():
+            if p.suffix.lower() == ".svg":
+                from src.ppt_engine.icon_engine import _default_engine
+                svg_content = p.read_text(encoding="utf-8")
+                recolored_svg = recolor_svg(svg_content, accent_hex, theme=theme)
+                dest_png = _default_engine.cache_dir / "custom" / f"{p.stem}_{accent_hex.lstrip('#')}.png"
+                dest_png.parent.mkdir(parents=True, exist_ok=True)
+                render_svg_to_png(recolored_svg, output_path=dest_png, size=512)
+                icon_path_to_use = dest_png
+            else:
+                stem = p.stem
+                if "_" in stem and ("0052CC" in stem or "2563EB" in stem):
+                    clean_name = stem.split("_")[0]
+                    icon_path_to_use = get_brand_icon(clean_name, brand_color=accent_hex, theme=theme)
+                else:
+                    icon_path_to_use = p
+        else:
+            clean_name = icon_str
+            if "_" in clean_name and any(c.isupper() or c.isdigit() for c in clean_name):
+                clean_name = clean_name.split("_")[0]
+            icon_path_to_use = get_brand_icon(clean_name, brand_color=accent_hex, theme=theme)
+
+        if icon_path_to_use and Path(icon_path_to_use).exists():
+            icon_pic = slide.shapes.add_picture(
+                str(icon_path_to_use),
+                icon_left,
+                icon_top,
+                width=icon_dim,
+                height=icon_dim,
+            )
+    except Exception as e:
+        logger.warning(f"Failed to add harmonized icon '{icon}': {e}")
+
+    return card, stripe, (icon_pic or badge_shape)
+
+
 def add_slide_footer(
     slide: Any,
     theme: Theme,
@@ -267,6 +411,7 @@ class HorizonColumnData:
     status_tag: str = "IN EXECUTION"  # e.g. "ACTIVE", "IN DESIGN", "DISCOVERY"
     status_bg_key: str = "badge_blue_fill"
     status_text_key: str = "badge_blue_text"
+    icon: Optional[str] = None  # Semantic icon identifier (e.g. "shield", "zap", "star")
     icon_path: Optional[Union[str, Path]] = None
 
 
@@ -279,6 +424,7 @@ def build_bcg_3_horizon_slide(
     horizons: Optional[List[HorizonColumnData]] = None,
     current_idx: int = 1,
     total_slides: int = 1,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
 ) -> Any:
     """
     Builds a BCG 3-Horizon Growth / Modernization Slide.
@@ -309,6 +455,7 @@ def build_bcg_3_horizon_slide(
                 status_tag="CORE  |  H1",
                 status_bg_key="badge_blue_fill",
                 status_text_key="badge_blue_text",
+                icon="shield",
             ),
             HorizonColumnData(
                 horizon_tag="HORIZON 2  |  1-3 YEARS",
@@ -326,6 +473,7 @@ def build_bcg_3_horizon_slide(
                 status_tag="SCALE  |  H2",
                 status_bg_key="badge_blue_fill",
                 status_text_key="badge_blue_text",
+                icon="zap",
             ),
             HorizonColumnData(
                 horizon_tag="HORIZON 3  |  3-5 YEARS",
@@ -343,6 +491,7 @@ def build_bcg_3_horizon_slide(
                 status_tag="FUTURE  |  H3",
                 status_bg_key="badge_red_fill",
                 status_text_key="badge_red_text",
+                icon="star",
             ),
         ]
 
@@ -400,16 +549,28 @@ def build_bcg_3_horizon_slide(
         p_st.font.color.rgb = theme.get_rgb(h_data.status_text_key)
 
         # 4. Column Header: Horizon Tag & Title
+        icon_to_use = h_data.icon or h_data.icon_path
         icon_offset_x = Inches(0.0)
-        if h_data.icon_path and Path(h_data.icon_path).exists():
-            slide.shapes.add_picture(
-                str(h_data.icon_path),
-                cx + Inches(0.18),
-                row_y + Inches(0.14),
-                width=Inches(0.34),
-                height=Inches(0.34),
-            )
-            icon_offset_x = Inches(0.40)
+        if icon_to_use:
+            try:
+                p = Path(str(icon_to_use))
+                if p.exists() and p.suffix.lower() == ".png" and "_" not in p.stem:
+                    icon_pic_path = p
+                else:
+                    stem = p.stem
+                    clean_id = stem.split("_")[0] if "_" in stem else stem
+                    icon_pic_path = get_brand_icon(clean_id, brand_color=accent_rgb, theme=theme)
+                if icon_pic_path and Path(icon_pic_path).exists():
+                    slide.shapes.add_picture(
+                        str(icon_pic_path),
+                        cx + Inches(0.18),
+                        row_y + Inches(0.14),
+                        width=Inches(0.34),
+                        height=Inches(0.34),
+                    )
+                    icon_offset_x = Inches(0.40)
+            except Exception as e:
+                logger.warning(f"Failed to render horizon icon '{icon_to_use}': {e}")
 
         # Tag line (sits between icon and status pill, single line guaranteed)
         tag_w = card_w - status_w - Inches(0.26) - icon_offset_x
@@ -514,7 +675,7 @@ def build_bcg_3_horizon_slide(
             p_bullet.font.color.rgb = theme.get_rgb("primary")
             p_bullet.space_after = Pt(2.5)
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides)
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
 
 
@@ -530,7 +691,11 @@ class StrategyPillarData:
     target_kpi: str             # e.g. "Target: 4.2x Deployment Velocity"
     proof_points: List[Tuple[str, str]]  # List of (Key Lever, Supporting Evidence / Target)
     accent_key: str = "accent"
+    icon: Optional[str] = None  # Semantic icon identifier (e.g. "layers", "shield-check", "trend-up")
     icon_path: Optional[Union[str, Path]] = None
+
+# Backwards-compatibility alias
+StrategicPillarData = StrategyPillarData
 
 
 def build_mckinsey_cascade_slide(
@@ -566,6 +731,7 @@ def build_mckinsey_cascade_slide(
                     ("Auto-Healing Nodes", "Cluster self-recovery reduces critical incident MTTR below 60 seconds."),
                 ],
                 accent_key="accent",
+                icon="layers",
             ),
             StrategyPillarData(
                 pillar_number="PILLAR 02",
@@ -577,6 +743,7 @@ def build_mckinsey_cascade_slide(
                     ("Immutable Audit Logs", "Tamper-proof event journal satisfies strict Tier-1 banking compliance."),
                 ],
                 accent_key="accent_teal",
+                icon="shield-check",
             ),
             StrategyPillarData(
                 pillar_number="PILLAR 03",
@@ -588,6 +755,7 @@ def build_mckinsey_cascade_slide(
                     ("Unit Cost Transparency", "Real-time cost telemetry mapped directly to product business lines."),
                 ],
                 accent_key="success",
+                icon="trend-up",
             ),
         ]
 
@@ -648,17 +816,29 @@ def build_mckinsey_cascade_slide(
             bg_color=theme.get_rgb("surface"),
         )
 
-        # Pillar Header Box
+        # Pillar Header Box & Harmonized Icon
+        icon_to_use = pillar.icon or pillar.icon_path
         icon_offset_x = Inches(0.0)
-        if pillar.icon_path and Path(pillar.icon_path).exists():
-            slide.shapes.add_picture(
-                str(pillar.icon_path),
-                cx + Inches(0.20),
-                pillar_y + Inches(0.18),
-                width=Inches(0.42),
-                height=Inches(0.42),
-            )
-            icon_offset_x = Inches(0.50)
+        if icon_to_use:
+            try:
+                p = Path(str(icon_to_use))
+                if p.exists() and p.suffix.lower() == ".png" and "_" not in p.stem:
+                    icon_pic_path = p
+                else:
+                    stem = p.stem
+                    clean_id = stem.split("_")[0] if "_" in stem else stem
+                    icon_pic_path = get_brand_icon(clean_id, brand_color=accent_rgb, theme=theme)
+                if icon_pic_path and Path(icon_pic_path).exists():
+                    slide.shapes.add_picture(
+                        str(icon_pic_path),
+                        cx + Inches(0.20),
+                        pillar_y + Inches(0.18),
+                        width=Inches(0.42),
+                        height=Inches(0.42),
+                    )
+                    icon_offset_x = Inches(0.50)
+            except Exception as e:
+                logger.warning(f"Failed to render pillar icon '{icon_to_use}': {e}")
 
         ph_tb = slide.shapes.add_textbox(cx + Inches(0.20) + icon_offset_x, pillar_y + Inches(0.16), card_w - Inches(0.40) - icon_offset_x, Inches(0.65))
         ph_tf = ph_tb.text_frame
@@ -763,7 +943,11 @@ class ScorecardQuadrantData:
     tagline: str                # e.g. "TCO Reduction & Capital Optimization"
     metrics: List[ScorecardMetric]
     accent_key: str = "accent"
+    icon: Optional[str] = None  # Semantic icon identifier (e.g. "dollar-sign", "users", "zap", "shield-check")
     icon_path: Optional[Union[str, Path]] = None
+
+# Backwards-compatibility alias
+QuadrantData = ScorecardQuadrantData
 
 
 def build_balanced_scorecard_slide(
@@ -784,15 +968,12 @@ def build_balanced_scorecard_slide(
 
     thresholds = theme.typography_thresholds
 
-    from src.core.config import ROOT_DIR
-    lucide_dir = ROOT_DIR / "assets" / "icons" / "lucide"
-
     if not quadrants:
         quadrants = [
             ScorecardQuadrantData(
                 quadrant_title="1. FINANCIAL & COMMERCIAL",
                 tagline="Capital Optimization & TCO",
-                icon_path=lucide_dir / "dollar-sign_0052CC.png",
+                icon="dollar-sign",
                 metrics=[
                     ScorecardMetric(
                         label="Infrastructure TCO Reduction",
@@ -816,7 +997,7 @@ def build_balanced_scorecard_slide(
             ScorecardQuadrantData(
                 quadrant_title="2. CUSTOMER & MARKET VALUE",
                 tagline="Reliability, Latency & Experience",
-                icon_path=lucide_dir / "users_0052CC.png",
+                icon="users",
                 metrics=[
                     ScorecardMetric(
                         label="Core API Availability SLA",
@@ -835,12 +1016,12 @@ def build_balanced_scorecard_slide(
                         status_text_key="badge_green_text",
                     ),
                 ],
-                accent_key="accent",
+                accent_key="accent_secondary",
             ),
             ScorecardQuadrantData(
                 quadrant_title="3. INTERNAL PROCESS EXCELLENCE",
                 tagline="Velocity, Quality & Automation",
-                icon_path=lucide_dir / "zap_0052CC.png",
+                icon="zap",
                 metrics=[
                     ScorecardMetric(
                         label="Deployment Release Velocity",
@@ -859,12 +1040,12 @@ def build_balanced_scorecard_slide(
                         status_text_key="badge_green_text",
                     ),
                 ],
-                accent_key="accent",
+                accent_key="accent_teal",
             ),
             ScorecardQuadrantData(
                 quadrant_title="4. ORGANIZATIONAL & CYBER RESILIENCE",
                 tagline="Zero-Trust & Compliance Posture",
-                icon_path=lucide_dir / "shield-check_0052CC.png",
+                icon="shield-check",
                 metrics=[
                     ScorecardMetric(
                         label="Zero-Trust Mutual TLS Attestation",
@@ -883,7 +1064,7 @@ def build_balanced_scorecard_slide(
                         status_text_key="badge_green_text",
                     ),
                 ],
-                accent_key="accent",
+                accent_key="primary",
             ),
         ]
 
@@ -908,41 +1089,41 @@ def build_balanced_scorecard_slide(
         qx, qy = positions[idx]
         accent_rgb = theme.get_rgb(quad_data.accent_key)
 
-        # 1. Main Quadrant Card & 2. Top Accent Stripe (Strict Geometry Rule: NEVER rounded corners at top)
-        add_card_with_top_stripe(
-            slide,
-            theme,
-            qx,
-            qy,
-            quad_w,
-            quad_h,
-            accent_rgb=accent_rgb,
+        # 1. Main Quadrant Card, Top Accent Stripe & Harmonized Brand Icon
+        semantic_defaults = ["dollar-sign", "users", "zap", "shield-check"]
+        icon_to_use = quad_data.icon or quad_data.icon_path or (semantic_defaults[idx] if idx < len(semantic_defaults) else None)
+
+        card, stripe, icon_elem = add_card_with_harmonized_icon(
+            slide=slide,
+            theme=theme,
+            left=qx,
+            top=qy,
+            width=quad_w,
+            height=quad_h,
+            accent_color=quad_data.accent_key,
+            icon=icon_to_use,
+            icon_size_in=0.36,
+            icon_pos=(0.20, 0.16),
+            has_badge_container=True,
             bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
         )
 
-        # 3. Category Icon / Glyph Badge
-        content_offset_x = Inches(0.68)
-        if quad_data.icon_path and Path(quad_data.icon_path).exists():
-            slide.shapes.add_picture(
-                str(quad_data.icon_path),
-                qx + Inches(0.20),
-                qy + Inches(0.16),
-                width=Inches(0.38),
-                height=Inches(0.38),
-            )
-        else:
+        content_offset_x = Inches(0.70)
+        if icon_elem is None:
+            # Fallback text glyph badge if icon rendering failed
             glyph_text = glyph_labels[idx] if idx < len(glyph_labels) else "[ • ]"
             icon_badge = slide.shapes.add_shape(
                 MSO_SHAPE.ROUNDED_RECTANGLE,
                 qx + Inches(0.20),
                 qy + Inches(0.16),
-                Inches(0.40),
-                Inches(0.36),
+                Inches(0.44),
+                Inches(0.44),
             )
             icon_badge.shadow.inherit = False
             icon_badge.fill.solid()
             icon_badge.fill.fore_color.rgb = theme.get_rgb("surface_muted")
-            icon_badge.line.color.rgb = theme.get_rgb("border")
+            icon_badge.line.color.rgb = accent_rgb
             icon_badge.line.width = Pt(1.0)
             ib_tf = icon_badge.text_frame
             ib_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -953,7 +1134,7 @@ def build_balanced_scorecard_slide(
             p_ib.font.size = Pt(8.5)
             p_ib.font.bold = True
             p_ib.alignment = PP_ALIGN.CENTER
-            p_ib.font.color.rgb = theme.get_rgb("accent")
+            p_ib.font.color.rgb = accent_rgb
 
         # 4. Quadrant Header Text
         qh_tb = slide.shapes.add_textbox(qx + content_offset_x, qy + Inches(0.14), quad_w - content_offset_x - Inches(0.20), Inches(0.45))
@@ -3232,8 +3413,8 @@ def build_browser_mockup_slide(
         engine = ImageEngine()
         src_img = engine.generate_procedural_3d_card(
             title="Enterprise Analytics Platform",
-            primary_color=theme.get_color("primary"),
-            accent_color=theme.get_color("accent"),
+            primary_color=theme.get_hex("primary"),
+            accent_color=theme.get_hex("accent"),
         )
 
     # 2. Render Mockup Container
@@ -3355,13 +3536,23 @@ def build_browser_mockup_slide(
         p_tit.font.color.rgb = theme.get_rgb("primary")
         p_tit.space_before = Pt(3)
 
-        # Body
-        p_bod = tf_c.add_paragraph()
-        p_bod.text = t_item.get("body", "")
-        p_bod.font.name = theme.font_family
-        p_bod.font.size = Pt(9.5)
-        p_bod.font.color.rgb = theme.get_rgb("secondary")
-        p_bod.space_before = Pt(3)
+        # Body / Bullets
+        body_val = t_item.get("body") or t_item.get("desc") or t_item.get("description") or ""
+        if isinstance(body_val, list):
+            for b_item in body_val:
+                p_b = tf_c.add_paragraph()
+                p_b.text = f"•  {b_item}"
+                p_b.font.name = theme.font_family
+                p_b.font.size = Pt(8.5)
+                p_b.font.color.rgb = theme.get_rgb("secondary")
+                p_b.space_before = Pt(2)
+        else:
+            p_bod = tf_c.add_paragraph()
+            p_bod.text = str(body_val)
+            p_bod.font.name = theme.font_family
+            p_bod.font.size = Pt(9.0)
+            p_bod.font.color.rgb = theme.get_rgb("secondary")
+            p_bod.space_before = Pt(3)
 
         cur_card_y += card_h + card_gap
 
@@ -3944,7 +4135,1355 @@ def build_feature_matrix_slide(
 
 
 # ============================================================================
-# 14. High-Level Consulting Archetype Deck Generator
+# 14. Technology Logo Grids, Capability Matrices & Iceberg Concepts
+# ============================================================================
+
+def _add_status_pill(
+    slide: Any,
+    theme: Theme,
+    left: Inches,
+    top: Inches,
+    width: Inches,
+    height: Inches,
+    status: str,
+    font_size_pt: float = 8.0,
+    override_color_key: Optional[str] = None,
+) -> Any:
+    """Renders a standalone rounded status badge pill with theme-resolved colors."""
+    if override_color_key:
+        if override_color_key in ("danger", "red"):
+            bg_key, text_key = ("badge_red_fill", "badge_red_text")
+        elif override_color_key in ("warning", "amber", "orange"):
+            bg_key, text_key = ("badge_amber_fill", "badge_amber_text")
+        elif override_color_key in ("success", "green"):
+            bg_key, text_key = ("badge_green_fill", "badge_green_text")
+        elif override_color_key in ("accent", "blue", "primary"):
+            bg_key, text_key = ("badge_blue_fill", "badge_blue_text")
+        else:
+            bg_key, text_key = ("surface_muted", "primary")
+    else:
+        bg_key, text_key = theme.resolve_status_badge_keys(status)
+
+    shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
+    pill = slide.shapes.add_shape(shape_type, left, top, width, height)
+    pill.shadow.inherit = False
+    pill.fill.solid()
+    pill.fill.fore_color.rgb = theme.get_rgb(bg_key)
+    pill.line.fill.background()
+
+    tf = pill.text_frame
+    tf.word_wrap = False
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    p = tf.paragraphs[0]
+    p.text = status.upper()
+    p.alignment = PP_ALIGN.CENTER
+    p.font.name = theme.font_family
+    p.font.size = Pt(font_size_pt)
+    p.font.bold = True
+    p.font.color.rgb = theme.get_rgb(text_key)
+    return pill
+
+
+def _add_bullet_paragraph(
+    tf: Any,
+    text: str,
+    font_name: str,
+    font_size_pt: float = 9.0,
+    font_color: Optional[RGBColor] = None,
+    space_before_pt: float = 4.0,
+    bullet_char: str = "•",
+) -> Any:
+    """Appends a bullet paragraph with DrawingML hanging indent (marL/indent)."""
+    from pptx.oxml.xmlchemy import OxmlElement
+
+    p = tf.add_paragraph()
+    clean_text = text.lstrip("•\t -*").strip()
+    p.text = clean_text
+    p.font.name = font_name
+    p.font.size = Pt(font_size_pt)
+    if font_color:
+        p.font.color.rgb = font_color
+    p.space_before = Pt(space_before_pt)
+
+    pPr = p._p.get_or_add_pPr()
+    pPr.set("marL", "288000")
+    pPr.set("indent", "-288000")
+
+    buChar = OxmlElement("a:buChar")
+    buChar.set("char", bullet_char)
+    pPr.append(buChar)
+    return p
+
+
+def _fit_image_in_box(
+    img_path: Union[str, Path],
+    box_left: Inches,
+    box_top: Inches,
+    box_width: Inches,
+    box_height: Inches,
+) -> Tuple[Inches, Inches, Inches, Inches]:
+    """Calculates coordinates to fit an image inside a bounding box while preserving aspect ratio."""
+    from PIL import Image
+
+    try:
+        with Image.open(img_path) as im:
+            orig_w, orig_h = im.size
+        img_ratio = orig_w / float(orig_h)
+
+        bw_in = box_width / 914400.0
+        bh_in = box_height / 914400.0
+        bl_in = box_left / 914400.0
+        bt_in = box_top / 914400.0
+
+        box_ratio = bw_in / bh_in
+        if img_ratio > box_ratio:
+            final_w_in = bw_in
+            final_h_in = bw_in / img_ratio
+        else:
+            final_h_in = bh_in
+            final_w_in = bh_in * img_ratio
+
+        final_l_in = bl_in + (bw_in - final_w_in) / 2.0
+        final_t_in = bt_in + (bh_in - final_h_in) / 2.0
+        return Inches(final_l_in), Inches(final_t_in), Inches(final_w_in), Inches(final_h_in)
+    except Exception as exc:
+        logger.warning(f"Could not calculate aspect ratio for {img_path}: {exc}")
+        return box_left, box_top, box_width, box_height
+
+
+@dataclass
+class TechLogoItem:
+    name: str
+    category: str
+    tier_badge: str = "CORE"
+    logo: Optional[str] = None
+    accent_key: str = "accent"
+    description: Optional[str] = None
+
+
+@dataclass
+class CardGridItem:
+    title: str
+    subtitle: Optional[str] = None
+    icon: Optional[str] = None
+    bullets: List[str] = field(default_factory=list)
+    accent_key: str = "accent"
+    badge: Optional[str] = None
+
+
+@dataclass
+class BadgeMatrixSection:
+    section_title: str
+    accent_key: str = "accent"
+    badge_count_label: Optional[str] = None
+    items: List[Dict[str, str]] = field(default_factory=list)
+
+
+def build_tech_logo_grid_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "TECHNOLOGY PORTFOLIO | ENTERPRISE ECOSYSTEM",
+    action_title: str = "Curated Best-of-Breed Technology Stack Delivers Governed High-Performance Analytics",
+    subtitle: Optional[str] = "Standardized technology matrix spanning ingestion, lakehouse storage, transformation, and semantic delivery.",
+    items: Optional[List[TechLogoItem]] = None,
+    columns: int = 4,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+) -> Any:
+    """Renders a structured grid of normalized technology cards with top stripes and badges."""
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+
+    if not items:
+        items = [
+            TechLogoItem("Snowflake", "AI Data Cloud & Lakehouse", tier_badge="CORE PLATFORM", logo="snowflake.svg", accent_key="accent"),
+            TechLogoItem("dbt Labs", "Semantic Transformation & DDL", tier_badge="MODELING", logo="dbt.svg", accent_key="accent_secondary"),
+            TechLogoItem("Apache Kafka", "Event Streaming & CDC", tier_badge="INGESTION", logo="kafka.svg", accent_key="primary"),
+            TechLogoItem("Amazon S3", "Scalable Object Storage", tier_badge="STORAGE", logo="amazons3.svg", accent_key="accent"),
+            TechLogoItem("HashiCorp Vault", "Secrets & Key Management", tier_badge="SECURITY", logo="vault.svg", accent_key="danger"),
+            TechLogoItem("Streamlit", "Interactive Data Applications", tier_badge="SERVING", logo="trending-up", accent_key="accent"),
+            TechLogoItem("Tableau", "Enterprise BI & Visualizations", tier_badge="ANALYTICS", logo="chart", accent_key="accent_secondary"),
+            TechLogoItem("Python", "Advanced Analytics & Machine Learning", tier_badge="COMPUTE", logo="cpu", accent_key="primary"),
+        ]
+
+    content_left = Inches(0.80)
+    content_top = Inches(1.80)
+    total_w = Inches(11.733)
+    total_h = Inches(5.00)
+
+    cols = max(1, min(columns, len(items)))
+    rows = max(1, (len(items) + cols - 1) // cols)
+
+    gap_x = Inches(0.24)
+    gap_y = Inches(0.22)
+    card_w = (total_w - (gap_x * (cols - 1))) / cols
+    card_h = (total_h - (gap_y * (rows - 1))) / rows
+
+    for idx, itm in enumerate(items):
+        r_idx = idx // cols
+        c_idx = idx % cols
+        cx = content_left + (c_idx * (card_w + gap_x))
+        cy = content_top + (r_idx * (card_h + gap_y))
+
+        accent_rgb = theme.get_rgb(itm.accent_key)
+        card, stripe = add_card_with_top_stripe(
+            slide,
+            theme,
+            cx,
+            cy,
+            card_w,
+            card_h,
+            accent_rgb=accent_rgb,
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+        )
+
+        # 1. Top right status pill
+        pill_w = Inches(1.15)
+        pill_h = Inches(0.22)
+        _add_status_pill(
+            slide,
+            theme,
+            cx + card_w - pill_w - Inches(0.12),
+            cy + Inches(0.10),
+            pill_w,
+            pill_h,
+            itm.tier_badge,
+            font_size_pt=7.5,
+            override_color_key=itm.accent_key,
+        )
+
+        # 2. Logo / Emblem Slot (top left)
+        logo_w = Inches(1.10)
+        logo_h = Inches(0.40)
+        logo_left = cx + Inches(0.14)
+        logo_top = cy + Inches(0.10)
+
+        resolved_img = None
+        if itm.logo:
+            p_logo = Path("assets/logos") / itm.logo
+            if not p_logo.exists():
+                p_logo = Path(itm.logo)
+            if p_logo.exists():
+                if p_logo.suffix.lower() == ".svg":
+                    try:
+                        dest_png = Path("output/cache/logos") / f"{p_logo.stem}.png"
+                        dest_png.parent.mkdir(parents=True, exist_ok=True)
+                        if not dest_png.exists():
+                            render_svg_to_png(p_logo.read_text(encoding="utf-8"), output_path=dest_png, size=256)
+                        resolved_img = dest_png
+                    except Exception as e:
+                        logger.warning(f"Could not render svg logo {p_logo}: {e}")
+                else:
+                    resolved_img = p_logo
+
+        if resolved_img and resolved_img.exists():
+            img_l, img_t, img_w, img_h = _fit_image_in_box(resolved_img, logo_left, logo_top, logo_w, logo_h)
+            slide.shapes.add_picture(str(resolved_img), img_l, img_t, width=img_w, height=img_h)
+        else:
+            badge_sh = slide.shapes.add_shape(
+                MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE,
+                logo_left, logo_top, logo_w, logo_h
+            )
+            badge_sh.shadow.inherit = False
+            badge_sh.fill.solid()
+            badge_sh.fill.fore_color.rgb = theme.get_rgb("surface_muted")
+            badge_sh.line.color.rgb = accent_rgb
+            badge_sh.line.width = Pt(0.75)
+            btf = badge_sh.text_frame
+            btf.margin_left = btf.margin_right = btf.margin_top = btf.margin_bottom = 0
+            bp = btf.paragraphs[0]
+            bp.text = itm.name.upper()[:12]
+            bp.alignment = PP_ALIGN.CENTER
+            bp.font.name = theme.font_family_header
+            bp.font.size = Pt(8.0)
+            bp.font.bold = True
+            bp.font.color.rgb = accent_rgb
+
+        # 3. Card Typography
+        tb_y = cy + Inches(0.56)
+        tb_h = card_h - Inches(0.62)
+        tb = slide.shapes.add_textbox(cx + Inches(0.14), tb_y, card_w - Inches(0.28), tb_h)
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+
+        p_t = tf.paragraphs[0]
+        p_t.text = itm.name
+        p_t.font.name = theme.font_family_header
+        p_t.font.size = Pt(11.0 if rows <= 2 else 9.5)
+        p_t.font.bold = True
+        p_t.font.color.rgb = theme.get_rgb("primary")
+
+        p_c = tf.add_paragraph()
+        p_c.text = itm.category
+        p_c.font.name = theme.font_family
+        p_c.font.size = Pt(8.5 if rows <= 2 else 8.0)
+        p_c.font.color.rgb = theme.get_rgb("secondary")
+        p_c.space_before = Pt(2)
+
+        if itm.description:
+            p_d = tf.add_paragraph()
+            p_d.text = itm.description
+            p_d.font.name = theme.font_family
+            p_d.font.size = Pt(8.0)
+            p_d.font.color.rgb = theme.get_rgb("muted")
+            p_d.space_before = Pt(4)
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
+
+
+def build_card_grid_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "STRATEGIC CAPABILITIES | CORE SERVICE OFFERINGS",
+    action_title: str = "Comprehensive Enterprise Solutions Span Modern Infrastructure to Autonomous Intelligence",
+    subtitle: Optional[str] = "Eight integrated core pillars deliver complete lifecycle support from strategic advisory to operational execution.",
+    items: Optional[List[CardGridItem]] = None,
+    columns: int = 4,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+) -> Any:
+    """Renders an N x M grid of structured capability cards with harmonized icons, top stripes, and bullets."""
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+
+    if not items:
+        items = [
+            CardGridItem("Cloud Infrastructure", "Multi-cloud architecture & migration", "cloud", ["Hybrid cloud orchestration", "Cost optimization (FinOps)", "Automated landing zones"], "accent", "PILLAR 01"),
+            CardGridItem("Data & Artificial Intelligence", "Modern data stack & machine learning", "database", ["Snowflake AI Data Cloud", "dbt semantic engineering", "Cortex GenAI solutions"], "accent", "PILLAR 02"),
+            CardGridItem("Cyber Security", "Zero-trust identity & governance", "shield", ["Enterprise RBAC & masking", "Threat posture defense", "SOC2 compliance auditing"], "danger", "PILLAR 03"),
+            CardGridItem("Digital Workplace", "Modern collaboration platforms", "users", ["Microsoft 365 & Power Platform", "Streamlined B2B workflows", "Hybrid workforce agility"], "primary", "PILLAR 04"),
+            CardGridItem("Enterprise Applications", "ERP & core transaction backbones", "layers", ["SAP ERP modernization", "CRM customer 360 views", "Supply chain integration"], "accent_secondary", "PILLAR 05"),
+            CardGridItem("Business Process Automation", "Intelligent robotic workflow automation", "cpu", ["RPA process discovery", "Low-code application hubs", "End-to-end task automation"], "accent", "PILLAR 06"),
+            CardGridItem("Managed IT Services", "24/7 mission-critical operations", "activity", ["SLA performance monitoring", "Preventative maintenance", "Incident remediation"], "primary", "PILLAR 07"),
+            CardGridItem("IT Advisory & Consulting", "Strategic technology alignment", "target", ["Digital maturity assessment", "Cloud transition roadmaps", "Program governance assurance"], "accent", "PILLAR 08"),
+        ]
+
+    content_left = Inches(0.80)
+    content_top = Inches(1.80)
+    total_w = Inches(11.733)
+    total_h = Inches(5.00)
+
+    cols = max(1, min(columns, len(items)))
+    rows = max(1, (len(items) + cols - 1) // cols)
+
+    gap_x = Inches(0.24)
+    gap_y = Inches(0.22)
+    card_w = (total_w - (gap_x * (cols - 1))) / cols
+    card_h = (total_h - (gap_y * (rows - 1))) / rows
+
+    for idx, itm in enumerate(items):
+        r_idx = idx // cols
+        c_idx = idx % cols
+        cx = content_left + (c_idx * (card_w + gap_x))
+        cy = content_top + (r_idx * (card_h + gap_y))
+
+        accent_rgb = theme.get_rgb(itm.accent_key)
+        card, stripe = add_card_with_top_stripe(
+            slide,
+            theme,
+            cx,
+            cy,
+            card_w,
+            card_h,
+            accent_rgb=accent_rgb,
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+        )
+
+        icon_dim = Inches(0.30)
+        icon_x = cx + Inches(0.14)
+        icon_y = cy + Inches(0.12)
+        if itm.icon:
+            try:
+                icon_path = get_brand_icon(itm.icon, brand_color=accent_rgb, theme=theme)
+                if icon_path and Path(icon_path).exists():
+                    slide.shapes.add_picture(str(icon_path), icon_x, icon_y, width=icon_dim, height=icon_dim)
+            except Exception as e:
+                logger.warning(f"Failed to add card icon {itm.icon}: {e}")
+
+        if itm.badge:
+            pill_w = Inches(0.95)
+            pill_h = Inches(0.20)
+            _add_status_pill(
+                slide,
+                theme,
+                cx + card_w - pill_w - Inches(0.12),
+                cy + Inches(0.10),
+                pill_w,
+                pill_h,
+                itm.badge,
+                font_size_pt=7.0,
+                override_color_key=itm.accent_key,
+            )
+
+        tb_x = cx + Inches(0.14)
+        tb_y = cy + Inches(0.46)
+        tb_w = card_w - Inches(0.28)
+        tb_h = card_h - Inches(0.50)
+
+        tb = slide.shapes.add_textbox(tb_x, tb_y, tb_w, tb_h)
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+
+        p_title = tf.paragraphs[0]
+        p_title.text = itm.title
+        p_title.font.name = theme.font_family_header
+        p_title.font.size = Pt(10.0 if rows <= 2 else 9.0)
+        p_title.font.bold = True
+        p_title.font.color.rgb = theme.get_rgb("primary")
+
+        if itm.subtitle:
+            p_sub = tf.add_paragraph()
+            p_sub.text = itm.subtitle
+            p_sub.font.name = theme.font_family
+            p_sub.font.size = Pt(8.0)
+            p_sub.font.color.rgb = theme.get_rgb("secondary")
+            p_sub.space_before = Pt(2)
+
+        for b in itm.bullets:
+            _add_bullet_paragraph(
+                tf,
+                b,
+                theme.font_family,
+                font_size_pt=7.8 if rows <= 2 else 7.2,
+                font_color=theme.get_rgb("secondary"),
+                space_before_pt=2.5,
+            )
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
+
+
+def build_badge_matrix_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "COMPETENCY & CREDENTIALS | PARTNERSHIP TIERS",
+    action_title: str = "Certified Industry Expertise Assures Technical Excellence and Rapid Delivery",
+    subtitle: Optional[str] = "Tiered competency matrix validates advanced specialization across hyperscalers, lakehouse platforms, and governance frameworks.",
+    sections: Optional[List[BadgeMatrixSection]] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+) -> Any:
+    """Renders a clustered multi-column matrix of partner certifications and credentials."""
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+
+    if not sections:
+        sections = [
+            BadgeMatrixSection(
+                section_title="Cloud & Data Lakehouse",
+                accent_key="accent",
+                badge_count_label="TIER 1 STATUS",
+                items=[
+                    {"name": "Snowflake", "level": "Select Services Partner", "domain": "Data Cloud & Analytics", "icon": "snowflake"},
+                    {"name": "Amazon Web Services", "level": "Advanced Tier Services", "domain": "Cloud Migration & Storage", "icon": "aws"},
+                    {"name": "Microsoft Azure", "level": "Solutions Partner", "domain": "Data & AI Modernization", "icon": "layers"},
+                ]
+            ),
+            BadgeMatrixSection(
+                section_title="Data Transformation & BI",
+                accent_key="accent_secondary",
+                badge_count_label="CERTIFIED PRACTICE",
+                items=[
+                    {"name": "dbt Labs", "level": "Preferred Partner", "domain": "Semantic Modeling", "icon": "dbt"},
+                    {"name": "Tableau", "level": "Gold Reseller & Services", "domain": "Visual Intelligence", "icon": "trending-up"},
+                    {"name": "Power BI", "level": "Enterprise Delivery Certified", "domain": "Self-Service Analytics", "icon": "activity"},
+                ]
+            ),
+            BadgeMatrixSection(
+                section_title="Security, Governance & CDC",
+                accent_key="primary",
+                badge_count_label="REGULATORY ASSURED",
+                items=[
+                    {"name": "HashiCorp Vault", "level": "Security Certified", "domain": "Secrets & Key Management", "icon": "lock"},
+                    {"name": "Apache Kafka", "level": "Streaming Architecture", "domain": "Real-time CDC Pipelines", "icon": "zap"},
+                    {"name": "SOC 2 Type II", "level": "Audited Controls", "domain": "Information Security Assurance", "icon": "shield"},
+                ]
+            ),
+        ]
+
+    content_left = Inches(0.80)
+    content_top = Inches(1.80)
+    total_w = Inches(11.733)
+    total_h = Inches(5.00)
+
+    num_cols = len(sections)
+    gap_x = Inches(0.28)
+    col_w = (total_w - (gap_x * (num_cols - 1))) / num_cols
+    col_h = total_h
+
+    for c_idx, sec in enumerate(sections):
+        cx = content_left + (c_idx * (col_w + gap_x))
+        cy = content_top
+
+        accent_rgb = theme.get_rgb(sec.accent_key)
+        card, stripe = add_card_with_top_stripe(
+            slide,
+            theme,
+            cx,
+            cy,
+            col_w,
+            col_h,
+            accent_rgb=accent_rgb,
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+        )
+
+        hdr_tb = slide.shapes.add_textbox(cx + Inches(0.18), cy + Inches(0.14), col_w - Inches(0.36), Inches(0.60))
+        htf = hdr_tb.text_frame
+        htf.word_wrap = True
+        htf.margin_left = htf.margin_right = htf.margin_top = htf.margin_bottom = 0
+
+        hp1 = htf.paragraphs[0]
+        hp1.text = sec.section_title
+        hp1.font.name = theme.font_family_header
+        hp1.font.size = Pt(11.0)
+        hp1.font.bold = True
+        hp1.font.color.rgb = theme.get_rgb("primary")
+
+        if sec.badge_count_label:
+            _add_status_pill(
+                slide,
+                theme,
+                cx + col_w - Inches(1.60),
+                cy + Inches(0.12),
+                Inches(1.42),
+                Inches(0.24),
+                sec.badge_count_label,
+                font_size_pt=7.5,
+                override_color_key=sec.accent_key,
+            )
+
+        item_y = cy + Inches(0.85)
+        item_gap = Inches(0.16)
+        avail_h = col_h - Inches(1.00)
+        num_items = len(sec.items)
+        item_h = min(Inches(1.18), (avail_h - (item_gap * max(1, num_items - 1))) / max(1, num_items))
+
+        for itm in sec.items:
+            icard = add_card(
+                slide,
+                theme,
+                cx + Inches(0.16),
+                item_y,
+                col_w - Inches(0.32),
+                item_h,
+                bg_color=theme.get_rgb("surface_muted"),
+                border_color=theme.get_rgb("border"),
+            )
+
+            icon_w = Inches(0.32)
+            icon_x = cx + Inches(0.28)
+            icon_y = item_y + Inches(0.16)
+            icon_name = itm.get("icon")
+            if icon_name:
+                try:
+                    ipath = get_brand_icon(icon_name, brand_color=accent_rgb, theme=theme)
+                    if ipath and Path(ipath).exists():
+                        slide.shapes.add_picture(str(ipath), icon_x, icon_y, width=icon_w, height=icon_w)
+                except Exception:
+                    pass
+
+            itb = slide.shapes.add_textbox(
+                cx + Inches(0.68),
+                item_y + Inches(0.10),
+                col_w - Inches(0.90),
+                item_h - Inches(0.20),
+            )
+            itf = itb.text_frame
+            itf.word_wrap = True
+            itf.margin_left = itf.margin_right = itf.margin_top = itf.margin_bottom = 0
+
+            p_inm = itf.paragraphs[0]
+            p_inm.text = itm.get("name", "")
+            p_inm.font.name = theme.font_family_header
+            p_inm.font.size = Pt(10.0)
+            p_inm.font.bold = True
+            p_inm.font.color.rgb = theme.get_rgb("primary")
+
+            p_ilvl = itf.add_paragraph()
+            p_ilvl.text = itm.get("level", "")
+            p_ilvl.font.name = theme.font_family
+            p_ilvl.font.size = Pt(8.5)
+            p_ilvl.font.bold = True
+            p_ilvl.font.color.rgb = accent_rgb
+            p_ilvl.space_before = Pt(1.5)
+
+            p_idom = itf.add_paragraph()
+            p_idom.text = itm.get("domain", "")
+            p_idom.font.name = theme.font_family
+            p_idom.font.size = Pt(8.0)
+            p_idom.font.color.rgb = theme.get_rgb("secondary")
+            p_idom.space_before = Pt(1.5)
+
+            item_y += item_h + item_gap
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
+
+
+def build_iceberg_concept_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "STRATEGIC RATIONALE | ARCHITECTURE FOUNDATION",
+    action_title: str = "Modern Data Platform Architecture Solves the Critical Subsurface Foundation Gap",
+    subtitle: Optional[str] = "While executives interact with surface dashboards, 85% of analytical resilience depends on robust foundation engineering.",
+    visible_items: Optional[List[Dict[str, str]]] = None,
+    subsurface_items: Optional[List[Dict[str, str]]] = None,
+    takeaways: Optional[List[str]] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+) -> Any:
+    """Renders the Iceberg Concept: Visible 15% Business Interface vs. Subsurface 85% Data Platform Foundation."""
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+
+    if not visible_items:
+        visible_items = [
+            {"title": "Executive KPI Dashboards", "desc": "Tableau & Power BI visual summaries for C-level tracking."},
+            {"title": "Streamlit Financial Apps", "desc": "Interactive margin, opex, and scenario analysis portals."},
+            {"title": "Cortex GenAI Summaries", "desc": "Natural language automated performance reporting."},
+        ]
+
+    if not subsurface_items:
+        subsurface_items = [
+            {"title": "Snowflake AI Data Cloud", "desc": "Decoupled cloud storage and multi-cluster elastic compute engines."},
+            {"title": "Automated CDC Pipelines", "desc": "Continuous Kafka/dbt ingestion capturing ERP transactions without downtime."},
+            {"title": "dbt Semantic Models", "desc": "Standardized star-schema data marts eliminating query divergence."},
+            {"title": "RBAC & Dynamic Masking", "desc": "Granular PII protection, column dynamic masking, and audit logging."},
+            {"title": "Automated Orchestration", "desc": "Dependency-aware DAG pipelines with alerting and SLA triggers."},
+            {"title": "FinOps & Cost Governance", "desc": "Warehouse auto-suspend/resume preventing runaway compute spend."},
+        ]
+
+    if not takeaways:
+        takeaways = [
+            "Dashboard failures originate in broken upstream data pipelines, not visualization design.",
+            "Legacy point-to-point ETL creates untraceable data lineage and reporting discrepancies.",
+            "Snowflake's decoupled storage-compute architecture guarantees 99.99% uptime and zero contention.",
+            "Investing in subsurface foundation data engineering reduces maintenance overhead by 70%.",
+        ]
+
+    left_x = Inches(0.80)
+    top_y = Inches(1.80)
+    iceberg_w = Inches(7.70)
+    iceberg_h = Inches(5.00)
+
+    takeaway_x = left_x + iceberg_w + Inches(0.30)
+    takeaway_w = Inches(11.733) - iceberg_w - Inches(0.30)
+    takeaway_h = iceberg_h
+
+    # 1. Above the Waterline Container (Top 28% of left panel)
+    above_h = Inches(1.50)
+    add_card(
+        slide,
+        theme,
+        left_x,
+        top_y,
+        iceberg_w,
+        above_h,
+        bg_color=theme.get_rgb("surface"),
+        border_color=theme.get_rgb("accent"),
+        border_width_pt=1.5,
+    )
+
+    atb = slide.shapes.add_textbox(left_x + Inches(0.16), top_y + Inches(0.08), iceberg_w - Inches(0.32), Inches(0.26))
+    atf = atb.text_frame
+    atf.margin_left = atf.margin_right = atf.margin_top = atf.margin_bottom = 0
+    ap = atf.paragraphs[0]
+    ap.text = "ABOVE THE WATERLINE  |  WHAT THE BUSINESS SEES (15% OF EFFORT)"
+    ap.font.name = theme.font_family_header
+    ap.font.size = Pt(8.5)
+    ap.font.bold = True
+    ap.font.color.rgb = theme.get_rgb("accent")
+
+    _add_status_pill(
+        slide,
+        theme,
+        left_x + iceberg_w - Inches(1.40),
+        top_y + Inches(0.08),
+        Inches(1.25),
+        Inches(0.22),
+        "VISIBLE INTERFACE",
+        font_size_pt=7.0,
+        override_color_key="accent",
+    )
+
+    col_w_above = (iceberg_w - Inches(0.32) - (Inches(0.12) * 2)) / 3.0
+    for i, itm in enumerate(visible_items[:3]):
+        ix = left_x + Inches(0.16) + (i * (col_w_above + Inches(0.12)))
+        iy = top_y + Inches(0.38)
+        ih = above_h - Inches(0.48)
+
+        add_card(
+            slide,
+            theme,
+            ix,
+            iy,
+            col_w_above,
+            ih,
+            bg_color=theme.get_rgb("surface_muted"),
+            border_color=theme.get_rgb("border"),
+        )
+        tb_i = slide.shapes.add_textbox(ix + Inches(0.08), iy + Inches(0.08), col_w_above - Inches(0.16), ih - Inches(0.16))
+        tf_i = tb_i.text_frame
+        tf_i.word_wrap = True
+        tf_i.margin_left = tf_i.margin_right = tf_i.margin_top = tf_i.margin_bottom = 0
+        p_it = tf_i.paragraphs[0]
+        p_it.text = itm.get("title", "")
+        p_it.font.name = theme.font_family_header
+        p_it.font.size = Pt(8.5)
+        p_it.font.bold = True
+        p_it.font.color.rgb = theme.get_rgb("primary")
+
+        p_id = tf_i.add_paragraph()
+        p_id.text = itm.get("desc", "")
+        p_id.font.name = theme.font_family
+        p_id.font.size = Pt(7.5)
+        p_id.font.color.rgb = theme.get_rgb("secondary")
+        p_id.space_before = Pt(2)
+
+    # 2. Waterline Divider Bar
+    waterline_y = top_y + above_h + Inches(0.08)
+    waterline_h = Inches(0.26)
+    wl_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, waterline_y, iceberg_w, waterline_h)
+    wl_bar.shadow.inherit = False
+    wl_bar.fill.solid()
+    wl_bar.fill.fore_color.rgb = theme.get_rgb("accent")
+    wl_bar.line.fill.background()
+
+    wl_tf = wl_bar.text_frame
+    wl_tf.margin_left = wl_tf.margin_right = wl_tf.margin_top = wl_tf.margin_bottom = 0
+    wl_p = wl_tf.paragraphs[0]
+    wl_p.text = "---  THE WATERLINE: ARCHITECTURAL FOUNDATION BOUNDARY  ---"
+    wl_p.alignment = PP_ALIGN.CENTER
+    wl_p.font.name = theme.font_family_header
+    wl_p.font.size = Pt(8.5)
+    wl_p.font.bold = True
+    wl_p.font.color.rgb = RGBColor(255, 255, 255)
+
+    # 3. Below the Waterline Container
+    below_y = waterline_y + waterline_h + Inches(0.08)
+    below_h = iceberg_h - (below_y - top_y)
+    add_card(
+        slide,
+        theme,
+        left_x,
+        below_y,
+        iceberg_w,
+        below_h,
+        bg_color=RGBColor(15, 23, 42),
+        border_color=theme.get_rgb("accent"),
+        border_width_pt=1.5,
+    )
+
+    btb = slide.shapes.add_textbox(left_x + Inches(0.16), below_y + Inches(0.08), iceberg_w - Inches(0.32), Inches(0.26))
+    btf = btb.text_frame
+    btf.margin_left = btf.margin_right = btf.margin_top = btf.margin_bottom = 0
+    bp = btf.paragraphs[0]
+    bp.text = "BELOW THE WATERLINE  |  DATA PLATFORM FOUNDATION (85% OF ARCHITECTURAL INVESTMENT)"
+    bp.font.name = theme.font_family_header
+    bp.font.size = Pt(8.5)
+    bp.font.bold = True
+    bp.font.color.rgb = RGBColor(147, 197, 253)
+
+    _add_status_pill(
+        slide,
+        theme,
+        left_x + iceberg_w - Inches(1.55),
+        below_y + Inches(0.08),
+        Inches(1.40),
+        Inches(0.22),
+        "CRITICAL FOUNDATION",
+        font_size_pt=7.0,
+        override_color_key="danger",
+    )
+
+    b_cols = 2
+    b_rows = 3
+    b_gap_x = Inches(0.14)
+    b_gap_y = Inches(0.10)
+    b_item_w = (iceberg_w - Inches(0.32) - (b_gap_x * (b_cols - 1))) / b_cols
+    b_item_h = (below_h - Inches(0.44) - (b_gap_y * (b_rows - 1))) / b_rows
+
+    for i, itm in enumerate(subsurface_items[:6]):
+        r_i = i // b_cols
+        c_i = i % b_cols
+        bx = left_x + Inches(0.16) + (c_i * (b_item_w + b_gap_x))
+        by = below_y + Inches(0.36) + (r_i * (b_item_h + b_gap_y))
+
+        add_card(
+            slide,
+            theme,
+            bx,
+            by,
+            b_item_w,
+            b_item_h,
+            bg_color=RGBColor(30, 41, 59),
+            border_color=RGBColor(51, 65, 85),
+            border_width_pt=0.75,
+        )
+
+        tb_bi = slide.shapes.add_textbox(bx + Inches(0.08), by + Inches(0.06), b_item_w - Inches(0.16), b_item_h - Inches(0.12))
+        tf_bi = tb_bi.text_frame
+        tf_bi.word_wrap = True
+        tf_bi.margin_left = tf_bi.margin_right = tf_bi.margin_top = tf_bi.margin_bottom = 0
+
+        p_bit = tf_bi.paragraphs[0]
+        p_bit.text = itm.get("title", "")
+        p_bit.font.name = theme.font_family_header
+        p_bit.font.size = Pt(8.5)
+        p_bit.font.bold = True
+        p_bit.font.color.rgb = RGBColor(241, 245, 249)
+
+        p_bid = tf_bi.add_paragraph()
+        p_bid.text = itm.get("desc", "")
+        p_bid.font.name = theme.font_family
+        p_bid.font.size = Pt(7.5)
+        p_bid.font.color.rgb = RGBColor(148, 163, 184)
+        p_bid.space_before = Pt(1.5)
+
+    # RIGHT PANEL: STRATEGIC TAKEAWAY
+    add_card_with_top_stripe(
+        slide,
+        theme,
+        takeaway_x,
+        top_y,
+        takeaway_w,
+        takeaway_h,
+        accent_rgb=theme.get_rgb("accent"),
+        bg_color=theme.get_rgb("surface"),
+        border_color=theme.get_rgb("border"),
+    )
+
+    ttb = slide.shapes.add_textbox(
+        takeaway_x + Inches(0.18),
+        top_y + Inches(0.14),
+        takeaway_w - Inches(0.36),
+        takeaway_h - Inches(0.28),
+    )
+    ttf = ttb.text_frame
+    ttf.word_wrap = True
+    ttf.margin_left = ttf.margin_right = ttf.margin_top = ttf.margin_bottom = 0
+
+    tp1 = ttf.paragraphs[0]
+    tp1.text = "STRATEGIC TAKEAWAY"
+    tp1.font.name = theme.font_family_header
+    tp1.font.size = Pt(12.0)
+    tp1.font.bold = True
+    tp1.font.color.rgb = theme.get_rgb("primary")
+
+    tp2 = ttf.add_paragraph()
+    tp2.text = "Why Foundation Data Engineering Outweighs UI Styling"
+    tp2.font.name = theme.font_family
+    tp2.font.size = Pt(9.0)
+    tp2.font.color.rgb = theme.get_rgb("secondary")
+    tp2.space_before = Pt(2)
+
+    _add_status_pill(
+        slide,
+        theme,
+        takeaway_x + takeaway_w - Inches(1.30),
+        top_y + Inches(0.12),
+        Inches(1.15),
+        Inches(0.24),
+        "KEY LESSON",
+        font_size_pt=7.5,
+        override_color_key="accent",
+    )
+
+    for bullet in takeaways:
+        _add_bullet_paragraph(
+            ttf,
+            bullet,
+            theme.font_family,
+            font_size_pt=8.5,
+            font_color=theme.get_rgb("secondary"),
+            space_before_pt=8.0,
+        )
+
+
+# ============================================================================
+# 14b. Project Kick-off, Agenda, Tabular Matrix & Closing Archetypes
+# ============================================================================
+
+@dataclass
+class AgendaItem:
+    num: str
+    title: str
+    description: Optional[str] = None
+    badge: Optional[str] = None
+    accent_key: str = "accent"
+
+
+def build_agenda_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "PROJECT ALIGNMENT | EXECUTIVE AGENDA",
+    action_title: str = "Comprehensive Project Alignment Across Governance, Deliverables, and Timelines",
+    subtitle: Optional[str] = "Structured discussion sequence establishing strategic consensus and stage-gate readiness.",
+    items: Optional[List[AgendaItem]] = None,
+    columns: int = 2,
+    current_idx: int = 2,
+    total_slides: int = 19,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+) -> Any:
+    """
+    Renders an executive table of contents / agenda slide with balanced multi-column cards.
+    Each item features a crisp rectangular card, accent-tinted number box, bold title, and optional description.
+    """
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+
+    if not items:
+        items = [
+            AgendaItem("01", "Project Initiation & Context", "Background, drivers, and executive sponsorship."),
+            AgendaItem("02", "Strategic Objectives", "Core transformation goals and business value targets."),
+            AgendaItem("03", "Stakeholders & Governance Roles", "Steering committee and PMO responsibilities."),
+            AgendaItem("04", "Project Team & RACI", "Joint organization hierarchy and delivery pods."),
+            AgendaItem("05", "Scope of Work & Workstreams", "Phased implementation boundaries and modules."),
+            AgendaItem("06", "Deliverables & Artifacts", "Milestone acceptance documents and specs."),
+            AgendaItem("07", "Project Assumptions", "Technical and operational baseline conditions."),
+            AgendaItem("08", "Target Solution Architecture", "Snowflake platform and Streamlit serving tiers."),
+            AgendaItem("09", "High-Level Phased Timeline", "Delivery roadmap from kick-off to go-live."),
+            AgendaItem("10", "Detailed Execution Gantt", "Weekly activity scheduling and critical path."),
+            AgendaItem("11", "Stage-Gate Milestones", "Contractual milestone dates and sign-off criteria."),
+            AgendaItem("12", "Project Prerequisites", "Environment setup, credentials, and connectivity."),
+            AgendaItem("13", "Communication & Collaboration", "Meeting cadence, status reporting, and channels."),
+            AgendaItem("14", "Risk Register & Mitigations", "Active risk controls, mitigations, and owners."),
+            AgendaItem("15", "Change Request Procedure", "Scope change governance and escalation gates."),
+            AgendaItem("16", "Q&A & Executive Discussion", "Open forum for clarification and final alignment."),
+        ]
+
+    total_items = len(items)
+    cols = max(1, min(columns, 4))
+    items_per_col = (total_items + cols - 1) // cols
+
+    canvas_w = Inches(11.733)
+    start_x = Inches(0.80)
+    start_y = Inches(1.80)
+    avail_h = Inches(5.00)
+
+    gap_x = Inches(0.35)
+    col_w = (canvas_w - (cols - 1) * gap_x) / cols
+
+    row_gap = Inches(0.08) if items_per_col > 6 else Inches(0.12)
+    card_h = min(Inches(1.05), (avail_h - (items_per_col - 1) * row_gap) / items_per_col)
+
+    for i, item in enumerate(items):
+        c_idx = i // items_per_col
+        r_idx = i % items_per_col
+
+        card_x = start_x + c_idx * (col_w + gap_x)
+        card_y = start_y + r_idx * (card_h + row_gap)
+
+        # Card container
+        add_card(
+            slide,
+            theme,
+            card_x,
+            card_y,
+            col_w,
+            card_h,
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+            force_rectangle=True,
+        )
+
+        # Left Number Box
+        num_w = Inches(0.65) if cols <= 2 else Inches(0.55)
+        num_bg = theme.get_rgb("surface_muted")
+        num_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, card_x, card_y, num_w, card_h)
+        num_box.shadow.inherit = False
+        num_box.fill.solid()
+        num_box.fill.fore_color.rgb = num_bg
+        num_box.line.fill.background()
+
+        ntf = num_box.text_frame
+        ntf.word_wrap = False
+        ntf.margin_left = ntf.margin_right = ntf.margin_top = ntf.margin_bottom = 0
+        np = ntf.paragraphs[0]
+        np.text = str(item.num)
+        np.alignment = PP_ALIGN.CENTER
+        np.font.name = theme.font_family_header
+        np.font.size = Pt(11.0 if cols > 2 or items_per_col > 6 else 12.5)
+        np.font.bold = True
+        np.font.color.rgb = theme.get_rgb(item.accent_key if item.accent_key else "accent")
+
+        # Text container
+        tb_left = card_x + num_w + Inches(0.12)
+        tb_w = col_w - num_w - Inches(0.20)
+        if item.badge:
+            tb_w -= Inches(1.20)
+
+        tb = slide.shapes.add_textbox(tb_left, card_y + Inches(0.04), tb_w, card_h - Inches(0.08))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+
+        tp = tf.paragraphs[0]
+        tp.text = item.title
+        tp.font.name = theme.font_family_header
+        title_font_pt = 10.0 if (items_per_col > 7 or cols > 2) else 11.0
+        tp.font.size = Pt(title_font_pt)
+        tp.font.bold = True
+        tp.font.color.rgb = theme.get_rgb("primary")
+
+        if item.description:
+            dp = tf.add_paragraph()
+            dp.text = item.description
+            dp.font.name = theme.font_family
+            desc_font_pt = 8.0 if (items_per_col > 7 or cols > 2) else 8.5
+            dp.font.size = Pt(desc_font_pt)
+            dp.font.color.rgb = theme.get_rgb("secondary")
+            dp.space_before = Pt(1)
+
+        if item.badge:
+            _add_status_pill(
+                slide,
+                theme,
+                card_x + col_w - Inches(1.15),
+                card_y + (card_h - Inches(0.22)) / 2,
+                Inches(1.05),
+                Inches(0.22),
+                item.badge,
+                font_size_pt=7.5,
+            )
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
+
+
+@dataclass
+class TableColumnDef:
+    header: str
+    width: float  # In inches
+    align: str = "LEFT"  # "LEFT", "CENTER", "RIGHT"
+    is_status: bool = False
+    is_index: bool = False
+
+
+def build_table_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "PROJECT GOVERNANCE | STAGE-GATE REGISTER",
+    action_title: str = "Structured Governance Register Establishes Accountabilities and Timelines",
+    subtitle: Optional[str] = "Detailed tracking matrix with designated owners, baseline targets, and delivery statuses.",
+    columns: Optional[List[TableColumnDef]] = None,
+    rows: Optional[List[List[Any]]] = None,
+    footnote: Optional[str] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+) -> Any:
+    """
+    Renders an executive consulting table/matrix slide using sharp vector cards.
+    Includes primary color header band, alternating row shading, dynamic status pills, and footnotes.
+    """
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+
+    if not columns or not rows:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
+
+    start_x = Inches(0.80)
+    total_w = Inches(11.733)
+    header_y = Inches(1.72)
+    header_h = Inches(0.38)
+
+    # Normalize column widths to sum exactly to total_w
+    col_widths_sum = sum(c.width for c in columns)
+    scale_w = (total_w.inches / col_widths_sum) if col_widths_sum > 0 else 1.0
+    scaled_widths = [Inches(c.width * scale_w) for c in columns]
+
+    # Header Band
+    hdr_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, header_y, total_w, header_h)
+    hdr_card.shadow.inherit = False
+    hdr_card.fill.solid()
+    hdr_card.fill.fore_color.rgb = theme.get_rgb("primary")
+    hdr_card.line.fill.background()
+
+    cur_x = start_x
+    for c_idx, col in enumerate(columns):
+        cw = scaled_widths[c_idx]
+        tb = slide.shapes.add_textbox(cur_x + Inches(0.08), header_y + Inches(0.06), cw - Inches(0.16), header_h - Inches(0.12))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+        p = tf.paragraphs[0]
+        p.text = col.header.upper()
+        if col.align == "CENTER":
+            p.alignment = PP_ALIGN.CENTER
+        elif col.align == "RIGHT":
+            p.alignment = PP_ALIGN.RIGHT
+        else:
+            p.alignment = PP_ALIGN.LEFT
+        p.font.name = theme.font_family_header
+        p.font.size = Pt(9.5)
+        p.font.bold = True
+        p.font.color.rgb = RGBColor(255, 255, 255)
+        cur_x += cw
+
+    # Rows
+    num_rows = len(rows)
+    avail_row_h = Inches(4.70) if not footnote else Inches(4.45)
+    row_gap = Inches(0.05) if num_rows > 8 else Inches(0.07)
+    row_h = min(Inches(0.46), max(Inches(0.28), (avail_row_h - (num_rows - 1) * row_gap) / num_rows))
+
+    row_start_y = header_y + header_h + Inches(0.08)
+
+    status_keywords = {
+        "COMPLETE", "COMPLETED", "IN PROGRESS", "ON TRACK", "RESCHEDULED", "PLANNED",
+        "CRITICAL GATE", "MILESTONE GATE", "HIGH", "MEDIUM", "LOW", "SIGNED-OFF",
+        "MUTUAL", "DAILY", "WEEKLY", "AS NEEDED", "OPEN", "RESOLVED"
+    }
+
+    font_size_pt = 9.0 if num_rows > 9 else (9.5 if num_rows > 6 else 10.5)
+
+    for r_idx, row in enumerate(rows):
+        cur_ry = row_start_y + r_idx * (row_h + row_gap)
+        is_alt = (r_idx % 2 != 0)
+        bg_color = theme.get_rgb("surface_muted") if is_alt else theme.get_rgb("surface")
+
+        add_card(
+            slide,
+            theme,
+            start_x,
+            cur_ry,
+            total_w,
+            row_h,
+            bg_color=bg_color,
+            border_color=theme.get_rgb("border"),
+            force_rectangle=True,
+        )
+
+        cur_cx = start_x
+        for c_idx, col in enumerate(columns):
+            cw = scaled_widths[c_idx]
+            cell_val = row[c_idx] if c_idx < len(row) else ""
+            cell_str = str(cell_val).strip()
+
+            is_status_col = col.is_status or (cell_str.upper() in status_keywords and len(cell_str) <= 20)
+
+            if is_status_col and cell_str:
+                pill_w = min(cw - Inches(0.20), Inches(1.55))
+                pill_h = min(row_h - Inches(0.08), Inches(0.25))
+                pill_x = cur_cx + (cw - pill_w) / 2
+                pill_y = cur_ry + (row_h - pill_h) / 2
+                _add_status_pill(
+                    slide=slide,
+                    theme=theme,
+                    left=pill_x,
+                    top=pill_y,
+                    width=pill_w,
+                    height=pill_h,
+                    status=cell_str,
+                    font_size_pt=max(7.0, font_size_pt - 1.5),
+                )
+            else:
+                tb = slide.shapes.add_textbox(cur_cx + Inches(0.08), cur_ry + Inches(0.04), cw - Inches(0.16), row_h - Inches(0.08))
+                tf = tb.text_frame
+                tf.word_wrap = True
+                tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+                p = tf.paragraphs[0]
+                p.text = cell_str
+                if col.align == "CENTER":
+                    p.alignment = PP_ALIGN.CENTER
+                elif col.align == "RIGHT":
+                    p.alignment = PP_ALIGN.RIGHT
+                else:
+                    p.alignment = PP_ALIGN.LEFT
+
+                if col.is_index or (c_idx == 0 and cell_str.isdigit()):
+                    p.font.name = theme.font_family_header
+                    p.font.size = Pt(font_size_pt + 0.5)
+                    p.font.bold = True
+                    p.font.color.rgb = theme.get_rgb("accent")
+                else:
+                    p.font.name = theme.font_family
+                    p.font.size = Pt(font_size_pt)
+                    if c_idx == 1:
+                        p.font.bold = True
+                        p.font.color.rgb = theme.get_rgb("primary")
+                    else:
+                        p.font.color.rgb = theme.get_rgb("secondary")
+
+            cur_cx += cw
+
+    if footnote:
+        foot_y = row_start_y + num_rows * (row_h + row_gap) + Inches(0.04)
+        tb_fn = slide.shapes.add_textbox(start_x, foot_y, total_w, Inches(0.25))
+        tf_fn = tb_fn.text_frame
+        tf_fn.word_wrap = False
+        tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
+        p_fn = tf_fn.paragraphs[0]
+        p_fn.text = footnote
+        p_fn.font.name = theme.font_family
+        p_fn.font.size = Pt(8.5)
+        p_fn.font.color.rgb = theme.get_rgb("muted")
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
+
+
+def build_thank_you_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "ENGAGEMENT WRAP-UP | THANK YOU",
+    title: str = "Thank You",
+    subtitle: Optional[str] = "Partnering to accelerate enterprise data modernization with Snowflake AI Data Cloud.",
+    contacts: Optional[List[Dict[str, str]]] = None,
+    company: str = "PT Metrodata Electronics Tbk  |  PT Mitra Integrasi Informatika",
+    office: str = "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470",
+    current_idx: int = 19,
+    total_slides: int = 19,
+    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+) -> Any:
+    """
+    Renders an executive corporate closing slide featuring dual brand vertical stripes
+    (1 red : 2 blue ratio), prominent typography, contact cards with top stripes, and corporate footer.
+    """
+    slide = add_slide_with_background(prs, theme)
+
+    stripe_top = Inches(1.80)
+    stripe_height = Inches(4.50)
+    stripe_left = Inches(0.80)
+    red_w = Inches(0.045)
+    blue_w = Inches(0.090)
+
+    # 1. Dual Vertical Brand Stripes (1 Red : 2 Blue ratio)
+    s_red = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, stripe_left, stripe_top, red_w, stripe_height)
+    s_red.shadow.inherit = False
+    s_red.fill.solid()
+    s_red.fill.fore_color.rgb = theme.get_rgb("accent_secondary", "#DC2626")
+    s_red.line.fill.background()
+
+    s_blue = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, stripe_left + red_w, stripe_top, blue_w, stripe_height)
+    s_blue.shadow.inherit = False
+    s_blue.fill.solid()
+    s_blue.fill.fore_color.rgb = theme.get_rgb("accent", "#0052CC")
+    s_blue.line.fill.background()
+
+    # 2. Text Content Area
+    text_left = stripe_left + red_w + blue_w + Inches(0.35)
+    text_width = Inches(11.20)
+    tb = slide.shapes.add_textbox(text_left, Inches(1.80), text_width, Inches(1.70))
+    tf = tb.text_frame
+    tf.word_wrap = True
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+
+    p_tr = tf.paragraphs[0]
+    p_tr.text = tracker.upper()
+    p_tr.font.name = theme.font_family_header
+    p_tr.font.size = Pt(11.0)
+    p_tr.font.bold = True
+    p_tr.font.color.rgb = theme.get_rgb("accent")
+
+    p_t = tf.add_paragraph()
+    p_t.text = title
+    p_t.font.name = theme.font_family_header
+    p_t.font.size = Pt(36.0)
+    p_t.font.bold = True
+    p_t.font.color.rgb = theme.get_rgb("primary")
+    p_t.space_before = Pt(6)
+
+    p_s = tf.add_paragraph()
+    p_s.text = subtitle or "Delivering Data-Driven Value & Predictive Intelligence with Cloud Analytics Platform."
+    p_s.font.name = theme.font_family
+    p_s.font.size = Pt(13.0)
+    p_s.font.color.rgb = theme.get_rgb("secondary")
+    p_s.space_before = Pt(10)
+
+    # 3. Contact Cards
+    if not contacts:
+        contacts = [
+            {"name": "Agus Suhanto", "role": "Project Manager, MII", "email": "agus.suhanto@mii.co.id"},
+            {"name": "Dian Eka Kusumawati", "role": "Account Manager, MII", "email": "dian.eka@mii.co.id"},
+            {"name": "Vicko Bhayyu", "role": "Technical Lead, MII", "email": "vicko.bhayyu@mii.co.id"},
+        ]
+
+    num_c = len(contacts)
+    card_gap = Inches(0.25)
+    card_w = min(Inches(5.40), (text_width - (num_c - 1) * card_gap) / num_c)
+    card_h = Inches(1.50)
+    card_y = Inches(3.85)
+
+    for i, c in enumerate(contacts[:4]):
+        cx = text_left + i * (card_w + card_gap)
+        acc_key = c.get("accent_key", "accent" if i == 0 else "accent_teal")
+        acc_col = theme.get_rgb(acc_key, "#0052CC")
+
+        add_card_with_top_stripe(
+            slide=slide,
+            theme=theme,
+            left=cx,
+            top=card_y,
+            width=card_w,
+            height=card_h,
+            accent_rgb=acc_col,
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+            stripe_height_in=0.06,
+        )
+
+        ctb = slide.shapes.add_textbox(cx + Inches(0.18), card_y + Inches(0.16), card_w - Inches(0.36), card_h - Inches(0.25))
+        ctf = ctb.text_frame
+        ctf.word_wrap = True
+        ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
+
+        cp1 = ctf.paragraphs[0]
+        cp1.text = c.get("name", "")
+        cp1.font.name = theme.font_family_header
+        cp1.font.size = Pt(13.0)
+        cp1.font.bold = True
+        cp1.font.color.rgb = theme.get_rgb("primary")
+
+        cp2 = ctf.add_paragraph()
+        cp2.text = c.get("role", "")
+        cp2.font.name = theme.font_family
+        cp2.font.size = Pt(10.5)
+        cp2.font.color.rgb = theme.get_rgb("accent")
+        cp2.space_before = Pt(3)
+
+        if c.get("email"):
+            cp3 = ctf.add_paragraph()
+            cp3.text = f"Email: {c['email']}"
+            cp3.font.name = theme.font_family
+            cp3.font.size = Pt(10.0)
+            cp3.font.color.rgb = theme.get_rgb("secondary")
+            cp3.space_before = Pt(4)
+
+    # 4. Corporate Address Footer
+    otb = slide.shapes.add_textbox(text_left, Inches(5.65), text_width, Inches(0.60))
+    otf = otb.text_frame
+    otf.word_wrap = True
+    otf.margin_left = otf.margin_right = otf.margin_top = otf.margin_bottom = 0
+    op1 = otf.paragraphs[0]
+    op1.text = f"{company}  |  {office}"
+    op1.font.name = theme.font_family
+    op1.font.size = Pt(10.0)
+    op1.font.color.rgb = theme.get_rgb("secondary")
+
+    op2 = otf.add_paragraph()
+    op2.text = notice
+    op2.font.name = theme.font_family
+    op2.font.size = Pt(9.0)
+    op2.font.color.rgb = theme.get_rgb("muted")
+    op2.space_before = Pt(3)
+
+    return slide
+
+
+# ============================================================================
+# 15. High-Level Consulting Archetype Deck Generator
 # ============================================================================
 
 class ConsultingDeckBuilder:
@@ -4276,6 +5815,90 @@ class ConsultingDeckBuilder:
             action_title=action_title,
             subtitle=subtitle,
             matrix_data=matrix_data,
+            current_idx=idx,
+            total_slides=idx,
+        )
+
+    def add_tech_logo_grid_slide(
+        self,
+        tracker: str = "TECHNOLOGY PORTFOLIO | ENTERPRISE ECOSYSTEM",
+        action_title: str = "Curated Best-of-Breed Technology Stack Delivers Governed High-Performance Analytics",
+        subtitle: Optional[str] = "Standardized technology matrix spanning ingestion, lakehouse storage, transformation, and semantic delivery.",
+        items: Optional[List[TechLogoItem]] = None,
+        columns: int = 4,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_tech_logo_grid_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            items=items,
+            columns=columns,
+            current_idx=idx,
+            total_slides=idx,
+        )
+
+    def add_card_grid_slide(
+        self,
+        tracker: str = "STRATEGIC CAPABILITIES | CORE SERVICE OFFERINGS",
+        action_title: str = "Comprehensive Enterprise Solutions Span Modern Infrastructure to Autonomous Intelligence",
+        subtitle: Optional[str] = "Eight integrated core pillars deliver complete lifecycle support from strategic advisory to operational execution.",
+        items: Optional[List[CardGridItem]] = None,
+        columns: int = 4,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_card_grid_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            items=items,
+            columns=columns,
+            current_idx=idx,
+            total_slides=idx,
+        )
+
+    def add_badge_matrix_slide(
+        self,
+        tracker: str = "COMPETENCY & CREDENTIALS | PARTNERSHIP TIERS",
+        action_title: str = "Certified Industry Expertise Assures Technical Excellence and Rapid Delivery",
+        subtitle: Optional[str] = "Tiered competency matrix validates advanced specialization across hyperscalers, lakehouse platforms, and governance frameworks.",
+        sections: Optional[List[BadgeMatrixSection]] = None,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_badge_matrix_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            sections=sections,
+            current_idx=idx,
+            total_slides=idx,
+        )
+
+    def add_iceberg_concept_slide(
+        self,
+        tracker: str = "STRATEGIC RATIONALE | ARCHITECTURE FOUNDATION",
+        action_title: str = "Modern Data Platform Architecture Solves the Critical Subsurface Foundation Gap",
+        subtitle: Optional[str] = "While executives interact with surface dashboards, 85% of analytical resilience depends on robust foundation engineering.",
+        visible_items: Optional[List[Dict[str, str]]] = None,
+        subsurface_items: Optional[List[Dict[str, str]]] = None,
+        takeaways: Optional[List[str]] = None,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_iceberg_concept_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            visible_items=visible_items,
+            subsurface_items=subsurface_items,
+            takeaways=takeaways,
             current_idx=idx,
             total_slides=idx,
         )

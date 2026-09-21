@@ -9,7 +9,7 @@ This directory contains the central documentation, architectural blueprints, sub
 ```text
 docs/
 ├── INDEX.md               # This master navigation index
-├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–21+)
+├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–27+)
 │
 ├── handovers/             # Historical sprint and session handover briefings
 │   ├── 2026-09-11_cli_skills_refactoring.md
@@ -18,7 +18,13 @@ docs/
 │   ├── 2026-09-16_slide3_corporate_equity_tree.md
 │   ├── 2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md
 │   ├── 2026-09-18_localization_and_bilingual_subsystems.md
-│   └── 2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md
+│   ├── 2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md
+│   ├── 2026-09-19_visual_harmonization_and_directwrite_preview_parity.md
+│   ├── 2026-09-19_presales_pitch_deck_modernization.md
+│   ├── 2026-09-19_project_kickoff_presentation_modernization.md
+│   ├── 2026-09-20_uat_briefing_presentation_modernization.md
+│   ├── 2026-09-20_weekly_progress_report_deck_modernization.md
+│   └── 2026-09-21_project_closing_deck_modernization.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
 │   ├── adaptive_documentation_scout_protocol.md
@@ -96,4 +102,10 @@ docs/
 * [**`2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md`**](handovers/2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md): Platform upgrade and security hardening master audit.
 * [**`2026-09-18_localization_and_bilingual_subsystems.md`**](handovers/2026-09-18_localization_and_bilingual_subsystems.md): Dual-catalog localization, hybrid translation engine, and paired reference decks.
 * [**`2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md`**](handovers/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md): Sprints 17–20 closeout (Milestones 18–21), security fixes, CR CLI, diagram URI pipeline, and Gantt/Harvey Balls archetypes.
+* [**`2026-09-19_visual_harmonization_and_directwrite_preview_parity.md`**](handovers/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md): Milestone 22 closeout (Presentation & diagram visual harmonization, icon engine tokens, DirectWrite typography calibration, and preview CLI).
+* [**`2026-09-19_presales_pitch_deck_modernization.md`**](handovers/2026-09-19_presales_pitch_deck_modernization.md): Milestone 23 closeout (Automated 36-slide presales consulting pitch deck modernization, PitchDeckBuilder, new archetypes, master YAML config, and preview verification).
+* [**`2026-09-19_project_kickoff_presentation_modernization.md`**](handovers/2026-09-19_project_kickoff_presentation_modernization.md): Milestone 24 closeout (Automated 19-slide project kick-off presentation modernization, agenda/table/thank-you archetypes, governance org overrides, Gantt deserialization, and preview verification).
+* [**`2026-09-20_uat_briefing_presentation_modernization.md`**](handovers/2026-09-20_uat_briefing_presentation_modernization.md): Milestone 25 closeout (Automated 25-slide bilingual UAT briefing presentation modernization, forensic template analysis, master YAML config, slide exporter whitespace advance calibration, Gantt normalization, and preview verification).
+* [**`2026-09-20_weekly_progress_report_deck_modernization.md`**](handovers/2026-09-20_weekly_progress_report_deck_modernization.md): Milestone 26 closeout (Automated 11-slide weekly progress report presentation modernization, forensic template analysis, dynamic milestone row height scaling, consulting S-curve chart generator, spreadsheet ingestion pipeline, and dual-mode preview verification).
+* [**`2026-09-21_project_closing_deck_modernization.md`**](handovers/2026-09-21_project_closing_deck_modernization.md): Milestone 27 closeout (Automated 9-slide project closing & maintenance transition deck modernization, forensic template & checklist audit, ClosingDeckBuilder, dynamic spreadsheet ingestion, and preview verification).
 

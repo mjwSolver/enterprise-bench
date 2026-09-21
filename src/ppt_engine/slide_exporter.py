@@ -491,7 +491,7 @@ class PurePythonSlideRenderer:
                 )
             else:
                 # Single run / simple paragraph with universal hanging indent
-                line_height = int(font_px * 1.25)
+                line_height = int(font_px * 1.18)
                 if has_bullet:
                     wrapped_lines = self._wrap_text(p_text, pil_font, max(10, usable_w - bullet_indent))
                     draw.text((x + left_margin, cur_y), bullet_char, fill=(*color_rgb, 255), font=pil_font)
@@ -510,14 +510,14 @@ class PurePythonSlideRenderer:
                         if p.alignment == PP_ALIGN.CENTER:
                             try:
                                 bbox = pil_font.getbbox(line)
-                                tw = bbox[2] - bbox[0]
+                                tw = (bbox[2] - bbox[0]) * 0.915
                                 text_x = x + (w - tw) / 2
                             except Exception:
                                 pass
                         elif p.alignment == PP_ALIGN.RIGHT:
                             try:
                                 bbox = pil_font.getbbox(line)
-                                tw = bbox[2] - bbox[0]
+                                tw = (bbox[2] - bbox[0]) * 0.915
                                 text_x = x + w - left_margin - tw
                             except Exception:
                                 pass
@@ -530,7 +530,7 @@ class PurePythonSlideRenderer:
                         )
                         cur_y += line_height
 
-            space_after = p.space_after.pt * scale_y if p.space_after else 3 * scale_y
+            space_after = p.space_after.pt * scale_y if p.space_after else 2.0 * scale_y
             cur_y += space_after
 
     def _render_multi_run_paragraph(
@@ -575,8 +575,8 @@ class PurePythonSlideRenderer:
 
         for text_token, font, color in tokens:
             try:
+                tw = font.getlength(text_token)
                 bbox = font.getbbox(text_token)
-                tw = bbox[2] - bbox[0]
                 th = bbox[3] - bbox[1]
             except Exception:
                 tw = len(text_token) * 8
@@ -585,14 +585,14 @@ class PurePythonSlideRenderer:
             if line_w + tw <= usable_w or not line_tokens:
                 line_tokens.append((text_token, font, color))
                 line_w += tw
-                max_h = max(max_h, th * 1.25)
+                max_h = max(max_h, th * 1.18)
             else:
                 # Render current line
                 self._draw_line_tokens(draw, line_tokens, x, cur_y)
                 cur_y += max_h
                 line_tokens = [(text_token, font, color)]
                 line_w = tw
-                max_h = th * 1.25
+                max_h = th * 1.18
 
         if line_tokens:
             self._draw_line_tokens(draw, line_tokens, x, cur_y)
@@ -611,8 +611,7 @@ class PurePythonSlideRenderer:
         for text_token, font, color in line_tokens:
             draw.text((lx, y), text_token, fill=(*color, 255), font=font)
             try:
-                bbox = font.getbbox(text_token)
-                tw = bbox[2] - bbox[0]
+                tw = font.getlength(text_token)
             except Exception:
                 tw = len(text_token) * 8
             lx += tw
@@ -620,7 +619,7 @@ class PurePythonSlideRenderer:
     def _wrap_text(self, text: str, font: ImageFont.ImageFont, max_width_px: float) -> List[str]:
         """Wrap text according to pixel width constraints with hanging indent for bullets."""
         lines: List[str] = []
-        raw_lines = text.split("\n")
+        raw_lines = text.replace("\x0b", "\n").replace("\r", "").split("\n")
 
         for rline in raw_lines:
             is_bullet = False
@@ -649,9 +648,9 @@ class PurePythonSlideRenderer:
 
                 try:
                     bbox = font.getbbox(test_line)
-                    text_w = bbox[2] - bbox[0]
+                    text_w = (bbox[2] - bbox[0]) * 0.915
                 except Exception:
-                    text_w = len(test_line) * 8
+                    text_w = len(test_line) * 8 * 0.915
 
                 if text_w <= max_width_px or (cur_line in ("", bullet_prefix)):
                     cur_line = test_line

@@ -248,6 +248,13 @@ def build_governance_org_structure_slide(
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
     locale: str = "en",
+    tier1_client_text: Optional[str] = None,
+    tier1_vendor_text: Optional[str] = None,
+    client_pm_title: Optional[str] = None,
+    vendor_pm_title: Optional[str] = None,
+    client_pm_bullets: Optional[List[str]] = None,
+    vendor_pm_bullets: Optional[List[str]] = None,
+    pods: Optional[List[Dict[str, Any]]] = None,
 ) -> Any:
     """
     Renders permanent reference Slide 33 as a true tree-like hierarchical org chart:
@@ -317,7 +324,7 @@ def build_governance_org_structure_slide(
     r1.font.bold = True
     r1.font.color.rgb = c_primary
     r1_sub = p_sc1.add_run()
-    r1_sub.text = loc.t("reference_slides.governance_org.tier1_client_sponsors_desc", "C-Level Leadership (Strategic vision, budget authorization, stage-gate sign-offs)")
+    r1_sub.text = tier1_client_text or loc.t("reference_slides.governance_org.tier1_client_sponsors_desc", "C-Level Leadership (Strategic vision, budget authorization, stage-gate sign-offs)")
     r1_sub.font.name = theme.font_family
     r1_sub.font.size = Pt(8.5)
     r1_sub.font.color.rgb = c_secondary
@@ -331,7 +338,7 @@ def build_governance_org_structure_slide(
     r2.font.bold = True
     r2.font.color.rgb = c_primary
     r2_sub = p_sc2.add_run()
-    r2_sub.text = loc.t("reference_slides.governance_org.tier1_vendor_leadership_desc", "Consulting Practice Director & Partner (Delivery assurance, executive SLA oversight)")
+    r2_sub.text = tier1_vendor_text or loc.t("reference_slides.governance_org.tier1_vendor_leadership_desc", "Consulting Practice Director & Partner (Delivery assurance, executive SLA oversight)")
     r2_sub.font.name = theme.font_family
     r2_sub.font.size = Pt(8.5)
     r2_sub.font.color.rgb = c_secondary
@@ -373,13 +380,13 @@ def build_governance_org_structure_slide(
     tf_pm1.margin_left = tf_pm1.margin_right = tf_pm1.margin_top = tf_pm1.margin_bottom = 0
 
     p_pm1_h = tf_pm1.paragraphs[0]
-    p_pm1_h.text = loc.t("reference_slides.governance_org.client_pm.title", f"{client_name} Project Manager", client_name=client_name)
+    p_pm1_h.text = client_pm_title or loc.t("reference_slides.governance_org.client_pm.title", f"{client_name} Project Manager", client_name=client_name)
     p_pm1_h.font.name = theme.font_family_header
     p_pm1_h.font.size = Pt(11.0)
     p_pm1_h.font.bold = True
     p_pm1_h.font.color.rgb = c_primary
 
-    c_pm_bullets = loc.get_list("reference_slides.governance_org.client_pm.bullets", [
+    c_pm_bullets = client_pm_bullets or loc.get_list("reference_slides.governance_org.client_pm.bullets", [
         "Facilitates business access, requirements sign-off, and UAT scheduling.",
         "Manages internal stakeholder communications and stage-gate readiness.",
         "Primary escalation point for cross-department data governance approvals.",
@@ -404,13 +411,13 @@ def build_governance_org_structure_slide(
     tf_pm2.margin_left = tf_pm2.margin_right = tf_pm2.margin_top = tf_pm2.margin_bottom = 0
 
     p_pm2_h = tf_pm2.paragraphs[0]
-    p_pm2_h.text = loc.t("reference_slides.governance_org.vendor_pm.title", f"{vendor_name} Project Manager & Lead", vendor_name=vendor_name)
+    p_pm2_h.text = vendor_pm_title or loc.t("reference_slides.governance_org.vendor_pm.title", f"{vendor_name} Project Manager & Lead", vendor_name=vendor_name)
     p_pm2_h.font.name = theme.font_family_header
     p_pm2_h.font.size = Pt(11.0)
     p_pm2_h.font.bold = True
     p_pm2_h.font.color.rgb = c_primary
 
-    v_pm_bullets = loc.get_list("reference_slides.governance_org.vendor_pm.bullets", [
+    v_pm_bullets = vendor_pm_bullets or loc.get_list("reference_slides.governance_org.vendor_pm.bullets", [
         "Drives daily delivery cadence, sprint backlogs, and milestone tracking.",
         "Maintains RAID logs, weekly progress S-curves, and formal Change Requests.",
         "Coordinates specialized Snowflake architects, engineers, and data scientists.",
@@ -508,19 +515,32 @@ def build_governance_org_structure_slide(
     ]
 
     pods_data = []
-    for dp in default_pods:
-        k = dp["key"]
-        p_title = loc.t(f"reference_slides.governance_org.pods.{k}.title", dp["title"])
-        p_badge = loc.t(f"reference_slides.governance_org.pods.{k}.badge", dp["badge"])
-        p_bullets = loc.get_list(f"reference_slides.governance_org.pods.{k}.bullets", dp["bullets"])
-        pods_data.append({
-            "title": p_title,
-            "org": dp["org"],
-            "badge": p_badge,
-            "badge_color": dp["badge_color"],
-            "stripe_color": dp["stripe_color"],
-            "bullets": p_bullets,
-        })
+    if pods:
+        for p in pods:
+            acc_str = p.get("stripe_color", p.get("badge_color", "accent"))
+            stripe_c = c_accent_sec if acc_str in ("accent_secondary", "danger", "red") else c_accent
+            pods_data.append({
+                "title": p.get("title", ""),
+                "org": p.get("org", ""),
+                "badge": p.get("badge", "POD"),
+                "badge_color": p.get("badge_color", "accent"),
+                "stripe_color": stripe_c,
+                "bullets": p.get("bullets", []),
+            })
+    else:
+        for dp in default_pods:
+            k = dp["key"]
+            p_title = loc.t(f"reference_slides.governance_org.pods.{k}.title", dp["title"])
+            p_badge = loc.t(f"reference_slides.governance_org.pods.{k}.badge", dp["badge"])
+            p_bullets = loc.get_list(f"reference_slides.governance_org.pods.{k}.bullets", dp["bullets"])
+            pods_data.append({
+                "title": p_title,
+                "org": dp["org"],
+                "badge": p_badge,
+                "badge_color": dp["badge_color"],
+                "stripe_color": dp["stripe_color"],
+                "bullets": p_bullets,
+            })
 
     for idx, pod in enumerate(pods_data):
         p_left = Inches(0.80) + idx * (pod_width + pod_gap)

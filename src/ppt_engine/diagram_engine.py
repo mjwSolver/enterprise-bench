@@ -23,6 +23,13 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from xml.dom import minidom
 import yaml
 
+from src.ppt_engine.icon_engine import (
+    normalize_color,
+    resolve_brand_color,
+    recolor_svg,
+    CANONICAL_ENTERPRISE_COLORS,
+)
+
 # Auto-configure dynamic cairo library for macOS / Linux headless rasterization
 def _setup_cairo_library() -> None:
     cairo_paths = [
@@ -1120,18 +1127,18 @@ def harmonize_icon_svg(
     svg = raw_svg.strip()
     k_lower = icon_key.lower().replace("-", "_")
 
+    # Normalize incoming color strings (resolving theme tokens if provided)
+    resolved_icon_col = normalize_color(icon_color) if icon_color else None
+    resolved_stroke = normalize_color(container_stroke) if container_stroke else "#2563EB"
+    resolved_accent = normalize_color(container_accent) if container_accent else "#3B82F6"
+
     # ------------------------------------------------------------------------
     # 1. BRAND WEIGHT (Official vendor/partner corporate logos)
     # ------------------------------------------------------------------------
     if icon_weight == "brand":
         # Check if caller explicitly overrides brand color (preserve_brand_color=False)
-        if icon_color and not preserve_brand_color:
-            svg = svg.replace("currentColor", icon_color)
-            if 'fill="none"' in svg and "stroke=" not in svg:
-                svg = re.sub(r'<svg(\s+)', rf'<svg\1stroke="{icon_color}" ', svg, count=1)
-            elif 'fill=' not in svg:
-                svg = re.sub(r'<svg(\s+)', rf'<svg\1fill="{icon_color}" ', svg, count=1)
-            return svg
+        if resolved_icon_col and not preserve_brand_color:
+            return recolor_svg(svg, resolved_icon_col)
 
         # Detect if SVG is already multi-color (has multiple distinct non-neutral hex colors)
         color_matches = set(re.findall(r'#(?:[0-9a-fA-F]{3}){1,2}', svg))
@@ -1152,73 +1159,93 @@ def harmonize_icon_svg(
                 break
 
         if not brand_hex:
-            brand_hex = icon_color or ("#FFFFFF" if is_dark_bg else "#0F172A")
+            brand_hex = resolved_icon_col or ("#FFFFFF" if is_dark_bg else "#0F172A")
 
-        # Replace currentColor or inject fill
-        svg = svg.replace("currentColor", brand_hex)
-        if 'fill="none"' in svg and "stroke=" in svg:
-            svg = re.sub(r'stroke="[^"]*"', f'stroke="{brand_hex}"', svg)
-        elif 'fill="none"' in svg and "stroke=" not in svg:
-            svg = svg.replace('fill="none"', f'fill="{brand_hex}"')
-        elif 'fill=' in svg:
-            svg = re.sub(r'fill="(?:#000(?:000)?|black|currentColor)"', f'fill="{brand_hex}"', svg, flags=re.IGNORECASE)
-        else:
-            svg = re.sub(r'<svg(\s+)', rf'<svg\1fill="{brand_hex}" ', svg, count=1)
-
-        return svg
+        return recolor_svg(svg, brand_hex)
 
     # ------------------------------------------------------------------------
     # 2. WEIGHTED (Solid silhouette glyphs harmonized to container accent)
     # ------------------------------------------------------------------------
     elif icon_weight == "weighted":
-        accent_hex = icon_color or container_accent or container_stroke
-        svg = svg.replace("currentColor", accent_hex)
-        svg = svg.replace('fill="none"', f'fill="{accent_hex}"')
-        if 'fill=' in svg:
-            svg = re.sub(r'fill="(?:#000(?:000)?|black|currentColor)"', f'fill="{accent_hex}"', svg, flags=re.IGNORECASE)
-        else:
-            svg = re.sub(r'<svg(\s+)', rf'<svg\1fill="{accent_hex}" ', svg, count=1)
-
-        if 'stroke=' in svg:
-            svg = re.sub(r'stroke="(?:#000(?:000)?|black|currentColor)"', f'stroke="{accent_hex}"', svg, flags=re.IGNORECASE)
-        else:
-            svg = re.sub(r'<svg(\s+)', rf'<svg\1stroke="{accent_hex}" ', svg, count=1)
-
-        return svg
+        accent_hex = resolved_icon_col or resolved_accent or resolved_stroke
+        return recolor_svg(svg, accent_hex)
 
     # ------------------------------------------------------------------------
     # 3. LIGHT (Outline stroke vectors: Lucide, Feather, Heroicons)
     # ------------------------------------------------------------------------
     else:  # "light"
-        stroke_hex = icon_color or container_stroke
-        svg = svg.replace("currentColor", stroke_hex)
-
-        if 'stroke=' in svg:
-            svg = re.sub(r'stroke="(?:#000(?:000)?|black|currentColor)"', f'stroke="{stroke_hex}"', svg, flags=re.IGNORECASE)
-        else:
-            svg = re.sub(r'<svg(\s+)', rf'<svg\1stroke="{stroke_hex}" ', svg, count=1)
-
-        if 'fill="none"' not in svg and 'fill=' not in svg:
-            svg = re.sub(r'<svg(\s+)', r'<svg\1fill="none" ', svg, count=1)
+        stroke_hex = resolved_icon_col or resolved_stroke
+        recolored = recolor_svg(svg, stroke_hex)
 
         # Prevent 1px hairline disappearance on 1080p slide renders:
         # Normalize stroke-width to >= 1.75px (standard 1.8px)
         def _normalize_stroke_width(match: re.Match) -> str:
-            val_str = match.group(1)
+            quote = match.group(1)
+            val_str = match.group(2)
             try:
                 val = float(val_str.replace("px", ""))
                 if val < 1.75:
-                    return 'stroke-width="1.8"'
+                    return f'stroke-width={quote}1.8{quote}'
             except ValueError:
                 pass
             return match.group(0)
 
-        if "stroke-width=" in svg:
-            svg = re.sub(r'stroke-width="([^"]+)"', _normalize_stroke_width, svg)
+        if "stroke-width=" in recolored:
+            recolored = re.sub(r'stroke-width=(["\'])([^"\']+)\1', _normalize_stroke_width, recolored)
         else:
-            svg = re.sub(r'<svg(\s+)', r'<svg\1stroke-width="1.8" ', svg, count=1)
+            recolored = re.sub(r'(<svg\b[^>]*)(>)', r'\1 stroke-width="1.8"\2', recolored, count=1)
 
-        return svg
+        return recolored
+
+
+def apply_node_icons(
+    nodes: Dict[str, DiagramNode],
+    node_icons: Dict[str, Dict[str, Any]],
+    theme_name: str = "modern_consulting",
+    custom_theme: Optional[Dict[str, Any]] = None,
+) -> None:
+    """
+    Applies node_icons specifications to DiagramNode AST instances.
+    Recognizes semantic palette roles ('primary', 'accent', 'secondary', 'warning', 'danger')
+    and binds them to both node card stroke and icon_color.
+    Infers technical icon_weight ('brand' for vendor logos, 'light' for UI glyphs).
+    """
+    theme_dict = dict(THEME_PRESETS.get(theme_name, THEME_PRESETS["modern_consulting"]))
+    if custom_theme:
+        theme_dict.update(custom_theme)
+
+    for nid, idata in node_icons.items():
+        if nid not in nodes:
+            continue
+        node = nodes[nid]
+        node.custom_style.update(idata)
+
+        raw_weight = str(idata.get("icon_weight") or idata.get("weight") or "").strip()
+        icon_key = str(idata.get("icon") or idata.get("logo") or "").lower().replace("-", "_")
+
+        # Check if raw_weight is a semantic palette role
+        role_candidates = (
+            "primary", "accent", "secondary", "accent_secondary",
+            "warning", "danger", "success", "muted", "accent_teal",
+        )
+        if raw_weight.lower() in role_candidates or raw_weight.lower() in CANONICAL_ENTERPRISE_COLORS:
+            role_key = raw_weight.lower()
+            role_hex = resolve_brand_color(role_key, theme=theme_dict)
+
+            # Bind card stroke and icon_color to the resolved role hex
+            if "stroke" not in idata:
+                node.custom_style["stroke"] = role_hex
+            if "icon_color" not in idata:
+                node.custom_style["icon_color"] = role_hex
+
+            # Infer technical icon_weight based on icon identity
+            is_vendor = any(v in icon_key for v in VENDOR_BRAND_COLORS)
+            node.icon_weight = "brand" if is_vendor else "light"
+        elif raw_weight in ("brand", "weighted", "light"):
+            node.icon_weight = raw_weight
+        else:
+            is_vendor = any(v in icon_key for v in VENDOR_BRAND_COLORS)
+            node.icon_weight = "brand" if is_vendor else "light"
 
 
 # ============================================================================
@@ -1541,15 +1568,9 @@ class DrawIOConverter:
             f"fontColor={font_col};",
             f"fontFamily={self.theme['node_font_family']};",
             f"fontSize={self.theme['node_font_size']};",
-            "fontStyle=0;",
+            f"fontStyle=0;",
             "shadow=0;",
         ]
-        if icon_key:
-            style_parts.append(f"icon={icon_key};")
-        if "icon_color" in node.custom_style:
-            style_parts.append(f"icon_color={node.custom_style['icon_color']};")
-        if node.icon_weight:
-            style_parts.append(f"icon_weight={node.icon_weight};")
         return "".join(style_parts)
 
     def _build_edge_style(
@@ -1906,10 +1927,23 @@ class DiagramRenderer:
 
         # Check for optional logo / icon embedding
         icon_path_str = node.custom_style.get("icon") or node.custom_style.get("logo")
+        image_data_uri = node.custom_style.get("image")
         text_cx = node.x + node.width / 2.0
         text_anchor = "middle"
 
-        if icon_path_str:
+        if image_data_uri and image_data_uri.startswith("data:image/"):
+            try:
+                icon_sz = min(node.height * 0.52, 36.0)
+                icon_x = node.x + 18.0
+                icon_y = node.y + (node.height - icon_sz) / 2.0
+                lines.append(
+                    f'  <image xlink:href="{image_data_uri}" x="{icon_x:.1f}" y="{icon_y:.1f}" width="{icon_sz:.1f}" height="{icon_sz:.1f}"/>'
+                )
+                text_cx = icon_x + icon_sz + 14.0
+                text_anchor = "start"
+            except Exception:
+                pass
+        elif icon_path_str:
             from src.ppt_engine.library_importer import IconRegistry
             icon_p = IconRegistry.resolve_icon(icon_path_str)
             if icon_p and icon_p.exists():
@@ -2048,13 +2082,7 @@ class DiagramEngine:
 
         parsed = self.parser.parse(mermaid_code)
         if node_icons:
-            for nid, idata in node_icons.items():
-                if nid in parsed.nodes:
-                    parsed.nodes[nid].custom_style.update(idata)
-                    if "icon_weight" in idata:
-                        parsed.nodes[nid].icon_weight = idata["icon_weight"]
-                    elif "weight" in idata:
-                        parsed.nodes[nid].icon_weight = idata["weight"]
+            apply_node_icons(parsed.nodes, node_icons, theme_name=theme)
         laid_out = self.layout.compute_layout(parsed)
 
         converter = DrawIOConverter(theme_name=theme)
@@ -2199,11 +2227,24 @@ def mxgraph_to_ast(diagram_elem: ET.Element) -> ParsedDiagram:
                     shape = "subroutine"
 
                 custom_style: Dict[str, str] = {}
-                for part in style.split(";"):
+                # Protect embedded data URIs (which contain ;base64,) from being split
+                safe_style = re.sub(r'image=(data:[^;]+);base64,', r'image=\1__B64SEP__', style)
+                for part in safe_style.split(";"):
                     if "=" in part:
                         k, v = part.split("=", 1)
-                        if k.strip() in ("fillColor", "strokeColor", "fontColor", "icon", "icon_color", "icon_weight", "weight", "image", "shape"):
-                            custom_style[k.strip()] = v.strip()
+                        k_clean = k.strip()
+                        v_clean = v.strip().replace("__B64SEP__", ";base64,")
+                        if k_clean in ("fillColor", "fill"):
+                            custom_style["fill"] = v_clean
+                            custom_style["fillColor"] = v_clean
+                        elif k_clean in ("strokeColor", "stroke"):
+                            custom_style["stroke"] = v_clean
+                            custom_style["strokeColor"] = v_clean
+                        elif k_clean in ("fontColor", "color"):
+                            custom_style["color"] = v_clean
+                            custom_style["fontColor"] = v_clean
+                        elif k_clean in ("icon", "icon_color", "icon_weight", "weight", "image", "shape"):
+                            custom_style[k_clean] = v_clean
 
                 parsed.nodes[nid] = DiagramNode(
                     id=nid,
@@ -2435,13 +2476,7 @@ class DrawIOProject:
         layout = HierarchicalLayoutEngine(font_size=fs)
         parsed = parser.parse(mermaid_code)
         if node_icons:
-            for nid, idata in node_icons.items():
-                if nid in parsed.nodes:
-                    parsed.nodes[nid].custom_style.update(idata)
-                    if "icon_weight" in idata:
-                        parsed.nodes[nid].icon_weight = idata["icon_weight"]
-                    elif "weight" in idata:
-                        parsed.nodes[nid].icon_weight = idata["weight"]
+            apply_node_icons(parsed.nodes, node_icons, theme_name=theme, custom_theme=c_theme)
         laid_out = layout.compute_layout(parsed)
         return self.add_or_update_page(name=name, diagram=laid_out, page_id=page_id, theme=theme, custom_theme=c_theme)
 
@@ -2648,5 +2683,8 @@ class DrawIOProject:
 
         project.save(target_path)
         return project
+
+    # Alias for convenience
+    from_yaml = build_from_config
 
 

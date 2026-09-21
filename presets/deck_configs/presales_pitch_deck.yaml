@@ -1,0 +1,899 @@
+deck_type: presales_pitch_deck
+theme: metrodata
+metadata:
+  project_name: "Modernize Data Platform Pitch Deck"
+  client_name: "[CLIENT_COMPANY_NAME]"
+  vendor_name: "PT Metrodata Electronics Tbk"
+  product: "Snowflake AI Data Cloud"
+  date_str: "September 2026"
+  confidentiality: "[CLIENT_COMPANY_NAME] & Metrodata Consulting  |  Confidential & Proprietary"
+
+slides:
+  # ==========================================================================
+  # PHASE 1: SLIDES 01 - 18 (COMPANY PROFILE, PORTFOLIO & CORE SNOWFLAKE)
+  # ==========================================================================
+
+  # Slide 01: Master Cover Slide
+  - archetype: hero_cover
+    tracker: "ENTERPRISE PRESALES MODERNIZATION"
+    title: "Data Application for Financial Analytics with Snowflake"
+    subtitle: "Modernizing Financial Data Architecture, High-Speed Ingestion & Executive Analytics"
+    client: "[CLIENT_COMPANY_NAME]"
+    vendor: "PT Metrodata Electronics Tbk"
+    product: "Snowflake AI Data Cloud"
+    date_str: "September 2026"
+    hero_image_path: "assets/images/hero/cloud_interchange_night.jpg"
+    hero_height: 3.65
+    scrim_alpha: 0.28
+
+  # Slide 02: Chapter Divider 01
+  - archetype: chapter_divider
+    tracker: "SECTION 01"
+    headline: "Our Company Profile"
+    subtitle: "PT Metrodata Electronics Tbk — Indonesia's leading Information and Communications Technology powerhouse."
+    division_tagline: "PT Mitra Integrasi Informatika  |  Consulting & Enterprise Solutions"
+
+  # Slide 03: Corporate Equity Tree
+  - archetype: corporate_equity_tree
+    tracker: "CORPORATE STRUCTURE | SUBSIDIARIES & AFFILIATES"
+    title: "Comprehensive ICT Ecosystem Connects Distribution, Solutions & Cloud Subsidiaries"
+    subtitle: "Strategic corporate equity hierarchy across distribution channels, managed services, and enterprise consulting."
+
+  # Slide 04: Metrodata 8 Pillars Offering
+  - archetype: card_grid
+    tracker: "METRODATA 8 PILLARS | CORE SOLUTIONS"
+    title: "Eight Strategic Pillars Deliver End-to-End Enterprise Modernization"
+    subtitle: "Integrated solution pillars supporting digital transformation from foundation cloud infrastructure to applied intelligence."
+    columns: 4
+    items:
+      - title: "Cloud Infrastructure"
+        subtitle: "Multi-cloud architecture & migration"
+        icon: "cloud"
+        badge: "PILLAR 01"
+        accent_key: "accent"
+        bullets:
+          - "Hybrid cloud orchestration & landing zones"
+          - "FinOps cost governance & rightsizing"
+          - "AWS, Azure & Google Cloud migration"
+      - title: "Data & Artificial Intelligence"
+        subtitle: "Modern data stack & machine learning"
+        icon: "database"
+        badge: "PILLAR 02"
+        accent_key: "accent"
+        bullets:
+          - "Snowflake AI Data Cloud implementation"
+          - "dbt semantic engineering & CDC pipelines"
+          - "Cortex GenAI & analytical copilot models"
+      - title: "Cyber Security"
+        subtitle: "Zero-trust identity & governance"
+        icon: "shield"
+        badge: "PILLAR 03"
+        accent_key: "danger"
+        bullets:
+          - "Enterprise RBAC & column data masking"
+          - "SOC2 compliance & audit logging"
+          - "Vault secrets management & encryption"
+      - title: "Digital Workplace"
+        subtitle: "Modern collaboration platforms"
+        icon: "users"
+        badge: "PILLAR 04"
+        accent_key: "primary"
+        bullets:
+          - "Microsoft 365 & Power Platform hubs"
+          - "Streamlined executive B2B workflows"
+          - "Hybrid workforce security & productivity"
+      - title: "Enterprise Applications"
+        subtitle: "Core ERP & business transaction backbones"
+        icon: "layers"
+        badge: "PILLAR 05"
+        accent_key: "accent_secondary"
+        bullets:
+          - "SAP ERP financial data modernization"
+          - "CRM customer 360 unified profiles"
+          - "Integrated supply chain data modeling"
+      - title: "Business Process Automation"
+        subtitle: "Intelligent robotic workflow automation"
+        icon: "cpu"
+        badge: "PILLAR 06"
+        accent_key: "accent"
+        bullets:
+          - "RPA transaction reconciliation"
+          - "Low-code application hubs & portals"
+          - "End-to-end multi-system workflow routing"
+      - title: "Managed IT Services"
+        subtitle: "24/7 mission-critical operations"
+        icon: "activity"
+        badge: "PILLAR 07"
+        accent_key: "primary"
+        bullets:
+          - "Proactive 24/7 SLA infrastructure monitoring"
+          - "Preventative maintenance & database tuning"
+          - "Rapid incident remediation & patch control"
+      - title: "IT Advisory & Consulting"
+        subtitle: "Strategic enterprise technology alignment"
+        icon: "target"
+        badge: "PILLAR 08"
+        accent_key: "accent"
+        bullets:
+          - "Digital maturity baseline assessments"
+          - "Cloud modernization architecture roadmaps"
+          - "Stage-gate PMO delivery assurance"
+
+  # Slide 05: Chapter Divider 02
+  - archetype: chapter_divider
+    tracker: "SECTION 02"
+    headline: "Our Data & AI Portfolio"
+    subtitle: "Accelerating enterprise insight velocity through modern lakehouse architecture and intelligent analytics."
+    division_tagline: "Data & AI Practice  |  Business Application & System Division"
+
+  # Slide 06: Product Portfolio
+  - archetype: tech_logo_grid
+    tracker: "PRODUCT PORTFOLIO | ENTERPRISE DATA ECOSYSTEM"
+    title: "Best-in-Class Technology Partnerships Ensure Seamless Solution Interoperability"
+    subtitle: "Curated partner portfolio spanning database engines, event streaming, data transformation, and visualization."
+    columns: 4
+    items:
+      - name: "Snowflake"
+        category: "AI Data Cloud & Lakehouse"
+        tier_badge: "CORE DW"
+        logo: "snowflake.svg"
+        accent_key: "accent"
+        description: "Decoupled storage & elastic multi-cluster compute."
+      - name: "dbt Labs"
+        category: "Semantic Transformation"
+        tier_badge: "MODELING"
+        logo: "dbt.svg"
+        accent_key: "accent_secondary"
+        description: "Version-controlled SQL modeling and testing."
+      - name: "Apache Kafka"
+        category: "Event Streaming & CDC"
+        tier_badge: "INGESTION"
+        logo: "kafka.svg"
+        accent_key: "primary"
+        description: "Low-latency change data capture from ERP."
+      - name: "Amazon S3"
+        category: "Cloud Object Storage"
+        tier_badge: "STORAGE"
+        logo: "amazons3.svg"
+        accent_key: "accent"
+        description: "High-durability staging landing zones."
+      - name: "HashiCorp Vault"
+        category: "Secrets Management"
+        tier_badge: "SECURITY"
+        logo: "vault.svg"
+        accent_key: "danger"
+        description: "Encrypted credential rotation & key security."
+      - name: "Streamlit"
+        category: "Interactive Applications"
+        tier_badge: "SERVING"
+        logo: "trending-up"
+        accent_key: "accent"
+        description: "Python-driven executive analytics portals."
+      - name: "Tableau"
+        category: "Enterprise BI Platform"
+        tier_badge: "ANALYTICS"
+        logo: "chart"
+        accent_key: "accent_secondary"
+        description: "Governed semantic reports and dashboards."
+      - name: "Python / AI"
+        category: "Advanced Machine Learning"
+        tier_badge: "COMPUTE"
+        logo: "cpu"
+        accent_key: "primary"
+        description: "Snowpark predictive models & Cortex AI."
+
+  # Slide 07: Modern Data Stack & Orchestration
+  - archetype: tech_logo_grid
+    tracker: "MODERN DATA STACK | ORCHESTRATION & INGESTION"
+    title: "Automated Ingestion and Continuous Data Pipelines Eliminate Operational Friction"
+    subtitle: "Tiered orchestration and streaming architecture guarantees timely, governed delivery of enterprise financial records."
+    columns: 4
+    items:
+      - name: "Apache Airflow"
+        category: "Workflow Orchestration"
+        tier_badge: "DAG ENGINE"
+        logo: "activity"
+        accent_key: "accent"
+        description: "Programmatic DAG scheduling & dependency alerts."
+      - name: "Snowpipe"
+        category: "Serverless Auto-Ingestion"
+        tier_badge: "SERVERLESS"
+        logo: "snowflake.svg"
+        accent_key: "accent"
+        description: "Event-driven continuous ingestion from cloud buckets."
+      - name: "Kafka Connect"
+        category: "CDC Database Connector"
+        tier_badge: "STREAMING"
+        logo: "kafka.svg"
+        accent_key: "primary"
+        description: "Real-time WAL transaction streaming from SAP ERP."
+      - name: "dbt Core"
+        category: "Automated Data Lineage"
+        tier_badge: "TRANSFORM"
+        logo: "dbt.svg"
+        accent_key: "accent_secondary"
+        description: "Continuous automated schema testing & docs."
+      - name: "AWS Glue"
+        category: "Serverless Data Catalog"
+        tier_badge: "CATALOG"
+        logo: "aws.svg"
+        accent_key: "accent"
+        description: "Automated schema crawler and metadata registry."
+      - name: "Docker / K8s"
+        category: "Containerized Workloads"
+        tier_badge: "DEVOPS"
+        logo: "layers"
+        accent_key: "primary"
+        description: "Isolated execution runtime for pipeline containers."
+      - name: "GitHub Actions"
+        category: "CI/CD Pipeline Engine"
+        tier_badge: "AUTOMATION"
+        logo: "check"
+        accent_key: "accent_secondary"
+        description: "Automated testing and schema promotion across envs."
+      - name: "SOC 2 Audit"
+        category: "Compliance Monitoring"
+        tier_badge: "GOVERNANCE"
+        logo: "shield"
+        accent_key: "danger"
+        description: "Continuous immutable logging for audit readiness."
+
+  # Slide 08: Competencies & Certifications
+  - archetype: badge_matrix
+    tracker: "COMPETENCIES & CERTIFICATIONS | ENTERPRISE ASSURANCE"
+    title: "Certified Engineering Teams Guarantee Flawless Implementation and High Availability"
+    subtitle: "Validated competencies across data lakehouse, cloud hyperscalers, and regulatory governance standards."
+    sections:
+      - section_title: "Cloud & Data Lakehouse"
+        accent_key: "accent"
+        badge_count_label: "TIER 1 STATUS"
+        items:
+          - name: "Snowflake"
+            level: "Select Services Partner"
+            domain: "SnowPro Core & Advanced Architects"
+            icon: "snowflake"
+          - name: "Amazon Web Services"
+            level: "Advanced Tier Services"
+            domain: "AWS Certified Solutions Architects"
+            icon: "aws"
+          - name: "Microsoft Azure"
+            level: "Solutions Partner"
+            domain: "Azure Data Engineer Certified"
+            icon: "layers"
+      - section_title: "Data Transformation & BI"
+        accent_key: "accent_secondary"
+        badge_count_label: "CERTIFIED PRACTICE"
+        items:
+          - name: "dbt Labs"
+            level: "Preferred Partner"
+            domain: "Certified dbt Analytics Engineers"
+            icon: "dbt"
+          - name: "Tableau"
+            level: "Gold Reseller & Services"
+            domain: "Tableau Certified Data Consultants"
+            icon: "trending-up"
+          - name: "Power BI"
+            level: "Enterprise Certified"
+            domain: "Fabric & Power BI Data Analysts"
+            icon: "activity"
+      - section_title: "Security, Governance & CDC"
+        accent_key: "primary"
+        badge_count_label: "REGULATORY ASSURED"
+        items:
+          - name: "HashiCorp Vault"
+            level: "Security Operations Certified"
+            domain: "Enterprise Infrastructure Encryption"
+            icon: "lock"
+          - name: "Apache Kafka"
+            level: "Event Streaming Architect"
+            domain: "Real-time CDC Architecture"
+            icon: "zap"
+          - name: "SOC 2 Type II"
+            level: "Audited Controls"
+            domain: "ISO 27001 & SOC 2 Compliance"
+            icon: "shield"
+
+  # Slide 09: Chapter Divider 03
+  - archetype: chapter_divider
+    tracker: "SECTION 03"
+    headline: "Our Customer References"
+    subtitle: "Proven track record of successful enterprise modernization across manufacturing, automotive, and retail."
+    division_tagline: "Enterprise Case Studies  |  PT Mitra Integrasi Informatika"
+
+  # Slide 10: Enterprise Client References
+  - archetype: badge_matrix
+    tracker: "CUSTOMER REFERENCES | ENTERPRISE CASE STUDIES"
+    title: "Trusted by Top Tier Financial, Manufacturing, and Retail Enterprises Across Southeast Asia"
+    subtitle: "Demonstrated modernization velocity delivering unified analytics and regulatory data governance."
+    sections:
+      - section_title: "Manufacturing & Automotive"
+        accent_key: "accent"
+        badge_count_label: "GLOBAL ENTERPRISE"
+        items:
+          - name: "Leading Automotive Distributor"
+            level: "Snowflake Modernization"
+            domain: "Consolidated financial marts from SAP ERP"
+            icon: "layers"
+          - name: "Heavy Machinery Group"
+            level: "Lakehouse Implementation"
+            domain: "Spare parts demand prediction on AWS"
+            icon: "cpu"
+          - name: "Electronics Manufacturer"
+            level: "Real-Time Telemetry"
+            domain: "Production line yield optimization"
+            icon: "activity"
+      - section_title: "Financial & Banking Services"
+        accent_key: "accent_secondary"
+        badge_count_label: "HIGH GOVERNANCE"
+        items:
+          - name: "Top 5 Commercial Bank"
+            level: "Regulatory Reporting Hub"
+            domain: "Automated BI compliance & masking"
+            icon: "shield"
+          - name: "Multi-Finance Institution"
+            level: "Credit Risk Scoring"
+            domain: "Sub-second loan scoring data marts"
+            icon: "trending-up"
+          - name: "National Insurance Leader"
+            level: "Customer 360 Analytics"
+            domain: "Unified policyholder lakehouse"
+            icon: "users"
+      - section_title: "Retail & Supply Chain"
+        accent_key: "primary"
+        badge_count_label: "HIGH CONCURRENCY"
+        items:
+          - name: "Nationwide FMCG Retailer"
+            level: "Inventory Optimization"
+            domain: "POS sales aggregation & replenishment"
+            icon: "database"
+          - name: "National Logistics Fleet"
+            level: "Route Efficiency Ops"
+            domain: "IoT sensor ingestion with Kafka"
+            icon: "zap"
+          - name: "E-Commerce Marketplace"
+            level: "Semantic Modeling"
+            domain: "dbt enterprise data model migration"
+            icon: "dbt"
+
+  # Slide 11: Data Science & AI Portfolio
+  - archetype: card_grid
+    tracker: "DATA SCIENCE PORTFOLIO | ADVANCED CAPABILITIES"
+    title: "End-to-End Data Science Lifecycle Accelerates Time-to-Insight for Enterprise Stakeholders"
+    subtitle: "From exploratory data discovery to production MLOps and autonomous AI copilot integration."
+    columns: 3
+    items:
+      - title: "Exploratory Financial Analytics"
+        subtitle: "Automated anomaly & variance detection"
+        icon: "activity"
+        badge: "DESCRIPTIVE"
+        accent_key: "accent"
+        bullets:
+          - "Multi-dimensional opex variance discovery"
+          - "Automated journal entry outlier flagging"
+          - "Consolidated subsidiary margin drill-down"
+      - title: "Predictive Margin Modeling"
+        subtitle: "Machine learning revenue forecasting"
+        icon: "trending-up"
+        badge: "PREDICTIVE"
+        accent_key: "accent_secondary"
+        bullets:
+          - "Snowpark Python regression pipelines"
+          - "Exchange rate & inflation sensitivity analysis"
+          - "Rolling 12-month budget trajectory projection"
+      - title: "Cortex GenAI Summaries"
+        subtitle: "Autonomous LLM narrative generation"
+        icon: "cpu"
+        badge: "GENERATIVE AI"
+        accent_key: "primary"
+        bullets:
+          - "Natural language monthly financial briefings"
+          - "Automated audit commentary drafting"
+          - "Executive conversational query assistant"
+      - title: "Automated Feature Engineering"
+        subtitle: "Semantic feature store on Snowflake"
+        icon: "database"
+        badge: "ENGINEERING"
+        accent_key: "accent"
+        bullets:
+          - "Versioned feature matrices in Snowflake"
+          - "Zero-copy cloning for data science experimentation"
+          - "Standardized KPI definitions via dbt"
+      - title: "Production MLOps & Monitoring"
+        subtitle: "Continuous model lifecycle governance"
+        icon: "shield"
+        badge: "GOVERNANCE"
+        accent_key: "danger"
+        bullets:
+          - "Model performance & data drift tracking"
+          - "Automated retraining triggers on new batches"
+          - "Audit-ready model version lineage registry"
+      - title: "Business Metric Explainability"
+        subtitle: "Interpretable AI for executive buy-in"
+        icon: "target"
+        badge: "DECISION SUPPORT"
+        accent_key: "accent_secondary"
+        bullets:
+          - "SHAP contribution scores for margin drivers"
+          - "Transparent audit trails for fiscal authorities"
+          - "Actionable root-cause guidance for branch heads"
+
+  # Slide 12: Chapter Divider 04
+  - archetype: chapter_divider
+    tracker: "SECTION 04"
+    headline: "Data Analytics Journey"
+    subtitle: "Structured methodology for transforming transactional data into strategic business intelligence."
+    division_tagline: "Methodology & Framework  |  Data Platform Modernization"
+
+  # Slide 13: Analytics Journey – Start with KPI
+  - archetype: split_hero
+    tracker: "ANALYTICS JOURNEY | KPI DISCOVERY FRAMEWORK"
+    title: "High-Performance Analytics Begins with Clarifying Strategic Business Objectives"
+    subtitle: "Aligning technical data schemas with executive decision metrics ensures measurable return on investment."
+    hero_tag: "FRAMEWORK"
+    hero_title: "KPI-Led Modernization"
+    hero_body: "Too many cloud migrations begin with technical plumbing rather than business outcomes. Our framework aligns executive queries with foundational data models."
+    blocks:
+      - title: "1. Descriptive: What Happened?"
+        body: "Reconcile past sales, gross margin, and operating expenses across business units with automated ERP ingestion."
+        tag: "STAGE 1"
+        icon: "activity"
+      - title: "2. Diagnostic: Why Did It Happen?"
+        body: "Trace root-cause drivers behind margin shrinkage or cost overruns through granular dbt dimensional drill-downs."
+        tag: "STAGE 2"
+        icon: "target"
+      - title: "3. Predictive: What Will Happen?"
+        body: "Forecast cash flows and working capital requirements using Snowpark machine learning models."
+        tag: "STAGE 3"
+        icon: "trending-up"
+      - title: "4. Prescriptive: How Can We Optimize It?"
+        body: "Deliver automated scenario modeling and executive decision levers through interactive Streamlit portals."
+        tag: "STAGE 4"
+        icon: "zap"
+
+  # Slide 14: The Iceberg Concept
+  - archetype: iceberg_concept
+    tracker: "ANALYTICS FOUNDATION | THE ICEBERG CONCEPT"
+    title: "Modern Data Platforms Eliminate the Subsurface Technical Debt That Breaks Dashboards"
+    subtitle: "While executives view surface reports, 85% of analytic resilience relies on robust foundation data engineering."
+    visible_items:
+      - title: "Executive Dashboards"
+        desc: "Interactive Tableau & Power BI portals for C-suite tracking."
+      - title: "Streamlit Analytics"
+        desc: "Custom margin, opex, and scenario analysis apps."
+      - title: "Cortex GenAI"
+        desc: "Automated executive summary generation."
+    subsurface_items:
+      - title: "Snowflake AI Data Cloud"
+        desc: "Decoupled cloud storage and multi-cluster elastic compute."
+      - title: "Continuous CDC Ingestion"
+        desc: "Kafka & Snowpipe streaming from SAP without lockups."
+      - title: "dbt Semantic Layer"
+        desc: "Standardized dimensional data models and test assertions."
+      - title: "RBAC & Dynamic Masking"
+        desc: "Granular PII protection, encryption, and audit logs."
+      - title: "Automated Orchestration"
+        desc: "Airflow DAG pipelines with alerting and SLA controls."
+      - title: "FinOps & Cost Governance"
+        desc: "Warehouse auto-suspend preventing runaway compute spend."
+    takeaways:
+      - "Dashboard failures stem from broken upstream pipelines, not visual charts."
+      - "Legacy point-to-point ETL creates untraceable data lineage and discrepancies."
+      - "Snowflake's decoupled storage-compute guarantees 99.99% reliability."
+      - "Foundation engineering reduces long-term reporting maintenance by 70%."
+
+  # Slide 15: Chapter Divider 05
+  - archetype: chapter_divider
+    tracker: "SECTION 05"
+    headline: "Product Introduction & Objective"
+    subtitle: "Snowflake AI Data Cloud: The unified foundation for enterprise financial intelligence."
+    division_tagline: "Technology Core  |  Snowflake Platform Architecture"
+
+  # Slide 16: Snowflake: The AI Data Cloud (3-Tier Architecture)
+  - archetype: bcg_3_horizon
+    tracker: "SNOWFLAKE ARCHITECTURE | THE AI DATA CLOUD"
+    title: "Decoupled Architecture Delivers Infinite Compute Elasticity with Zero Resource Contention"
+    subtitle: "Three independent layers: centralized cloud storage, multi-cluster elastic compute, and unified cloud services."
+    horizons:
+      - horizon_tag: "TIER 1  |  STORAGE LAYER"
+        title: "Centralized Cloud Storage"
+        strategic_focus: "Single source of truth with automated micro-partitioning and high-durability encryption."
+        metric_highlight: "Zero Contention"
+        metric_label: "Decoupled storage and compute"
+        initiatives:
+          - "Unified storage for structured and semi-structured JSON/Parquet"
+          - "Time Travel data recovery up to 90 days for audit trails"
+          - "Zero-Copy Cloning for instantaneous dev/test environments"
+          - "End-to-end AES-256 encryption at rest and in transit"
+        accent_key: "accent"
+        status_tag: "FOUNDATION"
+        status_bg_key: "badge_blue_fill"
+        status_text_key: "badge_blue_text"
+        icon: "database"
+      - horizon_tag: "TIER 2  |  COMPUTE LAYER"
+        title: "Multi-Cluster Elastic Compute"
+        strategic_focus: "Dedicated virtual warehouses scale instantly to eliminate reporting slowdowns."
+        metric_highlight: "Sub-Second"
+        metric_label: "Elastic warehouse auto-scaling"
+        initiatives:
+          - "Independent compute clusters for Ingestion, ETL, and BI queries"
+          - "Auto-suspend and resume minimizes idle cloud expenditure"
+          - "Multi-cluster warehouses automatically handle user concurrency"
+          - "Snowpark Python execution directly on data without egress"
+        accent_key: "primary"
+        status_tag: "ELASTICITY"
+        status_bg_key: "badge_blue_fill"
+        status_text_key: "badge_blue_text"
+        icon: "cpu"
+      - horizon_tag: "TIER 3  |  SERVICES & GOVERNANCE"
+        title: "Cloud Services & Horizon"
+        strategic_focus: "Global orchestration, optimization, and enterprise security governance."
+        metric_highlight: "100% Governed"
+        metric_label: "Built-in RBAC and auditability"
+        initiatives:
+          - "Automated query optimization, metadata management, and caching"
+          - "Snowflake Horizon centralized governance and dynamic masking"
+          - "Granular Role-Based Access Control (RBAC) across departments"
+          - "Integrated Cortex AI foundation for LLMs and semantic search"
+        accent_key: "accent_secondary"
+        status_tag: "GOVERNANCE"
+        status_bg_key: "badge_blue_fill"
+        status_text_key: "badge_blue_text"
+        icon: "shield"
+
+  # Slide 17: Snowflake Platform Architecture (Official Graphic)
+  - archetype: snowflake_platform_architecture
+    tracker: "TECHNOLOGY PLATFORM BLUEPRINT | SNOWFLAKE DATA CLOUD"
+    title: "Fully-Managed Unified Platform Eliminates Data Silos Across Multi-Cloud Environments"
+    subtitle: "Official Snowflake platform blueprint showing decoupled storage, elastic compute, and Horizon governance."
+
+  # Slide 18: Business Applications & End-to-End Pipeline
+  - archetype: snowflake_data_pipeline
+    tracker: "SOLUTION ARCHITECTURE | END-TO-END DATA PIPELINE"
+    title: "Modern Data Pipeline Streamlines Continuous Ingestion into Governed Analytics Consumption"
+    subtitle: "Official end-to-end data flow: transactional ERP/IoT sources into Snowflake core, virtual warehouses, and delivery channels."
+
+  # ==========================================================================
+  # PHASE 2: SLIDES 19 - 36 (CHALLENGES, BLUEPRINT, GANTT & GOVERNANCE)
+  # ==========================================================================
+
+  # Slide 19: Chapter Divider 06
+  - archetype: chapter_divider
+    tracker: "SECTION 06"
+    headline: "Existing Challenge & Proposed Solution"
+    subtitle: "Analyzing operational friction points and structuring the target modernized state."
+    division_tagline: "Problem Discovery & Target Architecture"
+
+  # Slide 20: Existing Challenges (SAP ERP Window Mockup)
+  - archetype: browser_mockup
+    tracker: "EXISTING CHALLENGES | OPERATIONAL FRICTION"
+    title: "Legacy ERP Silos and Manual Spreadsheet Assembly Create Severe Reporting Latency"
+    subtitle: "Fragmented financial tables in SAP require manual monthly exports, causing delayed executive visibility."
+    url: "https://sap.toyota-tsusho.local/sap/bc/gui/sap/its/webgui"
+    telemetry_badges:
+      - "⚠️ Legacy SAP GUI Batch Export"
+      - "🕒 Monthly Consolidation Lag"
+      - "❌ No Centralized Semantic Model"
+    takeaways_title: "CURRENT BOTTLENECKS & IMPACT"
+    takeaways:
+      - title: "Fragmented Financial Data"
+        desc: "Sales, COGS, and opex reside in disjointed tables requiring manual VLOOKUP reconciliations."
+        accent_key: "danger"
+      - title: "Slow Month-End Close"
+        desc: "Manual consolidation adds 7-10 business days delay before executive leadership receives reports."
+        accent_key: "warning"
+      - title: "High Operational Risk"
+        desc: "Spreadsheet-based calculations lack audit trails, creating compliance and data leakage risks."
+        accent_key: "danger"
+
+  # Slide 21: Gap Analysis & Solution Suggestion
+  - archetype: gap_analysis
+    tracker: "GAP ANALYSIS | AS-IS VS TO-BE"
+    title: "Strategic Modernization Bridges Current Legacy Friction into Agile Intelligence"
+    subtitle: "Detailed comparative analysis across latency, data quality, scalability, and operational governance."
+
+  # Slide 22: Proposed Solution
+  - archetype: chevron_process
+    tracker: "PROPOSED SOLUTION | VALUE CHAIN TRANSFORMATION"
+    title: "Integrated Four-Stage Value Chain Unifies Transactional Ingestion into AI Delivery"
+    subtitle: "End-to-end flow from automated CDC capture to dimensional modeling and interactive executive portals."
+    steps:
+      - phase_number: "01"
+        title: "Continuous CDC Ingestion"
+        subtitle: "Zero ERP Contention"
+        accent_key: "accent"
+        deliverables:
+          - "Automated Kafka transaction capture"
+          - "Micro-batch Snowpipe ingestion"
+          - "Bronze raw landing layer"
+      - phase_number: "02"
+        title: "Lakehouse Storage"
+        subtitle: "Snowflake Core Cloud"
+        accent_key: "accent_secondary"
+        deliverables:
+          - "Decoupled cloud storage"
+          - "Automated micro-partitioning"
+          - "Zero-copy cloning & Time Travel"
+      - phase_number: "03"
+        title: "Semantic Modeling"
+        subtitle: "dbt Dimensional Marts"
+        accent_key: "primary"
+        deliverables:
+          - "Star-schema dimensional tables"
+          - "Automated data quality assertions"
+          - "Silver cleansed & Gold marts"
+      - phase_number: "04"
+        title: "Executive Serving"
+        subtitle: "Interactive Dashboards"
+        accent_key: "accent"
+        deliverables:
+          - "Custom Streamlit financial app"
+          - "Tableau & Power BI direct query"
+          - "Cortex GenAI automated summaries"
+
+  # Slide 23: Proposed Architecture Blueprint
+  - archetype: split_hero
+    tracker: "PROPOSED ARCHITECTURE | SYSTEM BLUEPRINT"
+    title: "Target Cloud Blueprint Connects Source Systems to Governed Snowflake Lakehouse"
+    subtitle: "Modernized data platform architecture establishing continuous ingestion, transformation, and self-service analytics."
+    hero_tag: "BLUEPRINT"
+    hero_title: "Future-State Architecture"
+    hero_body: "A resilient, cloud-native data foundation designed for sub-second query performance and enterprise-grade security."
+    blocks:
+      - title: "Ingestion Tier"
+        body: "Change Data Capture (CDC) streams ERP transactional tables directly into S3 and Snowflake landing zones."
+        tag: "TIER 1"
+        icon: "zap"
+      - title: "Lakehouse Tier"
+        body: "Snowflake virtual warehouses execute dbt models to build audited Silver (cleansed) and Gold (marts) schemas."
+        tag: "TIER 2"
+        icon: "database"
+      - title: "Governance Tier"
+        body: "Snowflake Horizon enforces role-based access control, column-level masking, and complete query audit logs."
+        tag: "TIER 3"
+        icon: "shield"
+      - title: "Serving Tier"
+        body: "Streamlit and enterprise BI tools query virtual warehouses directly with zero concurrency degradation."
+        tag: "TIER 4"
+        icon: "trending-up"
+
+  # Slide 24: Analytics & Serving Architecture
+  - archetype: browser_mockup
+    tracker: "ANALYTICS APPLICATION | STREAMLIT CONSUMPTION"
+    title: "Modern Streamlit Application Empowers Finance Teams with Self-Service Analytics"
+    subtitle: "Interactive financial explorer directly connected to Snowflake Gold marts with automated scenario modeling."
+    url: "https://finance-analytics.tsusho.local/streamlit/margin-explorer"
+    telemetry_badges:
+      - "⚡ Direct Query to Snowflake Gold"
+      - "🔒 Role-Based Dynamic Masking Active"
+      - "📊 Sub-Second Response Latency"
+    takeaways_title: "CORE CAPABILITIES DELIVERED"
+    takeaways:
+      - title: "Real-Time Margin Explorer"
+        desc: "Instant drill-down into gross profit by division, brand, and customer segment."
+        accent_key: "accent"
+      - title: "Automated Opex Variance"
+        desc: "Dynamic actual vs budget comparison flagging cost spikes across departments."
+        accent_key: "accent_secondary"
+      - title: "Scenario Modeling"
+        desc: "Simulate foreign exchange fluctuations and material price shifts in real time."
+        accent_key: "primary"
+
+  # Slide 25: Chapter Divider 07
+  - archetype: chapter_divider
+    tracker: "SECTION 07"
+    headline: "Scope of Work"
+    subtitle: "Comprehensive delivery work breakdown and milestone governance framework."
+    division_tagline: "Implementation Governance  |  Scope & Workstreams"
+
+  # Slide 26: Project Delivery Lifecycle
+  - archetype: chevron_process
+    tracker: "DELIVERY LIFECYCLE | STAGE-GATE PHASES"
+    title: "Structured Four-Phase Delivery Framework Governs Implementation Quality"
+    subtitle: "Standardized consulting gates: Project Initiation, Cloud Build, Testing Validation, and Go-Live Handover."
+    steps:
+      - phase_number: "01"
+        title: "Initiation & Discovery"
+        subtitle: "Weeks 1 - 3"
+        accent_key: "accent"
+        deliverables:
+          - "Architecture design (FSD/TSD)"
+          - "Security & RBAC governance spec"
+          - "Environment setup & landing zones"
+      - phase_number: "02"
+        title: "Development & Build"
+        subtitle: "Weeks 4 - 10"
+        accent_key: "accent_secondary"
+        deliverables:
+          - "Kafka CDC ingestion pipelines"
+          - "dbt dimensional data modeling"
+          - "Streamlit financial application build"
+      - phase_number: "03"
+        title: "Testing & Validation"
+        subtitle: "Weeks 11 - 13"
+        accent_key: "primary"
+        deliverables:
+          - "System Integration Testing (SIT)"
+          - "User Acceptance Testing (UAT)"
+          - "Data reconciliation sign-off"
+      - phase_number: "04"
+        title: "Deployment & Handover"
+        subtitle: "Weeks 14 - 16"
+        accent_key: "accent"
+        deliverables:
+          - "Production cutover & deployment"
+          - "User training & administrator guide"
+          - "Formal BAST sign-off & warranty"
+
+  # Slide 27: Scope of Work Workstreams
+  - archetype: card_grid
+    tracker: "SCOPE OF WORK | DETAILED WORKSTREAMS"
+    title: "Four Core Workstreams Ensure Comprehensive Implementation Coverage"
+    subtitle: "Multi-disciplinary execution pods coordinating cloud infrastructure, data engineering, UI serving, and PMO."
+    columns: 4
+    items:
+      - title: "Workstream 1: Platform"
+        subtitle: "Cloud Landing & Security"
+        icon: "cloud"
+        badge: "INFRASTRUCTURE"
+        accent_key: "accent"
+        bullets:
+          - "Snowflake account setup & RBAC"
+          - "AWS VPC private networking"
+          - "Vault secrets rotation setup"
+      - title: "Workstream 2: Pipelines"
+        subtitle: "CDC & Data Modeling"
+        icon: "database"
+        badge: "DATA OPS"
+        accent_key: "accent_secondary"
+        bullets:
+          - "SAP ERP CDC ingestion tables"
+          - "dbt staging, silver, and gold marts"
+          - "Automated Airflow DAG orchestration"
+      - title: "Workstream 3: Analytics"
+        subtitle: "Application & Reports"
+        icon: "trending-up"
+        badge: "CONSUMPTION"
+        accent_key: "primary"
+        bullets:
+          - "Streamlit financial analytics portal"
+          - "Tableau/Power BI semantic data models"
+          - "Executive KPI alert notification engine"
+      - title: "Workstream 4: Governance"
+        subtitle: "Testing & Handover"
+        icon: "shield"
+        badge: "MANAGEMENT"
+        accent_key: "accent"
+        bullets:
+          - "SIT/UAT test scenario execution"
+          - "Admin & user documentation guides"
+          - "BAST milestone delivery sign-off"
+
+  # Slide 28: Assumptions – Sales & Gross Profit
+  - archetype: browser_mockup
+    tracker: "ENGAGEMENT ASSUMPTIONS | REVENUE & SALES"
+    title: "Financial Scoping Aligned with Target Data Entities and Calculation Logic"
+    subtitle: "Standardized transactional scoping covers domestic sales, export orders, and gross profit reconciliation."
+    url: "https://finance-analytics.tsusho.local/streamlit/sales-scoping"
+    telemetry_badges:
+      - "📋 Entity: Sales & Gross Margin"
+      - "🔄 Daily Automated Reconciliation"
+      - "🏢 Scope: Group Consolidated"
+    takeaways_title: "SCOPING ASSUMPTIONS & RULES"
+    takeaways:
+      - title: "Source Tables Included"
+        desc: "SAP SD sales documents, billing vouchers, and inventory movement records."
+        accent_key: "accent"
+      - title: "Gross Profit Logic"
+        desc: "Formula: Net Revenue minus Standard COGS minus Freight/Customs tariffs."
+        accent_key: "accent_secondary"
+      - title: "Data Refresh Cadence"
+        desc: "Daily automated batch ingestion with intra-day streaming for urgent adjustments."
+        accent_key: "primary"
+
+  # Slide 29: Assumptions – Opex & Net Margin
+  - archetype: browser_mockup
+    tracker: "ENGAGEMENT ASSUMPTIONS | OPEX & EXPENSE ALLOCATION"
+    title: "Operating Expense Modeling Aligned with Group Cost Center Hierarchy"
+    subtitle: "Standardized expense allocation logic mapping GL accounts, departmental cost centers, and net margins."
+    url: "https://finance-analytics.tsusho.local/streamlit/opex-scoping"
+    telemetry_badges:
+      - "📋 Entity: Operating Expenses (Opex)"
+      - "🏛️ Cost Center Mapping: 42 Centers"
+      - "📈 Net Profit After Tax Allocation"
+    takeaways_title: "OPEX ALLOCATION CRITERIA"
+    takeaways:
+      - title: "General Ledger Scope"
+        desc: "SAP FI/CO operational expenditure accounts across administrative and marketing pods."
+        accent_key: "accent"
+      - title: "Intercompany Transfers"
+        desc: "Elimination of intercompany charges during group financial rollup."
+        accent_key: "accent_secondary"
+      - title: "Historical Migration"
+        desc: "3 years of historical audited financial data migrated into Snowflake."
+        accent_key: "primary"
+
+  # Slide 30: Assumptions Summary
+  - archetype: split_hero
+    tracker: "ENGAGEMENT PARAMETERS | GENERAL ASSUMPTIONS"
+    title: "Project Success Factors Depend on Coordinated Joint Client-Vendor Governance"
+    subtitle: "Key technical prerequisites, client resource commitments, and operational assumptions."
+    hero_tag: "ASSUMPTIONS"
+    hero_title: "Engagement Prerequisites"
+    hero_body: "A collaborative partnership between client stakeholders and Metrodata engineers ensures smooth delivery without unexpected scope friction."
+    blocks:
+      - title: "Client IT Access & Credentials"
+        body: "Timely provision of SAP ERP read-only database credentials, firewall whitelisting, and AWS cloud VPC access."
+        tag: "ACCESS"
+        icon: "lock"
+      - title: "Subject Matter Expert Availability"
+        body: "Business Process Owners (Finance, Accounting, IT) committed to attend weekly sprint reviews and UAT sign-off."
+        tag: "RESOURCES"
+        icon: "users"
+      - title: "Environment Provisioning"
+        body: "Snowflake enterprise accounts and cloud infrastructure subscriptions provisioned before Sprint 2 kickoff."
+        tag: "INFRASTRUCTURE"
+        icon: "cloud"
+      - title: "Scope Boundary Management"
+        body: "Any functional modifications outside approved FSD will follow formal Change Request (CR) governance."
+        tag: "GOVERNANCE"
+        icon: "shield"
+
+  # Slide 31: Chapter Divider 08
+  - archetype: chapter_divider
+    tracker: "SECTION 08"
+    headline: "Project Timeline & Organization"
+    subtitle: "Project delivery schedule, milestone gates, and joint organizational governance."
+    division_tagline: "Delivery Schedule  |  Gantt & Org Structure"
+
+  # Slide 32: Project Timeline Estimate
+  - archetype: timeline_gantt
+    tracker: "PROJECT TIMELINE & DELIVERY GANTT"
+    title: "16-Week Modernization Roadmap Structured Across Clear Milestone Gates"
+    subtitle: "Multi-phase implementation schedule coordinating cloud staging, dbt transformations, and UAT sign-off."
+
+  # Slide 33: Project Organization Structure
+  - archetype: governance_org_structure
+    tracker: "PROJECT GOVERNANCE | ORGANIZATIONAL STRUCTURE"
+    title: "Joint Dual-Pillar Governance Matrix Establishes Clear Escalation & Delivery Ownership"
+    subtitle: "Hierarchical project structure connects executive steering committees, PMO leads, and specialized execution pods."
+    client_name: "[CLIENT_COMPANY_NAME]"
+    vendor_name: "PT Metrodata Electronics Tbk"
+
+  # Slide 34: Chapter Divider 09
+  - archetype: chapter_divider
+    tracker: "SECTION 09"
+    headline: "Change Request (CR)"
+    subtitle: "Contractual change control procedure ensuring scope and timeline governance."
+    division_tagline: "Scope Management  |  Change Request Governance"
+
+  # Slide 35: Change Request Procedure
+  - archetype: change_request_procedure
+    tracker: "PROJECT GOVERNANCE | SCOPE & CHANGE CONTROL"
+    title: "Structured Change Request Procedure Governs Scope Adjustments Through Defined Decision Gates"
+    subtitle: "Sequential 4-stage governance pipeline with bi-level escalation thresholds and auditable legal sign-offs."
+
+  # Slide 36: Executive Closing & Contact
+  - archetype: split_hero
+    tracker: "CONTACT & PRACTICE LEADERSHIP | METRODATA CONSULTING"
+    title: "Partnering for Transformative Enterprise Data Modernization"
+    subtitle: "PT Mitra Integrasi Informatika stands ready to accelerate your financial analytics journey."
+    hero_tag: "PARTNERSHIP"
+    hero_title: "Next Steps"
+    hero_body: "We look forward to collaborating with your leadership team to establish a high-performance Snowflake data cloud."
+    blocks:
+      - title: "Headquarters & Office"
+        body: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Tanjung Duren Selatan, Grogol Petamburan, Jakarta Barat 11470"
+        tag: "LOCATION"
+        icon: "building-2"
+      - title: "Consulting Practice Contact"
+        body: "Email: contact@mii.co.id  |  Phone: +62 21 29345 777  |  Web: www.metrodata.co.id"
+        tag: "INQUIRIES"
+        icon: "users"
+      - title: "Engagement Leadership"
+        body: "Practice Director: Data & AI Consulting  |  Principal Architect: Cloud Lakehouse Solutions"
+        tag: "LEADERSHIP"
+        icon: "target"
+      - title: "Confidentiality & Compliance"
+        body: "This presentation contains proprietary methodologies of PT Metrodata Electronics Tbk and PT Mitra Integrasi Informatika."
+        tag: "LEGAL"
+        icon: "shield"
