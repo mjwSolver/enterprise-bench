@@ -301,6 +301,7 @@ def build_ppt_deck(
     issues: Optional[str] = typer.Option(None, "--issues", help="Override issue log spreadsheet path for weekly deck"),
     checklist: Optional[str] = typer.Option(None, "--checklist", help="Override closeout checklist spreadsheet path for closing deck"),
     chart_mode: bool = typer.Option(False, "--chart-mode", help="Embed high-DPI S-Curve line chart on Slide 4"),
+    client: Optional[str] = typer.Option(None, "--client", help="Optional client name override for engagement context"),
 ) -> None:
     """Build a multi-slide executive consulting presentation deck from a YAML specification."""
     import subprocess
@@ -325,6 +326,14 @@ def build_ppt_deck(
         engagement_ctx = load_engagement_context(context_file)
     elif "context" in config_data:
         engagement_ctx = EngagementContext(**config_data["context"])
+
+    if client:
+        if engagement_ctx is None:
+            engagement_ctx = EngagementContext.default_ngl()
+        engagement_ctx.client_company_name = client
+        short = "".join(w[0] for w in client.split() if w[0].isalnum()).upper()
+        if short:
+            engagement_ctx.client_short_name = short
 
     rprint(f"[cyan]ℹ Building presentation deck:[/cyan] [bold]{deck_type}[/bold] from [bold]{config_path.name}[/bold]")
 
@@ -1558,6 +1567,7 @@ def file_change_request_cli(
     schedule_days: int = typer.Option(15, "--days", help="Estimated schedule calendar days required"),
     output_dir: Optional[str] = typer.Option(None, "--output-dir", "-o", help="Target output folder for CR package"),
     project_id: str = typer.Option("TTI_Snowflake_Analytics", "--project", help="Project identifier"),
+    client: Optional[str] = typer.Option(None, "--client", help="Client organization slug/name"),
 ) -> None:
     """
     Intake, model, and generate a complete Enterprise Change Request package:
@@ -1567,8 +1577,10 @@ def file_change_request_cli(
     4. BAST_Change_Request.docx (handover addendum)
     """
     from src.core.change_request import ChangeRequestProcessor, CRSubmission
+    from src.core.slug_registry import EngagementContext
 
-    processor = ChangeRequestProcessor(project_id=project_id)
+    ctx = EngagementContext.from_client_name(client) if client else EngagementContext.default_ngl()
+    processor = ChangeRequestProcessor(project_id=project_id, context=ctx)
     submission = CRSubmission(
         title=title,
         requester=requester,

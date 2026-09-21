@@ -48,6 +48,14 @@ STANDARD_SLUG_MAP: Dict[str, str] = {
     "[LEAD_ARCHITECT_NAME]": "lead_architect_name",
 }
 
+DEFAULT_CLIENT_COMPANY_NAME = "Nusantara Global Logistics"
+DEFAULT_CLIENT_SHORT_NAME = "NGL"
+DEFAULT_CLIENT_ADDRESS = "Gedung Cyber 2, Lt. 18, Jl. H.R. Rasuna Said, Jakarta Selatan"
+DEFAULT_PROJECT_NAME = "Enterprise Financial Intelligence & Cloud Analytics Platform"
+DEFAULT_VENDOR_COMPANY_NAME = "PT Metrodata Electronics Tbk"
+DEFAULT_VENDOR_SHORT_NAME = "Metrodata"
+DEFAULT_VENDOR_DIVISION = "Data & AI Modernization Practice"
+
 # Forbidden Legacy Entities for PII Leak Audits
 DEFAULT_FORBIDDEN_PATTERNS: List[str] = [
     r"\bToyota\b",
@@ -63,14 +71,14 @@ DEFAULT_FORBIDDEN_PATTERNS: List[str] = [
 
 class EngagementContext(BaseModel):
     """Complete engagement parameterization for multi-asset deliverable branding."""
-    client_company_name: str = Field("Nusantara Global Logistics", description="Full client legal name")
-    client_short_name: str = Field("NGL", description="Client abbreviation or acronym")
-    client_address: str = Field("Gedung Graha Logistik Lt. 8, Jakarta Selatan", description="Client address")
-    vendor_company_name: str = Field("PT Metrodata Electronics Tbk", description="Implementation partner name")
-    vendor_short_name: str = Field("Metrodata", description="Vendor short name")
-    vendor_division: str = Field("Data & AI Modernization Practice", description="Consulting practice name")
+    client_company_name: str = Field(DEFAULT_CLIENT_COMPANY_NAME, description="Full client legal name")
+    client_short_name: str = Field(DEFAULT_CLIENT_SHORT_NAME, description="Client abbreviation or acronym")
+    client_address: str = Field(DEFAULT_CLIENT_ADDRESS, description="Client address")
+    vendor_company_name: str = Field(DEFAULT_VENDOR_COMPANY_NAME, description="Implementation partner name")
+    vendor_short_name: str = Field(DEFAULT_VENDOR_SHORT_NAME, description="Vendor short name")
+    vendor_division: str = Field(DEFAULT_VENDOR_DIVISION, description="Consulting practice name")
 
-    project_name: str = Field("ENTERPRISE FINANCIAL INTELLIGENCE & CLOUD ANALYTICS", description="Project title")
+    project_name: str = Field(DEFAULT_PROJECT_NAME, description="Project title")
     project_code: str = Field("ENG-2000-NGL-01", description="PMO engagement tracking code")
     contract_number: str = Field("015/PKS/NGL-MII/XII/1999", description="PKS contract reference")
     milestone_name: str = Field("Milestone 1 — Assessment & Architecture Design", description="Current milestone")
@@ -86,6 +94,27 @@ class EngagementContext(BaseModel):
     vendor_partner_name: str = Field("Agustino", description="Vendor Engagement Partner")
     vendor_pm_name: str = Field("Budi Pratama, PMP", description="Vendor Project Manager")
     lead_architect_name: str = Field("Fajar Nugraha", description="Lead Solution Architect")
+
+    @classmethod
+    def default_ngl(cls) -> "EngagementContext":
+        """Return the canonical system-wide default engagement context."""
+        return cls()
+
+    def substitute(self, text: str) -> str:
+        """Replace all slug tokens and forbidden legacy client entities in text with contextual values."""
+        if not text:
+            return text
+        rep = self.to_slug_replacement_dict()
+        for slug, val in rep.items():
+            if slug in text:
+                text = text.replace(slug, str(val))
+        # Universal normalization of legacy client entities
+        text = re.sub(r"\bPT\s+Toyota\s+Tsusho\s+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bToyota\s+Tsusho\s+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bToyota\s+Tsusho\b", self.client_company_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bTTLC\b", self.client_short_name, text)
+        text = re.sub(r"\bTTI\b", self.client_short_name, text)
+        return text
 
     def to_slug_replacement_dict(self) -> Dict[str, str]:
         """Convert fields into [SLUG] -> value dictionary."""
@@ -255,7 +284,7 @@ def substitute_slugs_in_presentation(
     replacement_map: Union[EngagementContext, Dict[str, str]],
 ) -> int:
     """
-    Scans all slides, shapes, tables, and text frames in a Presentation,
+    Scans all slides, shapes, group shapes, tables, and text frames in a Presentation,
     substituting slug tokens (e.g. [CLIENT_COMPANY_NAME]) with parameter values.
     Returns the total number of substitutions made.
     """
@@ -266,39 +295,47 @@ def substitute_slugs_in_presentation(
 
     total_subs = 0
 
+    def _process_shape(shape: Any) -> int:
+        subs = 0
+        if shape.has_text_frame:
+            for paragraph in shape.text_frame.paragraphs:
+                for slug, val in rep.items():
+                    if slug in paragraph.text:
+                        found_in_runs = False
+                        for run in paragraph.runs:
+                            if slug in run.text:
+                                run.text = run.text.replace(slug, str(val))
+                                subs += 1
+                                found_in_runs = True
+                        if not found_in_runs and slug in paragraph.text:
+                            paragraph.text = paragraph.text.replace(slug, str(val))
+                            subs += 1
+
+        if shape.has_table:
+            for row in shape.table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.text_frame.paragraphs:
+                        for slug, val in rep.items():
+                            if slug in paragraph.text:
+                                found_in_runs = False
+                                for run in paragraph.runs:
+                                    if slug in run.text:
+                                        run.text = run.text.replace(slug, str(val))
+                                        subs += 1
+                                        found_in_runs = True
+                                if not found_in_runs and slug in paragraph.text:
+                                    paragraph.text = paragraph.text.replace(slug, str(val))
+                                    subs += 1
+
+        if hasattr(shape, "shapes"):
+            for sub_shape in shape.shapes:
+                subs += _process_shape(sub_shape)
+
+        return subs
+
     for slide in prs.slides:
         for shape in slide.shapes:
-            if shape.has_text_frame:
-                for paragraph in shape.text_frame.paragraphs:
-                    for slug, val in rep.items():
-                        if slug in paragraph.text:
-                            # Replace in individual runs if present to preserve run formatting
-                            found_in_runs = False
-                            for run in paragraph.runs:
-                                if slug in run.text:
-                                    run.text = run.text.replace(slug, str(val))
-                                    total_subs += 1
-                                    found_in_runs = True
-                            # If slug was split across runs or not in runs, replace at paragraph level
-                            if not found_in_runs and slug in paragraph.text:
-                                paragraph.text = paragraph.text.replace(slug, str(val))
-                                total_subs += 1
-
-            if shape.has_table:
-                for row in shape.table.rows:
-                    for cell in row.cells:
-                        for paragraph in cell.text_frame.paragraphs:
-                            for slug, val in rep.items():
-                                if slug in paragraph.text:
-                                    found_in_runs = False
-                                    for run in paragraph.runs:
-                                        if slug in run.text:
-                                            run.text = run.text.replace(slug, str(val))
-                                            total_subs += 1
-                                            found_in_runs = True
-                                    if not found_in_runs and slug in paragraph.text:
-                                        paragraph.text = paragraph.text.replace(slug, str(val))
-                                        total_subs += 1
+            total_subs += _process_shape(shape)
 
     return total_subs
 

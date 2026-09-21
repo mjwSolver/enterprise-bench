@@ -680,8 +680,9 @@ class PitchDeckBuilder:
     ) -> Path:
         """Saves presentation deck to target path after synchronizing pagination and substituting slugs."""
         self.update_pagination()
-        if engagement_context is not None:
-            substitute_slugs_in_presentation(self.prs, engagement_context)
+        if engagement_context is None:
+            engagement_context = EngagementContext.default_ngl()
+        substitute_slugs_in_presentation(self.prs, engagement_context)
 
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)

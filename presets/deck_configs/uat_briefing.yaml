@@ -1,6 +1,6 @@
 # ==============================================================================
 # Master Declarative Configuration: Bilingual UAT Briefing Presentation
-# Project: Toyota Tsusho Indonesia (TTI) — Snowflake Financial Analytics
+# Project: [CLIENT_COMPANY_NAME] ([CLIENT_SHORT_NAME]) — Snowflake Financial Analytics
 # Deliverable: 3.4_Sosialisasi_UAT_Briefing_Modernized.pptx (25 Slides)
 # ==============================================================================
 
@@ -8,7 +8,7 @@ deck_type: "uat_briefing"
 theme: "metrodata"
 
 metadata:
-  client_name: "PT Toyota Tsusho Indonesia"
+  client_name: "[CLIENT_COMPANY_NAME]"
   vendor_name: "PT Mitra Integrasi Informatika"
   product: "Snowflake Financial Analytics & Streamlit Application"
   date_str: "20 Februari 2026"
@@ -22,7 +22,7 @@ slides:
     tracker: "PROJECT ENGAGEMENT | USER ACCEPTANCE TESTING (UAT)"
     title: "Sosialisasi User Acceptance Testing (UAT)"
     subtitle: "Data Application for Financial Analytics with Snowflake: Validasi Fungsional, Tata Kelola & Panduan Aplikasi"
-    client: "PT TOYOTA TSUSHO INDONESIA"
+    client: "[CLIENT_COMPANY_NAME]"
     vendor: "PT MITRA INTEGRASI INFORMATIKA"
     product: "Snowflake AI Data Cloud & Streamlit Analytics"
     date_str: "20 Februari 2026"
@@ -115,7 +115,7 @@ slides:
         badge: "STAKEHOLDERS"
         bullets:
           - "Business Process Owners: Sales Department, Business Accounting, Consolidated Accounting."
-          - "IT Infrastructure & Governance: TTI IT Group mengawal kepatuhan akses dan otentikasi."
+          - "IT Infrastructure & Governance: [CLIENT_SHORT_NAME] IT Group mengawal kepatuhan akses dan otentikasi."
           - "Vendor Implementation Team: MII Project Team mendampingi eksekusi dan memfasilitasi perbaikan defect."
           - "Executive Steering Committee: Memberikan persetujuan akhir BAST pasca stabilitas tercapai."
 
@@ -755,7 +755,7 @@ slides:
         tag_color: "secondary"
         description:
           - "Riwayat pengisian data tercatat lengkap dengan identitas pengguna dan waktu modifikasi."
-          - "Memenuhi standar tata kelola kepatuhan audit internal PT Toyota Tsusho Indonesia."
+          - "Memenuhi standar tata kelola kepatuhan audit internal [CLIENT_COMPANY_NAME]."
 
   # ----------------------------------------------------------------------------
   # Slide 21: Modul AR Overdue (Analisis Piutang Jatuh Tempo) (Browser Mockup)
@@ -904,7 +904,7 @@ slides:
     tracker: "DUKUNGAN TEKNIS & ESKALASI | THANK YOU"
     title: "Terima Kasih & Selamat Menjalankan UAT"
     subtitle: "Tim Konsultan MII Berkomitmen Penuh Mendampingi Keberhasilan Pengujian Penerimaan Pengguna."
-    company: "PT Mitra Integrasi Informatika  |  PT Toyota Tsusho Indonesia"
+    company: "PT Mitra Integrasi Informatika  |  [CLIENT_COMPANY_NAME]"
     office: "APL Tower Lantai 37, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
     contacts:
       - name: "Agus Suhanto"

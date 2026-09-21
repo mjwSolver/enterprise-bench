@@ -5,9 +5,9 @@ metadata:
   client_name: "Nusantara Global Logistics"
   vendor_name: "PT Metrodata Electronics Tbk"
   report_number: "01"
-  report_date: "05 Jan 2000"
-  reporting_period: "15 Dec 1999 - 02 Jan 2000"
-  presenter: "Budi Pratama, PMP, Project Manager"
+  report_date: "05 Jan 2026"
+  reporting_period: "15 Dec 2025 - 02 Jan 2026"
+  presenter: "Project Leadership Team"
   confidentiality: "Nusantara Global Logistics & Metrodata Consulting  |  Confidential & Proprietary"
 
 spreadsheets:
@@ -23,7 +23,7 @@ slides:
     client: "Nusantara Global Logistics"
     vendor: "PT Metrodata Electronics Tbk"
     product: "Snowflake AI Data Cloud"
-    date_str: "05 Jan 2000"
+    date_str: "05 Jan 2026"
     tracker: "PROJECT GOVERNANCE & WEEKLY STATUS"
     client_sublabel: "Steering Committee & Executive Sponsors"
     vendor_sublabel: "Data & AI Modernization Practice"
@@ -36,64 +36,64 @@ slides:
     items:
       - num: "01"
         title: "Project Management Plan"
-        description: "Penyampaian tata kelola proyek, peran tim, dan baseline manajemen."
+        description: "Presentation of project governance, RACI alignment, and management baseline."
       - num: "02"
         title: "Overall Progress & S-Curve"
-        description: "Evaluasi progres durasi, bobot pekerjaan, dan analisis deviasi kumulatif."
+        description: "Evaluation of duration progress, work breakdown weighting, and cumulative variance analysis."
       - num: "03"
-        title: "Detail Aktivitas Mingguan"
-        description: "Pencapaian penyelesaian aktivitas pada periode 15 Dec 1999 - 02 Jan 2000."
+        title: "Weekly Activity Detail"
+        description: "Key achievements and deliverable progress during the 15 Dec 2025 - 02 Jan 2026 reporting cycle."
       - num: "04"
-        title: "Rencana Aktivitas Minggu Depan"
-        description: "Prioritas kerja dan target delivery untuk dua pekan mendatang."
+        title: "Two-Week Lookahead Plan"
+        description: "Immediate delivery priorities and architectural milestones for the upcoming two-week horizon."
       - num: "05"
-        title: "Status Milestone"
-        description: "Tracking capaian target milestone kontrak dan perkiraan tanggal delivery."
+        title: "Milestone Delivery Status"
+        description: "Contractual milestone tracking, baseline target comparisons, and projected delivery dates."
       - num: "06"
         title: "Risk Register & Issue Log"
-        description: "Manajemen risiko aktif, mitigasi dampak, dan resolusi Issue #1."
+        description: "Active risk matrix, preventive controls, and comprehensive remediation for active Issue #1."
       - num: "07"
-        title: "Q&A & Diskusi Terbuka"
-        description: "Forum koordinasi, klarifikasi teknis, dan keputusan tindak lanjut."
+        title: "Q&A & Executive Discussion"
+        description: "Stakeholder coordination forum, technical clarifications, and Steering Committee action items."
 
   # Slide 3: Executive Summary / Project Management Plan
   - archetype: exec_summary
     tracker: "GOVERNANCE FRAMEWORK | SECTION 01"
     title: "Project Management Plan Establishes Governance & Quality Baselines"
-    subtitle: "Penyampaian singkat dokumen Project Management Plan dan kerangka kerja eksekusi."
+    subtitle: "Executive overview of the Project Management Plan governance framework and quality execution baselines."
     cards:
       - title: "Scope & Deliverables"
         tag: "SCOPE BASELINE"
         icon_name: "target"
-        summary: "Modernisasi analitik data finansial berbasis platform cloud enterprise."
+        summary: "Modernization of enterprise financial analytics leveraging cloud data platform capabilities."
         points:
-          - "Definisi 4 use case analitik finansial dan konsolidasi ledger."
-          - "Staging data, dbt transformation pipelines, dan data warehouse."
-          - "Integrasi reporting BI dan modul automated summarization."
+          - "Definition of 4 core financial analytics use cases and multi-tier ledger consolidation."
+          - "Raw staging, dbt transformation pipelines, and dimensional enterprise warehouse layers."
+          - "Streamlit executive reporting integration and automated narrative summarization."
       - title: "Team Governance & RACI"
         tag: "TEAM ALIGNMENT"
         icon_name: "users"
-        summary: "Struktur tim gabungan NGL dan MII beroperasi dengan peran yang jelas."
+        summary: "Joint delivery organization between NGL and Metrodata operating with defined accountability."
         points:
-          - "Project Manager memimpin koordinasi harian dan sprint review."
-          - "Lead Data Architect mengawal standard arsitektur data cloud."
-          - "Weekly Progress Review dan Steering Committee berkala."
+          - "Project Manager steering daily scrum coordination and sprint review cycles."
+          - "Lead Data Architect governing enterprise cloud data architecture standards."
+          - "Weekly Progress Reviews and regular Steering Committee governance gates."
       - title: "Quality & Acceptance Gate"
         tag: "QUALITY ASSURANCE"
         icon_name: "shield-check"
-        summary: "Verifikasi bertingkat sebelum sign-off dan serah terima resmi."
+        summary: "Multi-tier quality verification preceding formal milestone sign-off and production handover."
         points:
-          - "Internal System Integration Testing (SIT) dengan zero critical defect."
-          - "User Acceptance Testing (UAT) bersama Business Owner NGL."
-          - "Sign-off formal BAST per milestone dan termin pembayaran."
+          - "System Integration Testing (SIT) executing against zero critical defect criteria."
+          - "User Acceptance Testing (UAT) conducted directly with NGL business process owners."
+          - "Formal BAST milestone certification and payment term sign-off."
       - title: "Communication & Reporting"
         tag: "COMMUNICATION PROTOCOL"
         icon_name: "radio"
-        summary: "Transparansi status melalui pelaporan berkala dan dokumentasi terpusat."
+        summary: "Transparent delivery cadence through recurring status reporting and centralized documentation."
         points:
-          - "Weekly Progress Report diterbitkan setiap hari Senin."
-          - "MoM formal untuk setiap technical clarification meeting."
-          - "Eskalasi issue berjenjang ke Steering Committee."
+          - "Weekly Progress Reports delivered every Monday morning to project stakeholders."
+          - "Formal Minutes of Meeting (MoM) published for all technical architecture reviews."
+          - "Structured escalation path to the Executive Steering Committee."
 
   # Slide 4: Overall Progress & S-Curve KPI
   - archetype: overall_progress
@@ -117,7 +117,7 @@ slides:
         value: "AMBER"
         subtext: "Minor delay; Go-Live protected"
         status: "AT RISK"
-    status_narrative: "Keterlambatan minor pada beberapa aktivitas asesmen FSD, namun buffer jadwal fase development memastikan target Go-Live tetap aman sesuai baseline awal."
+    status_narrative: "Minor schedule variance within FSD assessment activities is fully absorbed by internal development buffers, keeping downstream Go-Live securely on schedule."
     phases:
       - phase: "Phase 1: Project Initiation & Charter"
         planned: "100%"
@@ -142,58 +142,58 @@ slides:
 
   # Slide 5: Weekly Activity Detail (Chronological: Phase 1 -> 2 -> 3)
   - archetype: weekly_detail
-    tracker: "DETAIL AKTIVITAS MINGGUAN | 15 DEC 1999 - 02 JAN 2000"
+    tracker: "WEEKLY ACTIVITY DETAIL | 15 DEC 2025 - 02 JAN 2026"
     title: "Completed Activities Focus on Governance Sign-Off & Architecture Assessment"
-    subtitle: "Pencapaian aktivitas utama fase inisiasi dan asesmen teknis selama periode pelaporan."
+    subtitle: "Key activity achievements across initiation, governance, and architecture workstreams during the reporting cycle."
     workstreams:
       - stream: "Project Governance & Admin"
         badge: "PHASE 01"
         items:
-          - "Kick-off meeting resmi bersama Steering Committee dan Business Owner NGL."
-          - "Penerbitan MoM inisiasi dan baseline Project Charter bertandatangan."
-          - "Registrasi risiko awal dan kesepakatan jadwal cuti bersama akhir tahun."
-          - "Setup repository dokumentasi terpusat dan kanal koordinasi harian."
+          - "Official project kick-off meeting conducted with Steering Committee and NGL Business Owners."
+          - "Publication of initiation MoM and execution of the countersigned Project Charter baseline."
+          - "Initial risk register logging and year-end calendar coordination alignment."
+          - "Establishment of centralized documentation repository and daily coordination channels."
       - stream: "Architecture & Assessment (FSD)"
         badge: "PHASE 02"
         items:
-          - "Wawancara kebutuhan modul Financial Summary dan Journal Entries."
-          - "Penyusunan draft awal Functional Specification Document (FSD v0.8)."
-          - "Identifikasi struktur data source dan relasi database eksisting."
-          - "Review data dictionary dan katalog entitas akuntansi NGL."
+          - "Stakeholder discovery interviews completed for Financial Summary and Journal Entries modules."
+          - "Drafting of initial Functional Specification Document (FSD v0.8 baseline)."
+          - "Identification of legacy source data schemas and relational database dependencies."
+          - "Review of NGL enterprise data dictionary and chart of accounts catalog."
       - stream: "Platform Infrastructure & Setup"
         badge: "PHASE 03"
         items:
-          - "Provisioning akun Cloud Data Platform Enterprise Edition di AWS region."
-          - "Konfigurasi Virtual Warehouse (Compute XS/S) dan Resource Monitors."
-          - "Penyusunan baseline Role-Based Access Control (RBAC) dan network policy."
-          - "Pemberian akses developer dan integrasi authentication SSO."
+          - "Provisioning of Cloud Data Platform Enterprise Edition account in target cloud region."
+          - "Configuration of Virtual Warehouses (Compute XS/S) and resource monitoring threshold policies."
+          - "Establishment of baseline Role-Based Access Control (RBAC) and network security policies."
+          - "Developer credential onboarding and enterprise SSO integration setup."
 
-  # Slide 6: Lookahead Plan (Rencana Aktivitas Minggu Depan)
+  # Slide 6: Lookahead Plan (2-Week Horizon)
   - archetype: lookahead_plan
-    tracker: "RENCANA AKTIVITAS MINGGU DEPAN | 2-WEEK LOOKAHEAD"
+    tracker: "LOOKAHEAD PLAN | 2-WEEK EXECUTION HORIZON"
     title: "Two-Week Lookahead Prioritizes FSD Finalization & Data Ingestion Staging"
-    subtitle: "Rencana eksekusi terfokus pada finalisasi asesmen use case dan persiapan environment staging."
+    subtitle: "Execution roadmap prioritizing FSD assessment sign-off and staging pipeline ingestion setup."
     periods:
-      - period_label: "Pekan 1: 05 Jan - 09 Jan 2000"
+      - period_label: "Week 1: 05 Jan - 09 Jan 2026"
         target_milestone: "FSD Assessment Finalization"
         tasks:
-          - "Lanjutan meeting asesmen use-case automated analytics dengan key user (09 Jan 2000)."
-          - "Finalisasi data dictionary dan mapping tabel transaksi keuangan."
-          - "Review kapasitas komputasi warehouse dan konfigurasi storage integration."
-          - "Penyusunan draft final FSD untuk review internal stakeholder."
-      - period_label: "Pekan 2: 12 Jan - 16 Jan 2000"
+          - "Conduct rescheduled automated analytics use-case assessment workshop with key users (09 Jan 2026)."
+          - "Finalize enterprise data dictionary and transaction table mapping schemas."
+          - "Review warehouse compute sizing and configure cloud storage integration stages."
+          - "Assemble draft final FSD document for internal stakeholder peer review."
+      - period_label: "Week 2: 12 Jan - 16 Jan 2026"
         target_milestone: "FSD Sign-Off & Pipeline Kickoff"
         tasks:
-          - "Walkthrough komprehensif FSD bersama project owner dan tim business NGL."
-          - "Persetujuan dan formal sign-off dokumen FSD (Target: 19 Jan 2000)."
-          - "Kick-off sprint ingestion staging pipeline menggunakan dbt."
-          - "Verifikasi network connectivity dan secure tunnel ke on-premise source."
+          - "Execute comprehensive FSD walkthrough with NGL project sponsors and finance leadership."
+          - "Secure formal approval and sign-off on FSD v1.0 specifications (Target: 19 Jan 2026)."
+          - "Kick off dbt staging ingestion pipeline sprint and development workspace initialization."
+          - "Validate network connectivity and secure tunnel to on-premises transactional databases."
 
   # Slide 7: Milestone Status (Native Vector Consulting Cards)
   - archetype: milestone_status
-    tracker: "STATUS MILESTONE | CONTRACTUAL DELIVERY SCHEDULE"
+    tracker: "MILESTONE STATUS | CONTRACTUAL DELIVERY SCHEDULE"
     title: "Baseline Milestones Remain Protected with FSD Buffer Absorption"
-    subtitle: "Pergeseran jadwal FSD diserap oleh buffer fase development tanpa menggeser target Go-Live."
+    subtitle: "FSD assessment schedule shift is fully absorbed by development phase buffer without impacting Go-Live."
     milestones:
       - num: "01"
         name: "Kick-off Meeting"
@@ -266,12 +266,12 @@ slides:
         prob_boxes: 3
         impact_label: "IMPACT: MEDIUM"
         impact_boxes: 2
-        description: "Pergeseran jadwal asesmen FSD akibat cuti bersama akhir tahun 1999."
+        description: "FSD assessment schedule shift due to year-end holiday calendar alignment."
         mitigations:
-          - "Penjadwalan ulang meeting asesmen ke tanggal 09 Jan 2000."
-          - "Alokasi backup resource untuk modul Financial General Ledger."
-          - "Akselerasi review via preliminary wireframes dan mockups."
-        contingency: "Penyerapan delay (+17 hari) diserap penuh oleh buffer dev internal tanpa menggeser Go-Live."
+          - "Rescheduled assessment workshop to 09 Jan 2026."
+          - "Allocated backup engineering resource for Financial General Ledger module."
+          - "Accelerated review via preliminary wireframes and component mockups."
+        contingency: "Full absorption of the 17-day shift within internal development buffer without affecting Go-Live."
         owner: "Budi Pratama (PM)"
 
       - tier_name: "MANAGED / HIGH IMPACT"
@@ -283,12 +283,12 @@ slides:
         prob_boxes: 2
         impact_label: "IMPACT: HIGH"
         impact_boxes: 3
-        description: "Permintaan tambahan fitur di luar 4 use case analitik finansial yang disepakati."
+        description: "Requests for additional analytics features beyond the agreed 4 core financial use cases."
         mitigations:
-          - "Freeze baseline FSD v1.0 secara formal sebagai acuan delivery."
-          - "Sosialisasi batas ruang lingkup ke seluruh stakeholder proyek."
-          - "Terapkan prosedur Change Request (CR) formal untuk request baru."
-        contingency: "Lakukan impact analysis biaya dan jadwal; eskalasi keputusan CR ke Steering Committee."
+          - "Formally freeze FSD v1.0 baseline as the binding delivery benchmark."
+          - "Communicate scope boundaries across all project executive stakeholders."
+          - "Enforce formal Change Request (CR) governance for any newly submitted enhancements."
+        contingency: "Perform rigorous cost/schedule impact sizing and escalate CR decisions to Steering Committee."
         owner: "Budi Pratama (PM)"
 
       - tier_name: "MONITORED / DATA QUALITY"
@@ -300,12 +300,12 @@ slides:
         prob_boxes: 2
         impact_label: "IMPACT: HIGH"
         impact_boxes: 3
-        description: "Potensi anomali tipe data dan relasi foreign key yang belum tervalidasi pada staging berisiko memicu error automated ingestion."
+        description: "Potential unvalidated data type anomalies and foreign key relations in staging risk automated ingestion errors."
         mitigations:
-          - "Definisikan data dictionary & catalog sejak fase perencanaan."
-          - "Eksekusi automated data profiling pada environment staging."
-          - "Tetapkan quality threshold readiness minimal 98% pass rate."
-        contingency: "Cleansing data terfokus pada mandatory attributes; eskalasi deviasi skema ke tim sumber data."
+          - "Define enterprise data dictionary and catalog during architecture planning."
+          - "Execute automated data profiling scripts across staging environments."
+          - "Establish data quality threshold with a minimum 98% pass rate requirement."
+        contingency: "Focus initial data cleansing on mandatory attributes; escalate schema deviations to source data team."
         owner: "Lead Data Architect"
 
   # Slide 9: Issue Log
@@ -315,15 +315,15 @@ slides:
     subtitle: "Root cause resolved via rescheduled assessment sessions; downstream target go-live protected."
     issues:
       - id: "ISSUE-01"
-        date: "02-Jan-00"
-        title: "Keterlambatan delivery FSD karena bertepatan dengan libur pergantian milenium"
+        date: "02-Jan-26"
+        title: "FSD Assessment Completion Shift from Year-End Holiday Interval"
         owner: "Budi Pratama"
         severity: "Medium"
         status: "Open"
-        root_cause: "Personil kunci cuti pada periode akhir tahun 1999; asesmen analytics dijadwalkan ulang ke 9 Jan 2000."
-        impact: "Penyelesaian FSD bergeser dari 02 Jan 2000 ke 19 Jan 2000 (+17 hari kalender), tanpa menggeser milestone sesudahnya."
-        action_plan: "Pelaksanaan meeting asesmen tanggal 09 Jan 2000; konsolidasi FSD tanggal 15 Jan 2000; final sign-off tanggal 19 Jan 2000."
-        target_date: "19-Jan-00"
+        root_cause: "Key client and vendor stakeholders unavailable during year-end holiday period; analytics assessment sessions rescheduled to 09 Jan 2026."
+        impact: "FSD final sign-off rescheduled from 02 Jan 2026 to 19 Jan 2026 (+17 calendar days), fully contained within development buffer without downstream milestone slip."
+        action_plan: "Conduct rescheduled assessment session on 09 Jan 2026; complete FSD consolidation by 15 Jan 2026; secure final executive sign-off on 19 Jan 2026."
+        target_date: "19-Jan-26"
 
   # Slide 10: Chapter Divider / Q&A
   - archetype: chapter_divider
@@ -338,12 +338,6 @@ slides:
     tracker: "ENGAGEMENT WRAP-UP | THANK YOU"
     title: "Thank You"
     subtitle: "Delivering Data-Driven Value & Predictive Intelligence with Cloud Analytics Platform."
-    contacts:
-      - name: "Budi Pratama, PMP"
-        role: "Project Manager, MII"
-        email: "budi.pratama@metrodata.co.id"
-      - name: "Engagement Leadership"
-        role: "Data & AI Modernization Practice"
-        email: "enterprise.consulting@metrodata.co.id"
+    contacts: null
     company: "PT Metrodata Electronics Tbk"
     office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"

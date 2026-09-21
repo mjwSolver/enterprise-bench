@@ -2847,7 +2847,7 @@ def build_gap_analysis_slide(
             r_eye = p_top_r.add_run()
             r_eye.text = "TARGET BENEFIT:  "
             r_eye.font.name = theme.font_family_header
-            r_eye.font.size = Pt(9.5)
+            r_eye.font.size = Pt(11.0)
             r_eye.font.bold = True
             r_eye.font.color.rgb = hex_to_rgb("#047857")
 
@@ -3683,6 +3683,7 @@ def build_timeline_gantt_slide(
 
     # Time Axis Header Bar
     t_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, grid_left, header_y, grid_width, header_h)
+    t_bar.shadow.inherit = False
     t_bar.fill.solid()
     t_bar.fill.fore_color.rgb = theme.get_rgb("primary")
     t_bar.line.fill.background()
@@ -3693,12 +3694,14 @@ def build_timeline_gantt_slide(
         tb = slide.shapes.add_textbox(col_x, header_y, col_width, header_h)
         tf = tb.text_frame
         tf.word_wrap = False
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
         p = tf.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         lbl = labels[col_idx] if col_idx < len(labels) else f"P{col_idx + 1}"
         p.text = lbl
         p.font.name = theme.font_family_header
-        p.font.size = Pt(8.5)
+        p.font.size = Pt(11.0)
         p.font.bold = True
         p.font.color.rgb = RGBColor(255, 255, 255)
 
@@ -3721,6 +3724,7 @@ def build_timeline_gantt_slide(
 
         # Left label container (Sharp Rectangle)
         ws_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, cur_y, Inches(2.90), row_h)
+        ws_card.shadow.inherit = False
         ws_card.fill.solid()
         ws_card.fill.fore_color.rgb = RGBColor(255, 255, 255)
         ws_card.line.color.rgb = RGBColor(226, 232, 240)
@@ -3730,6 +3734,7 @@ def build_timeline_gantt_slide(
         accent_key = ws.accent_color
         acc_rgb = theme.get_rgb(accent_key) if accent_key in ("primary", "secondary", "accent") else theme.get_rgb("accent")
         stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, cur_y, Inches(0.08), row_h)
+        stripe.shadow.inherit = False
         stripe.fill.solid()
         stripe.fill.fore_color.rgb = acc_rgb
         stripe.line.fill.background()
@@ -3738,24 +3743,25 @@ def build_timeline_gantt_slide(
         tf_ws.word_wrap = True
         tf_ws.margin_left = Inches(0.18)
         tf_ws.margin_right = Inches(0.08)
-        tf_ws.margin_top = Inches(0.10)
+        tf_ws.margin_top = Inches(0.06)
         p_badge = tf_ws.paragraphs[0]
         p_badge.text = ws.badge.upper()
         p_badge.font.name = theme.font_family_header
-        p_badge.font.size = Pt(7.5)
+        p_badge.font.size = Pt(11.0)
         p_badge.font.bold = True
         p_badge.font.color.rgb = acc_rgb
 
         p_title = tf_ws.add_paragraph()
         p_title.text = ws.category
         p_title.font.name = theme.font_family_header
-        p_title.font.size = Pt(9.5)
+        p_title.font.size = Pt(11.0)
         p_title.font.bold = True
         p_title.font.color.rgb = theme.get_rgb("primary")
         p_title.space_before = Pt(2)
 
         # Grid row background
         row_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, grid_left, cur_y, grid_width, row_h)
+        row_bg.shadow.inherit = False
         row_bg.fill.solid()
         row_bg.fill.fore_color.rgb = RGBColor(248, 250, 252) if ws_idx % 2 == 0 else RGBColor(255, 255, 255)
         row_bg.line.color.rgb = RGBColor(226, 232, 240)
@@ -3765,6 +3771,7 @@ def build_timeline_gantt_slide(
         for c_idx in range(1, num_periods):
             cx = grid_left + c_idx * col_width
             vline = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, cur_y, Pt(1), row_h)
+            vline.shadow.inherit = False
             vline.fill.solid()
             vline.fill.fore_color.rgb = RGBColor(226, 232, 240)
             vline.line.fill.background()
@@ -3775,7 +3782,7 @@ def build_timeline_gantt_slide(
             task_gap = Inches(0.04)
             task_margin = Inches(0.06)
             task_h = (row_h - 2 * task_margin - (num_tasks - 1) * task_gap) / num_tasks
-            task_h = max(Inches(0.20), min(Inches(0.32), task_h))
+            task_h = max(Inches(0.22), min(Inches(0.36), task_h))
 
             for t_idx, task in enumerate(ws.tasks):
                 ty = cur_y + task_margin + t_idx * (task_h + task_gap)
@@ -3792,54 +3799,81 @@ def build_timeline_gantt_slide(
                     mx = bar_x + (bar_w - diam_size) / 2.0
                     my = ty + (task_h - diam_size) / 2.0
                     m_shape = slide.shapes.add_shape(MSO_SHAPE.DIAMOND, mx, my, diam_size, diam_size)
+                    m_shape.shadow.inherit = False
                     m_shape.fill.solid()
                     m_shape.fill.fore_color.rgb = theme.get_rgb("accent")
                     m_shape.line.color.rgb = theme.get_rgb("primary")
                     m_shape.line.width = Pt(1.5)
 
-                    # Label next to diamond
-                    tb_m = slide.shapes.add_textbox(mx + diam_size + Inches(0.05), ty - Inches(0.02), Inches(2.2), task_h)
-                    tf_m = tb_m.text_frame
-                    tf_m.word_wrap = True
-                    p_m = tf_m.paragraphs[0]
+                    # Dynamic label placement (flip leftwards if near right margin)
+                    label_w = Inches(2.20)
+                    if mx + diam_size + label_w > Inches(12.70):
+                        tb_m = slide.shapes.add_textbox(mx - label_w - Inches(0.06), ty - Inches(0.02), label_w, task_h)
+                        tf_m = tb_m.text_frame
+                        tf_m.word_wrap = True
+                        p_m = tf_m.paragraphs[0]
+                        p_m.alignment = PP_ALIGN.RIGHT
+                    else:
+                        tb_m = slide.shapes.add_textbox(mx + diam_size + Inches(0.06), ty - Inches(0.02), label_w, task_h)
+                        tf_m = tb_m.text_frame
+                        tf_m.word_wrap = True
+                        p_m = tf_m.paragraphs[0]
+                        p_m.alignment = PP_ALIGN.LEFT
+
                     p_m.text = task.name
                     p_m.font.name = theme.font_family_header
-                    p_m.font.size = Pt(7.5)
+                    p_m.font.size = Pt(11.0)
                     p_m.font.bold = True
                     p_m.font.color.rgb = theme.get_rgb("primary")
                 else:
                     # Task duration bar (Sharp Rectangle)
                     t_shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bar_x, ty, bar_w, task_h)
+                    t_shape.shadow.inherit = False
                     t_shape.fill.solid()
                     t_shape.fill.fore_color.rgb = fill_rgb
                     t_shape.line.color.rgb = RGBColor(255, 255, 255)
                     t_shape.line.width = Pt(0.75)
 
-                    tf_t = t_shape.text_frame
-                    tf_t.word_wrap = False
-                    tf_t.margin_left = Inches(0.06)
-                    tf_t.margin_right = Inches(0.06)
-                    tf_t.margin_top = Inches(0.01)
-                    p_t = tf_t.paragraphs[0]
-                    p_t.text = task.name
-                    p_t.font.name = theme.font_family_header
-                    p_t.font.size = Pt(7.5)
-                    p_t.font.bold = True
-                    p_t.font.color.rgb = RGBColor(255, 255, 255) if task.status != "PLANNED" else theme.get_rgb("primary")
+                    if bar_w < Inches(1.10):
+                        # Narrow bar: place label to the right of the bar to prevent clipping
+                        t_tb = slide.shapes.add_textbox(bar_x + bar_w + Inches(0.06), ty - Inches(0.02), Inches(2.20), task_h)
+                        t_tf = t_tb.text_frame
+                        t_tf.word_wrap = False
+                        t_tf.margin_left = t_tf.margin_right = t_tf.margin_top = t_tf.margin_bottom = 0
+                        p_t = t_tf.paragraphs[0]
+                        p_t.text = task.name
+                        p_t.font.name = theme.font_family_header
+                        p_t.font.size = Pt(11.0)
+                        p_t.font.bold = True
+                        p_t.font.color.rgb = theme.get_rgb("primary")
+                    else:
+                        tf_t = t_shape.text_frame
+                        tf_t.word_wrap = False
+                        tf_t.margin_left = Inches(0.06)
+                        tf_t.margin_right = Inches(0.06)
+                        tf_t.margin_top = Inches(0.01)
+                        p_t = tf_t.paragraphs[0]
+                        p_t.text = task.name
+                        p_t.font.name = theme.font_family_header
+                        p_t.font.size = Pt(11.0)
+                        p_t.font.bold = True
+                        p_t.font.color.rgb = RGBColor(255, 255, 255) if task.status != "PLANNED" else theme.get_rgb("primary")
 
     # 5. Current Period "TODAY / SPRINT" Indicator
     if data.current_period_marker is not None and 0.0 <= data.current_period_marker <= float(num_periods):
         marker_x = grid_left + (data.current_period_marker - 1.0) * col_width
         total_grid_h = num_ws * (row_h + row_gap)
         m_line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, marker_x, header_y, Pt(2), header_h + Inches(0.12) + total_grid_h)
+        m_line.shadow.inherit = False
         m_line.fill.solid()
         m_line.fill.fore_color.rgb = RGBColor(220, 38, 38)  # Crimson Red
         m_line.line.fill.background()
 
         # Marker tag on top
-        tag_w = Inches(0.85)
-        tag_h = Inches(0.22)
-        tag_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, marker_x - tag_w / 2.0, header_y - Inches(0.24), tag_w, tag_h)
+        tag_w = Inches(0.95)
+        tag_h = Inches(0.24)
+        tag_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, marker_x - tag_w / 2.0, header_y - Inches(0.26), tag_w, tag_h)
+        tag_box.shadow.inherit = False
         tag_box.fill.solid()
         tag_box.fill.fore_color.rgb = RGBColor(220, 38, 38)
         tag_box.line.fill.background()
@@ -3848,7 +3882,7 @@ def build_timeline_gantt_slide(
         p_tag.alignment = PP_ALIGN.CENTER
         p_tag.text = "CURRENT"
         p_tag.font.name = theme.font_family_header
-        p_tag.font.size = Pt(7.0)
+        p_tag.font.size = Pt(11.0)
         p_tag.font.bold = True
         p_tag.font.color.rgb = RGBColor(255, 255, 255)
 
@@ -3862,36 +3896,43 @@ def build_timeline_gantt_slide(
     ]
     cur_lx = left_x
     for symbol, sym_color, sym_label in legend_items:
-        tb_leg = slide.shapes.add_textbox(cur_lx, legend_y, Inches(1.8), Inches(0.25))
+        tb_leg = slide.shapes.add_textbox(cur_lx, legend_y, Inches(2.2), Inches(0.28))
         tf_l = tb_leg.text_frame
         p_l = tf_l.paragraphs[0]
         r_sym = p_l.add_run()
         r_sym.text = f"{symbol} "
         r_sym.font.name = theme.font_family_header
-        r_sym.font.size = Pt(9.0)
+        r_sym.font.size = Pt(11.0)
         r_sym.font.bold = True
         r_sym.font.color.rgb = sym_color
 
         r_lbl = p_l.add_run()
         r_lbl.text = sym_label
         r_lbl.font.name = theme.font_family
-        r_lbl.font.size = Pt(8.0)
+        r_lbl.font.size = Pt(11.0)
         r_lbl.font.color.rgb = theme.get_rgb("secondary")
-        cur_lx += Inches(1.75)
+        cur_lx += Inches(2.05)
 
     if data.footnote:
-        tb_fn = slide.shapes.add_textbox(grid_left, legend_y, grid_width, Inches(0.25))
+        tb_fn = slide.shapes.add_textbox(grid_left, legend_y, grid_width, Inches(0.28))
         tf_fn = tb_fn.text_frame
         p_fn = tf_fn.paragraphs[0]
         p_fn.alignment = PP_ALIGN.RIGHT
         p_fn.text = data.footnote
         p_fn.font.name = theme.font_family
-        p_fn.font.size = Pt(7.5)
+        p_fn.font.size = Pt(11.0)
         p_fn.font.italic = True
-        p_fn.font.color.rgb = RGBColor(148, 163, 184)
-
     # 7. Slide Footer
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+
+    # Enforce flat vector geometry by stripping drop shadows across all slide shapes
+    for sh in slide.shapes:
+        if hasattr(sh, "shadow"):
+            try:
+                sh.shadow.inherit = False
+            except Exception:
+                pass
+
     return slide
 
 
@@ -5403,63 +5444,101 @@ def build_thank_you_slide(
     p_s.space_before = Pt(10)
 
     # 3. Contact Cards
-    if not contacts:
-        contacts = [
-            {"name": "Agus Suhanto", "role": "Project Manager, MII", "email": "agus.suhanto@mii.co.id"},
-            {"name": "Dian Eka Kusumawati", "role": "Account Manager, MII", "email": "dian.eka@mii.co.id"},
-            {"name": "Vicko Bhayyu", "role": "Technical Lead, MII", "email": "vicko.bhayyu@mii.co.id"},
-        ]
+    if contacts:
+        num_c = len(contacts)
+        card_gap = Inches(0.25)
+        card_w = min(Inches(5.40), (text_width - (num_c - 1) * card_gap) / num_c)
+        card_h = Inches(1.50)
+        card_y = Inches(3.85)
 
-    num_c = len(contacts)
-    card_gap = Inches(0.25)
-    card_w = min(Inches(5.40), (text_width - (num_c - 1) * card_gap) / num_c)
-    card_h = Inches(1.50)
-    card_y = Inches(3.85)
+        for i, c in enumerate(contacts[:4]):
+            cx = text_left + i * (card_w + card_gap)
+            acc_key = c.get("accent_key", "accent" if i == 0 else "accent_teal")
+            acc_col = theme.get_rgb(acc_key, "#0052CC")
 
-    for i, c in enumerate(contacts[:4]):
-        cx = text_left + i * (card_w + card_gap)
-        acc_key = c.get("accent_key", "accent" if i == 0 else "accent_teal")
-        acc_col = theme.get_rgb(acc_key, "#0052CC")
+            add_card_with_top_stripe(
+                slide=slide,
+                theme=theme,
+                left=cx,
+                top=card_y,
+                width=card_w,
+                height=card_h,
+                accent_rgb=acc_col,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+                stripe_height_in=0.06,
+            )
 
-        add_card_with_top_stripe(
+            ctb = slide.shapes.add_textbox(cx + Inches(0.18), card_y + Inches(0.16), card_w - Inches(0.36), card_h - Inches(0.25))
+            ctf = ctb.text_frame
+            ctf.word_wrap = True
+            ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
+
+            cp1 = ctf.paragraphs[0]
+            cp1.text = c.get("name", "")
+            cp1.font.name = theme.font_family_header
+            cp1.font.size = Pt(13.0)
+            cp1.font.bold = True
+            cp1.font.color.rgb = theme.get_rgb("primary")
+
+            cp2 = ctf.add_paragraph()
+            cp2.text = c.get("role", "")
+            cp2.font.name = theme.font_family
+            cp2.font.size = Pt(11.0)
+            cp2.font.color.rgb = theme.get_rgb("accent")
+            cp2.space_before = Pt(3)
+
+            if c.get("email"):
+                cp3 = ctf.add_paragraph()
+                cp3.text = f"Email: {c['email']}"
+                cp3.font.name = theme.font_family
+                cp3.font.size = Pt(11.0)
+                cp3.font.color.rgb = theme.get_rgb("secondary")
+                cp3.space_before = Pt(4)
+    else:
+        # Clean corporate closing card (no personal staff names)
+        card_w = Inches(7.50)
+        card_h = Inches(1.50)
+        card_y = Inches(3.85)
+
+        card, stripe = add_card_with_top_stripe(
             slide=slide,
             theme=theme,
-            left=cx,
+            left=text_left,
             top=card_y,
             width=card_w,
             height=card_h,
-            accent_rgb=acc_col,
+            accent_rgb=theme.get_rgb("accent"),
             bg_color=theme.get_rgb("surface"),
             border_color=theme.get_rgb("border"),
             stripe_height_in=0.06,
         )
 
-        ctb = slide.shapes.add_textbox(cx + Inches(0.18), card_y + Inches(0.16), card_w - Inches(0.36), card_h - Inches(0.25))
+        ctb = slide.shapes.add_textbox(text_left + Inches(0.22), card_y + Inches(0.18), card_w - Inches(0.44), card_h - Inches(0.30))
         ctf = ctb.text_frame
         ctf.word_wrap = True
         ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
 
         cp1 = ctf.paragraphs[0]
-        cp1.text = c.get("name", "")
+        cp1.text = "Data & AI Modernization Practice"
         cp1.font.name = theme.font_family_header
-        cp1.font.size = Pt(13.0)
+        cp1.font.size = Pt(14.0)
         cp1.font.bold = True
         cp1.font.color.rgb = theme.get_rgb("primary")
 
         cp2 = ctf.add_paragraph()
-        cp2.text = c.get("role", "")
+        cp2.text = "Enterprise Cloud & Analytics Advisory Core"
         cp2.font.name = theme.font_family
-        cp2.font.size = Pt(10.5)
+        cp2.font.size = Pt(11.0)
         cp2.font.color.rgb = theme.get_rgb("accent")
         cp2.space_before = Pt(3)
 
-        if c.get("email"):
-            cp3 = ctf.add_paragraph()
-            cp3.text = f"Email: {c['email']}"
-            cp3.font.name = theme.font_family
-            cp3.font.size = Pt(10.0)
-            cp3.font.color.rgb = theme.get_rgb("secondary")
-            cp3.space_before = Pt(4)
+        cp3 = ctf.add_paragraph()
+        cp3.text = "Official Support Channel: enterprise.consulting@metrodata.co.id"
+        cp3.font.name = theme.font_family
+        cp3.font.size = Pt(11.0)
+        cp3.font.color.rgb = theme.get_rgb("secondary")
+        cp3.space_before = Pt(4)
 
     # 4. Corporate Address Footer
     otb = slide.shapes.add_textbox(text_left, Inches(5.65), text_width, Inches(0.60))
@@ -5469,13 +5548,13 @@ def build_thank_you_slide(
     op1 = otf.paragraphs[0]
     op1.text = f"{company}  |  {office}"
     op1.font.name = theme.font_family
-    op1.font.size = Pt(10.0)
+    op1.font.size = Pt(11.0)
     op1.font.color.rgb = theme.get_rgb("secondary")
 
     op2 = otf.add_paragraph()
     op2.text = notice
     op2.font.name = theme.font_family
-    op2.font.size = Pt(9.0)
+    op2.font.size = Pt(11.0)
     op2.font.color.rgb = theme.get_rgb("muted")
     op2.space_before = Pt(3)
 

@@ -568,7 +568,7 @@ slides:
     tracker: "EXISTING CHALLENGES | OPERATIONAL FRICTION"
     title: "Legacy ERP Silos and Manual Spreadsheet Assembly Create Severe Reporting Latency"
     subtitle: "Fragmented financial tables in SAP require manual monthly exports, causing delayed executive visibility."
-    url: "https://sap.toyota-tsusho.local/sap/bc/gui/sap/its/webgui"
+    url: "https://sap.ngl-logistics.local/sap/bc/gui/sap/its/webgui"
     telemetry_badges:
       - "⚠️ Legacy SAP GUI Batch Export"
       - "🕒 Monthly Consolidation Lag"

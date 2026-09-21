@@ -4,11 +4,11 @@ sync_xlsx: true
 
 metadata:
   project_name: "DATA APPLICATION FOR FINANCIAL ANALYTICS WITH SNOWFLAKE"
-  client_name: "PT Toyota Tsusho Indonesia"
+  client_name: "[CLIENT_COMPANY_NAME]"
   vendor_name: "PT Mitra Integrasi Informatika"
   report_date: "01 September 2026"
   presenter: "Agus Suhanto, Project Manager, MII"
-  confidentiality: "PT Toyota Tsusho Indonesia & PT Mitra Integrasi Informatika  |  Confidential"
+  confidentiality: "[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Confidential"
 
 spreadsheets:
   checklist: "clean_workspace/projects/TTI_Snowflake_Analytics/06_closing/5.2_Project_Closeout_Checklist_Template.xlsx"
@@ -18,7 +18,7 @@ slides:
   - archetype: cover
     title: "DATA APPLICATION FOR FINANCIAL ANALYTICS WITH SNOWFLAKE"
     subtitle: "Project Closing & Transition to Maintenance"
-    client: "PT Toyota Tsusho Indonesia"
+    client: "[CLIENT_COMPANY_NAME]"
     vendor: "PT Mitra Integrasi Informatika"
     product: "Snowflake AI Data Cloud"
     date_str: "01 September 2026"
@@ -36,6 +36,7 @@ slides:
         title: "Ruang Lingkup"
         subtitle: "Scope Review & Capabilities"
         accent: "accent"
+        icon: "compass"
         bullets:
           - "Review of 7 contractual delivery phases"
           - "Snowflake data modeling & Streamlit architecture"
@@ -44,6 +45,7 @@ slides:
         title: "Deliverables"
         subtitle: "Contractual Artifact Inventory"
         accent: "accent_teal"
+        icon: "package-check"
         bullets:
           - "100% completion across 19 required deliverables"
           - "FSD (8 modules), TSD, PMP & Test artifacts"
@@ -52,6 +54,7 @@ slides:
         title: "Closing Checklist"
         subtitle: "Sign-off Gates & Artifact Access"
         accent: "success"
+        icon: "file-signature"
         bullets:
           - "Formal sign-off matrix across 8 closeout gates"
           - "Zero open Sev 1/2 defects & RAID closure"
@@ -60,6 +63,7 @@ slides:
         title: "Maintenance Phase"
         subtitle: "Bucket Mandays Operating Model"
         accent: "accent_blue"
+        icon: "shield-check"
         bullets:
           - "30 mandays annual support allocation"
           - "0.5 manday minimum metering increment"
@@ -68,6 +72,7 @@ slides:
         title: "Contacts & Flow"
         subtitle: "Operational Request Lifecycle"
         accent: "warning"
+        icon: "git-pull-request"
         bullets:
           - "4-stage ticket workflow from submission to UAT"
           - "Primary technical contacts (Adam N. & Vicko B.)"
@@ -76,6 +81,7 @@ slides:
         title: "Maintenance Deliverables"
         subtitle: "Audit & Reporting Governance"
         accent: "accent_purple"
+        icon: "bar-chart-3"
         bullets:
           - "Monthly mandays consumption recap ledger"
           - "Granular developer timesheets per ticket"
@@ -91,6 +97,7 @@ slides:
         phase: "Phase 1: Architecture Baseline"
         accent: "accent"
         status: "Done"
+        icon: "compass"
         bullets:
           - "In-depth architectural assessment, source schema analysis & sizing"
           - "Project Management Plan (PMP) & Project Charter alignment"
@@ -99,6 +106,7 @@ slides:
         phase: "Phase 2: Cloud Infrastructure"
         accent: "accent_blue"
         status: "Delivered"
+        icon: "cloud"
         bullets:
           - "Dedicated Snowflake subscription provisioning & security RBAC"
           - "Multi-tier dimensional data modeling (Raw, Stage, Mart layers)"
@@ -107,6 +115,7 @@ slides:
         phase: "Phase 3: Analytics Frontend"
         accent: "accent_teal"
         status: "Done"
+        icon: "layout-dashboard"
         bullets:
           - "8 financial modules: Sales, GP, Opex, PBT, TVA ROIC, AR, Stock Aging"
           - "Executive Summary dashboard with consolidated KPI scorecards"
@@ -115,6 +124,7 @@ slides:
         phase: "Phase 4: Predictive Intelligence"
         accent: "accent_purple"
         status: "Done"
+        icon: "sparkles"
         bullets:
           - "Automated monthly narrative commentary engine via Cortex Complete"
           - "Context-aware financial variance analysis & operational driver insights"
@@ -123,6 +133,7 @@ slides:
         phase: "Phase 5: Verification & SIT/UAT"
         accent: "warning"
         status: "Done"
+        icon: "shield-check"
         bullets:
           - "System Integration Testing (SIT) across data pipelines and UI models"
           - "Formal User Acceptance Testing (UAT) with 1x revision cycle completed"
@@ -131,6 +142,7 @@ slides:
         phase: "Phase 6 & 7: Cutover & Closure"
         accent: "success"
         status: "Done"
+        icon: "check-circle-2"
         bullets:
           - "Production cutover & comprehensive technical knowledge transfer"
           - "End-user manuals, administrator guides, and signed BAST forms"
@@ -225,7 +237,7 @@ slides:
       - num: 1
         title: "All defects in Defect List resolved"
         status: "Yes"
-        detail: "0 open Sev 1/2 defects; all logged items verified & signed off by TTI QA"
+        detail: "0 open Sev 1/2 defects; all logged items verified & signed off by [CLIENT_SHORT_NAME] QA"
       - num: 2
         title: "All risks in Risk Register closed"
         status: "Yes"
@@ -237,7 +249,7 @@ slides:
       - num: 4
         title: "BAST 1 (Phase 1 Deliverables) sign-off"
         status: "Yes"
-        detail: "Executed and formally approved by TTI Finance & MII Project Sponsors"
+        detail: "Executed and formally approved by [CLIENT_SHORT_NAME] Finance & MII Project Sponsors"
       - num: 5
         title: "BAST 2 (Final Delivery & UAT) sign-off"
         status: "Yes"
@@ -253,7 +265,7 @@ slides:
       - num: 8
         title: "Customer Satisfaction Survey (CSS) dispatched"
         status: "Yes"
-        detail: "Official Microsoft Forms evaluation dispatched to TTI executive committee"
+        detail: "Official Microsoft Forms evaluation dispatched to [CLIENT_SHORT_NAME] executive committee"
     download_link: "https://drive.google.com/file/d/1jbNeQz7FGOoB5V-wnPjvgkLJQ1YiPYGQ/view?usp=sharing"
     password: "Metrodata2026!"
     css_link: "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=rgOfXJbVn0q-VTj8N43ujHvqOdLTWpVGqw01JkKQaalUQkVVM0RHVlRCSDFWSlZMUkpRQU81UDNMWS4u"
@@ -300,9 +312,9 @@ slides:
     flow_steps:
       - step: "01"
         title: "Request Submission"
-        subtitle: "TTI Initiates Request"
+        subtitle: "[CLIENT_SHORT_NAME] Initiates Request"
         accent: "accent"
-        desc: "TTI submits bug fix or Change Request via WhatsApp group or email with reproducible details."
+        desc: "[CLIENT_SHORT_NAME] submits bug fix or Change Request via WhatsApp group or email with reproducible details."
       - step: "02"
         title: "Impact Triage"
         subtitle: "MII Sizing & Scope"
@@ -312,12 +324,12 @@ slides:
         title: "Client Approval Gate"
         subtitle: "Authorization to Burn"
         accent: "warning"
-        desc: "Mandays estimation is formally submitted to TTI; work only commences upon written client approval."
+        desc: "Mandays estimation is formally submitted to [CLIENT_SHORT_NAME]; work only commences upon written client approval."
       - step: "04"
         title: "Delivery & Sign-off"
         subtitle: "Deployment & UAT"
         accent: "success"
-        desc: "MII delivers code remediation, conducts SIT, updates timesheet, and secures TTI sign-off."
+        desc: "MII delivers code remediation, conducts SIT, updates timesheet, and secures [CLIENT_SHORT_NAME] sign-off."
     contacts:
       - name: "Adam Nevriyanto"
         role: "Solution Architect & Technical Lead"
@@ -343,13 +355,13 @@ slides:
           - "Granular breakdown of mandays expended per financial analytics module."
           - "Remaining balance forecast to prevent unexpected end-of-year depletion."
           - "Submitted monthly in PDF and Excel formats for formal client sign-off."
-          - "Shared during monthly service review meetings with TTI leadership."
+          - "Shared during monthly service review meetings with [CLIENT_SHORT_NAME] leadership."
       - title: "Developer Timesheet Records"
         subtitle: "Task-by-Task Time Accounting"
         accent: "accent_teal"
         bullets:
           - "Granular daily timesheets logged by assigned MII software & data engineers."
-          - "Detailed task breakdown mapped to specific TTI ticket numbers."
+          - "Detailed task breakdown mapped to specific [CLIENT_SHORT_NAME] ticket numbers."
           - "Time accounted in strict 0.5-manday billable increments (4-hour resolution)."
           - "Quality and hours verified and counter-signed by MII Technical Lead."
           - "Complete audit trail compliant with enterprise procurement guidelines."
@@ -369,10 +381,10 @@ slides:
   - archetype: thank_you
     tracker: "PROJECT CLOSING & MAINTENANCE TRANSITION"
     title: "Thank You"
-    subtitle: "Empowering Financial Intelligence & Cloud Analytics at PT Toyota Tsusho Indonesia."
+    subtitle: "Empowering Financial Intelligence & Cloud Analytics at [CLIENT_COMPANY_NAME]."
     company: "PT Metrodata Electronics Tbk"
     office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
-    notice: "PT Toyota Tsusho Indonesia & PT Metrodata Electronics Tbk  |  Confidential"
+    notice: "[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Confidential"
     contacts:
       - name: "Agus Suhanto"
         role: "Project Manager, MII"

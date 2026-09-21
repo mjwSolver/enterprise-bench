@@ -1,9 +1,9 @@
 # ==============================================================================
 # PROJECT KICK-OFF PRESENTATION — MASTER DECLARATIVE SPECIFICATION
 # ==============================================================================
-# Project: Toyota Tsusho Data Application for Financial Analytics with Snowflake
+# Project: Enterprise Financial Intelligence & Cloud Analytics Platform
 # Deliverable: 1.1_Project_Kick-off_Material_Template.pptx (19 Slides Modernized)
-# Client: PT Toyota Tsusho Indonesia (TTI)
+# Client: Nusantara Global Logistics (NGL)
 # Implementation Partner: PT Mitra Integrasi Informatika (MII) / Metrodata
 # Architecture: Declarative Consulting Deck Builder (PitchDeckBuilder)
 # ==============================================================================
@@ -11,11 +11,11 @@
 deck_type: kickoff_deck
 
 metadata:
-  client_name: "PT Toyota Tsusho Indonesia"
+  client_name: "[CLIENT_COMPANY_NAME]"
   vendor_name: "PT Mitra Integrasi Informatika"
   product: "Snowflake AI Data Cloud & Streamlit"
   date_str: "16 December 2025"
-  confidentiality: "PT Toyota Tsusho Indonesia & PT Mitra Integrasi Informatika  |  Strictly Confidential"
+  confidentiality: "[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Strictly Confidential"
   division_tagline: "PT Mitra Integrasi Informatika  |  Data & AI Modernization Practice"
 
 slides:
@@ -26,7 +26,7 @@ slides:
     tracker: "ENTERPRISE FINANCIAL ANALYTICS | PROJECT INITIATION"
     title: "DATA APPLICATION FOR FINANCIAL ANALYTICS WITH SNOWFLAKE"
     subtitle: "Project Kick-off Meeting, Governance Alignment & Phased Implementation Roadmap"
-    client: "PT Toyota Tsusho Indonesia"
+    client: "[CLIENT_COMPANY_NAME]"
     vendor: "PT Mitra Integrasi Informatika"
     product: "Snowflake AI Data Cloud"
     date_str: "16 December 2025"
@@ -52,7 +52,7 @@ slides:
         description: "Centralized data platform, automated processing, and interactive analytics objectives."
       - num: "03"
         title: "Stakeholders & Roles"
-        description: "Core responsibilities across Customer (TTI), Consultant (MII), and Principal (Snowflake)."
+        description: "Core responsibilities across Customer ([CLIENT_SHORT_NAME]), Consultant (MII), and Principal (Snowflake)."
       - num: "04"
         title: "Tim Project"
         description: "Joint dual-pillar governance, steering committee sponsors, PMO, and technical execution pods."
@@ -129,7 +129,7 @@ slides:
         accent_key: "accent"
         bullets:
           - "Menyediakan platform data terpusat berbasis Snowflake sebagai sumber data keuangan konsisten."
-          - "Menjamin integritas dan validitas data lintas divisi finansial Toyota Tsusho."
+          - "Menjamin integritas dan validitas data lintas divisi finansial [CLIENT_COMPANY_NAME]."
           - "Mendukung skalabilitas compute dan storage elastis tanpa overhead operasional."
       - title: "Simplified Data Processing"
         subtitle: "Automated ETL & Modeling"
@@ -177,7 +177,7 @@ slides:
     subtitle: "Clear demarcation of accountabilities between Client Sponsors, Implementation Partner, and Technology Principal."
     columns: 3
     items:
-      - title: "PT Toyota Tsusho Indonesia"
+      - title: "[CLIENT_COMPANY_NAME]"
         subtitle: "Customer & Business Process Owners"
         icon: "users"
         badge: "CLIENT / SPONSOR"
@@ -215,11 +215,11 @@ slides:
     tracker: "TIM PROYEK | JOINT GOVERNANCE & RACI MATRIX"
     title: "Joint Dual-Pillar Governance Matrix Establishes Clear Escalation & Delivery Ownership"
     subtitle: "Hierarchical project structure connects executive steering committees, PMO leads, and specialized execution pods."
-    client_name: "PT Toyota Tsusho Indonesia"
+    client_name: "[CLIENT_COMPANY_NAME]"
     vendor_name: "PT Mitra Integrasi Informatika"
-    tier1_client_text: "Tadahiko Onaka (TTI SteerCo), Mulyanah (TTI Project Advisor)  |  Executive budget authorization & strategic sign-offs"
+    tier1_client_text: "Tadahiko Onaka ([CLIENT_SHORT_NAME] SteerCo), Mulyanah ([CLIENT_SHORT_NAME] Project Advisor)  |  Executive budget authorization & strategic sign-offs"
     tier1_vendor_text: "Arif Nanda A. (MII SteerCo), Dian Eka Kusumawati & Ho Herly (Account Managers), Lucky & Herman (Presales)"
-    client_pm_title: "Fredric Retanubun - TTI Project Manager"
+    client_pm_title: "Fredric Retanubun - [CLIENT_SHORT_NAME] Project Manager"
     client_pm_bullets:
       - "Facilitates internal business access, data extracts, and UAT scheduling."
       - "Coordinates cross-functional reviews across Finance, Accounting, and IT."
@@ -231,8 +231,8 @@ slides:
       - "Coordinates specialized Snowflake architects, engineers, and data scientists."
     pods:
       - title: "Business Process Owners"
-        org: "PT Toyota Tsusho Indonesia"
-        badge: "TTI BUSINESS"
+        org: "[CLIENT_COMPANY_NAME]"
+        badge: "[CLIENT_SHORT_NAME] BUSINESS"
         badge_color: "danger"
         stripe_color: "accent_secondary"
         bullets:
@@ -241,8 +241,8 @@ slides:
           - "Validates formulas (Sales, Opex, Margin, ROIC)."
           - "Executes UAT testing scenarios and signs off acceptance."
       - title: "IT & System Operations"
-        org: "PT Toyota Tsusho Indonesia"
-        badge: "TTI IT & OPS"
+        org: "[CLIENT_COMPANY_NAME]"
+        badge: "[CLIENT_SHORT_NAME] IT & OPS"
         badge_color: "danger"
         stripe_color: "accent_secondary"
         bullets:
@@ -453,14 +453,14 @@ slides:
         bullets:
           - "Data utama berasal dari sistem SAP ERP yang diekspor ke Excel/CSV."
           - "Format kolom, tipe data, dan header disepakati bersama dalam FSD."
-          - "Tim TTI bertanggung jawab memastikan kelengkapan data hasil ekspor SAP."
+          - "Tim [CLIENT_SHORT_NAME] bertanggung jawab memastikan kelengkapan data hasil ekspor SAP."
       - title: "Monthly Upload Cadence"
         subtitle: "Data Ingestion Schedule"
         icon: "calendar-clock"
         badge: "INGESTION"
         accent_key: "accent_teal"
         bullets:
-          - "Data bulanan akan diunggah oleh tim Toyota Tsusho sesuai jadwal closing."
+          - "Data bulanan akan diunggah oleh tim [CLIENT_SHORT_NAME] sesuai jadwal closing."
           - "Aplikasi Streamlit menyediakan halaman upload validasi skema."
           - "Jadwal upload dikoordinasikan sesuai target pelaporan bulanan."
       - title: "Application Scope Focus"
@@ -736,14 +736,14 @@ slides:
         align: "CENTER"
     rows:
       - ["01", "Project Kick-off Meeting & Team Alignment", "16 Dec 2025", "COMPLETED", "Joint PMO"]
-      - ["02", "Functional Specification Document (FSD) Sign-off", "02 Jan 2026", "CRITICAL GATE", "TTI SteerCo"]
+      - ["02", "Functional Specification Document (FSD) Sign-off", "02 Jan 2026", "CRITICAL GATE", "[CLIENT_SHORT_NAME] SteerCo"]
       - ["03", "Snowflake Subscription Environment Provisioned", "02 Jan 2026", "INFRASTRUCTURE", "MII Lead"]
       - ["04", "Streamlit Application & Modeling Development Complete", "13 Feb 2026", "DEVELOPMENT", "MII PM"]
       - ["05", "System Integration Testing (SIT) Result Sign-off", "24 Feb 2026", "TESTING", "MII Lead"]
-      - ["06", "User Acceptance Testing (UAT) Result Sign-off", "31 Mar 2026", "CRITICAL GATE", "TTI BPO"]
-      - ["07", "Production Cutover & Official Go-Live", "01 Apr 2026", "CRITICAL GATE", "TTI SteerCo"]
+      - ["06", "User Acceptance Testing (UAT) Result Sign-off", "31 Mar 2026", "CRITICAL GATE", "[CLIENT_SHORT_NAME] BPO"]
+      - ["07", "Production Cutover & Official Go-Live", "01 Apr 2026", "CRITICAL GATE", "[CLIENT_SHORT_NAME] SteerCo"]
       - ["08", "Technical Specification Document (TSD) Sign-off", "08 Apr 2026", "DOCUMENTATION", "Joint PMO"]
-      - ["09", "Knowledge Transfer & User Training Complete", "16 Apr 2026", "HANDOVER", "TTI Team"]
+      - ["09", "Knowledge Transfer & User Training Complete", "16 Apr 2026", "HANDOVER", "[CLIENT_SHORT_NAME] Team"]
       - ["10", "Two-Month Operational Guarantee Period Complete", "02 Jun 2026", "WARRANTY", "Joint PMO"]
       - ["11", "Final Project Closure & BAST Final Sign-off", "02 Jun 2026", "CRITICAL GATE", "SteerCo Leadership"]
 
@@ -777,7 +777,7 @@ slides:
         width: 1.833
         align: "LEFT"
     rows:
-      - ["01", "Mutual Non-Disclosure Agreement (NDA)", "PT MII / TTI", "Dian Eka Kusumawati", "IN PROGRESS", "Final bilateral legal execution"]
+      - ["01", "Mutual Non-Disclosure Agreement (NDA)", "PT MII / [CLIENT_SHORT_NAME]", "Dian Eka Kusumawati", "IN PROGRESS", "Final bilateral legal execution"]
       - ["02", "Developer Laptops & Security Clearance", "PT MII", "All PIC / Consultants", "COMPLETE", "Hardware & security tools ready"]
       - ["03", "WhatsApp Group & Microsoft Teams Channels", "PT MII", "Lucky / PMO", "COMPLETE", "Coordination channels active"]
       - ["04", "SharePoint Document Collaboration Repository", "PT MII", "Agus Suhanto (PM)", "COMPLETE", "Artifact workspace provisioned"]
@@ -809,7 +809,7 @@ slides:
         align: "LEFT"
     rows:
       - ["01", "Weekly Progress Checkpoint", "Weekly (or As Needed)", "1st: Onsite  |  2nd: Online MS Teams", "Joint Project Team & PMO Leads"]
-      - ["02", "Steering Committee Review Meeting", "Milestone Gates / As Needed", "1st: Online  |  2nd: Onsite if Escalated", "Steering Committee Leadership (TTI & MII)"]
+      - ["02", "Steering Committee Review Meeting", "Milestone Gates / As Needed", "1st: Online  |  2nd: Onsite if Escalated", "Steering Committee Leadership ([CLIENT_SHORT_NAME] & MII)"]
       - ["03", "Central Document Repository", "Daily Active Access", "Enterprise SharePoint (Provided by MII)", "All Project Stakeholders & Core Team"]
       - ["04", "Operational Ad-Hoc Coordination", "Daily Continuous", "Corporate Email, Phone, Teams & WhatsApp", "All Project Stakeholders"]
 
@@ -841,7 +841,7 @@ slides:
     rows:
       - ["01", "Requirement Risk: Risiko penambahan fitur baru pada fase asesmen (planning) yang membuat estimasi timeline proyek bertambah.", "Stick pada requirement baseline; lakukan prioritisasi use case ketat (MoSCoW); rencanakan implementasi fitur sekunder pada fase berikutnya.", "Rebaseline timeline dan alokasi tim jika usulan penambahan fitur disetujui formal di level Steering Committee.", "Agus Suhanto (PM)"]
       - ["02", "Change Risk: Permintaan perubahan spesifikasi sepanjang proyek berjalan setelah baseline disetujui bersama dalam dokumen FSD.", "Sosialisasikan batas ruang lingkup FSD baseline; tegakkan disiplin delivery; lakukan asesmen dampak teknis dan biaya sebelum persetujuan.", "Sesuaikan permintaan perubahan dengan prosedur Change Request resmi melalui addendum kontrak.", "Agus Suhanto (PM)"]
-      - ["03", "Data Readiness Risk: Potensi ketidaksesuaian format ekspor CSV dari modul SAP ERP atau keterlambatan penyediaan data bulanan.", "Tetapkan template data dictionary terstandarisasi sejak awal planning; lakukan validasi skema awal pada environment staging.", "Fokus pemrosesan pada mandatory attributes; eskalasi ketidaksesuaian format langsung ke PIC IT Toyota Tsusho.", "Vicko Bhayyu (Tech Lead)"]
+      - ["03", "Data Readiness Risk: Potensi ketidaksesuaian format ekspor CSV dari modul SAP ERP atau keterlambatan penyediaan data bulanan.", "Tetapkan template data dictionary terstandarisasi sejak awal planning; lakukan validasi skema awal pada environment staging.", "Fokus pemrosesan pada mandatory attributes; eskalasi ketidaksesuaian format langsung ke PIC IT [CLIENT_SHORT_NAME].", "Vicko Bhayyu (Tech Lead)"]
 
   # ----------------------------------------------------------------------------
   # Slide 17: 15. Prosedur Change Requests (Scope & Change Control Procedure)
@@ -858,7 +858,7 @@ slides:
     tracker: "SESI DISKUSI | QUESTIONS & EXECUTIVE ALIGNMENT"
     headline: "Questions & Executive Alignment Discussion"
     subtitle: "Open forum for stakeholder inquiries, technical clarifications, and formal kick-off endorsement."
-    division_tagline: "PT Toyota Tsusho Indonesia  |  PT Mitra Integrasi Informatika"
+    division_tagline: "[CLIENT_COMPANY_NAME]  |  PT Mitra Integrasi Informatika"
 
   # ----------------------------------------------------------------------------
   # Slide 19: Closing / Thank You Slide
@@ -869,13 +869,4 @@ slides:
     subtitle: "Partnering to accelerate financial data intelligence and analytics velocity with Snowflake Data Cloud."
     company: "PT Mitra Integrasi Informatika  |  PT Metrodata Electronics Tbk"
     office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
-    contacts:
-      - name: "Agus Suhanto"
-        role: "Project Manager, MII"
-        email: "agus.suhanto@mii.co.id"
-      - name: "Dian Eka Kusumawati"
-        role: "Account Manager, MII"
-        email: "dian.eka@mii.co.id"
-      - name: "Vicko Bhayyu"
-        role: "Technical Lead, MII"
-        email: "vicko.bhayyu@mii.co.id"
+    contacts: null

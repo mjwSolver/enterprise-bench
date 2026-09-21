@@ -4,6 +4,38 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-09-21] - Sprints 17–27 Review & Enhancement Sprint (Phases 1–5): Universal Normalization & Defect Rectification
+
+### Summary
+Executed a comprehensive 5-phase review and enhancement sprint across Sprints 17–27 collateral, resolving cross-cutting entity normalization, visual enrichment, defect rectifications, and automated change request governance. Established "Nusantara Global Logistics" (`NGL`) as the system-wide canonical default client entity across models, declarative presets, and slide pre-save shape traversal (`src/core/slug_registry.py`). Enriched Project Closing Deck (`5.1`) with Lucide vector iconography, an operational 3-swimlane maintenance workflow, and clean corporate closing geometry (`src/ppt_engine/closing_deck.py`). Perfected Weekly Progress Report (`4.2`) milestone row vertical centering via `MSO_ANCHOR.MIDDLE`, DrawingML hanging bullets in risk mitigations, and 100% English language purity (`src/ppt_engine/weekly_progress_deck.py`). Rectified Project Kick-off Material (`1.1`) defects by deprecating static screenshots on Slide 10 in favor of a native 3-column OpenXML vector architecture with SVG logos and orange callouts, flipping Gantt diamond labels leftwards to eliminate slide canvas bleed, stripping drop shadows, and eliminating hardcoded staff names on Slide 19 (`src/ppt_engine/reference_slides.py`, `src/ppt_engine/consulting_archetypes.py`). Automated Change Request (`CR_07`) dynamic output routing and recursive document/workbook sanitization (`src/core/change_request.py`).
+
+### Milestones Delivered
+- **Phase 1: Universal Slug & PII Normalization:**
+  - Standardized system-wide canonical default client entity to `Nusantara Global Logistics` (short name: `NGL`) in [`src/core/slug_registry.py`](../src/core/slug_registry.py) with `EngagementContext.default_ngl()` and `EngagementContext.substitute()`.
+  - Implemented recursive slide shape and group shape traversal in `substitute_slugs_in_presentation`, substituting slug tokens and regex scrubbing legacy entities across shapes, tables, and nested group shapes (`shape.shapes`).
+  - Sanitized declarative YAML presets (`closing_deck.yaml`, `kickoff_presentation.yaml`, `presales_pitch_deck.yaml`, `uat_briefing.yaml`, `weekly_progress.yaml`) replacing hardcoded entities with `[CLIENT_COMPANY_NAME]` and `[CLIENT_SHORT_NAME]`.
+  - Enforced a strict optical font size floor ($\ge 11.0\text{pt}$ minimum, $\ge 12.0\text{pt}$ body copy) across all presentation engines and archetypes.
+- **Phase 2: Project Closing Deck (5.1) Visual Enrichment:**
+  - Integrated Lucide vector icons tinted with `theme.accent` across Slide 02 Agenda badges (`compass`, `package-check`, `file-signature`, `shield-check`, `git-pull-request`, `bar-chart-3`), Slide 03 Capability cards, Slide 04 Deliverables format badges (`file-text`, `presentation`, `table`, `code`), and Slide 05 Checklist access cards in [`src/ppt_engine/closing_deck.py`](../src/ppt_engine/closing_deck.py).
+  - Upgraded Slide 07 from flat sequential boxes into a formal 3-swimlane maintenance workflow (Client Organization, Metrodata L1/L2 Managed Services, Lead Development) with SLA targets.
+  - Re-architected Slide 09 to default to a clean corporate closing card without hardcoded personal staff emails.
+- **Phase 3: Weekly Progress Report (4.2) Typography & Language Purity:**
+  - Resolved Slide 07 milestone status row vertical alignment defect in [`src/ppt_engine/weekly_progress_deck.py`](../src/ppt_engine/weekly_progress_deck.py) by allocating full `row_h` height and setting `tf.vertical_anchor = MSO_ANCHOR.MIDDLE` across text frames, harmonizing with status pills.
+  - Upgraded Slide 08 Risk Register mitigations with DrawingML bullet glyphs and hanging indents (`marL="288000"`, `indent="-288000"`) via `_add_bullet_paragraph`.
+  - Replaced Indonesian phrases in presets and builders with a 100% pure English baseline, isolating bilingual translation to dedicated locale catalogs.
+- **Phase 4: Project Kick-off Material (1.1) Defect Rectification:**
+  - Replaced static raster screenshot (`snowflake_solution_architecture.png`) on Slide 10 in [`src/ppt_engine/reference_slides.py`](../src/ppt_engine/reference_slides.py) with a native 3-column OpenXML vector container architecture with official SVG tech logos (`kafka`, `snowflake`, `dbt`, `streamlit`, `vault`) and high-contrast orange callout boxes (`#FFF7ED` fill, `#EA580C` border).
+  - Fixed Slide 12 Gantt timeline in [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py): dynamically flipped Week 24 milestone diamond label leftwards (`mx - label_w - Inches(0.06)`) when nearing the right margin, preventing slide canvas bleed ($X > 13.333''$).
+  - Evaluated narrow duration bars to prevent label collisions, stripped drop shadows across all timeline shapes (`shape.shadow.inherit = False`), and scaled timeline fonts from `Pt(7.0)`/`Pt(7.5)` to $\ge 11.0\text{pt}$.
+  - Re-architected Slide 19 (`build_thank_you_slide`) to default to a clean corporate contact card (`contacts=None` / `show_staff_contacts=False`).
+- **Phase 5: Automated Change Request Suite (CR_07):**
+  - Enhanced [`src/core/change_request.py`](../src/core/change_request.py) with dynamic client routing via `EngagementContext` to `output/NGL_Snowflake_Analytics/change_requests/CR_07/`.
+  - Implemented `_substitute_docx` and `_substitute_xlsx` for recursive post-generation document and workbook sanitization across paragraphs, table cells, and worksheets.
+  - Verified zero legacy logos in `Change_Request_Form_CR_07.docx` and master template `4.4_Change_Request_Form_Template.docx`.
+- Reference Handover: [`docs/handovers/2026-09-21_sprints_17_27_completion_briefing.md`](handovers/2026-09-21_sprints_17_27_completion_briefing.md)
+
+---
+
 ## [2026-09-21] - Milestone 27: Automated Project Closing Deck Modernization (9 Slides)
 
 ### Summary

@@ -232,6 +232,38 @@ def _fit_image_in_box(
         return box_left, box_top, box_width, box_height
 
 
+def _resolve_logo_png(logo_ref: Union[str, Path]) -> Optional[Path]:
+    """
+    Resolves an SVG or PNG asset from logos/icons directories and renders SVG to cached PNG.
+    """
+    p = Path(logo_ref)
+    if not p.exists():
+        base_dir = Path(__file__).resolve().parent.parent.parent
+        for candidate in [
+            Path("assets/logos") / p.name,
+            Path("assets/icons/lucide") / p.name,
+            base_dir / "assets" / "logos" / p.name,
+            base_dir / "assets" / "icons" / "lucide" / p.name,
+        ]:
+            if candidate.exists():
+                p = candidate
+                break
+    if not p.exists():
+        return None
+    if p.suffix.lower() == ".svg":
+        dest_png = Path("output/cache/logos") / f"{p.stem}.png"
+        dest_png.parent.mkdir(parents=True, exist_ok=True)
+        if not dest_png.exists():
+            try:
+                from src.ppt_engine.icon_engine import render_svg_to_png
+                render_svg_to_png(p.read_text(encoding="utf-8"), output_path=dest_png, size=256)
+            except Exception as exc:
+                logger.warning(f"Could not render svg logo {p}: {exc}")
+                return None
+        return dest_png
+    return p
+
+
 # ============================================================================
 # 1. Slide 33: Project Organization Structure Slide (Tree-Like Hierarchy)
 # ============================================================================
@@ -311,7 +343,7 @@ def build_governance_org_structure_slide(
     p_sc_header = tf_sc.paragraphs[0]
     p_sc_header.text = loc.t("reference_slides.governance_org.tier1_header", "TIER 1: JOINT STEERING COMMITTEE (PROJECT SPONSORSHIP)")
     p_sc_header.font.name = theme.font_family_header
-    p_sc_header.font.size = Pt(10.5)
+    p_sc_header.font.size = Pt(12.0)
     p_sc_header.font.bold = True
     p_sc_header.font.color.rgb = c_accent
 
@@ -320,13 +352,13 @@ def build_governance_org_structure_slide(
     r1 = p_sc1.add_run()
     r1.text = loc.t("reference_slides.governance_org.tier1_client_sponsors_label", f"{client_name} Sponsors: ", client_name=client_name)
     r1.font.name = theme.font_family
-    r1.font.size = Pt(9.0)
+    r1.font.size = Pt(11.5)
     r1.font.bold = True
     r1.font.color.rgb = c_primary
     r1_sub = p_sc1.add_run()
     r1_sub.text = tier1_client_text or loc.t("reference_slides.governance_org.tier1_client_sponsors_desc", "C-Level Leadership (Strategic vision, budget authorization, stage-gate sign-offs)")
     r1_sub.font.name = theme.font_family
-    r1_sub.font.size = Pt(8.5)
+    r1_sub.font.size = Pt(11.0)
     r1_sub.font.color.rgb = c_secondary
 
     p_sc2 = tf_sc.add_paragraph()
@@ -334,13 +366,13 @@ def build_governance_org_structure_slide(
     r2 = p_sc2.add_run()
     r2.text = loc.t("reference_slides.governance_org.tier1_vendor_leadership_label", f"{vendor_name} Leadership: ", vendor_name=vendor_name)
     r2.font.name = theme.font_family
-    r2.font.size = Pt(9.0)
+    r2.font.size = Pt(11.5)
     r2.font.bold = True
     r2.font.color.rgb = c_primary
     r2_sub = p_sc2.add_run()
     r2_sub.text = tier1_vendor_text or loc.t("reference_slides.governance_org.tier1_vendor_leadership_desc", "Consulting Practice Director & Partner (Delivery assurance, executive SLA oversight)")
     r2_sub.font.name = theme.font_family
-    r2_sub.font.size = Pt(8.5)
+    r2_sub.font.size = Pt(11.0)
     r2_sub.font.color.rgb = c_secondary
 
     # ------------------------------------------------------------------------
@@ -393,7 +425,7 @@ def build_governance_org_structure_slide(
     ])
     for b_idx, b_text in enumerate(c_pm_bullets):
         sb = 3 if b_idx == 0 else 2
-        _add_bullet_paragraph(tf_pm1, b_text, theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=sb)
+        _add_bullet_paragraph(tf_pm1, b_text, theme.font_family, font_size_pt=11.0, font_color=c_secondary, space_before_pt=sb)
 
     # Metrodata PM Card
     pm2_left = Inches(6.813)
@@ -424,7 +456,7 @@ def build_governance_org_structure_slide(
     ])
     for b_idx, b_text in enumerate(v_pm_bullets):
         sb = 3 if b_idx == 0 else 2
-        _add_bullet_paragraph(tf_pm2, b_text, theme.font_family, font_size_pt=8.5, font_color=c_secondary, space_before_pt=sb)
+        _add_bullet_paragraph(tf_pm2, b_text, theme.font_family, font_size_pt=11.0, font_color=c_secondary, space_before_pt=sb)
 
     # ------------------------------------------------------------------------
     # HIERARCHY TREE CONNECTOR LINES: TIER 2 -> TIER 3
@@ -549,7 +581,7 @@ def build_governance_org_structure_slide(
             accent_rgb=pod["stripe_color"],
             bg_color=c_surface,
         )
-        _add_status_pill(slide, theme, p_left + Inches(0.14), pod_top + Inches(0.08), Inches(1.10), Inches(0.20), pod["badge"], font_size_pt=7.0, override_color_key=pod["badge_color"])
+        _add_status_pill(slide, theme, p_left + Inches(0.14), pod_top + Inches(0.08), Inches(1.30), Inches(0.24), pod["badge"], font_size_pt=8.5, override_color_key=pod["badge_color"])
 
         tb_pod = slide.shapes.add_textbox(p_left + Inches(0.14), pod_top + Inches(0.32), pod_width - Inches(0.28), pod_height - Inches(0.36))
         tf_pod = tb_pod.text_frame
@@ -559,19 +591,19 @@ def build_governance_org_structure_slide(
         p_h = tf_pod.paragraphs[0]
         p_h.text = pod["title"]
         p_h.font.name = theme.font_family_header
-        p_h.font.size = Pt(9.5)
+        p_h.font.size = Pt(11.5)
         p_h.font.bold = True
         p_h.font.color.rgb = c_primary
 
         p_sub = tf_pod.add_paragraph()
         p_sub.text = pod["org"]
         p_sub.font.name = theme.font_family
-        p_sub.font.size = Pt(7.5)
+        p_sub.font.size = Pt(11.0)
         p_sub.font.color.rgb = c_muted
         p_sub.space_before = Pt(1)
 
         for b_text in pod["bullets"]:
-            _add_bullet_paragraph(tf_pod, b_text, theme.font_family, font_size_pt=8.0, font_color=c_secondary, space_before_pt=1.5)
+            _add_bullet_paragraph(tf_pod, b_text, theme.font_family, font_size_pt=11.0, font_color=c_secondary, space_before_pt=1.5)
 
     resolved_notice = loc.t("common.confidential_notice", notice) if notice == "Enterprise Strategy Group  |  Confidential & Proprietary" else notice
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=resolved_notice)
@@ -1004,8 +1036,12 @@ def build_snowflake_data_pipeline_slide(
     locale: str = "en",
 ) -> Any:
     """
-    Renders permanent reference Slide 18 by cleanly embedding the official
-    Snowflake solution architecture dataflow graphic under our standard consulting frame.
+    Renders permanent reference Slide 18 as a native 3-column vector container architecture:
+      - Column 1: Sources & Continuous Ingestion (SAP ERP, Apache Kafka, Amazon S3)
+      - Column 2: Governed Snowflake Platform (Bronze Raw Vault, Silver dbt, Gold Marts)
+      - Column 3: Consumption & GenAI Serving (Streamlit Apps, Cortex AI, Governed BI)
+      - Inter-column directional chevrons & bottom orange transformation callouts.
+      - Strictly enforces >= 11.0pt typography and sharp rectangular container geometry.
     """
     from src.core.locale_engine import get_locale_engine
     loc = get_locale_engine(locale)
@@ -1021,47 +1057,226 @@ def build_snowflake_data_pipeline_slide(
     slide = add_slide_with_background(prs, theme)
     add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
-    # Frame Container for Official Graphic
-    frame_left = Inches(1.00)
-    frame_top = Inches(1.80)
-    frame_width = Inches(11.333)
-    frame_height = Inches(5.05)
+    c_primary = theme.get_rgb("primary")
+    c_secondary = theme.get_rgb("secondary")
+    c_muted = theme.get_rgb("muted")
+    c_accent = theme.get_rgb("accent")
+    c_surface = theme.get_rgb("surface")
+    c_border = theme.get_rgb("border")
 
-    # Background card to frame image cleanly
-    add_card(
-        slide,
-        theme,
-        frame_left,
-        frame_top,
-        frame_width,
-        frame_height,
-        bg_color=theme.get_rgb("surface"),
-        border_color=theme.get_rgb("border"),
-    )
+    # Orange Callout Colors (60-30-10 palette distribution)
+    orange_fill = RGBColor(255, 251, 235)    # #FFFBEB warm amber tint
+    orange_border = RGBColor(245, 158, 11)   # #F59E0B crisp amber border
+    orange_title = RGBColor(180, 83, 9)      # #B45309 deep amber title
+    orange_body = RGBColor(120, 53, 15)      # #78350F dark amber body
 
-    # Embed official graphic with strict aspect ratio preservation
-    if OFFICIAL_SNOWFLAKE_FLOW_IMG.exists():
-        inner_left = frame_left + Inches(0.15)
-        inner_top = frame_top + Inches(0.15)
-        inner_width = frame_width - Inches(0.30)
-        inner_height = frame_height - Inches(0.30)
+    col_w = Inches(3.64)
+    col_h = Inches(4.90)
+    col_top = Inches(1.80)
+    col_gap = Inches(0.40)
+    start_left = Inches(0.80)
 
-        img_l, img_t, img_w, img_h = _fit_image_in_box(
-            OFFICIAL_SNOWFLAKE_FLOW_IMG,
-            inner_left,
-            inner_top,
-            inner_width,
-            inner_height,
+    # 3 Column specifications
+    columns_data = [
+        {
+            "num": "01",
+            "title": "SOURCES & CONTINUOUS INGESTION",
+            "subtitle": "Automated batch & event-driven ingestion",
+            "accent": c_accent,
+            "blocks": [
+                {
+                    "title": "SAP ERP CSV & Financial Extracts",
+                    "desc": "Monthly transactional GL/AP/AR extracts & raw trial balances.",
+                    "icon": "file-spreadsheet.svg",
+                },
+                {
+                    "title": "Apache Kafka CDC Streaming",
+                    "desc": "Real-time inventory changes & operational logistics telemetry.",
+                    "icon": "kafka.svg",
+                },
+                {
+                    "title": "Amazon S3 Object Landing Zone",
+                    "desc": "Encrypted staging buckets with automated event triggers.",
+                    "icon": "amazons3.svg",
+                },
+            ],
+            "callout_title": "⚡ Automated Snowpipe & Event Triggers",
+            "callout_desc": "Serverless data loading upon file arrival with zero manual intervention.",
+        },
+        {
+            "num": "02",
+            "title": "GOVERNED SNOWFLAKE PLATFORM",
+            "subtitle": "Decoupled storage, elastic compute & Horizon",
+            "accent": c_accent,
+            "blocks": [
+                {
+                    "title": "Raw Ingestion Vault (Bronze)",
+                    "desc": "Immutable audit-ready raw store supporting VARIANT schema-on-read.",
+                    "icon": "vault.svg",
+                },
+                {
+                    "title": "dbt Transformation (Silver)",
+                    "desc": "Automated DAG pipelines, data cleansing, tests & reconciliations.",
+                    "icon": "dbt.svg",
+                },
+                {
+                    "title": "Dimensional Analytics Marts (Gold)",
+                    "desc": "Star-schema marts optimized for executive financial reporting.",
+                    "icon": "snowflake.svg",
+                },
+            ],
+            "callout_title": "⚡ Virtual Warehouses & Dynamic Pruning",
+            "callout_desc": "Multi-cluster elastic compute scales to zero; instant queries with zero contention.",
+        },
+        {
+            "num": "03",
+            "title": "CONSUMPTION & GENAI SERVING",
+            "subtitle": "Interactive portals, AI narration & BI tools",
+            "accent": c_accent,
+            "blocks": [
+                {
+                    "title": "Streamlit Financial Application Suite",
+                    "desc": "8 dynamic financial modules: P&L, Cash Flow, Variance & S-Curves.",
+                    "icon": "layout-dashboard.svg",
+                },
+                {
+                    "title": "Cortex GenAI & Semantic Search",
+                    "desc": "Automated executive commentary & natural language queries.",
+                    "icon": "sparkles.svg",
+                },
+                {
+                    "title": "Governed BI Tools & Excel Live Sync",
+                    "desc": "Direct SQL connectors for PowerBI, Tableau, and financial models.",
+                    "icon": "shield-check.svg",
+                },
+            ],
+            "callout_title": "⚡ RBAC Security & Horizon Governance",
+            "callout_desc": "Column masking, dynamic row access policies & centralized audit trail.",
+        },
+    ]
+
+    for c_idx, col in enumerate(columns_data):
+        c_left = start_left + c_idx * (col_w + col_gap)
+
+        # 1. Outer container with sharp top stripe
+        add_card_with_top_stripe(
+            slide, theme, c_left, col_top, col_w, col_h,
+            accent_rgb=col["accent"],
+            bg_color=c_surface,
         )
-        slide.shapes.add_picture(
-            str(OFFICIAL_SNOWFLAKE_FLOW_IMG),
-            img_l,
-            img_t,
-            width=img_w,
-            height=img_h,
-        )
-    else:
-        logger.warning(f"Official Snowflake data flow graphic not found at: {OFFICIAL_SNOWFLAKE_FLOW_IMG}")
+
+        # 2. Column Header
+        tb_hdr = slide.shapes.add_textbox(c_left + Inches(0.16), col_top + Inches(0.12), col_w - Inches(0.32), Inches(0.72))
+        tf_hdr = tb_hdr.text_frame
+        tf_hdr.word_wrap = True
+        tf_hdr.margin_left = tf_hdr.margin_right = tf_hdr.margin_top = tf_hdr.margin_bottom = 0
+        p_ch = tf_hdr.paragraphs[0]
+        p_ch.text = f"{col['num']}. {col['title']}"
+        p_ch.font.name = theme.font_family_header
+        p_ch.font.size = Pt(12.0)
+        p_ch.font.bold = True
+        p_ch.font.color.rgb = col["accent"]
+
+        p_cs = tf_hdr.add_paragraph()
+        p_cs.text = col["subtitle"]
+        p_cs.font.name = theme.font_family
+        p_cs.font.size = Pt(11.0)
+        p_cs.font.color.rgb = c_muted
+        p_cs.space_before = Pt(2)
+
+        # 3. Inter-column directional Chevron between columns
+        if c_idx < 2:
+            arr_x = c_left + col_w + (col_gap - Inches(0.24)) / 2.0
+            arr_y = col_top + Inches(2.20)
+            ch = slide.shapes.add_shape(MSO_SHAPE.CHEVRON, arr_x, arr_y, Inches(0.24), Inches(0.36))
+            ch.shadow.inherit = False
+            ch.fill.solid()
+            ch.fill.fore_color.rgb = theme.get_rgb("accent_secondary")
+            ch.line.fill.background()
+
+        # 4. Three Sub-Cards inside the column
+        block_top_base = col_top + Inches(0.92)
+        block_h = Inches(0.88)
+        block_gap = Inches(0.12)
+        block_w = col_w - Inches(0.32)
+        block_l = c_left + Inches(0.16)
+
+        for b_idx, blk in enumerate(col["blocks"]):
+            b_top = block_top_base + b_idx * (block_h + block_gap)
+
+            # Sub-card background
+            b_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, block_l, b_top, block_w, block_h)
+            b_card.shadow.inherit = False
+            b_card.fill.solid()
+            b_card.fill.fore_color.rgb = theme.get_rgb("surface_muted")
+            b_card.line.color.rgb = c_border
+            b_card.line.width = Pt(1.0)
+
+            # Left Icon / Logo Slot
+            icon_slot_l = block_l + Inches(0.10)
+            icon_slot_t = b_top + Inches(0.14)
+            icon_slot_w = Inches(0.60)
+            icon_slot_h = Inches(0.60)
+
+            resolved_img = _resolve_logo_png(blk["icon"])
+            if resolved_img and resolved_img.exists():
+                img_l, img_t, img_w, img_h = _fit_image_in_box(resolved_img, icon_slot_l, icon_slot_t, icon_slot_w, icon_slot_h)
+                slide.shapes.add_picture(str(resolved_img), img_l, img_t, width=img_w, height=img_h)
+            else:
+                badge_sh = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, icon_slot_l, icon_slot_t, icon_slot_w, icon_slot_h)
+                badge_sh.shadow.inherit = False
+                badge_sh.fill.solid()
+                badge_sh.fill.fore_color.rgb = c_surface
+                badge_sh.line.color.rgb = c_border
+
+            # Right Text Box
+            tb_b = slide.shapes.add_textbox(block_l + Inches(0.76), b_top + Inches(0.08), block_w - Inches(0.84), block_h - Inches(0.16))
+            tf_b = tb_b.text_frame
+            tf_b.word_wrap = True
+            tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
+
+            p_bt = tf_b.paragraphs[0]
+            p_bt.text = blk["title"]
+            p_bt.font.name = theme.font_family_header
+            p_bt.font.size = Pt(11.5)
+            p_bt.font.bold = True
+            p_bt.font.color.rgb = c_primary
+
+            p_bd = tf_b.add_paragraph()
+            p_bd.text = blk["desc"]
+            p_bd.font.name = theme.font_family
+            p_bd.font.size = Pt(11.0)
+            p_bd.font.color.rgb = c_secondary
+            p_bd.space_before = Pt(2)
+
+        # 5. Bottom Orange Callout Box
+        callout_top = col_top + col_h - Inches(0.96)
+        callout_h = Inches(0.84)
+        callout_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, block_l, callout_top, block_w, callout_h)
+        callout_card.shadow.inherit = False
+        callout_card.fill.solid()
+        callout_card.fill.fore_color.rgb = orange_fill
+        callout_card.line.color.rgb = orange_border
+        callout_card.line.width = Pt(1.5)
+
+        tb_c = slide.shapes.add_textbox(block_l + Inches(0.12), callout_top + Inches(0.08), block_w - Inches(0.24), callout_h - Inches(0.16))
+        tf_c = tb_c.text_frame
+        tf_c.word_wrap = True
+        tf_c.margin_left = tf_c.margin_right = tf_c.margin_top = tf_c.margin_bottom = 0
+
+        p_ct = tf_c.paragraphs[0]
+        p_ct.text = col["callout_title"]
+        p_ct.font.name = theme.font_family_header
+        p_ct.font.size = Pt(11.5)
+        p_ct.font.bold = True
+        p_ct.font.color.rgb = orange_title
+
+        p_cd = tf_c.add_paragraph()
+        p_cd.text = col["callout_desc"]
+        p_cd.font.name = theme.font_family
+        p_cd.font.size = Pt(11.0)
+        p_cd.font.color.rgb = orange_body
+        p_cd.space_before = Pt(2)
 
     resolved_notice = loc.t("common.confidential_notice", notice) if notice == "Enterprise Strategy Group  |  Confidential & Proprietary" else notice
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=resolved_notice)

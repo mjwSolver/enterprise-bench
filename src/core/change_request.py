@@ -16,7 +16,36 @@ import openpyxl
 from pydantic import BaseModel, Field
 
 from src.core.config import CLEAN_DIR, validate_clean_path
+from src.core.slug_registry import EngagementContext, DEFAULT_CLIENT_SHORT_NAME
 from src.core.workspace import WorkspaceRouter
+
+
+def _substitute_docx(doc: Any, context: EngagementContext) -> None:
+    """Substitutes legacy slugs and placeholders across paragraphs and table cells."""
+    for p in doc.paragraphs:
+        if p.text:
+            new_text = context.substitute(p.text)
+            if new_text != p.text:
+                p.text = new_text
+    for t in doc.tables:
+        for row in t.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    if p.text:
+                        new_text = context.substitute(p.text)
+                        if new_text != p.text:
+                            p.text = new_text
+
+
+def _substitute_xlsx(wb: Any, context: EngagementContext) -> None:
+    """Substitutes legacy slugs across all sheets and cells in an openpyxl workbook."""
+    for sheet in wb.worksheets:
+        for row in sheet.iter_rows():
+            for cell in row:
+                if isinstance(cell.value, str):
+                    new_val = context.substitute(cell.value)
+                    if new_val != cell.value:
+                        cell.value = new_val
 
 
 class CRSubmission(BaseModel):
@@ -62,7 +91,12 @@ class CRProcessingResult(BaseModel):
 class ChangeRequestProcessor:
     """Orchestrates document generation, ledger logging, and scoping for Change Requests."""
 
-    def __init__(self, project_id: str = "TTI_Snowflake_Analytics"):
+    def __init__(
+        self,
+        project_id: str = "TTI_Snowflake_Analytics",
+        context: Optional[EngagementContext] = None,
+    ):
+        self.context = context or EngagementContext.default_ngl()
         self.project_id = project_id
         self.project = WorkspaceRouter.get_project(project_id)
 
@@ -100,7 +134,11 @@ class ChangeRequestProcessor:
         4. Prepares draft BAST_Change_Request.docx
         """
         cr_id = submission.cr_id or self._get_next_cr_id()
-        out_p = Path(output_dir) if output_dir else Path("output") / self.project_id / "change_requests" / f"CR_{cr_id.zfill(2)}"
+        if output_dir:
+            out_p = Path(output_dir)
+        else:
+            client_prefix = self.context.client_short_name if self.context else DEFAULT_CLIENT_SHORT_NAME
+            out_p = Path("output") / f"{client_prefix}_Snowflake_Analytics" / "change_requests" / f"CR_{cr_id.zfill(2)}"
         out_p.mkdir(parents=True, exist_ok=True)
 
         total_mandays = sum(submission.mandays_breakdown.values())
@@ -149,6 +187,7 @@ class ChangeRequestProcessor:
             t3.rows[4].cells[2].text = f"{total_mandays} mandays"
 
         doc_out_path = out_p / f"Change_Request_Form_CR_{cr_id.zfill(2)}.docx"
+        _substitute_docx(doc, self.context)
         doc.save(str(doc_out_path))
 
         # 2. Append to Change_Log_Ledger.xlsx
@@ -176,6 +215,7 @@ class ChangeRequestProcessor:
                 "Under Review",
             ]
             ws.append(new_row)
+            _substitute_xlsx(wb, self.context)
             wb.save(str(ledger_out_path))
             wb.close()
             ledger_updated = True
@@ -199,6 +239,7 @@ class ChangeRequestProcessor:
             ws_cr.append(["Deployment & Operational Handover", "DevOps Engineer", submission.mandays_breakdown.get("deployment", 0)])
             ws_cr.append(["Total Committed Effort", "All Teams", total_mandays])
 
+            _substitute_xlsx(wb_sc, self.context)
             wb_sc.save(str(scoping_out_path))
             wb_sc.close()
 
@@ -211,6 +252,7 @@ class ChangeRequestProcessor:
             if len(doc_bast.paragraphs) > 1:
                 p = doc_bast.paragraphs[1]
                 p.text = f"Pekerjaan : Jasa Implementasi Snowflake - Change Request #{cr_id} ({submission.title})"
+            _substitute_docx(doc_bast, self.context)
             doc_bast.save(str(bast_out_path))
 
         summary = (

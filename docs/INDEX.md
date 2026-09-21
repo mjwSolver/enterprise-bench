@@ -24,7 +24,9 @@ docs/
 │   ├── 2026-09-19_project_kickoff_presentation_modernization.md
 │   ├── 2026-09-20_uat_briefing_presentation_modernization.md
 │   ├── 2026-09-20_weekly_progress_report_deck_modernization.md
-│   └── 2026-09-21_project_closing_deck_modernization.md
+│   ├── 2026-09-21_project_closing_deck_modernization.md
+│   ├── 2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md
+│   └── 2026-09-21_sprints_17_27_completion_briefing.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
 │   ├── adaptive_documentation_scout_protocol.md
@@ -108,4 +110,6 @@ docs/
 * [**`2026-09-20_uat_briefing_presentation_modernization.md`**](handovers/2026-09-20_uat_briefing_presentation_modernization.md): Milestone 25 closeout (Automated 25-slide bilingual UAT briefing presentation modernization, forensic template analysis, master YAML config, slide exporter whitespace advance calibration, Gantt normalization, and preview verification).
 * [**`2026-09-20_weekly_progress_report_deck_modernization.md`**](handovers/2026-09-20_weekly_progress_report_deck_modernization.md): Milestone 26 closeout (Automated 11-slide weekly progress report presentation modernization, forensic template analysis, dynamic milestone row height scaling, consulting S-curve chart generator, spreadsheet ingestion pipeline, and dual-mode preview verification).
 * [**`2026-09-21_project_closing_deck_modernization.md`**](handovers/2026-09-21_project_closing_deck_modernization.md): Milestone 27 closeout (Automated 9-slide project closing & maintenance transition deck modernization, forensic template & checklist audit, ClosingDeckBuilder, dynamic spreadsheet ingestion, and preview verification).
+* [**`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`**](handovers/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md): Sprints 17–27 review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap.
+* [**`2026-09-21_sprints_17_27_completion_briefing.md`**](handovers/2026-09-21_sprints_17_27_completion_briefing.md): Sprints 17–27 closeout (Universal NGL slug & PII normalization, Closing Deck visual enrichment, Weekly Progress typography & English purity, Kick-off Slide 10/12/19 defect fixes, and automated Change Request suite).
 

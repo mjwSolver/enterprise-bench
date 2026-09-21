@@ -1157,12 +1157,13 @@ class WeeklyProgressDeckBuilder:
             tb = slide.shapes.add_textbox(cur_x, header_y + Inches(0.08), width, header_h - Inches(0.16))
             tf = tb.text_frame
             tf.word_wrap = False
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
             tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
             p = tf.paragraphs[0]
             p.text = label
             p.alignment = align
             p.font.name = self.theme.font_family_header
-            p.font.size = Pt(10.0)
+            p.font.size = Pt(11.0)
             p.font.bold = True
             p.font.color.rgb = RGBColor(255, 255, 255)
             cur_x += width
@@ -1173,25 +1174,23 @@ class WeeklyProgressDeckBuilder:
         available_h = max_bottom_y - row_y
 
         if n_rows <= 8:
-            row_h = Inches(0.46)
-            row_gap = Inches(0.07)
+            row_h = Inches(0.48)
+            row_gap = Inches(0.06)
             font_no_pt = 11.5
             font_desc_pt = 11.0
-            font_date_pt = 10.5
+            font_date_pt = 11.0
             font_act_pt = 11.0
-            font_pill_pt = 9.0
+            font_pill_pt = 11.0
             pill_h = Inches(0.28)
-            pad_top = Inches(0.08)
         else:
             row_gap = Inches(0.04)
             row_h = (available_h - row_gap * (n_rows - 1)) / n_rows
-            font_no_pt = 10.0 if n_rows >= 11 else 10.5
-            font_desc_pt = 9.5 if n_rows >= 11 else 10.0
-            font_date_pt = 9.0 if n_rows >= 11 else 9.5
-            font_act_pt = 9.5 if n_rows >= 11 else 10.0
-            font_pill_pt = 8.0 if n_rows >= 11 else 8.5
-            pill_h = Inches(0.24) if n_rows >= 11 else Inches(0.26)
-            pad_top = Inches(0.05)
+            font_no_pt = 11.0
+            font_desc_pt = 11.0
+            font_date_pt = 11.0
+            font_act_pt = 11.0
+            font_pill_pt = 11.0
+            pill_h = Inches(0.28)
 
         for r_idx, m in enumerate(milestones):
             cur_ry = row_y + r_idx * (row_h + row_gap)
@@ -1208,11 +1207,12 @@ class WeeklyProgressDeckBuilder:
                 force_rectangle=True,
             )
 
-            # Col 0: Number
+            # Col 0: Number (Centered, Middle-aligned)
             x0 = start_x
-            tb0 = slide.shapes.add_textbox(x0, cur_ry + pad_top, Inches(0.70), row_h - pad_top * 2)
+            tb0 = slide.shapes.add_textbox(x0, cur_ry, Inches(0.70), row_h)
             tf0 = tb0.text_frame
             tf0.word_wrap = False
+            tf0.vertical_anchor = MSO_ANCHOR.MIDDLE
             tf0.margin_left = tf0.margin_right = tf0.margin_top = tf0.margin_bottom = 0
             p0 = tf0.paragraphs[0]
             p0.text = str(m.get("num", f"{r_idx+1:02d}"))
@@ -1222,11 +1222,12 @@ class WeeklyProgressDeckBuilder:
             p0.font.bold = True
             p0.font.color.rgb = self.theme.get_rgb("accent")
 
-            # Col 1: Milestone Name
+            # Col 1: Milestone Name (Left-aligned, Middle-aligned)
             x1 = x0 + Inches(0.70)
-            tb1 = slide.shapes.add_textbox(x1, cur_ry + pad_top, Inches(5.00), row_h - pad_top * 2)
+            tb1 = slide.shapes.add_textbox(x1 + Inches(0.12), cur_ry, Inches(4.88), row_h)
             tf1 = tb1.text_frame
             tf1.word_wrap = True
+            tf1.vertical_anchor = MSO_ANCHOR.MIDDLE
             tf1.margin_left = tf1.margin_right = tf1.margin_top = tf1.margin_bottom = 0
             p1 = tf1.paragraphs[0]
             p1.text = m.get("name", "")
@@ -1235,11 +1236,12 @@ class WeeklyProgressDeckBuilder:
             p1.font.bold = True
             p1.font.color.rgb = self.theme.get_rgb("primary")
 
-            # Col 2: Baseline Target
+            # Col 2: Baseline Target (Centered, Middle-aligned)
             x2 = x1 + Inches(5.00)
-            tb2 = slide.shapes.add_textbox(x2, cur_ry + pad_top, Inches(1.90), row_h - pad_top * 2)
+            tb2 = slide.shapes.add_textbox(x2, cur_ry, Inches(1.90), row_h)
             tf2 = tb2.text_frame
             tf2.word_wrap = False
+            tf2.vertical_anchor = MSO_ANCHOR.MIDDLE
             tf2.margin_left = tf2.margin_right = tf2.margin_top = tf2.margin_bottom = 0
             p2 = tf2.paragraphs[0]
             p2.text = m.get("target_date", "")
@@ -1248,11 +1250,12 @@ class WeeklyProgressDeckBuilder:
             p2.font.size = Pt(font_date_pt)
             p2.font.color.rgb = self.theme.get_rgb("secondary")
 
-            # Col 3: Actual / Projected
+            # Col 3: Actual / Projected (Centered, Middle-aligned)
             x3 = x2 + Inches(1.90)
-            tb3 = slide.shapes.add_textbox(x3, cur_ry + pad_top, Inches(2.05), row_h - pad_top * 2)
+            tb3 = slide.shapes.add_textbox(x3, cur_ry, Inches(2.05), row_h)
             tf3 = tb3.text_frame
             tf3.word_wrap = False
+            tf3.vertical_anchor = MSO_ANCHOR.MIDDLE
             tf3.margin_left = tf3.margin_right = tf3.margin_top = tf3.margin_bottom = 0
             p3 = tf3.paragraphs[0]
             p3.text = m.get("actual_date", "")
@@ -1309,13 +1312,13 @@ class WeeklyProgressDeckBuilder:
                     "prob_boxes": 3,
                     "impact_label": "IMPACT: MEDIUM",
                     "impact_boxes": 2,
-                    "description": "Pergeseran jadwal asesmen FSD akibat cuti bersama akhir tahun 1999.",
+                    "description": "FSD assessment schedule shift due to year-end holiday calendar alignment.",
                     "mitigations": [
-                        "Penjadwalan ulang meeting asesmen ke tanggal 09 Jan 2000.",
-                        "Alokasi backup resource untuk modul Financial General Ledger.",
-                        "Akselerasi review via preliminary wireframes dan mockups.",
+                        "Rescheduled assessment workshop to 09 Jan 2026.",
+                        "Allocated backup engineering resource for Financial General Ledger module.",
+                        "Accelerated review via preliminary wireframes and component mockups.",
                     ],
-                    "contingency": "Penyerapan delay (+17 hari) diserap penuh oleh buffer dev internal tanpa menggeser Go-Live.",
+                    "contingency": "Full absorption of the 17-day shift within internal development buffer without affecting Go-Live.",
                     "owner": "Budi Pratama (PM)",
                 },
                 {
@@ -1328,13 +1331,13 @@ class WeeklyProgressDeckBuilder:
                     "prob_boxes": 2,
                     "impact_label": "IMPACT: HIGH",
                     "impact_boxes": 3,
-                    "description": "Permintaan tambahan fitur di luar 4 use case analitik finansial yang disepakati.",
+                    "description": "Requests for additional analytics features beyond the agreed 4 core financial use cases.",
                     "mitigations": [
-                        "Freeze baseline FSD v1.0 secara formal sebagai acuan delivery.",
-                        "Sosialisasi batas ruang lingkup ke seluruh stakeholder proyek.",
-                        "Terapkan prosedur Change Request (CR) formal untuk request baru.",
+                        "Formally freeze FSD v1.0 baseline as the binding delivery benchmark.",
+                        "Communicate scope boundaries across all project executive stakeholders.",
+                        "Enforce formal Change Request (CR) governance for any newly submitted enhancements.",
                     ],
-                    "contingency": "Lakukan impact analysis biaya dan jadwal; eskalasi keputusan CR ke Steering Committee.",
+                    "contingency": "Perform rigorous cost/schedule impact sizing and escalate CR decisions to Steering Committee.",
                     "owner": "Budi Pratama (PM)",
                 },
                 {
@@ -1347,13 +1350,13 @@ class WeeklyProgressDeckBuilder:
                     "prob_boxes": 2,
                     "impact_label": "IMPACT: HIGH",
                     "impact_boxes": 3,
-                    "description": "Potensi anomali tipe data dan relasi foreign key yang belum tervalidasi pada staging berisiko memicu error automated ingestion.",
+                    "description": "Potential unvalidated data type anomalies and foreign key relations in staging risk automated ingestion errors.",
                     "mitigations": [
-                        "Definisikan data dictionary & catalog sejak fase perencanaan.",
-                        "Eksekusi automated data profiling pada environment staging.",
-                        "Tetapkan quality threshold readiness minimal 98% pass rate.",
+                        "Define enterprise data dictionary and catalog during architecture planning.",
+                        "Execute automated data profiling scripts across staging environments.",
+                        "Establish data quality threshold with a minimum 98% pass rate requirement.",
                     ],
-                    "contingency": "Cleansing data terfokus pada mandatory attributes; eskalasi deviasi skema ke tim sumber data.",
+                    "contingency": "Focus initial data cleansing on mandatory attributes; escalate schema deviations to source data team.",
                     "owner": "Lead Data Architect",
                 },
             ]
@@ -1427,7 +1430,7 @@ class WeeklyProgressDeckBuilder:
                 width=Inches(1.75),
                 height=Inches(0.26),
                 status=t.get("tier_name", "MANAGED"),
-                font_size_pt=8.0,
+                font_size_pt=11.0,
                 override_color_key=acc_key,
             )
 
@@ -1489,7 +1492,7 @@ class WeeklyProgressDeckBuilder:
             sh = atf.paragraphs[0]
             sh.text = "PREVENTIVE MITIGATION CONTROLS"
             sh.font.name = self.theme.font_family_header
-            sh.font.size = Pt(10.0)
+            sh.font.size = Pt(11.0)
             sh.font.bold = True
             sh.font.color.rgb = accent_rgb
 
@@ -1514,7 +1517,7 @@ class WeeklyProgressDeckBuilder:
             fp = ftf.paragraphs[0]
             fp.text = f"Owner: {t.get('owner', 'Project Manager')}"
             fp.font.name = self.theme.font_family_header
-            fp.font.size = Pt(10.5)
+            fp.font.size = Pt(11.0)
             fp.font.bold = True
             fp.font.color.rgb = self.theme.get_rgb("secondary")
 
@@ -1541,15 +1544,15 @@ class WeeklyProgressDeckBuilder:
             issues = [
                 {
                     "id": "ISSUE-01",
-                    "date": "02-Jan-00",
-                    "title": "Keterlambatan delivery FSD karena bertepatan dengan libur pergantian milenium",
+                    "date": "02-Jan-26",
+                    "title": "FSD Assessment Completion Shift from Year-End Holiday Interval",
                     "owner": "Budi Pratama",
                     "severity": "Medium",
                     "status": "Open",
-                    "root_cause": "Personil kunci cuti pada periode akhir tahun 1999; asesmen analytics dijadwalkan ulang ke 9 Jan 2000.",
-                    "impact": "Penyelesaian FSD bergeser dari 02 Jan 2000 ke 19 Jan 2000 (+17 hari kalender), tanpa menggeser milestone sesudahnya.",
-                    "action_plan": "Pelaksanaan meeting asesmen tanggal 09 Jan 2000; konsolidasi FSD tanggal 15 Jan 2000; final sign-off tanggal 19 Jan 2000.",
-                    "target_date": "19-Jan-00",
+                    "root_cause": "Key client and vendor stakeholders unavailable during year-end holiday period; analytics assessment sessions rescheduled to 09 Jan 2026.",
+                    "impact": "FSD final sign-off rescheduled from 02 Jan 2026 to 19 Jan 2026 (+17 calendar days), fully contained within development buffer without downstream milestone slip.",
+                    "action_plan": "Conduct rescheduled assessment session on 09 Jan 2026; complete FSD consolidation by 15 Jan 2026; secure final executive sign-off on 19 Jan 2026.",
+                    "target_date": "19-Jan-26",
                 }
             ]
 
@@ -1576,9 +1579,9 @@ class WeeklyProgressDeckBuilder:
         stf.word_wrap = True
         stf.margin_left = stf.margin_right = stf.margin_top = stf.margin_bottom = 0
         sp = stf.paragraphs[0]
-        sp.text = f"ACTIVE ISSUE OVERVIEW: Total Active: 1  |  Severity: MEDIUM  |  Status: OPEN  |  Target Resolution: {iss.get('target_date', '19-Jan-00')}  |  Owner: {iss.get('owner', 'Budi Pratama')}"
+        sp.text = f"ACTIVE ISSUE OVERVIEW: Total Active: 1  |  Severity: MEDIUM  |  Status: OPEN  |  Target Resolution: {iss.get('target_date', '19-Jan-26')}  |  Owner: {iss.get('owner', 'Budi Pratama')}"
         sp.font.name = self.theme.font_family_header
-        sp.font.size = Pt(10.5)
+        sp.font.size = Pt(11.0)
         sp.font.bold = True
         sp.font.color.rgb = self.theme.get_rgb("accent")
 
@@ -1614,9 +1617,9 @@ class WeeklyProgressDeckBuilder:
         col_3h = main_h - Inches(1.05)
 
         sections = [
-            ("AKAR MASALAH (ROOT CAUSE)", iss.get("root_cause", ""), self.theme.get_rgb("muted")),
-            ("ANALISIS DAMPAK (SCHEDULE IMPACT)", iss.get("impact", ""), self.theme.get_rgb("danger")),
-            ("RENCANA RESOLUSI (ACTION PLAN)", iss.get("action_plan", ""), self.theme.get_rgb("success")),
+            ("ROOT CAUSE & ANALYSIS", iss.get("root_cause", ""), self.theme.get_rgb("muted")),
+            ("SCHEDULE & DELIVERY IMPACT", iss.get("impact", ""), self.theme.get_rgb("danger")),
+            ("CORRECTIVE RESOLUTION PLAN", iss.get("action_plan", ""), self.theme.get_rgb("success")),
         ]
 
         for c_idx, (sec_title, sec_text, sec_color) in enumerate(sections):
@@ -1729,53 +1732,95 @@ class WeeklyProgressDeckBuilder:
         p_s.font.color.rgb = self.theme.get_rgb("secondary")
         p_s.space_before = Pt(10)
 
-        contacts = d.get("contacts", [
-            {"name": "Budi Pratama, PMP", "role": "Project Manager, MII", "email": "budi.pratama@metrodata.co.id"},
-            {"name": "Engagement Leadership", "role": "Data & AI Modernization Practice", "email": "enterprise.consulting@metrodata.co.id"},
-        ])
+        contacts = d.get("contacts")
 
-        card_w = Inches(5.40)
-        card_h = Inches(1.50)
-        card_y = Inches(3.80)
+        if contacts:
+            card_w = Inches(5.40)
+            card_h = Inches(1.50)
+            card_y = Inches(3.80)
 
-        for i, c in enumerate(contacts[:2]):
-            cx = text_left + i * (card_w + Inches(0.30))
+            for i, c in enumerate(contacts[:2]):
+                cx = text_left + i * (card_w + Inches(0.30))
+                card, stripe = add_card_with_top_stripe(
+                    slide=slide,
+                    theme=self.theme,
+                    left=cx,
+                    top=card_y,
+                    width=card_w,
+                    height=card_h,
+                    accent_rgb=self.theme.get_rgb("accent") if i == 0 else self.theme.get_rgb("accent_teal"),
+                    bg_color=self.theme.get_rgb("surface"),
+                    border_color=self.theme.get_rgb("border"),
+                    stripe_height_in=0.06,
+                )
+
+                ctb = slide.shapes.add_textbox(cx + Inches(0.18), card_y + Inches(0.16), card_w - Inches(0.36), card_h - Inches(0.25))
+                ctf = ctb.text_frame
+                ctf.word_wrap = True
+                ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
+
+                cp1 = ctf.paragraphs[0]
+                cp1.text = c.get("name", "")
+                cp1.font.name = self.theme.font_family_header
+                cp1.font.size = Pt(13.0)
+                cp1.font.bold = True
+                cp1.font.color.rgb = self.theme.get_rgb("primary")
+
+                cp2 = ctf.add_paragraph()
+                cp2.text = c.get("role", "")
+                cp2.font.name = self.theme.font_family
+                cp2.font.size = Pt(11.0)
+                cp2.font.color.rgb = self.theme.get_rgb("accent")
+                cp2.space_before = Pt(3)
+
+                cp3 = ctf.add_paragraph()
+                cp3.text = f"Email: {c.get('email', '')}"
+                cp3.font.name = self.theme.font_family
+                cp3.font.size = Pt(11.0)
+                cp3.font.color.rgb = self.theme.get_rgb("secondary")
+                cp3.space_before = Pt(4)
+        else:
+            # Clean corporate closing without hardcoded staff names
+            card_w = Inches(7.50)
+            card_h = Inches(1.50)
+            card_y = Inches(3.80)
+
             card, stripe = add_card_with_top_stripe(
                 slide=slide,
                 theme=self.theme,
-                left=cx,
+                left=text_left,
                 top=card_y,
                 width=card_w,
                 height=card_h,
-                accent_rgb=self.theme.get_rgb("accent") if i == 0 else self.theme.get_rgb("accent_teal"),
+                accent_rgb=self.theme.get_rgb("accent"),
                 bg_color=self.theme.get_rgb("surface"),
                 border_color=self.theme.get_rgb("border"),
                 stripe_height_in=0.06,
             )
 
-            ctb = slide.shapes.add_textbox(cx + Inches(0.18), card_y + Inches(0.16), card_w - Inches(0.36), card_h - Inches(0.25))
+            ctb = slide.shapes.add_textbox(text_left + Inches(0.22), card_y + Inches(0.18), card_w - Inches(0.44), card_h - Inches(0.30))
             ctf = ctb.text_frame
             ctf.word_wrap = True
             ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
 
             cp1 = ctf.paragraphs[0]
-            cp1.text = c.get("name", "")
+            cp1.text = "Data & AI Modernization Practice"
             cp1.font.name = self.theme.font_family_header
-            cp1.font.size = Pt(13.0)
+            cp1.font.size = Pt(14.0)
             cp1.font.bold = True
             cp1.font.color.rgb = self.theme.get_rgb("primary")
 
             cp2 = ctf.add_paragraph()
-            cp2.text = c.get("role", "")
+            cp2.text = "Enterprise Cloud & Analytics Advisory Core"
             cp2.font.name = self.theme.font_family
-            cp2.font.size = Pt(10.5)
+            cp2.font.size = Pt(11.0)
             cp2.font.color.rgb = self.theme.get_rgb("accent")
             cp2.space_before = Pt(3)
 
             cp3 = ctf.add_paragraph()
-            cp3.text = f"Email: {c.get('email', '')}"
+            cp3.text = "Official Support Channel: enterprise.consulting@metrodata.co.id"
             cp3.font.name = self.theme.font_family
-            cp3.font.size = Pt(10.0)
+            cp3.font.size = Pt(11.0)
             cp3.font.color.rgb = self.theme.get_rgb("secondary")
             cp3.space_before = Pt(4)
 
@@ -1786,7 +1831,7 @@ class WeeklyProgressDeckBuilder:
         op1 = otf.paragraphs[0]
         op1.text = f"{d.get('company', 'PT Metrodata Electronics Tbk')}  |  {d.get('office', 'APL Tower 37th Floor, Jakarta')}"
         op1.font.name = self.theme.font_family
-        op1.font.size = Pt(10.0)
+        op1.font.size = Pt(11.0)
         op1.font.color.rgb = self.theme.get_rgb("muted")
 
         add_slide_footer(slide, self.theme, current_idx=idx, total_slides=11, notice=self.metadata.get("confidentiality", "Confidential"))
@@ -2082,12 +2127,12 @@ class WeeklyProgressDeckBuilder:
     ) -> Path:
         """Synchronizes pagination, optionally substitutes slugs, and saves presentation deck."""
         self.update_pagination()
-        if engagement_context:
-            try:
-                from src.core.slug_registry import substitute_slugs_in_presentation
-                substitute_slugs_in_presentation(self.prs, engagement_context)
-            except Exception as e:
-                logger.warning(f"Failed to substitute slugs in presentation: {e}")
+        try:
+            from src.core.slug_registry import EngagementContext, substitute_slugs_in_presentation
+            ctx = engagement_context or EngagementContext.default_ngl()
+            substitute_slugs_in_presentation(self.prs, ctx)
+        except Exception as e:
+            logger.warning(f"Failed to substitute slugs in presentation: {e}")
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)
         self.prs.save(str(p))

@@ -107,6 +107,27 @@ def _add_status_pill(
     return pill
 
 
+def _add_icon_safe(
+    slide: Any,
+    icon_name: str,
+    left: Inches,
+    top: Inches,
+    size: Inches,
+    color: Any,
+    theme: Theme,
+) -> Optional[Any]:
+    """Safely retrieves a brand-harmonized icon via IconEngine and adds it to the slide."""
+    try:
+        from src.ppt_engine.icon_engine import _default_engine
+        png_path = _default_engine.get_icon(icon_name, color=color, theme=theme)
+        if png_path and Path(png_path).exists():
+            pic = slide.shapes.add_picture(str(png_path), left, top, width=size, height=size)
+            return pic
+    except Exception as e:
+        logger.debug(f"Failed to add icon {icon_name}: {e}")
+    return None
+
+
 def _add_bullet_paragraph(
     tf: Any,
     text: str,
@@ -298,6 +319,8 @@ class ClosingDeckBuilder:
         start_x = Inches(0.80)
         start_y = Inches(1.85)
 
+        default_agenda_icons = ["compass", "package-check", "file-signature", "shield-check", "git-pull-request", "bar-chart-3"]
+
         for i, item in enumerate(agenda_items[:6]):
             col = i % cols
             row = i // cols
@@ -320,10 +343,23 @@ class ClosingDeckBuilder:
                 stripe_height_in=0.06,
             )
 
+            # Icon at top right of agenda card
+            icon_name = item.get("icon") or default_agenda_icons[i % len(default_agenda_icons)]
+            icon_dim = Inches(0.32)
+            _add_icon_safe(
+                slide=slide,
+                icon_name=icon_name,
+                left=cx + card_w - icon_dim - Inches(0.18),
+                top=cy + Inches(0.14),
+                size=icon_dim,
+                color=accent_rgb,
+                theme=self.theme,
+            )
+
             tb = slide.shapes.add_textbox(
                 cx + Inches(0.20),
                 cy + Inches(0.14),
-                card_w - Inches(0.40),
+                card_w - icon_dim - Inches(0.42),
                 card_h - Inches(0.24),
             )
             tf = tb.text_frame
@@ -349,16 +385,16 @@ class ClosingDeckBuilder:
                 p_sub = tf.add_paragraph()
                 p_sub.text = item.get("subtitle", "")
                 p_sub.font.name = self.theme.font_family
-                p_sub.font.size = Pt(9.5)
+                p_sub.font.size = Pt(11.0)
                 p_sub.font.color.rgb = self.theme.get_rgb("secondary")
-                p_sub.space_before = Pt(2)
+                p_sub.space_before = Pt(3)
 
             for b in item.get("bullets", []):
                 _add_bullet_paragraph(
                     tf=tf,
                     text=b,
                     font_name=self.theme.font_family,
-                    font_size_pt=9.5,
+                    font_size_pt=11.0,
                     font_color=self.theme.get_rgb("secondary"),
                     space_before_pt=4.0,
                 )
@@ -465,6 +501,8 @@ class ClosingDeckBuilder:
         start_x = Inches(0.80)
         start_y = Inches(1.85)
 
+        default_pillar_icons = ["compass", "cloud", "layout-dashboard", "sparkles", "shield-check", "check-circle-2"]
+
         for i, p in enumerate(pillars[:6]):
             col = i % cols
             row = i // cols
@@ -487,26 +525,39 @@ class ClosingDeckBuilder:
                 stripe_height_in=0.06,
             )
 
+            # Icon badge on the left of card header
+            icon_name = p.get("icon") or default_pillar_icons[i % len(default_pillar_icons)]
+            icon_dim = Inches(0.30)
+            _add_icon_safe(
+                slide=slide,
+                icon_name=icon_name,
+                left=cx + Inches(0.16),
+                top=cy + Inches(0.14),
+                size=icon_dim,
+                color=accent_rgb,
+                theme=self.theme,
+            )
+
             # Top right status pill
             status_text = p.get("status", "DONE")
-            pill_w = Inches(0.85)
-            pill_h = Inches(0.24)
+            pill_w = Inches(0.95)
+            pill_h = Inches(0.26)
             _add_status_pill(
                 slide=slide,
                 theme=self.theme,
-                left=cx + card_w - pill_w - Inches(0.16),
+                left=cx + card_w - pill_w - Inches(0.14),
                 top=cy + Inches(0.14),
                 width=pill_w,
                 height=pill_h,
                 status=status_text,
-                font_size_pt=8.0,
+                font_size_pt=11.0,
             )
 
             tb = slide.shapes.add_textbox(
-                cx + Inches(0.18),
-                cy + Inches(0.14),
-                card_w - pill_w - Inches(0.36),
-                Inches(0.48),
+                cx + Inches(0.52),
+                cy + Inches(0.10),
+                card_w - pill_w - Inches(0.70),
+                Inches(0.54),
             )
             tf = tb.text_frame
             tf.word_wrap = True
@@ -515,7 +566,7 @@ class ClosingDeckBuilder:
             p_title = tf.paragraphs[0]
             p_title.text = p.get("title", "")
             p_title.font.name = self.theme.font_family_header
-            p_title.font.size = Pt(12.5)
+            p_title.font.size = Pt(12.0)
             p_title.font.bold = True
             p_title.font.color.rgb = self.theme.get_rgb("primary")
 
@@ -523,17 +574,17 @@ class ClosingDeckBuilder:
                 p_phase = tf.add_paragraph()
                 p_phase.text = p.get("phase", "").upper()
                 p_phase.font.name = self.theme.font_family
-                p_phase.font.size = Pt(8.5)
+                p_phase.font.size = Pt(11.0)
                 p_phase.font.bold = True
                 p_phase.font.color.rgb = accent_rgb
                 p_phase.space_before = Pt(2)
 
             # Bullets
             tb_b = slide.shapes.add_textbox(
-                cx + Inches(0.18),
-                cy + Inches(0.68),
-                card_w - Inches(0.36),
-                card_h - Inches(0.76),
+                cx + Inches(0.16),
+                cy + Inches(0.70),
+                card_w - Inches(0.32),
+                card_h - Inches(0.78),
             )
             tf_b = tb_b.text_frame
             tf_b.word_wrap = True
@@ -544,9 +595,9 @@ class ClosingDeckBuilder:
                     tf=tf_b,
                     text=b,
                     font_name=self.theme.font_family,
-                    font_size_pt=9.5,
+                    font_size_pt=11.0,
                     font_color=self.theme.get_rgb("secondary"),
-                    space_before_pt=3.0 if b_idx > 0 else 0.0,
+                    space_before_pt=4.0 if b_idx > 0 else 0.0,
                 )
 
         add_slide_footer(slide, self.theme, current_idx=idx, total_slides=9)
@@ -576,11 +627,11 @@ class ClosingDeckBuilder:
             {"label": "CONTRACT DELIVERABLES", "value": "19 / 19", "desc": "100% Delivered", "accent": "accent"},
             {"label": "FSD MODULE SPECS", "value": "8 Modules", "desc": "Signed-off Specifications", "accent": "accent_teal"},
             {"label": "QUALITY & TEST SUITES", "value": "SIT & UAT", "desc": "Zero Sev 1/2 Defects", "accent": "success"},
-            {"label": "HANDOVER STATUS", "value": "BAST 1 & 2", "desc": "Signed Off by TTI & MII", "accent": "accent_purple"},
+            {"label": "HANDOVER STATUS", "value": "BAST 1 & 2", "desc": "Signed Off by [CLIENT_SHORT_NAME] & MII", "accent": "accent_purple"},
         ]
 
         kpi_w = Inches(2.75)
-        kpi_h = Inches(0.72)
+        kpi_h = Inches(0.74)
         gap_kpi = Inches(0.24)
         start_x = Inches(0.80)
         top_kpi = Inches(1.80)
@@ -607,9 +658,9 @@ class ClosingDeckBuilder:
             pbar.fill.fore_color.rgb = acc
             pbar.line.fill.background()
 
-            tb = slide.shapes.add_textbox(kx + Inches(0.12), top_kpi + Inches(0.08), kpi_w - Inches(0.20), kpi_h - Inches(0.12))
+            tb = slide.shapes.add_textbox(kx + Inches(0.12), top_kpi + Inches(0.06), kpi_w - Inches(0.20), kpi_h - Inches(0.10))
             tf = tb.text_frame
-            tf.word_wrap = False
+            tf.word_wrap = True
             tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
 
             p_val = tf.paragraphs[0]
@@ -622,7 +673,7 @@ class ClosingDeckBuilder:
             p_lbl = tf.add_paragraph()
             p_lbl.text = f"{kpi['label']}  •  {kpi['desc']}"
             p_lbl.font.name = self.theme.font_family
-            p_lbl.font.size = Pt(8.0)
+            p_lbl.font.size = Pt(11.0)
             p_lbl.font.bold = True
             p_lbl.font.color.rgb = self.theme.get_rgb("secondary")
             p_lbl.space_before = Pt(2)
@@ -682,7 +733,7 @@ class ClosingDeckBuilder:
         )
 
         col_w = Inches(2.75)
-        col_h = Inches(4.05)
+        col_h = Inches(4.20)
         top_cols = Inches(2.65)
 
         for i, cat in enumerate(categories[:4]):
@@ -703,7 +754,7 @@ class ClosingDeckBuilder:
             )
 
             # Header inside column card
-            tb_ch = slide.shapes.add_textbox(cx + Inches(0.14), top_cols + Inches(0.12), col_w - Inches(0.28), Inches(0.48))
+            tb_ch = slide.shapes.add_textbox(cx + Inches(0.14), top_cols + Inches(0.10), col_w - Inches(0.28), Inches(0.52))
             tf_ch = tb_ch.text_frame
             tf_ch.word_wrap = True
             tf_ch.margin_left = tf_ch.margin_right = tf_ch.margin_top = tf_ch.margin_bottom = 0
@@ -711,21 +762,21 @@ class ClosingDeckBuilder:
             p_ct = tf_ch.paragraphs[0]
             p_ct.text = cat.get("title", "")
             p_ct.font.name = self.theme.font_family_header
-            p_ct.font.size = Pt(11.5)
+            p_ct.font.size = Pt(12.0)
             p_ct.font.bold = True
             p_ct.font.color.rgb = self.theme.get_rgb("primary")
 
             p_cc = tf_ch.add_paragraph()
             p_cc.text = cat.get("count", "").upper()
             p_cc.font.name = self.theme.font_family
-            p_cc.font.size = Pt(8.0)
+            p_cc.font.size = Pt(11.0)
             p_cc.font.bold = True
             p_cc.font.color.rgb = acc
-            p_cc.space_before = Pt(1)
+            p_cc.space_before = Pt(2)
 
             # Items
             item_y = top_cols + Inches(0.68)
-            item_h = Inches(0.60)
+            item_h = Inches(0.62)
             item_gap = Inches(0.06)
 
             for j, item in enumerate(cat.get("items", [])):
@@ -746,27 +797,36 @@ class ClosingDeckBuilder:
                     force_rectangle=True,
                 )
 
-                # Format pill on left
-                fmt_w = Inches(0.58)
-                fmt_h = Inches(0.22)
-                _add_status_pill(
+                # Format icon on left
+                fmt_raw = str(item.get("fmt", "DOCX")).upper()
+                if "PPT" in fmt_raw:
+                    fmt_icon = "presentation"
+                elif "XLS" in fmt_raw:
+                    fmt_icon = "table"
+                elif "CODE" in fmt_raw:
+                    fmt_icon = "code"
+                elif "CLOUD" in fmt_raw:
+                    fmt_icon = "cloud"
+                else:
+                    fmt_icon = "file-text"
+
+                icon_dim = Inches(0.24)
+                _add_icon_safe(
                     slide=slide,
-                    theme=self.theme,
-                    left=cx + Inches(0.14),
+                    icon_name=fmt_icon,
+                    left=cx + Inches(0.16),
                     top=iy + Inches(0.19),
-                    width=fmt_w,
-                    height=fmt_h,
-                    status=item.get("fmt", "DOCX"),
-                    font_size_pt=6.5,
-                    override_color_key="primary",
+                    size=icon_dim,
+                    color=acc,
+                    theme=self.theme,
                 )
 
                 # Title
                 tb_it = slide.shapes.add_textbox(
-                    cx + Inches(0.76),
+                    cx + Inches(0.46),
                     iy + Inches(0.08),
-                    col_w - Inches(1.54),
-                    item_h - Inches(0.16),
+                    col_w - Inches(1.36),
+                    item_h - Inches(0.14),
                 )
                 tf_it = tb_it.text_frame
                 tf_it.word_wrap = True
@@ -775,22 +835,22 @@ class ClosingDeckBuilder:
                 p_it = tf_it.paragraphs[0]
                 p_it.text = item.get("name", "")
                 p_it.font.name = self.theme.font_family
-                p_it.font.size = Pt(8.5)
+                p_it.font.size = Pt(11.0)
                 p_it.font.bold = True
                 p_it.font.color.rgb = self.theme.get_rgb("primary")
 
                 # Status pill on right
-                status_w = Inches(0.62)
-                status_h = Inches(0.22)
+                status_w = Inches(0.70)
+                status_h = Inches(0.26)
                 _add_status_pill(
                     slide=slide,
                     theme=self.theme,
                     left=cx + col_w - Inches(0.14) - status_w,
-                    top=iy + Inches(0.19),
+                    top=iy + Inches(0.18),
                     width=status_w,
                     height=status_h,
                     status=item.get("status", "Delivered"),
-                    font_size_pt=6.5,
+                    font_size_pt=11.0,
                 )
 
         add_slide_footer(slide, self.theme, current_idx=idx, total_slides=9)
@@ -822,7 +882,7 @@ class ClosingDeckBuilder:
                     "num": 1,
                     "title": "All defects in Defect List resolved",
                     "status": "Yes",
-                    "detail": "0 open Sev 1/2 defects; all logged items verified & signed off by TTI QA",
+                    "detail": "0 open Sev 1/2 defects; all logged items verified & signed off by [CLIENT_SHORT_NAME] QA",
                 },
                 {
                     "num": 2,
@@ -840,7 +900,7 @@ class ClosingDeckBuilder:
                     "num": 4,
                     "title": "BAST 1 (Phase 1 Deliverables) sign-off",
                     "status": "Yes",
-                    "detail": "Executed and formally approved by TTI Finance & MII Project Sponsors",
+                    "detail": "Executed and formally approved by [CLIENT_SHORT_NAME] Finance & MII Project Sponsors",
                 },
                 {
                     "num": 5,
@@ -864,7 +924,7 @@ class ClosingDeckBuilder:
                     "num": 8,
                     "title": "Customer Satisfaction Survey (CSS) dispatched",
                     "status": "Yes",
-                    "detail": "Official Microsoft Forms evaluation dispatched to TTI executive committee",
+                    "detail": "Official Microsoft Forms evaluation dispatched to [CLIENT_SHORT_NAME] executive committee",
                 },
             ],
         )
@@ -901,9 +961,9 @@ class ClosingDeckBuilder:
         p_mh.font.color.rgb = self.theme.get_rgb("primary")
 
         # 8 Rows inside Matrix
-        row_start_y = top_y + Inches(0.48)
-        row_h = Inches(0.50)
-        row_gap = Inches(0.06)
+        row_start_y = top_y + Inches(0.44)
+        row_h = Inches(0.52)
+        row_gap = Inches(0.04)
 
         for i, item in enumerate(checklist_items[:8]):
             ry = row_start_y + i * (row_h + row_gap)
@@ -923,19 +983,19 @@ class ClosingDeckBuilder:
             )
 
             # Number badge
-            tb_num = slide.shapes.add_textbox(rx + Inches(0.10), ry + Inches(0.11), Inches(0.28), Inches(0.28))
+            tb_num = slide.shapes.add_textbox(rx + Inches(0.08), ry + Inches(0.12), Inches(0.28), Inches(0.28))
             tf_num = tb_num.text_frame
             tf_num.word_wrap = False
             tf_num.margin_left = tf_num.margin_right = tf_num.margin_top = tf_num.margin_bottom = 0
             p_n = tf_num.paragraphs[0]
             p_n.text = f"{item.get('num', i+1):02d}"
             p_n.font.name = self.theme.font_family_header
-            p_n.font.size = Pt(9.5)
+            p_n.font.size = Pt(11.0)
             p_n.font.bold = True
             p_n.font.color.rgb = self.theme.get_rgb("accent")
 
             # Title and Detail
-            tb_txt = slide.shapes.add_textbox(rx + Inches(0.42), ry + Inches(0.06), rw - Inches(1.50), row_h - Inches(0.12))
+            tb_txt = slide.shapes.add_textbox(rx + Inches(0.38), ry + Inches(0.06), rw - Inches(1.50), row_h - Inches(0.12))
             tf_txt = tb_txt.text_frame
             tf_txt.word_wrap = True
             tf_txt.margin_left = tf_txt.margin_right = tf_txt.margin_top = tf_txt.margin_bottom = 0
@@ -943,20 +1003,20 @@ class ClosingDeckBuilder:
             p_t = tf_txt.paragraphs[0]
             p_t.text = item.get("title", "")
             p_t.font.name = self.theme.font_family_header
-            p_t.font.size = Pt(9.5)
+            p_t.font.size = Pt(11.0)
             p_t.font.bold = True
             p_t.font.color.rgb = self.theme.get_rgb("primary")
 
             p_d = tf_txt.add_paragraph()
             p_d.text = item.get("detail", "")
             p_d.font.name = self.theme.font_family
-            p_d.font.size = Pt(7.5)
+            p_d.font.size = Pt(11.0)
             p_d.font.color.rgb = self.theme.get_rgb("secondary")
             p_d.space_before = Pt(1)
 
             # Status pill
-            pill_w = Inches(0.85)
-            pill_h = Inches(0.25)
+            pill_w = Inches(0.95)
+            pill_h = Inches(0.28)
             _add_status_pill(
                 slide=slide,
                 theme=self.theme,
@@ -965,7 +1025,7 @@ class ClosingDeckBuilder:
                 width=pill_w,
                 height=pill_h,
                 status=item.get("status", "Yes"),
-                font_size_pt=8.0,
+                font_size_pt=11.0,
             )
 
         # Right Side Cards (Credential Card & CSS Survey Card)
@@ -987,7 +1047,18 @@ class ClosingDeckBuilder:
             stripe_height_in=0.05,
         )
 
-        tb_ca = slide.shapes.add_textbox(right_x + Inches(0.18), top_y + Inches(0.12), right_w - Inches(0.36), card_a_h - Inches(0.24))
+        icon_dim = Inches(0.30)
+        _add_icon_safe(
+            slide=slide,
+            icon_name="folder-archive",
+            left=right_x + right_w - icon_dim - Inches(0.18),
+            top=top_y + Inches(0.14),
+            size=icon_dim,
+            color=self.theme.get_rgb("accent"),
+            theme=self.theme,
+        )
+
+        tb_ca = slide.shapes.add_textbox(right_x + Inches(0.18), top_y + Inches(0.12), right_w - icon_dim - Inches(0.36), card_a_h - Inches(0.24))
         tf_ca = tb_ca.text_frame
         tf_ca.word_wrap = True
         tf_ca.margin_left = tf_ca.margin_right = tf_ca.margin_top = tf_ca.margin_bottom = 0
@@ -995,14 +1066,14 @@ class ClosingDeckBuilder:
         p_cat = tf_ca.paragraphs[0]
         p_cat.text = "SECURE DELIVERABLES REPOSITORY"
         p_cat.font.name = self.theme.font_family_header
-        p_cat.font.size = Pt(11.0)
+        p_cat.font.size = Pt(12.0)
         p_cat.font.bold = True
         p_cat.font.color.rgb = self.theme.get_rgb("primary")
 
         p_cas = tf_ca.add_paragraph()
         p_cas.text = "Complete package: 19 deliverables, source code packages, documentation & signed BAST forms."
         p_cas.font.name = self.theme.font_family
-        p_cas.font.size = Pt(8.5)
+        p_cas.font.size = Pt(11.0)
         p_cas.font.color.rgb = self.theme.get_rgb("secondary")
         p_cas.space_before = Pt(3)
 
@@ -1014,15 +1085,15 @@ class ClosingDeckBuilder:
         p_lbl1 = tf_ca.add_paragraph()
         p_lbl1.text = "GOOGLE DRIVE SECURE LINK"
         p_lbl1.font.name = self.theme.font_family_header
-        p_lbl1.font.size = Pt(8.0)
+        p_lbl1.font.size = Pt(11.0)
         p_lbl1.font.bold = True
         p_lbl1.font.color.rgb = self.theme.get_rgb("accent")
-        p_lbl1.space_before = Pt(8)
+        p_lbl1.space_before = Pt(6)
 
         p_url = tf_ca.add_paragraph()
-        p_url.text = dl_link if len(dl_link) < 65 else dl_link[:62] + "..."
+        p_url.text = dl_link if len(dl_link) < 55 else dl_link[:52] + "..."
         p_url.font.name = "Courier New"
-        p_url.font.size = Pt(8.0)
+        p_url.font.size = Pt(11.0)
         p_url.font.color.rgb = self.theme.get_rgb("primary")
         p_url.space_before = Pt(2)
 
@@ -1031,7 +1102,7 @@ class ClosingDeckBuilder:
         p_lbl2 = tf_ca.add_paragraph()
         p_lbl2.text = "ARCHIVE DECRYPTION PASSWORD"
         p_lbl2.font.name = self.theme.font_family_header
-        p_lbl2.font.size = Pt(8.0)
+        p_lbl2.font.size = Pt(11.0)
         p_lbl2.font.bold = True
         p_lbl2.font.color.rgb = self.theme.get_rgb("accent")
         p_lbl2.space_before = Pt(6)
@@ -1039,7 +1110,7 @@ class ClosingDeckBuilder:
         p_pw = tf_ca.add_paragraph()
         p_pw.text = f"[ {password} ]  •  Protected Zip Archive"
         p_pw.font.name = "Courier New"
-        p_pw.font.size = Pt(9.0)
+        p_pw.font.size = Pt(11.0)
         p_pw.font.bold = True
         p_pw.font.color.rgb = self.theme.get_rgb("accent_teal")
         p_pw.space_before = Pt(2)
@@ -1060,7 +1131,17 @@ class ClosingDeckBuilder:
             stripe_height_in=0.05,
         )
 
-        tb_cb = slide.shapes.add_textbox(right_x + Inches(0.18), card_b_top + Inches(0.12), right_w - Inches(0.36), card_b_h - Inches(0.24))
+        _add_icon_safe(
+            slide=slide,
+            icon_name="clipboard-check",
+            left=right_x + right_w - icon_dim - Inches(0.18),
+            top=card_b_top + Inches(0.14),
+            size=icon_dim,
+            color=self.theme.get_rgb("success"),
+            theme=self.theme,
+        )
+
+        tb_cb = slide.shapes.add_textbox(right_x + Inches(0.18), card_b_top + Inches(0.12), right_w - icon_dim - Inches(0.36), card_b_h - Inches(0.24))
         tf_cb = tb_cb.text_frame
         tf_cb.word_wrap = True
         tf_cb.margin_left = tf_cb.margin_right = tf_cb.margin_top = tf_cb.margin_bottom = 0
@@ -1068,14 +1149,14 @@ class ClosingDeckBuilder:
         p_cbt = tf_cb.paragraphs[0]
         p_cbt.text = "CUSTOMER SATISFACTION SURVEY (CSS)"
         p_cbt.font.name = self.theme.font_family_header
-        p_cbt.font.size = Pt(11.0)
+        p_cbt.font.size = Pt(12.0)
         p_cbt.font.bold = True
         p_cbt.font.color.rgb = self.theme.get_rgb("primary")
 
         p_cbs = tf_cb.add_paragraph()
         p_cbs.text = "Your feedback is essential to evaluate project execution, communication quality, and technical expertise."
         p_cbs.font.name = self.theme.font_family
-        p_cbs.font.size = Pt(8.5)
+        p_cbs.font.size = Pt(11.0)
         p_cbs.font.color.rgb = self.theme.get_rgb("secondary")
         p_cbs.space_before = Pt(3)
 
@@ -1086,22 +1167,22 @@ class ClosingDeckBuilder:
         p_css_lbl = tf_cb.add_paragraph()
         p_css_lbl.text = "SURVEY SUBMISSION PORTAL"
         p_css_lbl.font.name = self.theme.font_family_header
-        p_css_lbl.font.size = Pt(8.0)
+        p_css_lbl.font.size = Pt(11.0)
         p_css_lbl.font.bold = True
         p_css_lbl.font.color.rgb = self.theme.get_rgb("success")
-        p_css_lbl.space_before = Pt(8)
+        p_css_lbl.space_before = Pt(6)
 
         p_css_url = tf_cb.add_paragraph()
-        p_css_url.text = css_link if len(css_link) < 65 else css_link[:62] + "..."
+        p_css_url.text = css_link if len(css_link) < 55 else css_link[:52] + "..."
         p_css_url.font.name = "Courier New"
-        p_css_url.font.size = Pt(7.5)
+        p_css_url.font.size = Pt(11.0)
         p_css_url.font.color.rgb = self.theme.get_rgb("primary")
         p_css_url.space_before = Pt(2)
 
         p_css_sub = tf_cb.add_paragraph()
         p_css_sub.text = "Status: Survey Dispatched  •  Target Completion: 14 Days"
         p_css_sub.font.name = self.theme.font_family
-        p_css_sub.font.size = Pt(8.0)
+        p_css_sub.font.size = Pt(11.0)
         p_css_sub.font.bold = True
         p_css_sub.font.color.rgb = self.theme.get_rgb("accent_teal")
         p_css_sub.space_before = Pt(4)
@@ -1177,7 +1258,7 @@ class ClosingDeckBuilder:
             p_lbl = tf.add_paragraph()
             p_lbl.text = f"{kpi['label']}  •  {kpi['desc']}"
             p_lbl.font.name = self.theme.font_family
-            p_lbl.font.size = Pt(8.5)
+            p_lbl.font.size = Pt(11.0)
             p_lbl.font.bold = True
             p_lbl.font.color.rgb = self.theme.get_rgb("secondary")
             p_lbl.space_before = Pt(2)
@@ -1262,7 +1343,7 @@ class ClosingDeckBuilder:
                 p_s = tf.add_paragraph()
                 p_s.text = p.get("subtitle", "").upper()
                 p_s.font.name = self.theme.font_family
-                p_s.font.size = Pt(8.5)
+                p_s.font.size = Pt(11.0)
                 p_s.font.bold = True
                 p_s.font.color.rgb = acc
                 p_s.space_before = Pt(2)
@@ -1272,14 +1353,15 @@ class ClosingDeckBuilder:
                     tf=tf,
                     text=b,
                     font_name=self.theme.font_family,
-                    font_size_pt=10.0,
+                    font_size_pt=11.0,
                     font_color=self.theme.get_rgb("secondary"),
-                    space_before_pt=8.0 if b_idx == 0 else 6.0,
+                    space_before_pt=6.0 if b_idx == 0 else 4.0,
                 )
 
         add_slide_footer(slide, self.theme, current_idx=idx, total_slides=9)
         return slide
 
+    # -------------------------------------------------------------------------
     # -------------------------------------------------------------------------
     # Slide 7: Maintenance Contacts & Request Flow
     # -------------------------------------------------------------------------
@@ -1295,117 +1377,215 @@ class ClosingDeckBuilder:
             action_title=d.get("title", "Maintenance Workflow & Designated Primary Contacts"),
             subtitle=d.get(
                 "subtitle",
-                "Structured 4-step request lifecycle and dedicated technical contacts for seamless issue resolution.",
+                "Structured 3-swimlane request lifecycle across client, support triage, and engineering practices.",
             ),
         )
 
-        # Top 4-Step Process Chevron Flow
-        steps = d.get(
-            "flow_steps",
-            [
-                {
-                    "step": "01",
-                    "title": "Request Submission",
-                    "subtitle": "TTI Initiates Request",
-                    "accent": "accent",
-                    "desc": "TTI submits bug fix or Change Request via WhatsApp group or email with reproducible details.",
-                },
-                {
-                    "step": "02",
-                    "title": "Impact Triage",
-                    "subtitle": "MII Sizing & Scope",
-                    "accent": "accent_teal",
-                    "desc": "Primary contact analyzes technical impact, code dependencies, and estimates required mandays.",
-                },
-                {
-                    "step": "03",
-                    "title": "Client Approval Gate",
-                    "subtitle": "Authorization to Burn",
-                    "accent": "warning",
-                    "desc": "Mandays estimation is formally submitted to TTI; work only commences upon written client approval.",
-                },
-                {
-                    "step": "04",
-                    "title": "Delivery & Sign-off",
-                    "subtitle": "Deployment & UAT",
-                    "accent": "success",
-                    "desc": "MII delivers code remediation, conducts SIT, updates timesheet, and secures TTI sign-off.",
-                },
-            ],
-        )
+        # ---------------------------------------------------------------------
+        # Top Section: Formal 3-Swimlane Process Flowchart
+        # ---------------------------------------------------------------------
+        lanes = [
+            {
+                "id": "client",
+                "title": "Client Organization",
+                "subtitle": "[CLIENT_SHORT_NAME] Operations & Finance",
+                "accent": "accent",
+            },
+            {
+                "id": "support",
+                "title": "Vendor Support Core",
+                "subtitle": "Metrodata L1/L2 Operations",
+                "accent": "accent_teal",
+            },
+            {
+                "id": "engineering",
+                "title": "Engineering Practice",
+                "subtitle": "Snowflake & Streamlit Core",
+                "accent": "accent_purple",
+            },
+        ]
 
-        step_w = Inches(2.75)
-        step_h = Inches(2.20)
-        gap_x = Inches(0.24)
+        lane_h = Inches(0.70)
+        lane_gap = Inches(0.08)
+        swimlane_top = Inches(1.80)
+        lane_w = Inches(11.73)
         start_x = Inches(0.80)
-        top_step = Inches(1.80)
 
-        for i, st in enumerate(steps[:4]):
-            sx = start_x + i * (step_w + gap_x)
-            acc = self.theme.get_rgb(st.get("accent", "accent"))
+        # Render 3 Swimlane Background Bands and Headers
+        lane_y_map = {}
+        for l_idx, lane in enumerate(lanes):
+            ly = swimlane_top + l_idx * (lane_h + lane_gap)
+            lane_y_map[lane["id"]] = ly
+            acc = self.theme.get_rgb(lane["accent"])
 
-            card, stripe = add_card_with_top_stripe(
+            # Full-width lane background track
+            track = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, ly, lane_w, lane_h)
+            track.shadow.inherit = False
+            track.fill.solid()
+            track.fill.fore_color.rgb = self.theme.get_rgb("background")
+            track.line.color.rgb = self.theme.get_rgb("border")
+            track.line.width = Pt(1)
+
+            # Left lane header container
+            header_w = Inches(2.25)
+            h_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, ly, header_w, lane_h)
+            h_box.shadow.inherit = False
+            h_box.fill.solid()
+            h_box.fill.fore_color.rgb = self.theme.get_rgb("surface")
+            h_box.line.color.rgb = self.theme.get_rgb("border")
+            h_box.line.width = Pt(1)
+
+            # Left accent stripe on lane header
+            l_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, ly, Inches(0.05), lane_h)
+            l_bar.shadow.inherit = False
+            l_bar.fill.solid()
+            l_bar.fill.fore_color.rgb = acc
+            l_bar.line.fill.background()
+
+            tb_lh = slide.shapes.add_textbox(start_x + Inches(0.12), ly + Inches(0.10), header_w - Inches(0.20), lane_h - Inches(0.18))
+            tf_lh = tb_lh.text_frame
+            tf_lh.word_wrap = True
+            tf_lh.margin_left = tf_lh.margin_right = tf_lh.margin_top = tf_lh.margin_bottom = 0
+
+            p_lt = tf_lh.paragraphs[0]
+            p_lt.text = lane["title"]
+            p_lt.font.name = self.theme.font_family_header
+            p_lt.font.size = Pt(11.0)
+            p_lt.font.bold = True
+            p_lt.font.color.rgb = self.theme.get_rgb("primary")
+
+            p_ls = tf_lh.add_paragraph()
+            p_ls.text = lane["subtitle"]
+            p_ls.font.name = self.theme.font_family
+            p_ls.font.size = Pt(11.0)
+            p_ls.font.bold = True
+            p_ls.font.color.rgb = acc
+            p_ls.space_before = Pt(2)
+
+        # 5 Steps mapped into Swimlanes
+        flow_steps = [
+            {
+                "num": "01",
+                "lane": "client",
+                "title": "Request Submission",
+                "desc": "WhatsApp / Email Ticket",
+                "accent": "accent",
+                "icon": "mail",
+            },
+            {
+                "num": "02",
+                "lane": "support",
+                "title": "SLA Triage & Quote",
+                "desc": "Impact & Manday Sizing",
+                "accent": "accent_teal",
+                "icon": "clock",
+            },
+            {
+                "num": "03",
+                "lane": "client",
+                "title": "Manday Approval",
+                "desc": "Written Authorization Gate",
+                "accent": "warning",
+                "icon": "check-circle",
+            },
+            {
+                "num": "04",
+                "lane": "engineering",
+                "title": "Fix, SIT & Deploy",
+                "desc": "Snowflake & Streamlit Core",
+                "accent": "accent_purple",
+                "icon": "code-2",
+            },
+            {
+                "num": "05",
+                "lane": "client",
+                "title": "UAT & Sign-off",
+                "desc": "Timesheet & Closure",
+                "accent": "success",
+                "icon": "file-signature",
+            },
+        ]
+
+        sla_badges = [
+            "< 4h Sev 1 Triage",
+            "1-2d Sizing Quote",
+            "Approved Mandays",
+            "Verified Delivery",
+        ]
+
+        step_w = Inches(1.58)
+        step_h = Inches(0.60)
+        col_gap = Inches(0.35)
+        step_start_x = start_x + Inches(2.40)
+
+        for s_idx, st in enumerate(flow_steps):
+            sx = step_start_x + s_idx * (step_w + col_gap)
+            sy = lane_y_map[st["lane"]] + Inches(0.05)
+            s_acc = self.theme.get_rgb(st["accent"])
+
+            # Step Card with top stripe
+            add_card_with_top_stripe(
                 slide=slide,
                 theme=self.theme,
                 left=sx,
-                top=top_step,
+                top=sy,
                 width=step_w,
                 height=step_h,
-                accent_rgb=acc,
+                accent_rgb=s_acc,
                 bg_color=self.theme.get_rgb("surface"),
                 border_color=self.theme.get_rgb("border"),
-                stripe_height_in=0.05,
+                stripe_height_in=0.04,
             )
 
-            tb = slide.shapes.add_textbox(sx + Inches(0.16), top_step + Inches(0.12), step_w - Inches(0.32), step_h - Inches(0.20))
-            tf = tb.text_frame
-            tf.word_wrap = True
-            tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+            tb_s = slide.shapes.add_textbox(sx + Inches(0.08), sy + Inches(0.06), step_w - Inches(0.14), step_h - Inches(0.10))
+            tf_s = tb_s.text_frame
+            tf_s.word_wrap = True
+            tf_s.margin_left = tf_s.margin_right = tf_s.margin_top = tf_s.margin_bottom = 0
 
-            p_num = tf.paragraphs[0]
-            p_num.text = f"STEP {st.get('step', f'0{i+1}')}"
-            p_num.font.name = self.theme.font_family_header
-            p_num.font.size = Pt(13.0)
-            p_num.font.bold = True
-            p_num.font.color.rgb = acc
+            p_sn = tf_s.paragraphs[0]
+            p_sn.text = f"{st['num']}. {st['title']}"
+            p_sn.font.name = self.theme.font_family_header
+            p_sn.font.size = Pt(11.0)
+            p_sn.font.bold = True
+            p_sn.font.color.rgb = self.theme.get_rgb("primary")
 
-            p_t = tf.add_paragraph()
-            p_t.text = st.get("title", "")
-            p_t.font.name = self.theme.font_family_header
-            p_t.font.size = Pt(11.5)
-            p_t.font.bold = True
-            p_t.font.color.rgb = self.theme.get_rgb("primary")
-            p_t.space_before = Pt(2)
+            p_sd = tf_s.add_paragraph()
+            p_sd.text = st["desc"]
+            p_sd.font.name = self.theme.font_family
+            p_sd.font.size = Pt(11.0)
+            p_sd.font.color.rgb = self.theme.get_rgb("secondary")
+            p_sd.space_before = Pt(1)
 
-            if st.get("subtitle"):
-                p_sub = tf.add_paragraph()
-                p_sub.text = st.get("subtitle", "").upper()
-                p_sub.font.name = self.theme.font_family
-                p_sub.font.size = Pt(8.0)
-                p_sub.font.bold = True
-                p_sub.font.color.rgb = self.theme.get_rgb("secondary")
-                p_sub.space_before = Pt(2)
+            # Connector arrow & SLA Callout to next step
+            if s_idx < 4:
+                arrow_x = sx + step_w + Inches(0.04)
+                arrow_w = col_gap - Inches(0.08)
+                next_lane_y = lane_y_map[flow_steps[s_idx + 1]["lane"]] + Inches(0.05)
+                mid_y = (sy + next_lane_y) / 2 + Inches(0.15)
 
-            p_d = tf.add_paragraph()
-            p_d.text = st.get("desc", "")
-            p_d.font.name = self.theme.font_family
-            p_d.font.size = Pt(9.2)
-            p_d.font.color.rgb = self.theme.get_rgb("secondary")
-            p_d.space_before = Pt(6)
+                # SLA callout pill
+                badge_text = sla_badges[s_idx]
+                badge_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, arrow_x, mid_y, arrow_w, Inches(0.26))
+                badge_box.shadow.inherit = False
+                badge_box.fill.solid()
+                badge_box.fill.fore_color.rgb = self.theme.get_rgb("surface")
+                badge_box.line.color.rgb = self.theme.get_rgb("border")
+                badge_box.line.width = Pt(0.75)
 
-            if i < 3:
-                arrow_w = Inches(0.14)
-                arrow_h = Inches(0.12)
-                arrow_x = sx + step_w + (gap_x - arrow_w) / 2
-                arrow_y = top_step + (step_h - arrow_h) / 2
-                arrow_shape = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, arrow_x, arrow_y, arrow_w, arrow_h)
-                arrow_shape.shadow.inherit = False
-                arrow_shape.fill.solid()
-                arrow_shape.fill.fore_color.rgb = self.theme.get_rgb("border")
-                arrow_shape.line.fill.background()
+                b_tf = badge_box.text_frame
+                b_tf.word_wrap = True
+                b_tf.margin_left = b_tf.margin_right = b_tf.margin_top = b_tf.margin_bottom = 0
+                b_p = b_tf.paragraphs[0]
+                b_p.text = badge_text
+                b_p.font.name = self.theme.font_family
+                b_p.font.size = Pt(11.0)
+                b_p.font.bold = True
+                b_p.font.color.rgb = s_acc
 
+        # ---------------------------------------------------------------------
         # Bottom Section: Contacts (Left) & Channels/SLA (Right)
-        top_bottom = Inches(4.25)
+        # ---------------------------------------------------------------------
+        top_bottom = Inches(4.30)
         h_bottom = Inches(2.55)
 
         # Left: 2 Primary Contact Cards
@@ -1453,7 +1633,7 @@ class ClosingDeckBuilder:
         )
 
         c_w = contacts_w - Inches(0.36)
-        c_h = Inches(0.85)
+        c_h = Inches(0.90)
         c_gap = Inches(0.10)
         c_start_y = top_bottom + Inches(0.48)
 
@@ -1493,19 +1673,20 @@ class ClosingDeckBuilder:
             p_cr = tf_c.add_paragraph()
             p_cr.text = f"{con.get('role', '')}  •  {con.get('phone', '')}"
             p_cr.font.name = self.theme.font_family
-            p_cr.font.size = Pt(8.5)
+            p_cr.font.size = Pt(11.0)
             p_cr.font.color.rgb = self.theme.get_rgb("accent")
             p_cr.space_before = Pt(1)
 
             p_ce = tf_c.add_paragraph()
             p_ce.text = f"Email: {con.get('email', '')}"
             p_ce.font.name = "Courier New"
-            p_ce.font.size = Pt(8.5)
+            p_ce.font.size = Pt(11.0)
             p_ce.font.bold = True
             p_ce.font.color.rgb = self.theme.get_rgb("secondary")
             p_ce.space_before = Pt(2)
 
         # Right: Communication Channels & SLA
+        gap_x = Inches(0.24)
         right_x = start_x + contacts_w + gap_x
         right_w = Inches(5.74)
         add_card_with_top_stripe(
@@ -1544,15 +1725,15 @@ class ClosingDeckBuilder:
             p_l = tf_rh.add_paragraph()
             p_l.text = f"{lbl}: "
             p_l.font.name = self.theme.font_family_header
-            p_l.font.size = Pt(9.0)
+            p_l.font.size = Pt(11.0)
             p_l.font.bold = True
             p_l.font.color.rgb = self.theme.get_rgb("primary")
-            p_l.space_before = Pt(5)
+            p_l.space_before = Pt(4)
 
             r_d = p_l.add_run()
             r_d.text = desc
             r_d.font.name = self.theme.font_family
-            r_d.font.size = Pt(8.5)
+            r_d.font.size = Pt(11.0)
             r_d.font.bold = False
             r_d.font.color.rgb = self.theme.get_rgb("secondary")
 
@@ -1591,7 +1772,7 @@ class ClosingDeckBuilder:
                         "Granular breakdown of mandays expended per financial analytics module.",
                         "Remaining balance forecast to prevent unexpected end-of-year depletion.",
                         "Submitted monthly in PDF and Excel formats for formal client sign-off.",
-                        "Shared during monthly service review meetings with TTI leadership.",
+                        "Shared during monthly service review meetings with [CLIENT_SHORT_NAME] leadership.",
                     ],
                 },
                 {
@@ -1600,7 +1781,7 @@ class ClosingDeckBuilder:
                     "accent": "accent_teal",
                     "bullets": [
                         "Granular daily timesheets logged by assigned MII software & data engineers.",
-                        "Detailed task breakdown mapped to specific TTI ticket numbers.",
+                        "Detailed task breakdown mapped to specific [CLIENT_SHORT_NAME] ticket numbers.",
                         "Time accounted in strict 0.5-manday billable increments (4-hour resolution).",
                         "Quality and hours verified and counter-signed by MII Technical Lead.",
                         "Complete audit trail compliant with enterprise procurement guidelines.",
@@ -1663,7 +1844,7 @@ class ClosingDeckBuilder:
                 p_s = tf.add_paragraph()
                 p_s.text = dl.get("subtitle", "").upper()
                 p_s.font.name = self.theme.font_family
-                p_s.font.size = Pt(8.5)
+                p_s.font.size = Pt(11.0)
                 p_s.font.bold = True
                 p_s.font.color.rgb = acc
                 p_s.space_before = Pt(2)
@@ -1673,9 +1854,9 @@ class ClosingDeckBuilder:
                     tf=tf,
                     text=b,
                     font_name=self.theme.font_family,
-                    font_size_pt=10.0,
+                    font_size_pt=11.0,
                     font_color=self.theme.get_rgb("secondary"),
-                    space_before_pt=9.0 if b_idx == 0 else 7.0,
+                    space_before_pt=6.0 if b_idx == 0 else 4.0,
                 )
 
         add_slide_footer(slide, self.theme, current_idx=idx, total_slides=9)
@@ -1732,71 +1913,102 @@ class ClosingDeckBuilder:
         p_s = tf.add_paragraph()
         p_s.text = d.get(
             "subtitle",
-            "Empowering Financial Intelligence & Cloud Analytics at PT Toyota Tsusho Indonesia.",
+            "Empowering Financial Intelligence & Cloud Analytics at [CLIENT_COMPANY_NAME].",
         )
         p_s.font.name = self.theme.font_family
         p_s.font.size = Pt(13.0)
         p_s.font.color.rgb = self.theme.get_rgb("secondary")
         p_s.space_before = Pt(10)
 
-        contacts = d.get(
-            "contacts",
-            [
-                {
-                    "name": "Agus Suhanto",
-                    "role": "Project Manager, MII",
-                    "email": "agus.suhanto@metrodata.co.id",
-                },
-                {
-                    "name": "Engagement Leadership",
-                    "role": "Data & AI Modernization Practice",
-                    "email": "enterprise.consulting@metrodata.co.id",
-                },
-            ],
-        )
+        contacts = d.get("contacts")
 
-        card_w = Inches(5.40)
-        card_h = Inches(1.50)
-        card_y = Inches(3.80)
+        if contacts:
+            card_w = Inches(5.40)
+            card_h = Inches(1.50)
+            card_y = Inches(3.80)
 
-        for i, c in enumerate(contacts[:2]):
-            cx = text_left + i * (card_w + Inches(0.30))
+            for i, c in enumerate(contacts[:2]):
+                cx = text_left + i * (card_w + Inches(0.30))
+                card, stripe = add_card_with_top_stripe(
+                    slide=slide,
+                    theme=self.theme,
+                    left=cx,
+                    top=card_y,
+                    width=card_w,
+                    height=card_h,
+                    accent_rgb=self.theme.get_rgb("accent") if i == 0 else self.theme.get_rgb("accent_teal"),
+                    bg_color=self.theme.get_rgb("surface"),
+                    border_color=self.theme.get_rgb("border"),
+                    stripe_height_in=0.06,
+                )
+
+                ctb = slide.shapes.add_textbox(cx + Inches(0.18), card_y + Inches(0.16), card_w - Inches(0.36), card_h - Inches(0.25))
+                ctf = ctb.text_frame
+                ctf.word_wrap = True
+                ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
+
+                cp1 = ctf.paragraphs[0]
+                cp1.text = c.get("name", "")
+                cp1.font.name = self.theme.font_family_header
+                cp1.font.size = Pt(13.0)
+                cp1.font.bold = True
+                cp1.font.color.rgb = self.theme.get_rgb("primary")
+
+                cp2 = ctf.add_paragraph()
+                cp2.text = c.get("role", "")
+                cp2.font.name = self.theme.font_family
+                cp2.font.size = Pt(11.0)
+                cp2.font.color.rgb = self.theme.get_rgb("accent")
+                cp2.space_before = Pt(3)
+
+                cp3 = ctf.add_paragraph()
+                cp3.text = f"Email: {c.get('email', '')}"
+                cp3.font.name = self.theme.font_family
+                cp3.font.size = Pt(11.0)
+                cp3.font.color.rgb = self.theme.get_rgb("secondary")
+                cp3.space_before = Pt(4)
+        else:
+            # Clean corporate closing without hardcoded staff names
+            card_w = Inches(7.50)
+            card_h = Inches(1.50)
+            card_y = Inches(3.80)
+
             card, stripe = add_card_with_top_stripe(
                 slide=slide,
                 theme=self.theme,
-                left=cx,
+                left=text_left,
                 top=card_y,
                 width=card_w,
                 height=card_h,
-                accent_rgb=self.theme.get_rgb("accent") if i == 0 else self.theme.get_rgb("accent_teal"),
+                accent_rgb=self.theme.get_rgb("accent"),
                 bg_color=self.theme.get_rgb("surface"),
                 border_color=self.theme.get_rgb("border"),
                 stripe_height_in=0.06,
             )
 
-            ctb = slide.shapes.add_textbox(cx + Inches(0.18), card_y + Inches(0.16), card_w - Inches(0.36), card_h - Inches(0.25))
+            ctb = slide.shapes.add_textbox(text_left + Inches(0.22), card_y + Inches(0.18), card_w - Inches(0.44), card_h - Inches(0.30))
             ctf = ctb.text_frame
             ctf.word_wrap = True
             ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
 
             cp1 = ctf.paragraphs[0]
-            cp1.text = c.get("name", "")
+            cp1.text = "Data & AI Modernization Practice"
             cp1.font.name = self.theme.font_family_header
-            cp1.font.size = Pt(13.0)
+            cp1.font.size = Pt(14.0)
             cp1.font.bold = True
             cp1.font.color.rgb = self.theme.get_rgb("primary")
 
             cp2 = ctf.add_paragraph()
-            cp2.text = c.get("role", "")
+            cp2.text = "Enterprise Cloud & Analytics Advisory Core"
             cp2.font.name = self.theme.font_family
-            cp2.font.size = Pt(10.5)
+            cp2.font.size = Pt(11.0)
             cp2.font.color.rgb = self.theme.get_rgb("accent")
             cp2.space_before = Pt(3)
 
             cp3 = ctf.add_paragraph()
-            cp3.text = f"Email: {c.get('email', '')}"
+            cp3.text = "Official Support Channel: enterprise.consulting@metrodata.co.id"
             cp3.font.name = self.theme.font_family
-            cp3.font.size = Pt(10.0)
+            cp3.font.size = Pt(11.0)
             cp3.font.color.rgb = self.theme.get_rgb("secondary")
             cp3.space_before = Pt(4)
 
@@ -1807,7 +2019,7 @@ class ClosingDeckBuilder:
         op1 = otf.paragraphs[0]
         op1.text = f"{d.get('company', 'PT Metrodata Electronics Tbk')}  |  {d.get('office', 'APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470')}"
         op1.font.name = self.theme.font_family
-        op1.font.size = Pt(10.0)
+        op1.font.size = Pt(11.0)
         op1.font.color.rgb = self.theme.get_rgb("muted")
 
         add_slide_footer(
@@ -1815,7 +2027,7 @@ class ClosingDeckBuilder:
             self.theme,
             current_idx=idx,
             total_slides=9,
-            notice=d.get("notice", "PT Toyota Tsusho Indonesia & PT Metrodata Electronics Tbk  |  Confidential"),
+            notice=d.get("notice", "[CLIENT_COMPANY_NAME] & PT Metrodata Electronics Tbk  |  Confidential"),
         )
         return slide
 
@@ -1882,14 +2094,14 @@ class ClosingDeckBuilder:
             # Ingest checklist items from Section 3 (rows 34 to 41)
             raw_checklist = []
             detail_mapping = {
-                1: "0 open Sev 1/2 defects; all logged items verified & signed off by TTI QA",
+                1: "0 open Sev 1/2 defects; all logged items verified & signed off by [CLIENT_SHORT_NAME] QA",
                 2: "All project delivery risks mitigated; residual risks transitioned to maintenance",
                 3: "All technical and operational issues resolved; zero blocking issues remaining",
-                4: "Executed and formally approved by TTI Finance & MII Project Sponsors",
+                4: "Executed and formally approved by [CLIENT_SHORT_NAME] Finance & MII Project Sponsors",
                 5: "Signed upon successful UAT sign-off and completion of 2-week warranty period",
                 6: "Administrative addendum for minor enhancements under final client review",
                 7: "Scheduled upon handover completion; maintenance accounts provisioned separately",
-                8: "Official Microsoft Forms evaluation dispatched to TTI executive committee",
+                8: "Official Microsoft Forms evaluation dispatched to [CLIENT_SHORT_NAME] executive committee",
             }
             for r in range(34, 42):
                 no_val = ws.cell(r, 1).value
@@ -2017,12 +2229,12 @@ class ClosingDeckBuilder:
     ) -> Path:
         """Synchronizes pagination, optionally substitutes slugs, and saves presentation deck."""
         self.update_pagination()
-        if engagement_context:
-            try:
-                from src.core.slug_registry import substitute_slugs_in_presentation
-                substitute_slugs_in_presentation(self.prs, engagement_context)
-            except Exception as e:
-                logger.warning(f"Failed to substitute slugs in presentation: {e}")
+        try:
+            from src.core.slug_registry import EngagementContext, substitute_slugs_in_presentation
+            ctx = engagement_context or EngagementContext.default_ngl()
+            substitute_slugs_in_presentation(self.prs, ctx)
+        except Exception as e:
+            logger.warning(f"Failed to substitute slugs in presentation: {e}")
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)
         self.prs.save(str(p))
