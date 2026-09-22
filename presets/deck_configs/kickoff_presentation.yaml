@@ -219,7 +219,7 @@ slides:
     vendor_name: "PT Mitra Integrasi Informatika"
     tier1_client_text: "Tadahiko Onaka ([CLIENT_SHORT_NAME] SteerCo), Mulyanah ([CLIENT_SHORT_NAME] Project Advisor)  |  Executive budget authorization & strategic sign-offs"
     tier1_vendor_text: "Arif Nanda A. (MII SteerCo), Dian Eka Kusumawati & Ho Herly (Account Managers), Lucky & Herman (Presales)"
-    client_pm_title: "Fredric Retanubun - [CLIENT_SHORT_NAME] Project Manager"
+    client_pm_title: "Dewi Lestari - [CLIENT_SHORT_NAME] Project Manager"
     client_pm_bullets:
       - "Facilitates internal business access, data extracts, and UAT scheduling."
       - "Coordinates cross-functional reviews across Finance, Accounting, and IT."

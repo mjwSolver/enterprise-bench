@@ -277,7 +277,6 @@ slides:
     subtitle: "Flexible, capacity-based support structure designed for agile bug remediation, platform health, and minor CRs."
     pillars:
       - title: "Capacity Metering & Top-Up"
-        subtitle: "Annual Capacity Scheme"
         accent: "accent"
         bullets:
           - "A total allocation of 30 mandays per contract year."
@@ -286,7 +285,6 @@ slides:
           - "Mandays may be topped up if fully utilized within the current year."
           - "Transparent monthly burn-rate reconciliation and notifications."
       - title: "Rollover & Commercial Terms"
-        subtitle: "Contract Flexibility"
         accent: "accent_teal"
         bullets:
           - "Remaining unused mandays carry over to following year's contract."
@@ -295,7 +293,6 @@ slides:
           - "Option to combine mandays for medium complexity Change Requests."
           - "Predictable annual operational budget without lock-in penalties."
       - title: "Eligible Maintenance Scope"
-        subtitle: "Supported Workstreams"
         accent: "accent_purple"
         bullets:
           - "Mandays utilized for bug fixing and corrective incident resolution."
@@ -347,7 +344,6 @@ slides:
     subtitle: "Standard recurring deliverables ensuring complete auditability of mandays utilization, time tracking, and changes."
     deliverables:
       - title: "Monthly Mandays Usage Recap"
-        subtitle: "Executive Consumption Ledger"
         accent: "accent"
         bullets:
           - "Monthly consolidated statement of mandays consumed during the billing cycle."
@@ -357,7 +353,6 @@ slides:
           - "Submitted monthly in PDF and Excel formats for formal client sign-off."
           - "Shared during monthly service review meetings with [CLIENT_SHORT_NAME] leadership."
       - title: "Developer Timesheet Records"
-        subtitle: "Task-by-Task Time Accounting"
         accent: "accent_teal"
         bullets:
           - "Granular daily timesheets logged by assigned MII software & data engineers."
@@ -367,7 +362,6 @@ slides:
           - "Complete audit trail compliant with enterprise procurement guidelines."
           - "Archived digitally alongside monthly invoicing documentation."
       - title: "Technical Documentation & CR Logs"
-        subtitle: "Architecture & Code Integrity"
         accent: "accent_purple"
         bullets:
           - "Formal Root Cause Analysis (RCA) documentation for all resolved defects."

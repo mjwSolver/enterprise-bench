@@ -100,6 +100,13 @@ class EngagementContext(BaseModel):
         """Return the canonical system-wide default engagement context."""
         return cls()
 
+    @classmethod
+    def from_client_name(cls, client_name: str) -> "EngagementContext":
+        """Construct an EngagementContext from a client slug or company name."""
+        if not client_name or client_name.strip().upper() in ("NGL", "NUSANTARA GLOBAL LOGISTICS"):
+            return cls.default_ngl()
+        return cls(client_company_name=client_name, client_short_name=client_name)
+
     def substitute(self, text: str) -> str:
         """Replace all slug tokens and forbidden legacy client entities in text with contextual values."""
         if not text:
@@ -108,12 +115,14 @@ class EngagementContext(BaseModel):
         for slug, val in rep.items():
             if slug in text:
                 text = text.replace(slug, str(val))
-        # Universal normalization of legacy client entities
+        # Universal normalization of legacy client entities & known personnel
         text = re.sub(r"\bPT\s+Toyota\s+Tsusho\s+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
         text = re.sub(r"\bToyota\s+Tsusho\s+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
         text = re.sub(r"\bToyota\s+Tsusho\b", self.client_company_name, text, flags=re.IGNORECASE)
         text = re.sub(r"\bTTLC\b", self.client_short_name, text)
         text = re.sub(r"\bTTI\b", self.client_short_name, text)
+        text = re.sub(r"\bFredric\s+Retanubun\b", self.client_pm_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bTadahiko\s+Onaka\b", self.client_sponsor_name, text, flags=re.IGNORECASE)
         return text
 
     def to_slug_replacement_dict(self) -> Dict[str, str]:

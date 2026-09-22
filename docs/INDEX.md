@@ -26,7 +26,8 @@ docs/
 │   ├── 2026-09-20_weekly_progress_report_deck_modernization.md
 │   ├── 2026-09-21_project_closing_deck_modernization.md
 │   ├── 2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md
-│   └── 2026-09-21_sprints_17_27_completion_briefing.md
+│   ├── 2026-09-21_sprints_17_27_completion_briefing.md
+│   └── 2026-09-23_feedback_and_quality_enhancement_sprint.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
 │   ├── adaptive_documentation_scout_protocol.md
@@ -112,4 +113,5 @@ docs/
 * [**`2026-09-21_project_closing_deck_modernization.md`**](handovers/2026-09-21_project_closing_deck_modernization.md): Milestone 27 closeout (Automated 9-slide project closing & maintenance transition deck modernization, forensic template & checklist audit, ClosingDeckBuilder, dynamic spreadsheet ingestion, and preview verification).
 * [**`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`**](handovers/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md): Sprints 17–27 review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap.
 * [**`2026-09-21_sprints_17_27_completion_briefing.md`**](handovers/2026-09-21_sprints_17_27_completion_briefing.md): Sprints 17–27 closeout (Universal NGL slug & PII normalization, Closing Deck visual enrichment, Weekly Progress typography & English purity, Kick-off Slide 10/12/19 defect fixes, and automated Change Request suite).
+* [**`2026-09-23_feedback_and_quality_enhancement_sprint.md`**](handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): Milestone 27 / Sprints 17–27 Feedback & Quality Enhancement Sprint closeout (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML image aspect ratio QA engine & CLI, Slide 7 maintenance workflow architecture & OpenXML connectors, DrawingML bullet schema compliance, and Slide 6 KPI overflow fix).
 

@@ -4,6 +4,38 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-09-23] - Milestone 27 / Sprints 17–27 Feedback & Quality Enhancement Sprint: PII Scrubbing, Aspect QA & DrawingML Hardening
+
+### Summary
+Executed an end-of-sprint feedback and quality enhancement cycle across Milestone 27 and Sprints 17–27 collateral. Scrubbed legacy PII 'Fredric Retanubun', substituting canonical client PM 'Dewi Lestari' across clean workspace templates, CR_07 change log ledger, and kickoff presets, and enhanced `src/core/slug_registry.py` with automated personnel normalization. Developed `scripts/generate_synthetic_cr_gantt.py` to replace real MS Project Gantt screenshots in Change Request CR_07 Word templates and outputs with synthetic watermarked graphics. Engineered `src/core/image_aspect.py` and CLI commands (`bench doc check-aspect`, `bench doc fix-aspect`) to dynamically audit and correct OpenXML container vs natural image aspect ratio mismatches, curing 38.7% squish down to 0% distortion in Word documents, and integrated into `src/core/change_request.py`. Overhauled Closing Deck Slide 7 maintenance workflow architecture in `src/ppt_engine/closing_deck.py`, eliminating crushed 0.27" text boxes with 3-line structured card typography and native OpenXML directional connector lines with triangle arrowheads. Resolved ECMA-376 schema ordering constraints (`<a:buFont>`, `<a:buChar>` before `<a:defRPr>`) to permanently restore missing PowerPoint bullets across `closing_deck.py`, `weekly_progress_deck.py`, and `consulting_archetypes.py`. Streamlined redundant subtitles and fixed KPI badge overflow on Closing Deck Slide 6.
+
+### Milestones Delivered
+- **PII Scrubbing & Personnel Normalization:**
+  - Replaced legacy PII 'Fredric Retanubun' with canonical client PM 'Dewi Lestari' across clean workspace templates, CR_07 Change Log Ledger, and kickoff configurations ([`presets/deck_configs/kickoff_presentation.yaml`](../presets/deck_configs/kickoff_presentation.yaml)).
+  - Enhanced [`src/core/slug_registry.py`](../src/core/slug_registry.py) with automated personnel regex scrubbing (`Fredric Retanubun` $\rightarrow$ `client_pm_name`, `Tadahiko Onaka` $\rightarrow$ `client_sponsor_name`) and `EngagementContext.from_client_name()`.
+- **Synthetic Gantt Generator & Screenshot Replacement:**
+  - Developed [`scripts/generate_synthetic_cr_gantt.py`](../scripts/generate_synthetic_cr_gantt.py) rendering 150 DPI watermarked synthetic project schedule graphics (`assets/synthetic_cr_gantt.png`).
+  - Replaced real MS Project Gantt screenshots in Change Request CR_07 Word templates (`4.4_Change_Request_Form_Template.docx`, `Change_Request_Form_CR_07.docx`) and outputs with synthetic graphics.
+- **Image Aspect Ratio QA Engine & Unified CLI:**
+  - Built [`src/core/image_aspect.py`](../src/core/image_aspect.py) providing `ImageAspectEngine` and `ImageAspectReport` for OpenXML container vs natural image aspect ratio validation.
+  - Added CLI commands `bench doc check-aspect` and `bench doc fix-aspect` in [`src/cli.py`](../src/cli.py).
+  - Cured 38.7% squish down to 0% distortion in Word documents by dynamically calculating proportional extents.
+  - Integrated automated aspect ratio correction into [`src/core/change_request.py`](../src/core/change_request.py) (`ChangeRequestProcessor.process_cr`).
+- **Closing Deck Slide 7 Architecture (Maintenance Workflow):**
+  - Eliminated crushed 0.27" floating callout boxes causing vertical letter wrapping on Slide 7 in [`src/ppt_engine/closing_deck.py`](../src/ppt_engine/closing_deck.py).
+  - Replaced with 3-line structured card typography (`step_w = Inches(1.64)`, `step_h = Inches(0.72)`) with dedicated SLA and gate badges.
+  - Added native OpenXML directional connector lines (`MSO_CONNECTOR.STRAIGHT`) with DrawingML triangle arrowheads (`<a:headEnd type="triangle"/>`).
+- **DrawingML Bullet Standardization & ECMA-376 Schema Hardening:**
+  - Resolved ECMA-376 PresentationML schema constraint requiring `<a:buClrTx>`, `<a:buSzPct>`, `<a:buFont>`, `<a:buChar>` to precede `<a:defRPr>` in `<a:pPr>`.
+  - Standardized `_add_bullet_paragraph` with schema insertion ordering and CSS fallback font list sanitization across [`src/ppt_engine/closing_deck.py`](../src/ppt_engine/closing_deck.py), [`src/ppt_engine/weekly_progress_deck.py`](../src/ppt_engine/weekly_progress_deck.py), and [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py).
+- **Subtitle Streamlining & Slide 6 Overflow Fix:**
+  - Removed redundant subtitles across Slide 06 pillar cards and Slide 08 deliverable cards in [`src/ppt_engine/closing_deck.py`](../src/ppt_engine/closing_deck.py) and [`presets/deck_configs/closing_deck.yaml`](../presets/deck_configs/closing_deck.yaml).
+  - Streamlined verbose KPI badges on Slide 6 to prevent text frame overflow and adhere to clean consulting design principles.
+  - Added safe exception handling for footer page numbering in `update_pagination()`.
+- Reference Handover: [`docs/handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md`](handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md)
+
+---
+
 ## [2026-09-21] - Sprints 17–27 Review & Enhancement Sprint (Phases 1–5): Universal Normalization & Defect Rectification
 
 ### Summary

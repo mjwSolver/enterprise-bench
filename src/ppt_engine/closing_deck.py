@@ -37,6 +37,8 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.oxml.ns import qn
+from pptx.oxml.xmlchemy import OxmlElement
 from pptx.util import Inches, Pt
 
 from src.ppt_engine.consulting_archetypes import (
@@ -142,23 +144,46 @@ def _add_bullet_paragraph(
     and native bullet formatting for clean alignment across native and headless renderers.
     """
     from pptx.oxml.xmlchemy import OxmlElement
+    from pptx.oxml.ns import qn
 
     p = tf.add_paragraph()
     clean_text = text.lstrip("•\t -*").strip()
     p.text = clean_text
-    p.font.name = font_name
+
+    # Strip CSS fallback lists if present (e.g. "Calibri, Helvetica, Arial...")
+    clean_font = font_name.split(",")[0].strip().strip('"\'') if font_name else "Calibri"
+    if not clean_font:
+        clean_font = "Calibri"
+    p.font.name = clean_font
     p.font.size = Pt(font_size_pt)
     if font_color:
         p.font.color.rgb = font_color
     p.space_before = Pt(space_before_pt)
 
+    # DrawingML Hanging Indent: marL="288000" (0.20 in), indent="-288000"
     pPr = p._p.get_or_add_pPr()
     pPr.set("marL", "288000")
     pPr.set("indent", "-288000")
 
+    # In ECMA-376 PresentationML, buClrTx, buSzPct, buFont, and buChar MUST precede defRPr!
+    buClrTx = OxmlElement("a:buClrTx")
+    buSzPct = OxmlElement("a:buSzPct")
+    buSzPct.set("val", "100000")
+    buFont = OxmlElement("a:buFont")
+    buFont.set("typeface", "Arial")
     buChar = OxmlElement("a:buChar")
     buChar.set("char", bullet_char)
-    pPr.append(buChar)
+
+    elems = [buClrTx, buSzPct, buFont, buChar]
+    defRPr = pPr.find(qn("a:defRPr"))
+    if defRPr is not None:
+        idx = pPr.index(defRPr)
+        for offset, el in enumerate(elems):
+            pPr.insert(idx + offset, el)
+    else:
+        for el in elems:
+            pPr.append(el)
+
     return p
 
 
@@ -1209,11 +1234,11 @@ class ClosingDeckBuilder:
             ),
         )
 
-        # Top KPI Banner
+        # Top KPI Banner (Clean, concise labels with zero overflow)
         kpis = [
-            {"label": "ANNUAL QUOTA POOL", "value": "30 Mandays", "desc": "Allocated per contract year", "accent": "accent"},
-            {"label": "MINIMUM BILLABLE UNIT", "value": "0.5 Manday", "desc": "Granular task-based accounting", "accent": "accent_teal"},
-            {"label": "ROLLOVER GUARANTEE", "value": "100% Rollover", "desc": "Carried over to following year", "accent": "success"},
+            {"label": "Annual Quota Pool", "value": "30 Mandays", "accent": "accent"},
+            {"label": "Minimum Billable Unit", "value": "0.5 Manday", "accent": "accent_teal"},
+            {"label": "Rollover Guarantee", "value": "100% Rollover", "accent": "success"},
         ]
 
         kpi_w = Inches(3.70)
@@ -1245,7 +1270,7 @@ class ClosingDeckBuilder:
 
             tb = slide.shapes.add_textbox(kx + Inches(0.16), top_kpi + Inches(0.12), kpi_w - Inches(0.28), kpi_h - Inches(0.20))
             tf = tb.text_frame
-            tf.word_wrap = False
+            tf.word_wrap = True
             tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
 
             p_val = tf.paragraphs[0]
@@ -1256,20 +1281,19 @@ class ClosingDeckBuilder:
             p_val.font.color.rgb = self.theme.get_rgb("primary")
 
             p_lbl = tf.add_paragraph()
-            p_lbl.text = f"{kpi['label']}  •  {kpi['desc']}"
+            p_lbl.text = kpi["label"].upper()
             p_lbl.font.name = self.theme.font_family
             p_lbl.font.size = Pt(11.0)
             p_lbl.font.bold = True
             p_lbl.font.color.rgb = self.theme.get_rgb("secondary")
             p_lbl.space_before = Pt(2)
 
-        # Bottom 3 Deep-Dive Pillar Cards
+        # Bottom 3 Deep-Dive Pillar Cards (Clean titles, no redundant subtitles)
         pillars = d.get(
             "pillars",
             [
                 {
                     "title": "Capacity Metering & Top-Up",
-                    "subtitle": "Annual Capacity Scheme",
                     "accent": "accent",
                     "bullets": [
                         "A total allocation of 30 mandays per contract year.",
@@ -1281,7 +1305,6 @@ class ClosingDeckBuilder:
                 },
                 {
                     "title": "Rollover & Commercial Terms",
-                    "subtitle": "Contract Flexibility",
                     "accent": "accent_teal",
                     "bullets": [
                         "Remaining unused mandays carry over to following year's contract.",
@@ -1293,7 +1316,6 @@ class ClosingDeckBuilder:
                 },
                 {
                     "title": "Eligible Maintenance Scope",
-                    "subtitle": "Supported Workstreams",
                     "accent": "accent_purple",
                     "bullets": [
                         "Mandays utilized for bug fixing and corrective incident resolution.",
@@ -1405,9 +1427,9 @@ class ClosingDeckBuilder:
             },
         ]
 
-        lane_h = Inches(0.70)
-        lane_gap = Inches(0.08)
-        swimlane_top = Inches(1.80)
+        lane_h = Inches(0.78)
+        lane_gap = Inches(0.06)
+        swimlane_top = Inches(1.72)
         lane_w = Inches(11.73)
         start_x = Inches(0.80)
 
@@ -1442,7 +1464,7 @@ class ClosingDeckBuilder:
             l_bar.fill.fore_color.rgb = acc
             l_bar.line.fill.background()
 
-            tb_lh = slide.shapes.add_textbox(start_x + Inches(0.12), ly + Inches(0.10), header_w - Inches(0.20), lane_h - Inches(0.18))
+            tb_lh = slide.shapes.add_textbox(start_x + Inches(0.12), ly + Inches(0.12), header_w - Inches(0.20), lane_h - Inches(0.24))
             tf_lh = tb_lh.text_frame
             tf_lh.word_wrap = True
             tf_lh.margin_left = tf_lh.margin_right = tf_lh.margin_top = tf_lh.margin_bottom = 0
@@ -1462,65 +1484,60 @@ class ClosingDeckBuilder:
             p_ls.font.color.rgb = acc
             p_ls.space_before = Pt(2)
 
-        # 5 Steps mapped into Swimlanes
+        # 5 Steps mapped into Swimlanes with integrated SLA / Gate metadata
         flow_steps = [
             {
                 "num": "01",
                 "lane": "client",
-                "title": "Request Submission",
-                "desc": "WhatsApp / Email Ticket",
+                "title": "Request Intake",
+                "desc": "WhatsApp & Email",
                 "accent": "accent",
-                "icon": "mail",
+                "tag": "SLA: Immediate",
             },
             {
                 "num": "02",
                 "lane": "support",
-                "title": "SLA Triage & Quote",
-                "desc": "Impact & Manday Sizing",
+                "title": "SLA Triage",
+                "desc": "Manday Sizing",
                 "accent": "accent_teal",
-                "icon": "clock",
+                "tag": "SLA: < 4h / 1-2d",
             },
             {
                 "num": "03",
                 "lane": "client",
                 "title": "Manday Approval",
-                "desc": "Written Authorization Gate",
+                "desc": "Written Approval",
                 "accent": "warning",
-                "icon": "check-circle",
+                "tag": "Gate: Authorized",
             },
             {
                 "num": "04",
                 "lane": "engineering",
                 "title": "Fix, SIT & Deploy",
-                "desc": "Snowflake & Streamlit Core",
+                "desc": "Snowflake & Streamlit",
                 "accent": "accent_purple",
-                "icon": "code-2",
+                "tag": "Cycle: Continuous",
             },
             {
                 "num": "05",
                 "lane": "client",
                 "title": "UAT & Sign-off",
-                "desc": "Timesheet & Closure",
+                "desc": "Timesheet Sign-off",
                 "accent": "success",
-                "icon": "file-signature",
+                "tag": "Gate: Verified",
             },
         ]
 
-        sla_badges = [
-            "< 4h Sev 1 Triage",
-            "1-2d Sizing Quote",
-            "Approved Mandays",
-            "Verified Delivery",
-        ]
+        step_w = Inches(1.64)
+        step_h = Inches(0.72)
+        col_gap = Inches(0.31)
+        step_start_x = start_x + Inches(2.38)
 
-        step_w = Inches(1.58)
-        step_h = Inches(0.60)
-        col_gap = Inches(0.35)
-        step_start_x = start_x + Inches(2.40)
+        from pptx.enum.shapes import MSO_CONNECTOR
 
         for s_idx, st in enumerate(flow_steps):
             sx = step_start_x + s_idx * (step_w + col_gap)
-            sy = lane_y_map[st["lane"]] + Inches(0.05)
+            sy = lane_y_map[st["lane"]] + Inches(0.03)
             s_acc = self.theme.get_rgb(st["accent"])
 
             # Step Card with top stripe
@@ -1537,7 +1554,7 @@ class ClosingDeckBuilder:
                 stripe_height_in=0.04,
             )
 
-            tb_s = slide.shapes.add_textbox(sx + Inches(0.08), sy + Inches(0.06), step_w - Inches(0.14), step_h - Inches(0.10))
+            tb_s = slide.shapes.add_textbox(sx + Inches(0.06), sy + Inches(0.03), step_w - Inches(0.12), step_h - Inches(0.05))
             tf_s = tb_s.text_frame
             tf_s.word_wrap = True
             tf_s.margin_left = tf_s.margin_right = tf_s.margin_top = tf_s.margin_bottom = 0
@@ -1554,33 +1571,36 @@ class ClosingDeckBuilder:
             p_sd.font.name = self.theme.font_family
             p_sd.font.size = Pt(11.0)
             p_sd.font.color.rgb = self.theme.get_rgb("secondary")
-            p_sd.space_before = Pt(1)
+            p_sd.space_before = Pt(0)
 
-            # Connector arrow & SLA Callout to next step
+            p_st = tf_s.add_paragraph()
+            p_st.text = st["tag"]
+            p_st.font.name = self.theme.font_family
+            p_st.font.size = Pt(11.0)
+            p_st.font.bold = True
+            p_st.font.color.rgb = s_acc
+            p_st.space_before = Pt(1)
+
+            # Directional Connector Arrow to next step
             if s_idx < 4:
-                arrow_x = sx + step_w + Inches(0.04)
-                arrow_w = col_gap - Inches(0.08)
-                next_lane_y = lane_y_map[flow_steps[s_idx + 1]["lane"]] + Inches(0.05)
-                mid_y = (sy + next_lane_y) / 2 + Inches(0.15)
+                next_st = flow_steps[s_idx + 1]
+                next_sx = step_start_x + (s_idx + 1) * (step_w + col_gap)
+                next_sy = lane_y_map[next_st["lane"]] + Inches(0.04)
 
-                # SLA callout pill
-                badge_text = sla_badges[s_idx]
-                badge_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, arrow_x, mid_y, arrow_w, Inches(0.26))
-                badge_box.shadow.inherit = False
-                badge_box.fill.solid()
-                badge_box.fill.fore_color.rgb = self.theme.get_rgb("surface")
-                badge_box.line.color.rgb = self.theme.get_rgb("border")
-                badge_box.line.width = Pt(0.75)
+                cx1 = int(sx + step_w)
+                cy1 = int(sy + step_h / 2)
+                cx2 = int(next_sx)
+                cy2 = int(next_sy + step_h / 2)
 
-                b_tf = badge_box.text_frame
-                b_tf.word_wrap = True
-                b_tf.margin_left = b_tf.margin_right = b_tf.margin_top = b_tf.margin_bottom = 0
-                b_p = b_tf.paragraphs[0]
-                b_p.text = badge_text
-                b_p.font.name = self.theme.font_family
-                b_p.font.size = Pt(11.0)
-                b_p.font.bold = True
-                b_p.font.color.rgb = s_acc
+                conn = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, cx1, cy1, cx2, cy2)
+                conn.line.color.rgb = self.theme.get_rgb("accent")
+                conn.line.width = Pt(1.5)
+
+                head_end = OxmlElement("a:headEnd")
+                head_end.set("type", "triangle")
+                head_end.set("w", "med")
+                head_end.set("len", "med")
+                conn.line._get_or_add_ln().append(head_end)
 
         # ---------------------------------------------------------------------
         # Bottom Section: Contacts (Left) & Channels/SLA (Right)
@@ -1764,7 +1784,6 @@ class ClosingDeckBuilder:
             [
                 {
                     "title": "Monthly Mandays Usage Recap",
-                    "subtitle": "Executive Consumption Ledger",
                     "accent": "accent",
                     "bullets": [
                         "Monthly consolidated statement of mandays consumed during the billing cycle.",
@@ -1777,7 +1796,6 @@ class ClosingDeckBuilder:
                 },
                 {
                     "title": "Developer Timesheet Records",
-                    "subtitle": "Task-by-Task Time Accounting",
                     "accent": "accent_teal",
                     "bullets": [
                         "Granular daily timesheets logged by assigned MII software & data engineers.",
@@ -1790,7 +1808,6 @@ class ClosingDeckBuilder:
                 },
                 {
                     "title": "Technical Documentation & CR Logs",
-                    "subtitle": "Architecture & Code Integrity",
                     "accent": "accent_purple",
                     "bullets": [
                         "Formal Root Cause Analysis (RCA) documentation for all resolved defects.",
@@ -2197,11 +2214,14 @@ class ClosingDeckBuilder:
         total_slides = len(self.prs.slides)
         for s_idx, slide in enumerate(self.prs.slides, start=1):
             for shape in slide.shapes:
-                # Strictly only update shapes positioned in the footer zone (Y >= 6.8")
-                if getattr(shape, "top", None) is not None and shape.top < Inches(6.8):
+                if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
                     continue
-                if shape.has_text_frame:
-                    for paragraph in shape.text_frame.paragraphs:
+                try:
+                    if getattr(shape, "top", None) is not None and shape.top < Inches(6.8):
+                        continue
+                except Exception:
+                    pass
+                for paragraph in shape.text_frame.paragraphs:
                         text_clean = paragraph.text.strip()
                         if re.match(r"^\d{2}\s*/\s*\d{2}$", text_clean):
                             new_page_str = f"{s_idx:02d} / {total_slides:02d}"

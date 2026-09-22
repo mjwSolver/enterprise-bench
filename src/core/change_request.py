@@ -190,6 +190,10 @@ class ChangeRequestProcessor:
         _substitute_docx(doc, self.context)
         doc.save(str(doc_out_path))
 
+        # Enforce zero-distortion aspect ratio preservation on embedded images
+        from src.core.image_aspect import ImageAspectEngine
+        ImageAspectEngine().fix_docx(doc_out_path)
+
         # 2. Append to Change_Log_Ledger.xlsx
         ledger_template = self.project.resolve_clean_file("4.4_Change_Log_Ledger_Template.xlsx")
         ledger_out_path = out_p / f"Change_Log_Ledger_Updated_CR_{cr_id.zfill(2)}.xlsx"

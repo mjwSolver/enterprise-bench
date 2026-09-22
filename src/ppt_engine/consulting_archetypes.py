@@ -4239,20 +4239,41 @@ def _add_bullet_paragraph(
 
     p = tf.add_paragraph()
     clean_text = text.lstrip("•\t -*").strip()
-    p.text = clean_text
-    p.font.name = font_name
+    # Strip CSS fallback lists if present (e.g. "Calibri, Helvetica, Arial...")
+    clean_font = font_name.split(",")[0].strip().strip('"\'') if font_name else "Calibri"
+    if not clean_font:
+        clean_font = "Calibri"
+    p.font.name = clean_font
     p.font.size = Pt(font_size_pt)
     if font_color:
         p.font.color.rgb = font_color
     p.space_before = Pt(space_before_pt)
 
+    # DrawingML Hanging Indent: marL="288000" (0.20 in), indent="-288000"
     pPr = p._p.get_or_add_pPr()
     pPr.set("marL", "288000")
     pPr.set("indent", "-288000")
 
+    # In ECMA-376 PresentationML, buClrTx, buSzPct, buFont, and buChar MUST precede defRPr!
+    from pptx.oxml.ns import qn
+    buClrTx = OxmlElement("a:buClrTx")
+    buSzPct = OxmlElement("a:buSzPct")
+    buSzPct.set("val", "100000")
+    buFont = OxmlElement("a:buFont")
+    buFont.set("typeface", "Arial")
     buChar = OxmlElement("a:buChar")
     buChar.set("char", bullet_char)
-    pPr.append(buChar)
+
+    elems = [buClrTx, buSzPct, buFont, buChar]
+    defRPr = pPr.find(qn("a:defRPr"))
+    if defRPr is not None:
+        idx = pPr.index(defRPr)
+        for offset, el in enumerate(elems):
+            pPr.insert(idx + offset, el)
+    else:
+        for el in elems:
+            pPr.append(el)
+
     return p
 
 

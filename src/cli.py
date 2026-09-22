@@ -788,6 +788,49 @@ def purge_doc(
         rprint(f"  Comments removed: {tot_c} | Highlights: {tot_h} | Revisions normalized: {tot_r}")
 
 
+@doc_app.command("check-aspect")
+def check_image_aspect(
+    file: str = typer.Option(..., "--file", "-f", help="Path to .docx file to inspect for image distortion"),
+    tolerance: float = typer.Option(3.0, "--tolerance", "-t", help="Distortion tolerance percentage (default: 3%)"),
+) -> None:
+    """Audit embedded drawings in a .docx file for aspect ratio squish or distortion."""
+    from src.core.image_aspect import ImageAspectEngine
+    engine = ImageAspectEngine(tolerance_pct=tolerance)
+    reports = engine.audit_docx(file)
+    distorted = [r for r in reports if r.is_distorted]
+    if not reports:
+        rprint(f"[cyan]ℹ No embedded drawings found in:[/cyan] {file}")
+        return
+    if not distorted:
+        rprint(f"[green]✓ All {len(reports)} embedded image(s) maintain perfect aspect ratio (0% squish):[/green] {file}")
+        for r in reports:
+            rprint(f"  • {r.media_path}: {r.container_width_in:.2f}\" x {r.container_height_in:.2f}\" (ratio {r.container_aspect_ratio:.2f}:1)")
+    else:
+        rprint(f"[yellow]⚠ Found {len(distorted)} distorted image(s) in:[/yellow] {file}")
+        for r in distorted:
+            rprint(f"  • [bold]{r.media_path}[/bold] (rId: {r.rel_id}): Container {r.container_width_in:.2f}\" x {r.container_height_in:.2f}\" (ratio {r.container_aspect_ratio:.2f}) vs Natural {r.natural_width_px}x{r.natural_height_px} (ratio {r.natural_aspect_ratio:.2f}) -> [red]{r.distortion_pct}% distortion[/red]. Suggested height: {r.suggested_height_in:.2f}\"")
+        raise typer.Exit(code=1)
+
+
+@doc_app.command("fix-aspect")
+def fix_image_aspect(
+    file: str = typer.Option(..., "--file", "-f", help="Path to .docx file to correct"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Optional output path (defaults to in-place)"),
+    max_width: float = typer.Option(6.5, "--max-width", "-w", help="Maximum image width in inches (default: 6.5\")"),
+) -> None:
+    """Automatically correct squished or distorted image extents in a .docx file."""
+    from src.core.image_aspect import ImageAspectEngine
+    engine = ImageAspectEngine()
+    count, reports = engine.fix_docx(file, output_path=output, max_width_in=max_width)
+    target = output or file
+    if count == 0:
+        rprint(f"[green]✓ No distortion detected, document is already proportional:[/green] {target}")
+    else:
+        rprint(f"[green]✓ Successfully corrected aspect ratio on {count} image frame(s) in:[/green] [bold]{target}[/bold]")
+        for r in reports:
+            rprint(f"  • {r.media_path}: {r.container_width_in:.2f}\" x {r.container_height_in:.2f}\" (ratio {r.container_aspect_ratio:.2f}:1)")
+
+
 @doc_app.command("lint")
 def lint_doc(
     file: str = typer.Option(..., "--file", "-f", help="Path to .docx file to inspect"),
