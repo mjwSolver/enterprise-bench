@@ -4229,7 +4229,7 @@ def _add_bullet_paragraph(
     tf: Any,
     text: str,
     font_name: str,
-    font_size_pt: float = 9.0,
+    font_size_pt: float = 11.0,
     font_color: Optional[RGBColor] = None,
     space_before_pt: float = 4.0,
     bullet_char: str = "•",

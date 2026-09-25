@@ -29,13 +29,13 @@ Locate the `"staff_bindings"` block. Replace the `"full_name"` and `"official_po
 
 ```json
 "ROLE_PROJECT_MANAGER": {
-  "full_name": "Agus Suhanto",
+  "full_name": "Agus Pramono",
   "official_position": "Senior Project Manager",
-  "email": "agus.suhanto@enterprise-consulting.com",
+  "email": "agus.Pramono@enterprise-consulting.com",
   "phone": "+6281234567890"
 },
 "ROLE_STREAMLIT_DEV": {
-  "full_name": "Marcell Jeremy Wiradinata",
+  "full_name": "Reza Pratama",
   "official_position": "Analytics & UI Engineer",
   "email": "marcell.wiradinata@enterprise-consulting.com",
   "phone": "+6281234567893"

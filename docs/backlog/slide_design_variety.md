@@ -2,7 +2,7 @@
 
 > **Status:** Open Backlog / Design Modernization  
 > **Topic:** PowerPoint Layout Variety, Eliminating Box Fatigue, Template-Driven Archetypes  
-> **Target Module:** [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)
+> **Target Module:** [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py)
 
 ---
 
@@ -16,7 +16,7 @@ Generated presentations in the platform currently exhibit visual repetition ("bo
 
 ## 2. Exported Template Previews (Visual Inspection Reference)
 
-To inspire new archetypes, full slide image exports have been generated from the production master templates using [`slide_exporter.py`](../src/ppt_engine/slide_exporter.py).
+To inspire new archetypes, full slide image exports have been generated from the production master templates using [`slide_exporter.py`](../../src/ppt_engine/slide_exporter.py).
 
 ### 🚀 Fast Reference Commands (macOS Native Preview)
 
@@ -33,18 +33,18 @@ open output/template_previews/kickoff/
 
 | Slide File | Layout Pattern | Why It Breaks the "Box" Monotony |
 | :--- | :--- | :--- |
-| [`output/template_previews/pitch_deck/slide_07.png`](../output/template_previews/pitch_deck/slide_07.png) | **Horizontal Data Pipeline** | Unbordered source nodes flowing into an engine container and fanning out via arrows to consumer tools. |
-| [`output/template_previews/pitch_deck/slide_08.png`](../output/template_previews/pitch_deck/slide_08.png) | **Split 1/3 Hero + 2/3 Detail** | Bold left-third accent block with large stat callouts; clean unboxed typography on the right. |
-| [`output/template_previews/pitch_deck/slide_21.png`](../output/template_previews/pitch_deck/slide_21.png) | **Gap Analysis (As-Is vs. To-Be)** | Two contrasting vertical panels comparing current pain points against target capabilities with transition badges. |
-| [`output/template_previews/pitch_deck/slide_26.png`](../output/template_previews/pitch_deck/slide_26.png) | **Stepped Chevron Process Flow** | Connected directional chevron flow (`Initiation ➔ Development ➔ Testing`) with progressive color saturation. |
-| [`output/template_previews/pitch_deck/slide_32.png`](../output/template_previews/pitch_deck/slide_32.png) | **Gantt / Delivery Timeline** | Calendar-aligned matrix with horizontal duration bars and milestone markers. |
-| [`output/template_previews/pitch_deck/slide_33.png`](../output/template_previews/pitch_deck/slide_33.png) | **Hierarchical Org & RACI Tree** | Structured governance hierarchy with orthogonal reporting connectors. |
+| [`output/template_previews/pitch_deck/slide_07.png`](../../output/template_previews/pitch_deck/slide_07.png) | **Horizontal Data Pipeline** | Unbordered source nodes flowing into an engine container and fanning out via arrows to consumer tools. |
+| [`output/template_previews/pitch_deck/slide_08.png`](../../output/template_previews/pitch_deck/slide_08.png) | **Split 1/3 Hero + 2/3 Detail** | Bold left-third accent block with large stat callouts; clean unboxed typography on the right. |
+| [`output/template_previews/pitch_deck/slide_21.png`](../../output/template_previews/pitch_deck/slide_21.png) | **Gap Analysis (As-Is vs. To-Be)** | Two contrasting vertical panels comparing current pain points against target capabilities with transition badges. |
+| [`output/template_previews/pitch_deck/slide_26.png`](../../output/template_previews/pitch_deck/slide_26.png) | **Stepped Chevron Process Flow** | Connected directional chevron flow (`Initiation ➔ Development ➔ Testing`) with progressive color saturation. |
+| [`output/template_previews/pitch_deck/slide_32.png`](../../output/template_previews/pitch_deck/slide_32.png) | **Gantt / Delivery Timeline** | Calendar-aligned matrix with horizontal duration bars and milestone markers. |
+| [`output/template_previews/pitch_deck/slide_33.png`](../../output/template_previews/pitch_deck/slide_33.png) | **Hierarchical Org & RACI Tree** | Structured governance hierarchy with orthogonal reporting connectors. |
 
 ---
 
 ## 3. Proposed Engine Archetypes to Implement
 
-The following programmatic builders in [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py) expand the engine's design variety:
+The following programmatic builders in [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py) expand the engine's design variety:
 
 1. **`build_chevron_process_slide(...)`** (✓ Implemented):
    - 3–5 interconnected horizontal chevrons/ribbons with directional points (`MSO_SHAPE.CHEVRON`).
@@ -70,7 +70,7 @@ The following programmatic builders in [`src/ppt_engine/consulting_archetypes.py
 
 > **Status:** Open / High Priority  
 > **Topic:** Dedicated Image Bounding Boxes, Logo Lockups, and Template Reference Formatting  
-> **Modules:** [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py), [`src/ppt_engine/image_engine.py`](../src/ppt_engine/image_engine.py), [`src/ppt_engine/theme_engine.py`](../src/ppt_engine/theme_engine.py)
+> **Modules:** [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py), [`src/ppt_engine/image_engine.py`](../../src/ppt_engine/image_engine.py), [`src/ppt_engine/theme_engine.py`](../../src/ppt_engine/theme_engine.py)
 
 ### 📌 Problem Statement & Context
 Current presentation generation relies primarily on text containers and vector icons. While initial support for stock photography and image framing exists (`frame_slide_image`), presentations lack structured, template-level conventions for:

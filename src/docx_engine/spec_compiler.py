@@ -835,14 +835,18 @@ class SpecCompiler:
         self,
         output_path: Union[str, Path],
         engagement_context: Optional[Any] = None,
+        purge_elements: bool = True,
     ) -> Path:
-        """Save the compiled Word document to disk, substituting slugs if engagement_context is provided."""
+        """Save the compiled Word document to disk, substituting slugs and purging editorial artifacts."""
         if engagement_context is not None:
             from src.core.slug_registry import substitute_slugs_in_document
             substitute_slugs_in_document(self.doc, engagement_context)
         out = Path(output_path)
         out.parent.mkdir(parents=True, exist_ok=True)
         self.doc.save(str(out))
+        if purge_elements:
+            from src.core.docx_purger import purge_docx_elements
+            purge_docx_elements(out, out, purge_comments=True, purge_highlights=True, accept_revisions=True)
         return out
 
 

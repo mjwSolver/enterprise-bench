@@ -174,17 +174,17 @@ class Theme:
     def typography_thresholds(self) -> Dict[str, float]:
         """Dictionary of standard font size thresholds in points."""
         defaults = {
-            "tracker_pt": float(self.typography.get("tracker_size_pt", 9.5)),
+            "tracker_pt": float(self.typography.get("tracker_size_pt", 11.0)),
             "action_title_pt": float(self.typography.get("title_size_pt", 20.0)),
-            "subtitle_pt": 11.0,
-            "card_title_pt": float(self.typography.get("card_title_size_pt", 12.0)),
-            "body_pt": float(self.typography.get("body_size_pt", 10.0)),
-            "bullet_pt": 9.5,
-            "caption_pt": float(self.typography.get("caption_size_pt", 8.5)),
-            "metric_large_pt": 24.0,
+            "subtitle_pt": 12.5,
+            "card_title_pt": float(self.typography.get("card_title_size_pt", 14.0)),
+            "body_pt": float(self.typography.get("body_size_pt", 12.0)),
+            "bullet_pt": 11.5,
+            "caption_pt": float(self.typography.get("caption_size_pt", 10.5)),
+            "metric_large_pt": 26.0,
             "metric_medium_pt": float(self.typography.get("metric_size_pt", 18.0)),
             "metric_small_pt": 14.0,
-            "badge_pt": 8.0,
+            "badge_pt": 10.0,
         }
         thresholds = self.typography.get("thresholds", {})
         if isinstance(thresholds, dict):

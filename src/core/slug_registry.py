@@ -115,14 +115,19 @@ class EngagementContext(BaseModel):
         for slug, val in rep.items():
             if slug in text:
                 text = text.replace(slug, str(val))
-        # Universal normalization of legacy client entities & known personnel
-        text = re.sub(r"\bPT\s+Toyota\s+Tsusho\s+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bToyota\s+Tsusho\s+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bToyota\s+Tsusho\b", self.client_company_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bTTLC\b", self.client_short_name, text)
-        text = re.sub(r"\bTTI\b", self.client_short_name, text)
-        text = re.sub(r"\bFredric\s+Retanubun\b", self.client_pm_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bTadahiko\s+Onaka\b", self.client_sponsor_name, text, flags=re.IGNORECASE)
+        # Universal normalization of legacy client entities, domains & known personnel
+        text = re.sub(r"\bPT\.?[\s\u00a0]+Toyota[\s\u00a0]+Ts?h?usho[\s\u00a0]+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bToyota[\s\u00a0]+Ts?h?usho[\s\u00a0]+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bToyota[\s\u00a0]+(Ts?h?usho|Susho)\b", self.client_company_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\b(Toyota|Tsusho|Tshuso)\b", self.client_short_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"(?<![A-Za-z0-9])TTLC(?![A-Za-z0-9])", self.client_short_name, text)
+        text = re.sub(r"(?<![A-Za-z0-9])TTI(?![A-Za-z0-9])", self.client_short_name, text)
+        text = re.sub(r"@tti\.co\.id\b", "@ngl.co.id", text, flags=re.IGNORECASE)
+        text = re.sub(r"\bFredric[\s\u00a0]+Retanubun\b", self.client_pm_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bTadahiko[\s\u00a0]+Onaka\b", self.client_sponsor_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bDebby[\s\u00a0]+Lutfi[\s\u00a0]+Adria?nto\b", self.client_bpo_lead, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bAgus[\s\u00a0]+Pramono\b", self.vendor_pm_name, text, flags=re.IGNORECASE)
+        text = re.sub(r"\bArif[\s\u00a0]+Nanda[\s\u00a0]+Hermawan\b", self.client_sponsor_name, text, flags=re.IGNORECASE)
         return text
 
     def to_slug_replacement_dict(self) -> Dict[str, str]:
@@ -297,8 +302,9 @@ def substitute_slugs_in_presentation(
     substituting slug tokens (e.g. [CLIENT_COMPANY_NAME]) with parameter values.
     Returns the total number of substitutions made.
     """
-    if isinstance(replacement_map, EngagementContext):
-        rep = replacement_map.to_slug_replacement_dict()
+    context: Optional[EngagementContext] = replacement_map if isinstance(replacement_map, EngagementContext) else None
+    if context:
+        rep = context.to_slug_replacement_dict()
     else:
         rep = replacement_map
 
@@ -319,6 +325,12 @@ def substitute_slugs_in_presentation(
                         if not found_in_runs and slug in paragraph.text:
                             paragraph.text = paragraph.text.replace(slug, str(val))
                             subs += 1
+                if context:
+                    orig = paragraph.text
+                    normalized = context.substitute(orig)
+                    if orig != normalized:
+                        paragraph.text = normalized
+                        subs += 1
 
         if shape.has_table:
             for row in shape.table.rows:
@@ -335,6 +347,12 @@ def substitute_slugs_in_presentation(
                                 if not found_in_runs and slug in paragraph.text:
                                     paragraph.text = paragraph.text.replace(slug, str(val))
                                     subs += 1
+                        if context:
+                            orig = paragraph.text
+                            normalized = context.substitute(orig)
+                            if orig != normalized:
+                                paragraph.text = normalized
+                                subs += 1
 
         if hasattr(shape, "shapes"):
             for sub_shape in shape.shapes:
@@ -357,8 +375,9 @@ def substitute_slugs_in_document(
     Scans body paragraphs, tables, headers, and footers in a python-docx Document,
     substituting slug tokens with parameter values.
     """
-    if isinstance(replacement_map, EngagementContext):
-        rep = replacement_map.to_slug_replacement_dict()
+    context: Optional[EngagementContext] = replacement_map if isinstance(replacement_map, EngagementContext) else None
+    if context:
+        rep = context.to_slug_replacement_dict()
     else:
         rep = replacement_map
 
@@ -375,6 +394,12 @@ def substitute_slugs_in_document(
                 if slug in p.text:
                     p.text = p.text.replace(slug, str(val))
                     total_subs += 1
+        if context:
+            orig = p.text
+            normalized = context.substitute(orig)
+            if orig != normalized:
+                p.text = normalized
+                total_subs += 1
 
     # Tables
     for table in doc.tables:
@@ -390,6 +415,12 @@ def substitute_slugs_in_document(
                             if slug in p.text:
                                 p.text = p.text.replace(slug, str(val))
                                 total_subs += 1
+                    if context:
+                        orig = p.text
+                        normalized = context.substitute(orig)
+                        if orig != normalized:
+                            p.text = normalized
+                            total_subs += 1
 
     # Headers & Footers
     for section in doc.sections:
@@ -398,10 +429,22 @@ def substitute_slugs_in_document(
                 if slug in p.text:
                     p.text = p.text.replace(slug, str(val))
                     total_subs += 1
+            if context:
+                orig = p.text
+                normalized = context.substitute(orig)
+                if orig != normalized:
+                    p.text = normalized
+                    total_subs += 1
         for p in section.footer.paragraphs:
             for slug, val in rep.items():
                 if slug in p.text:
                     p.text = p.text.replace(slug, str(val))
+                    total_subs += 1
+            if context:
+                orig = p.text
+                normalized = context.substitute(orig)
+                if orig != normalized:
+                    p.text = normalized
                     total_subs += 1
 
     return total_subs
@@ -415,8 +458,9 @@ def substitute_slugs_in_workbook(
     Scans all cells across sheets in an openpyxl Workbook, substituting slug tokens.
     Preserves formulas and data types.
     """
-    if isinstance(replacement_map, EngagementContext):
-        rep = replacement_map.to_slug_replacement_dict()
+    context: Optional[EngagementContext] = replacement_map if isinstance(replacement_map, EngagementContext) else None
+    if context:
+        rep = context.to_slug_replacement_dict()
     else:
         rep = replacement_map
 
@@ -429,6 +473,12 @@ def substitute_slugs_in_workbook(
                     for slug, val in rep.items():
                         if slug in cell.value:
                             cell.value = cell.value.replace(slug, str(val))
+                            total_subs += 1
+                    if context:
+                        orig = cell.value
+                        normalized = context.substitute(orig)
+                        if orig != normalized:
+                            cell.value = normalized
                             total_subs += 1
 
     return total_subs

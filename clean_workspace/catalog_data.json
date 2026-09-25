@@ -403,7 +403,7 @@
     "tables": [
       "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
       "Project Manager Approval            {{ client_lead_name }} Date: | Project Advisor            {{ client_pm_name }} Date:",
-      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Arif Nanda Atmavidya Date:"
+      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Rudi Hermawan Date:"
     ]
   },
   {
@@ -436,7 +436,7 @@
       "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
       "Reviewer       Andri  Date: | Reviewer       {{ client_analyst_1 }} Date:",
       "Project Manager Approval       {{ client_lead_name }} Date: | Project Advisor       {{ client_pm_name }} Date:",
-      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Arif Nanda Atmavidya Date:"
+      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Rudi Hermawan Date:"
     ]
   },
   {
@@ -477,7 +477,7 @@
     "tables": [
       "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
       "Project Manager Approval            {{ client_lead_name }} Date: | Project Advisor            {{ client_analyst_1 }} Date:",
-      "Project Manager Viewer      {{ vendor_pm_name }} Date: | Steering Committee      Arif Nanda Atmavidya Date:"
+      "Project Manager Viewer      {{ vendor_pm_name }} Date: | Steering Committee      Rudi Hermawan Date:"
     ]
   },
   {
@@ -510,7 +510,7 @@
       "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
       "Reviewer\u00a0 \u00a0 \u00a0 \u00a0  \u00a0 {{ client_engineer_1 }}\u00a0 Date: | Reviewer\u00a0 \u00a0 \u00a0 \u00a0  \u00a0\u00a0 {{ client_analyst_2 }}\u00a0 Date:",
       "Project Manager Approval\u00a0 \u00a0 \u00a0 \u00a0   {{ client_lead_name }}\u00a0 Date: | Project Advisor\u00a0 \u00a0 \u00a0  \u00a0 \u00a0 {{ client_analyst_1 }}\u00a0 Date:",
-      "Project Manager Reviewer\u00a0 \u00a0 \u00a0 \u00a0 \u00a0 \u00a0 {{ vendor_pm_name }}\u00a0 Date:\u00a029 Jun 2026 | Steering Committee\u00a0 \u00a0 \u00a0 \u00a0 \u00a0 \u00a0 Arif Nanda Atmavidya\u00a0 Date:\u00a029 Jun 2026"
+      "Project Manager Reviewer\u00a0 \u00a0 \u00a0 \u00a0 \u00a0 \u00a0 {{ vendor_pm_name }}\u00a0 Date:\u00a029 Jun 2026 | Steering Committee\u00a0 \u00a0 \u00a0 \u00a0 \u00a0 \u00a0 Rudi Hermawan\u00a0 Date:\u00a029 Jun 2026"
     ]
   },
   {
@@ -543,7 +543,7 @@
       "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
       "Reviewer       {{ client_engineer_1 }} Date: | Reviewer       {{ client_analyst_2 }} Date:",
       "Project Manager Approval       {{ client_lead_name }} Date: | Project Advisor       {{ client_analyst_1 }} Date:",
-      "Project Manager Reviewer      {{ vendor_pm_name }} Date:  29 Juni 2026 | Steering Committee      Arif Nanda Atmavidya Date: 29 Juni 2026"
+      "Project Manager Reviewer      {{ vendor_pm_name }} Date:  29 Juni 2026 | Steering Committee      Rudi Hermawan Date: 29 Juni 2026"
     ]
   },
   {
@@ -634,7 +634,7 @@
       "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
       "Reviewer       {{ client_engineer_1 }} Date: | Reviewer       {{ client_analyst_1 }} Date:",
       "Project Manager Approval       {{ client_lead_name }} Date: | Project Advisor       {{ client_pm_name }} Date:",
-      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Arif Nanda Atmavidya Date:"
+      "Project Manager Reviewer      {{ vendor_pm_name }} Date: | Steering Committee      Rudi Hermawan Date:"
     ]
   },
   {
@@ -666,7 +666,7 @@
     "tables": [
       "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
       "Tanggal | Versi | Editor | Modifikasi",
-      "24 Apr 2026 | 1.0 | Marcel Jeremy Wiradinata {{ vendor_contributor_name }} Willyam Saputra {{ vendor_pm_name }} | Versi final 1.0",
+      "24 Apr 2026 | 1.0 | Reza Pratama {{ vendor_contributor_name }} Aditya Putra {{ vendor_pm_name }} | Versi final 1.0",
       "Contoh MFA menggunakan aplikasi DUO. | Contoh Google Authenticator input code."
     ]
   },
@@ -699,7 +699,7 @@
     "tables": [
       "Disiapkan untuk: \t    {{ client_company }} MidPlaza 2 Building 3rd Floor Jl. Jenderal Sudirman Kav. 10-11  Jakarta 10220 DKI Jakarta | Disiapkan oleh:     {{ vendor_company }} APL Tower Lantai 37 Jl. Letjen S. Parman Kav. 28 Jakarta Barat 11470 DKI Jakarta",
       "Tanggal | Versi | Editor | Modifikasi",
-      "24 Apr 2026 | 1.0 | {{ vendor_lead_name }} Willyam Saputra Marcel Jeremy Wiradinata {{ vendor_pm_name }} | Versi final 1.0",
+      "24 Apr 2026 | 1.0 | {{ vendor_lead_name }} Aditya Putra Reza Pratama {{ vendor_pm_name }} | Versi final 1.0",
       "Modul | Nama / Format File | Stage",
       "Sales / GP / OP / PBT | tcp16_mmm_yyyy.xlsx | TCP16"
     ]
@@ -1153,7 +1153,7 @@
     ],
     "tables": [
       "PT {{ client_short_name }} Indonesia | PT {{ vendor_company }}",
-      "Debby Lutfi Ardiyanto Project Leader | Arif Nanda Atmavidya  Division Manager / Project Steering Committee"
+      "Debby Lutfi Ardiyanto Project Leader | Rudi Hermawan  Division Manager / Project Steering Committee"
     ]
   },
   {
@@ -1169,11 +1169,11 @@
       "Pekerjaan   \t: Jasa Implementasi {{ tech_partner }}",
       "No. Perjanjian\t: {{ contract_number }}",
       "Pada hari ini Senin tanggal dua puluh enam Bulan Januari Tahun Dua Ribu Dua Puluh Enam, yang bertandatangan di bawah ini:",
-      "1.\tNama\t: Debby Lutfi Ardiyanto"
+      "1.\tNama\t: {{ client_lead_name }}"
     ],
     "tables": [
-      "PT Toyota Tshuso Indonesia | PT {{ vendor_company }}",
-      "Debby Lutfi Ardiyanto Project Leader | Arif Nanda Atmavidya  Division Manager / Project Steering Committee"
+      "PT {{ client_company }} | PT {{ vendor_company }}",
+      "{{ client_lead_name }} Project Leader | {{ client_exec_name }}  Division Manager / Project Steering Committee"
     ]
   },
   {
@@ -1193,7 +1193,7 @@
     ],
     "tables": [
       "PT {{ client_short_name }} Indonesia | PT {{ vendor_company }}",
-      "Debby Lutfi Ardiyanto Project Leader | Arif Nanda Atmavidya  Division Manager / Project Steering Committee"
+      "Debby Lutfi Ardiyanto Project Leader | Rudi Hermawan  Division Manager / Project Steering Committee"
     ]
   },
   {

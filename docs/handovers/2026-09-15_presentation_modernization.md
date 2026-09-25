@@ -17,8 +17,8 @@ This handover equips fresh agent contexts to modernize the PowerPoint generation
 ## 2. Phase A: Asset Registry & `missing_resources.md` Subsystem
 
 ### Target Module
-- [`src/ppt_engine/resource_manager.py`](../src/ppt_engine/resource_manager.py) (New core module)
-- Integrated into [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py) and [`src/cli.py`](../src/cli.py)
+- [`src/ppt_engine/resource_manager.py`](../../src/ppt_engine/resource_manager.py) (New core module)
+- Integrated into [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py) and [`src/cli.py`](../../src/cli.py)
 
 ### Technical Specification
 1. **Manifest Parsing & Resolution:**
@@ -68,10 +68,10 @@ This handover equips fresh agent contexts to modernize the PowerPoint generation
 ## 3. Phase B: Chapter Divider Archetype & De-Squared Layouts
 
 ### Target Module
-- [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)
+- [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py)
 
 ### Benchmark Reference
-- Reference: [`output/template_previews/pitch_deck/slide_31.png`](../output/template_previews/pitch_deck/slide_31.png) and [`slide_15.png`](../output/template_previews/pitch_deck/slide_15.png)
+- Reference: [`output/template_previews/pitch_deck/slide_31.png`](../../output/template_previews/pitch_deck/slide_31.png) and [`slide_15.png`](../../output/template_previews/pitch_deck/slide_15.png)
 - Goal: Mirror the legacy 1/3 text + 2/3 photographic plate with the square Metrodata mark, while fixing legacy contrast defects via a dark translucent scrim overlay.
 
 ### Architectural Blueprint: `build_chapter_divider_slide(...)`
@@ -143,15 +143,15 @@ Fresh context agents must verify without running test suites (`AGENTS.md` compli
 
 ## 5. Implementation Status & Verified Deliverables
 
-- **Core Module**: [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)
+- **Core Module**: [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py)
   - `build_chapter_divider_slide(...)`: Asymmetric 1/3 narrative panel + 2/3 photographic hero plate with OpenXML DrawingML 45% dark scrim overlay (`#0B132B` via `<a:alpha val="45000"/>`).
   - `ConsultingDeckBuilder.add_chapter_divider_slide(...)`: Method integration for multi-slide presentation decks.
-- **Resource Integration**: Seamlessly integrated with [`src/ppt_engine/resource_manager.py`](../src/ppt_engine/resource_manager.py) for auto-resolution and graceful fallback to solid `#0F172A` cards and typographic pill badges (`[ METRODATA ]`).
-- **Exporter Enhancements**: [`src/ppt_engine/slide_exporter.py`](../src/ppt_engine/slide_exporter.py) updated to support natural shape z-ordering and DrawingML alpha extraction in pure-Python preview exports.
+- **Resource Integration**: Seamlessly integrated with [`src/ppt_engine/resource_manager.py`](../../src/ppt_engine/resource_manager.py) for auto-resolution and graceful fallback to solid `#0F172A` cards and typographic pill badges (`[ METRODATA ]`).
+- **Exporter Enhancements**: [`src/ppt_engine/slide_exporter.py`](../../src/ppt_engine/slide_exporter.py) updated to support natural shape z-ordering and DrawingML alpha extraction in pure-Python preview exports.
 - **Verified Deliverables**:
   - PPTX Output: `output/verification_chapter_divider.pptx`
   - Visual Previews: `output/verification_previews/slide_01.png` (Photo + Scrim + Logo), `slide_02.png` (Photo Fallback), `slide_03.png` (Photo & Logo Fallback).
 - **Standards & Guidelines**:
-  - [`AGENTS.md`](../AGENTS.md): Enforced geometry rules, unified text frame, and 1/3 + 2/3 asymmetric composition rules.
-  - [`skills/presentation-maker/SKILL.md`](../skills/presentation-maker/SKILL.md): Added Chapter Divider archetype recipe and import references.
-  - [`skills/enterprise-bench-dev/SKILL.md`](../skills/enterprise-bench-dev/SKILL.md): Documented OpenXML alpha and de-squaring engine pattern.
+  - [`AGENTS.md`](../../AGENTS.md): Enforced geometry rules, unified text frame, and 1/3 + 2/3 asymmetric composition rules.
+  - [`skills/presentation-maker/SKILL.md`](../../skills/presentation-maker/SKILL.md): Added Chapter Divider archetype recipe and import references.
+  - [`skills/enterprise-bench-dev/SKILL.md`](../../skills/enterprise-bench-dev/SKILL.md): Documented OpenXML alpha and de-squaring engine pattern.

@@ -597,9 +597,8 @@ def frame_mockup_cli(
 
     # 5. Native desktop preview
     if open_image:
-        cmd = f'open -a "Preview" "{out_path.resolve()}"'
         rprint(f"[cyan]ℹ Launching desktop Preview:[/cyan] [bold]{out_path.name}[/bold]")
-        subprocess.run(cmd, shell=True)
+        subprocess.run(["open", "-a", "Preview", str(out_path.resolve())], check=False)
     else:
         rprint(f'[dim]Tip: View in Preview via desktop review: `open -a "Preview" "{out_path}"`[/dim]')
 
@@ -632,9 +631,8 @@ def export_preview_cli(
         rprint(f"  • {img.name}")
 
     if open_first and images:
-        cmd = f'open -a "Preview" "{images[0].resolve()}"'
         rprint(f"[cyan]ℹ Launching desktop Preview:[/cyan] [bold]{images[0].name}[/bold]")
-        subprocess.run(cmd, shell=True)
+        subprocess.run(["open", "-a", "Preview", str(images[0].resolve())], check=False)
 
 
 

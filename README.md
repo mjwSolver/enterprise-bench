@@ -37,7 +37,7 @@ uv sync --all-extras
 * **[`src/docx_engine/`](src/docx_engine/)**: Deterministic compliance and specification engine (`docxtpl` / OpenXML stamping for BAST, PKS, FSD, TSD, MoM).
 * **[`src/xlsx_engine/`](src/xlsx_engine/)**: Cloud calculators, S-curve progress tracking, and RAID log generators.
 * **[`src/core/`](src/core/)**: Shared Pydantic data models, corporate brand palettes, and PII sanitization.
-* **[`templates/`](templates/)**: 38 golden master enterprise templates extracted from real-world enterprise delivery.
+* **[`clean_workspace/`](clean_workspace/)**: 38 golden master enterprise templates extracted from real-world enterprise delivery.
 
 ---
 
@@ -59,7 +59,7 @@ uv run bench ppt themes
 uv run bench ppt generate --theme brickred --output output/AcmeDigital/presentations/strategic_deck.pptx
 
 # Scrub sensitive client names from a Word template and inject Jinja tokens
-uv run bench doc sanitize --input templates/07_Internal_Legal_Contracts/BAST_Milestone_1_Template.docx --output output/BAST_Sanitized.docx
+uv run bench doc sanitize --input clean_workspace/projects/TTI_Snowflake_Analytics/07_Internal_Legal_Contracts/BAST_Milestone_1_Template.docx --output output/BAST_Sanitized.docx
 
 # Stamp a Word template with JSON data payload
 uv run bench doc stamp --template output/BAST_Sanitized.docx --data payload.json --output output/BAST_Final.docx

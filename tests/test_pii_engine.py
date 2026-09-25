@@ -73,12 +73,12 @@ def test_pipeline_entity_dictionary():
     pipeline = DetectorPipeline()
     node = TextNode(
         location="Slide 1",
-        text="Presented by Agus Suhanto, Project Manager at PT Mitra Integrasi Informatika for Toyota Tsusho.",
+        text="Presented by Agus Pramono, Project Manager at PT Mitra Integrasi Informatika for Toyota Tsusho.",
         node_type="slide_shape",
     )
     matches = pipeline.scan_node(node)
     matched_values = [m.raw_value.lower() for m in matches]
-    assert any("agus suhanto" in v for v in matched_values)
+    assert any("agus pramono" in v for v in matched_values)
     assert any("mitra integrasi informatika" in v for v in matched_values)
     assert any("toyota tsusho" in v for v in matched_values)
 
@@ -90,7 +90,7 @@ def test_pipeline_entity_dictionary():
 def test_docx_handling(tmp_path: Path):
     doc_path = tmp_path / "test_contract.docx"
     doc = docx.Document()
-    doc.core_properties.author = "Agus Suhanto"
+    doc.core_properties.author = "Agus Pramono"
     doc.core_properties.comments = "Confidential Client Data"
 
     # Body
@@ -98,9 +98,9 @@ def test_docx_handling(tmp_path: Path):
     # Table
     tbl = doc.add_table(rows=2, cols=2)
     tbl.rows[0].cells[0].paragraphs[0].text = "Contact Person"
-    tbl.rows[0].cells[1].paragraphs[0].text = "Agus Suhanto"
+    tbl.rows[0].cells[1].paragraphs[0].text = "Agus Pramono"
     tbl.rows[1].cells[0].paragraphs[0].text = "Email"
-    tbl.rows[1].cells[1].paragraphs[0].text = "agus.suhanto@metrodata.co.id"
+    tbl.rows[1].cells[1].paragraphs[0].text = "agus.Pramono@metrodata.co.id"
     # Header
     doc.sections[0].header.paragraphs[0].text = "Confidential - TTI Snowflake Implementation"
 
@@ -111,7 +111,7 @@ def test_docx_handling(tmp_path: Path):
     nodes = handler.extract_text_nodes(doc_path)
     assert len(nodes) >= 4
     meta = handler.extract_metadata(doc_path)
-    assert meta["author"] == "Agus Suhanto"
+    assert meta["author"] == "Agus Pramono"
 
     # Test Engine Scan & Map & Sanitize
     engine = PiiEngine()
@@ -126,9 +126,9 @@ def test_docx_handling(tmp_path: Path):
     # Verify sanitized output
     clean_doc = docx.Document(str(clean_path))
     clean_text = " ".join(p.text for p in clean_doc.paragraphs)
-    assert "Agus Suhanto" not in clean_text
+    assert "Agus Pramono" not in clean_text
     assert "Toyota Tsusho" not in clean_text
-    assert clean_doc.core_properties.author != "Agus Suhanto"
+    assert clean_doc.core_properties.author != "Agus Pramono"
 
 
 # ============================================================================
@@ -143,7 +143,7 @@ def test_pptx_handling(tmp_path: Path):
     slide_layout = prs.slide_layouts[0]
     slide = prs.slides.add_slide(slide_layout)
     slide.shapes.title.text = "Project Kick-off for Toyota Tsusho"
-    slide.placeholders[1].text = "Presented by Adam Nevriyanto (Adam.Nevriyanto@metrodata.co.id)"
+    slide.placeholders[1].text = "Presented by Adam Wijaya (Adam.Wijaya@metrodata.co.id)"
 
     prs.save(str(ppt_path))
 
@@ -168,7 +168,7 @@ def test_pptx_handling(tmp_path: Path):
     clean_prs = pptx.Presentation(str(clean_path))
     assert clean_prs.core_properties.author != "Fredric Retanubun"
     clean_sub = clean_prs.slides[0].placeholders[1].text
-    assert "Adam Nevriyanto" not in clean_sub
+    assert "Adam Wijaya" not in clean_sub
     assert "@metrodata.co.id" not in clean_sub
 
 

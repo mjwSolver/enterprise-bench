@@ -580,8 +580,32 @@ class SlideValidator:
         geo_cfg = self.theme_config.get("geometry", {})
         max_border_pt = float(geo_cfg.get("max_border_width_pt", 2.0))
 
+        # Check Cover Slide footer anti-pattern (Slide 1 must never have footers or pagination)
+        if slide_num == 1:
+            for shape in slide.shapes:
+                try:
+                    top_in = shape.top.inches
+                    h_in = shape.height.inches
+                    if top_in >= 6.95 and h_in <= 0.40:
+                        issues.append(
+                            ValidationIssue(
+                                check_id="CHECK_5_THEME_GEOMETRY",
+                                check_name="Cover Slide Architecture Compliance",
+                                slide_number=slide_num,
+                                severity=Severity.ERROR,
+                                message="Cover slide contains illegal footer bar or pagination element (footers strictly start on slide 2).",
+                                shape_id=str(getattr(shape, "shape_id", "")),
+                                shape_name=getattr(shape, "name", "FooterElement"),
+                                found_value=f"top={top_in:.2f}\"",
+                                expected_threshold="No footer on slide 1",
+                                fix_suggestion="Remove slide footer and pagination from cover slide.",
+                            )
+                        )
+                except Exception:
+                    pass
+
+        # Check shape border stroke width and top stripe geometric alignment
         for shape in slide.shapes:
-            # Check shape border stroke width
             if hasattr(shape, "line") and shape.line.fill.type is not None:
                 if shape.line.width:
                     line_w_pt = shape.line.width.pt
@@ -600,6 +624,42 @@ class SlideValidator:
                                 fix_suggestion=f"Reduce line.width to Pt(1) or Pt({max_border_pt:.1f}).",
                             )
                         )
+
+            # Check geometric alignment: Container cards with top accent stripes MUST be sharp rectangles
+            try:
+                if getattr(shape, "auto_shape_type", None) == MSO_SHAPE.ROUNDED_RECTANGLE:
+                    s_left = shape.left.inches
+                    s_top = shape.top.inches
+                    s_w = shape.width.inches
+                    s_h = shape.height.inches
+
+                    # Only check large card containers, not small pills/badges
+                    if s_w >= 2.0 and s_h >= 1.0:
+                        for other in slide.shapes:
+                            if other is shape:
+                                continue
+                            if getattr(other, "auto_shape_type", None) == MSO_SHAPE.RECTANGLE:
+                                o_left = other.left.inches
+                                o_top = other.top.inches
+                                o_w = other.width.inches
+                                o_h = other.height.inches
+                                if o_h <= 0.15 and abs(o_top - s_top) < 0.05 and abs(o_left - s_left) < 0.05 and abs(o_w - s_w) < 0.05:
+                                    issues.append(
+                                        ValidationIssue(
+                                            check_id="CHECK_5_THEME_GEOMETRY",
+                                            check_name="Geometric Alignment Rule",
+                                            slide_number=slide_num,
+                                            severity=Severity.ERROR,
+                                            message="Container card with top accent stripe has rounded corners (MSO_SHAPE.ROUNDED_RECTANGLE). Both card and stripe MUST be sharp rectangles (MSO_SHAPE.RECTANGLE).",
+                                            shape_id=str(getattr(shape, "shape_id", "")),
+                                            shape_name=getattr(shape, "name", "CardContainer"),
+                                            found_value="ROUNDED_RECTANGLE + Top Stripe",
+                                            expected_threshold="MSO_SHAPE.RECTANGLE",
+                                            fix_suggestion="Change container shape to MSO_SHAPE.RECTANGLE or use add_card_with_top_stripe().",
+                                        )
+                                    )
+            except Exception:
+                pass
 
         return issues
 

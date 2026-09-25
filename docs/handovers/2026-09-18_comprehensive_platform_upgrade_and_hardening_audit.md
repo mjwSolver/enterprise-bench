@@ -205,7 +205,7 @@ The Change Request subsystem (`src/core/change_request.py`) is fully implemented
 ### D3. On-Demand Draw.io URI Embedder for Markdown & PPTX
 Currently, Draw.io diagrams can be compiled into `.drawio` and exported to PNG via CLI (`bench diagram export-all`), but Markdown specs and PPTX decks require manual intermediate PNG paths.
 - **Proposal:** Implement an On-Demand URI Resolver in `src/ppt_engine/diagram_engine.py`:
-  - Syntax: `![Architecture](presets/diagrams/fsd_architecture.yaml#Sales Dataflow)` or `![Pipeline](project.drawio#0)`
+  - Syntax: `![Architecture](<presets/diagrams/fsd_architecture.yaml#Sales Dataflow>)` or `![Pipeline](<project.drawio#0>)`
   - Automatically rasterizes the requested page to `output/.cache/diagrams/` at high DPI on demand.
 
 ### D4. Active Bilingual Sprint (`presets/locales/` Expansion)

@@ -242,7 +242,7 @@ class ClosingDeckBuilder:
             date_str=d.get("date_str", self.metadata.get("report_date", "01 September 2026")),
             tracker=d.get("tracker", "PROJECT CLOSING & MAINTENANCE TRANSITION"),
             client_sublabel=d.get("client_sublabel", "Steering Committee & Executive Sponsors"),
-            vendor_sublabel=d.get("vendor_sublabel", "Agus Suhanto, Project Manager, MII"),
+            vendor_sublabel=d.get("vendor_sublabel", "Agus Pramono, Project Manager, MII"),
         )
 
     # -------------------------------------------------------------------------
@@ -1638,9 +1638,9 @@ class ClosingDeckBuilder:
             "contacts",
             [
                 {
-                    "name": "Adam Nevriyanto",
+                    "name": "Andi Wijaya",
                     "role": "Solution Architect & Technical Lead",
-                    "email": "Adam.Nevriyanto@metrodata.co.id",
+                    "email": "Adam.Wijaya@metrodata.co.id",
                     "phone": "MII Technical Support Core",
                 },
                 {

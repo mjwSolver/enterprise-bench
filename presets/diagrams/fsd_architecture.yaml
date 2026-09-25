@@ -8,7 +8,7 @@ pages:
     theme: "modern_consulting"
     font_size: 15.0
     node_icons:
-      ERP: { icon: "pos_store", weight: "primary" }
+      ERP: { icon: "pos_store", weight: "secondary" }
       Kafka: { icon: "kafka", weight: "accent" }
       S3: { icon: "amazons3", weight: "secondary" }
       Snowflake: { icon: "snowflake", weight: "primary" }
@@ -16,11 +16,17 @@ pages:
       Streamlit: { icon: "mobile", weight: "accent" }
     mermaid: |
       graph LR
-        ERP["SAP ERP (Sales Orders)"] --> Kafka["Kafka Stream Bus"]
-        Kafka --> S3["Amazon S3 Raw Lake"]
-        S3 --> Snowflake["Snowflake RAW_STG"]
-        Snowflake --> DBT["dbt Core (Gold Sales Mart)"]
-        DBT --> Streamlit["Streamlit Executive Portal"]
+        subgraph Ingestion["1. Ingestion Layer"]
+          ERP["SAP ERP (Sales Orders)"] --> Kafka["Kafka Stream Bus"]
+        end
+        subgraph Lakehouse["2. Lakehouse Core"]
+          S3["Amazon S3 Raw Lake"] --> Snowflake["Snowflake RAW_STG"]
+        end
+        subgraph Delivery["3. Analytics Delivery"]
+          DBT["dbt Core (Gold Mart)"] --> Streamlit["Streamlit Executive Portal"]
+        end
+        Kafka --> S3
+        Snowflake --> DBT
 
   - name: "02_Gross_Profit_Use_Case"
     theme: "modern_consulting"
@@ -33,10 +39,19 @@ pages:
       BI: { icon: "mobile", weight: "accent" }
     mermaid: |
       graph LR
-        COGS["SAP COGS Ledger"] --> Snowflake["Snowflake DWH"]
-        Sales["Sales Invoices"] --> Snowflake
-        Snowflake --> DBT["dbt Margin Calculator"]
-        DBT --> BI["Gross Profit Dashboard"]
+        subgraph Sources["1. Source Ledgers"]
+          COGS["SAP COGS Ledger"]
+          Sales["Sales Invoices"]
+        end
+        subgraph Warehouse["2. DWH & Transformation"]
+          Snowflake["Snowflake DWH"] --> DBT["dbt Margin Calculator"]
+        end
+        subgraph Reporting["3. Analytics View"]
+          BI["Gross Profit Dashboard"]
+        end
+        COGS --> Snowflake
+        Sales --> Snowflake
+        DBT --> BI
 
   - name: "03_Operating_Profit_Use_Case"
     theme: "modern_consulting"
@@ -49,10 +64,19 @@ pages:
       Exec: { icon: "mobile", weight: "accent" }
     mermaid: |
       graph LR
-        OPEX["SG&A Expenses"] --> Snowflake["Snowflake DWH"]
-        Payroll["HR Payroll Ledger"] --> Snowflake
-        Snowflake --> DBT["dbt EBITDA Models"]
-        DBT --> Exec["EBITDA Executive View"]
+        subgraph Expenses["1. Expense Sources"]
+          OPEX["SG&A Expenses"]
+          Payroll["HR Payroll Ledger"]
+        end
+        subgraph Warehouse["2. DWH & Modeling"]
+          Snowflake["Snowflake DWH"] --> DBT["dbt EBITDA Models"]
+        end
+        subgraph Executive["3. Executive View"]
+          Exec["EBITDA Executive View"]
+        end
+        OPEX --> Snowflake
+        Payroll --> Snowflake
+        DBT --> Exec
 
   - name: "04_Profit_Before_Tax_Use_Case"
     theme: "modern_consulting"
@@ -64,9 +88,19 @@ pages:
       PBT_Report: { icon: "mobile", weight: "accent" }
     mermaid: |
       graph LR
-        EBIT["Operating Profit Mart"] --> DBT["dbt PBT Model"]
-        Finance["Interest & Non-Op Income"] --> DBT
-        DBT --> PBT_Report["Statutory PBT Statement"]
+        subgraph Inputs["1. Upstream Marts"]
+          EBIT["Operating Profit Mart"]
+          Finance["Interest & Non-Op Income"]
+        end
+        subgraph Modeling["2. Tax Modeling"]
+          DBT["dbt PBT Model"]
+        end
+        subgraph Statutory["3. Statutory Filing"]
+          PBT_Report["Statutory PBT Statement"]
+        end
+        EBIT --> DBT
+        Finance --> DBT
+        DBT --> PBT_Report
 
   - name: "05_TVA_ROIC_Use_Case"
     theme: "modern_consulting"
@@ -78,28 +112,66 @@ pages:
       ROIC: { icon: "mobile", weight: "accent" }
     mermaid: |
       graph LR
-        NOPAT["Net Operating Profit"] --> DBT["dbt ROIC Engine"]
-        Capital["Invested Capital Base"] --> DBT
-        DBT --> ROIC["ROIC Performance Scorecard"]
+        subgraph Valuation["1. Value Drivers"]
+          NOPAT["Net Operating Profit"]
+          Capital["Invested Capital Base"]
+        end
+        subgraph Engine["2. ROIC Engine"]
+          DBT["dbt ROIC Engine"]
+        end
+        subgraph Scorecard["3. Scorecard"]
+          ROIC["ROIC Performance Scorecard"]
+        end
+        NOPAT --> DBT
+        Capital --> DBT
+        DBT --> ROIC
 
   - name: "06_Sales_Entities_Schema"
     theme: "modern_consulting"
     font_size: 15.0
+    node_icons:
+      DimCust: { icon: "lucide:users", weight: "secondary" }
+      DimProd: { icon: "lucide:layers", weight: "secondary" }
+      DimBranch: { icon: "lucide:building-2", weight: "secondary" }
+      DimDate: { icon: "lucide:calendar", weight: "secondary" }
+      FactSales: { icon: "lucide:table", weight: "primary" }
     mermaid: |
-      graph TD
-        DimCust["dim_customer (Customer Master)"] --> FactSales["fact_sales_orders (Transactions)"]
-        DimProd["dim_product (SKU Master)"] --> FactSales
-        DimBranch["dim_branch (Logistics Hub)"] --> FactSales
-        DimDate["dim_date (Fiscal Calendar)"] --> FactSales
+      graph LR
+        subgraph Dimensions["Master Dimensions"]
+          DimCust["dim_customer (Customer Master)"]
+          DimProd["dim_product (SKU Master)"]
+          DimBranch["dim_branch (Logistics Hub)"]
+          DimDate["dim_date (Fiscal Calendar)"]
+        end
+        subgraph Facts["Transactional Fact"]
+          FactSales["fact_sales_orders (Transactions)"]
+        end
+        DimCust --> FactSales
+        DimProd --> FactSales
+        DimBranch --> FactSales
+        DimDate --> FactSales
 
   - name: "07_Gross_Profit_Entities"
     theme: "modern_consulting"
     font_size: 15.0
+    node_icons:
+      FactSales: { icon: "lucide:table", weight: "secondary" }
+      DimCost: { icon: "lucide:dollar-sign", weight: "secondary" }
+      DimChannel: { icon: "lucide:radio", weight: "secondary" }
+      FactMargin: { icon: "lucide:table", weight: "primary" }
     mermaid: |
-      graph TD
-        FactSales["fact_sales_orders"] --> FactMargin["fact_gross_margin (Calculated)"]
-        DimCost["dim_standard_cost (Unit Costs)"] --> FactMargin
-        DimChannel["dim_sales_channel (B2B / Retail)"] --> FactMargin
+      graph LR
+        subgraph Inputs["Transactional Inputs"]
+          FactSales["fact_sales_orders"]
+          DimCost["dim_standard_cost (Unit Costs)"]
+          DimChannel["dim_sales_channel (B2B / Retail)"]
+        end
+        subgraph MarginMart["Calculated Margin"]
+          FactMargin["fact_gross_margin (Calculated)"]
+        end
+        FactSales --> FactMargin
+        DimCost --> FactMargin
+        DimChannel --> FactMargin
 
   - name: "08_AR_Overdue_Use_Case"
     theme: "modern_consulting"
@@ -112,10 +184,19 @@ pages:
       Aging: { icon: "mobile", weight: "accent" }
     mermaid: |
       graph LR
-        Billing["SAP AR Open Items"] --> Snowflake["Snowflake DWH"]
-        Bank["Bank Statement Cleared"] --> Snowflake
-        Snowflake --> DBT["dbt Aging Bucket Logic"]
-        DBT --> Aging["AR Overdue Watchlist"]
+        subgraph Ingestion["1. Financial Sources"]
+          Billing["SAP AR Open Items"]
+          Bank["Bank Statement Cleared"]
+        end
+        subgraph Core["2. Warehouse & Aging Logic"]
+          Snowflake["Snowflake DWH"] --> DBT["dbt Aging Bucket Logic"]
+        end
+        subgraph RiskView["3. Credit Watchlist"]
+          Aging["AR Overdue Watchlist"]
+        end
+        Billing --> Snowflake
+        Bank --> Snowflake
+        DBT --> Aging
 
   - name: "09_Inventory_Aging_Use_Case"
     theme: "modern_consulting"
@@ -128,10 +209,18 @@ pages:
       Stock: { icon: "mobile", weight: "accent" }
     mermaid: |
       graph LR
-        WMS["Logistics WMS System"] --> S3["Amazon S3 Raw"]
-        S3 --> Snowflake["Snowflake Staging"]
-        Snowflake --> DBT["dbt FIFO Valuation"]
-        DBT --> Stock["Inventory Aging Matrix"]
+        subgraph Ingestion["1. Logistics Ingestion"]
+          WMS["Logistics WMS System"]
+        end
+        subgraph Processing["2. Warehouse & Analytics"]
+          S3["Amazon S3 Raw"] --> Snowflake["Snowflake Staging"]
+          Snowflake --> DBT["dbt FIFO Valuation"]
+        end
+        subgraph Consumption["3. Inventory Matrix"]
+          Stock["Inventory Aging Matrix"]
+        end
+        WMS --> S3
+        DBT --> Stock
 
   - name: "10_Summary_and_Ref_Data"
     theme: "modern_consulting"
@@ -142,55 +231,130 @@ pages:
       Snowflake: { icon: "snowflake", weight: "primary" }
       Marts: { icon: "dbt", weight: "primary" }
     mermaid: |
-      graph TD
-        MDM["Enterprise Master Data"] --> Snowflake["Snowflake Golden Hub"]
-        ERP["Transactional Systems"] --> Snowflake
-        Snowflake --> Marts["Consolidated Enterprise Marts"]
+      graph LR
+        subgraph Sources["1. Master & Source Data"]
+          MDM["Enterprise Master Data"]
+          ERP["Transactional Systems"]
+        end
+        subgraph Core["2. Golden Hub"]
+          Snowflake["Snowflake Golden Hub"]
+        end
+        subgraph Delivery["3. Consolidated Marts"]
+          Marts["Consolidated Enterprise Marts"]
+        end
+        MDM --> Snowflake
+        ERP --> Snowflake
+        Snowflake --> Marts
 
   - name: "11_Operating_Profit_Entities"
     theme: "modern_consulting"
     font_size: 15.0
+    node_icons:
+      DimCC: { icon: "lucide:building-2", weight: "secondary" }
+      DimGL: { icon: "lucide:file-spreadsheet", weight: "secondary" }
+      DimPeriod: { icon: "lucide:calendar", weight: "secondary" }
+      FactOpex: { icon: "lucide:table", weight: "primary" }
     mermaid: |
-      graph TD
-        DimCC["dim_cost_center (Organization)"] --> FactOpex["fact_operating_expenses"]
-        DimGL["dim_chart_of_accounts (GL Accounts)"] --> FactOpex
-        DimPeriod["dim_fiscal_period (Monthly)"] --> FactOpex
+      graph LR
+        subgraph Dimensions["Master Dimensions"]
+          DimCC["dim_cost_center (Organization)"]
+          DimGL["dim_chart_of_accounts (GL Accounts)"]
+          DimPeriod["dim_fiscal_period (Monthly)"]
+        end
+        subgraph Facts["Operating Expenses"]
+          FactOpex["fact_operating_expenses"]
+        end
+        DimCC --> FactOpex
+        DimGL --> FactOpex
+        DimPeriod --> FactOpex
 
   - name: "12_PBT_Entities_Schema"
     theme: "modern_consulting"
     font_size: 15.0
+    node_icons:
+      FactOpex: { icon: "lucide:table", weight: "secondary" }
+      FactGross: { icon: "lucide:table", weight: "secondary" }
+      DimTax: { icon: "lucide:shield-check", weight: "secondary" }
+      FactPBT: { icon: "lucide:table", weight: "primary" }
     mermaid: |
-      graph TD
-        FactOpex["fact_operating_expenses"] --> FactPBT["fact_consolidated_pbt"]
-        FactGross["fact_gross_margin"] --> FactPBT
-        DimTax["dim_tax_entity (Legal Entity)"] --> FactPBT
+      graph LR
+        subgraph Upstream["Upstream Inputs"]
+          FactOpex["fact_operating_expenses"]
+          FactGross["fact_gross_margin"]
+          DimTax["dim_tax_entity (Legal Entity)"]
+        end
+        subgraph Consolidated["Consolidated PBT"]
+          FactPBT["fact_consolidated_pbt"]
+        end
+        FactOpex --> FactPBT
+        FactGross --> FactPBT
+        DimTax --> FactPBT
 
   - name: "13_AR_Aging_Entities"
     theme: "modern_consulting"
     font_size: 15.0
+    node_icons:
+      DimCustomer: { icon: "lucide:users", weight: "secondary" }
+      DimPayment: { icon: "lucide:dollar-sign", weight: "secondary" }
+      DimAgingBucket: { icon: "lucide:calendar-clock", weight: "secondary" }
+      FactAR: { icon: "lucide:table", weight: "primary" }
     mermaid: |
-      graph TD
-        DimCustomer["dim_customer (Debtor)"] --> FactAR["fact_ar_open_invoices"]
-        DimPayment["dim_payment_terms (Net 30/60)"] --> FactAR
-        DimAgingBucket["dim_aging_bucket (0-30, 31-60, 61+)"] --> FactAR
+      graph LR
+        subgraph Dimensions["Master Dimensions"]
+          DimCustomer["dim_customer (Debtor)"]
+          DimPayment["dim_payment_terms (Net 30/60)"]
+          DimAgingBucket["dim_aging_bucket (0-30, 31-60, 61+)"]
+        end
+        subgraph Facts["AR Invoices"]
+          FactAR["fact_ar_open_invoices"]
+        end
+        DimCustomer --> FactAR
+        DimPayment --> FactAR
+        DimAgingBucket --> FactAR
 
   - name: "14_Inventory_Aging_Entities"
     theme: "modern_consulting"
     font_size: 15.0
+    node_icons:
+      DimWhs: { icon: "lucide:building-2", weight: "secondary" }
+      DimItem: { icon: "lucide:layers", weight: "secondary" }
+      DimAgeRange: { icon: "lucide:calendar-clock", weight: "secondary" }
+      FactStock: { icon: "lucide:table", weight: "primary" }
     mermaid: |
-      graph TD
-        DimWhs["dim_warehouse (Depot)"] --> FactStock["fact_stock_on_hand"]
-        DimItem["dim_product (Lot/Batch)"] --> FactStock
-        DimAgeRange["dim_shelf_life_bucket"] --> FactStock
+      graph LR
+        subgraph Dimensions["Master Dimensions"]
+          DimWhs["dim_warehouse (Depot)"]
+          DimItem["dim_product (Lot/Batch)"]
+          DimAgeRange["dim_shelf_life_bucket"]
+        end
+        subgraph Facts["Inventory Position"]
+          FactStock["fact_stock_on_hand"]
+        end
+        DimWhs --> FactStock
+        DimItem --> FactStock
+        DimAgeRange --> FactStock
 
   - name: "15_TVA_ROIC_Entities"
     theme: "modern_consulting"
     font_size: 15.0
+    node_icons:
+      FactAssets: { icon: "lucide:table", weight: "secondary" }
+      FactIncome: { icon: "lucide:table", weight: "secondary" }
+      DimBU: { icon: "lucide:building-2", weight: "secondary" }
+      FactROIC: { icon: "lucide:table", weight: "primary" }
     mermaid: |
-      graph TD
-        FactAssets["fact_balance_sheet_assets"] --> FactROIC["fact_divisional_roic"]
-        FactIncome["fact_consolidated_pbt"] --> FactROIC
-        DimBU["dim_business_unit (Subsidiary)"] --> FactROIC
+      graph LR
+        subgraph Inputs["Financial Inputs"]
+          FactAssets["fact_balance_sheet_assets"]
+          FactIncome["fact_consolidated_pbt"]
+          DimBU["dim_business_unit (Subsidiary)"]
+        end
+        subgraph ValuationMart["Divisional ROIC"]
+          FactROIC["fact_divisional_roic"]
+        end
+        FactAssets --> FactROIC
+        FactIncome --> FactROIC
+        DimBU --> FactROIC
 
   - name: "16_Platform_Security_and_RBAC"
     theme: "modern_consulting"
@@ -203,10 +367,17 @@ pages:
       SOC2: { icon: "soc2_badge", weight: "accent" }
     mermaid: |
       graph LR
-        Vault["HashiCorp Vault (Secrets)"] --> AWS_IAM["AWS IAM Role Federation"]
-        AWS_IAM --> Snow_RBAC["Snowflake Dynamic Role-Based Access"]
-        Snow_RBAC --> Audit["CloudTrail & Snowflake Access History"]
-        Audit --> SOC2["SOC2 / UU PDP Compliance Gateway"]
+        subgraph Identity["1. Identity & Credentials"]
+          Vault["HashiCorp Vault (Secrets)"] --> AWS_IAM["AWS IAM Role Federation"]
+        end
+        subgraph Authorization["2. Access Governance"]
+          Snow_RBAC["Snowflake Dynamic RBAC"]
+        end
+        subgraph Compliance["3. Audit & Compliance"]
+          Audit["CloudTrail & Access Log"] --> SOC2["SOC2 Compliance Gateway"]
+        end
+        AWS_IAM --> Snow_RBAC
+        Snow_RBAC --> Audit
 
   - name: "17_Enterprise_Lakehouse_Topology"
     theme: "modern_consulting"
@@ -220,8 +391,14 @@ pages:
       PowerBI: { icon: "mobile", weight: "accent" }
     mermaid: |
       graph LR
-        SAP["SAP ERP Core"] --> Kafka["Kafka Streaming Bus"]
-        Kafka --> S3["Amazon S3 Data Lake"]
-        S3 --> Snowflake["Snowflake Cloud DW"]
-        Snowflake --> DBT["dbt Transformation Core"]
-        DBT --> PowerBI["Power BI & Streamlit Analytics"]
+        subgraph Sources["1. Ingestion Sources"]
+          SAP["SAP ERP Core"] --> Kafka["Kafka Streaming Bus"]
+        end
+        subgraph Lakehouse["2. Storage & Compute"]
+          S3["Amazon S3 Data Lake"] --> Snowflake["Snowflake Cloud DW"]
+        end
+        subgraph Analytics["3. Analytics & BI"]
+          DBT["dbt Transformation Core"] --> PowerBI["Power BI & Streamlit"]
+        end
+        Kafka --> S3
+        Snowflake --> DBT

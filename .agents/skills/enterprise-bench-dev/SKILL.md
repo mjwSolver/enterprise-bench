@@ -156,5 +156,5 @@ After editing `src/cli.py`:
 - **Execution Environment**: Always execute Python commands through `uv run ...`.
 - **Typing**: Use strict Python 3.10+ type hints (`dict[str, Any]`, `list[str]`, `str | None`).
 - **Pathing**: Always use `pathlib.Path` resolved relative to `src.core.config.ROOT_DIR` or `clean_workspace/`. Never use hardcoded absolute machine paths.
-- **Relative Links**: In documentation, always use relative markdown links (e.g., `[LIFECYCLE.md](LIFECYCLE.md)`).
+- **Relative Links**: In documentation, always use relative markdown links (e.g., `[LIFECYCLE.md](../../LIFECYCLE.md)`).
 - **Workspace File Writes**: When authoring or staging new workspace files, use [`scripts/write_file.py`](../../scripts/write_file.py) to avoid shell escaping pitfalls.

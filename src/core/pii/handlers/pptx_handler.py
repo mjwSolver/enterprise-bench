@@ -133,8 +133,14 @@ class PptxHandler(BaseFormatHandler):
         prs = pptx.Presentation(str(input_path))
         repl_count = 0
         details: List[str] = []
-
         sorted_replacements = sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True)
+        # Compile replacement rules into regex patterns (supports both regexes and literals)
+        compiled_rules: List[Tuple[re.Pattern, str]] = []
+        for target, replacement in sorted_replacements:
+            try:
+                compiled_rules.append((re.compile(target, flags=re.IGNORECASE), replacement))
+            except re.error:
+                compiled_rules.append((re.compile(re.escape(target), flags=re.IGNORECASE), replacement))
 
         def _clean_paragraph(p, location: str) -> int:
             nonlocal repl_count
@@ -148,20 +154,22 @@ class PptxHandler(BaseFormatHandler):
                     continue
                 orig = run.text
                 new_val = orig
-                for target, replacement in sorted_replacements:
-                    if target.lower() in new_val.lower():
-                        new_val = re.sub(re.escape(target), replacement, new_val, flags=re.IGNORECASE)
+                for regex, replacement in compiled_rules:
+                    if regex.search(new_val):
+                        new_val = regex.sub(replacement, new_val)
                 if new_val != orig:
                     run.text = new_val
                     local_applied += 1
 
             # Paragraph-level fallback if entity was fragmented across runs
             p_text = p.text
-            for target, replacement in sorted_replacements:
-                if re.search(re.escape(target), p_text, flags=re.IGNORECASE):
-                    p.text = re.sub(re.escape(target), replacement, p_text, flags=re.IGNORECASE)
-                    local_applied += 1
-                    p_text = p.text
+            orig_p_text = p_text
+            for regex, replacement in compiled_rules:
+                if regex.search(p_text):
+                    p_text = regex.sub(replacement, p_text)
+            if p_text != orig_p_text:
+                p.text = p_text
+                local_applied += 1
 
             if local_applied:
                 details.append(f"Replaced {local_applied} entity(ies) in {location}")

@@ -2,8 +2,8 @@
 
 > **Status:** Open Backlog / Architecture & Visual Design Specification  
 > **Topic:** Master Cover Slide Redesign, Hero Plate Composition, Cinematic Tech Imagery, Beyond Plain Text Openings  
-> **Target Subsystems:** [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py), [`src/ppt_engine/reference_slides.py`](../src/ppt_engine/reference_slides.py), [`assets/images/`](../assets/images/)  
-> **Benchmark Reference:** Original Presales Pitch Deck Cover ([`media_1789563662926.png`](../assets/images/)) / [`Modernize_Data_Platform_Pitch_Deck_Template.pptx`](../clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx)
+> **Target Subsystems:** [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py), [`src/ppt_engine/reference_slides.py`](../../src/ppt_engine/reference_slides.py), [`assets/images/`](../../assets/images)  
+> **Benchmark Reference:** Original Presales Pitch Deck Cover ([`media_1789563662926.png`](../../assets/images)) / [`Modernize_Data_Platform_Pitch_Deck_Template.pptx`](../../clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx)
 
 ---
 

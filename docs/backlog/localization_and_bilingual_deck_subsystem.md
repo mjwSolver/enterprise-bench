@@ -2,7 +2,7 @@
 
 > **Status:** Open Backlog / Architecture & Strategy Specification  
 > **Topic:** Multi-Language Delivery, English-to-Indonesian Translation Engine, Bilingual PMO Glossary, Local Enterprise Compliance  
-> **Target Subsystems:** [`src/ppt_engine`](../src/ppt_engine), [`src/docx_engine`](../src/docx_engine), [`src/core`](../src/core), [`presets/deck_configs`](../presets/deck_configs)  
+> **Target Subsystems:** [`src/ppt_engine`](../../src/ppt_engine), [`src/docx_engine`](../../src/docx_engine), [`src/core`](../../src/core), [`presets/deck_configs`](../../presets/deck_configs)  
 > **Applicability:** All consulting presentations, governance reference slides, legal contracts (PKS/BAST), and technical specifications.
 
 ---

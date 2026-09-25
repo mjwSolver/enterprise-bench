@@ -7,7 +7,7 @@ metadata:
   client_name: "[CLIENT_COMPANY_NAME]"
   vendor_name: "PT Mitra Integrasi Informatika"
   report_date: "01 September 2026"
-  presenter: "Agus Suhanto, Project Manager, MII"
+  presenter: "Agus Pramono, Project Manager, MII"
   confidentiality: "[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Confidential"
 
 spreadsheets:
@@ -24,7 +24,7 @@ slides:
     date_str: "01 September 2026"
     tracker: "PROJECT CLOSING & MAINTENANCE TRANSITION"
     client_sublabel: "Steering Committee & Executive Sponsors"
-    vendor_sublabel: "Agus Suhanto, Project Manager, MII"
+    vendor_sublabel: "Agus Pramono, Project Manager, MII"
 
   # Slide 2: Table of Contents / Executive Agenda
   - archetype: agenda
@@ -328,9 +328,9 @@ slides:
         accent: "success"
         desc: "MII delivers code remediation, conducts SIT, updates timesheet, and secures [CLIENT_SHORT_NAME] sign-off."
     contacts:
-      - name: "Adam Nevriyanto"
+      - name: "Andi Wijaya"
         role: "Solution Architect & Technical Lead"
-        email: "Adam.Nevriyanto@metrodata.co.id"
+        email: "Adam.Wijaya@metrodata.co.id"
         phone: "MII Technical Support Core"
       - name: "Vicko Bhayyu"
         role: "Senior Data Engineer & Maintenance Lead"
@@ -380,9 +380,9 @@ slides:
     office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
     notice: "[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Confidential"
     contacts:
-      - name: "Agus Suhanto"
+      - name: "Agus Pramono"
         role: "Project Manager, MII"
-        email: "agus.suhanto@metrodata.co.id"
+        email: "agus.Pramono@metrodata.co.id"
       - name: "Engagement Leadership"
         role: "Data & AI Modernization Practice"
         email: "enterprise.consulting@metrodata.co.id"

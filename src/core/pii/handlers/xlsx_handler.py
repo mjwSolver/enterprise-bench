@@ -114,18 +114,23 @@ class XlsxHandler(BaseFormatHandler):
         wb = openpyxl.load_workbook(str(input_path))
         repl_count = 0
         details: List[str] = []
-
         sorted_replacements = sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True)
+        # Compile replacement rules into regex patterns (supports both regexes and literals)
+        compiled_rules: List[Tuple[re.Pattern, str]] = []
+        for target, replacement in sorted_replacements:
+            try:
+                compiled_rules.append((re.compile(target, flags=re.IGNORECASE), replacement))
+            except re.error:
+                compiled_rules.append((re.compile(re.escape(target), flags=re.IGNORECASE), replacement))
 
         for sheet in wb.worksheets:
             # Check sheet title
             orig_title = sheet.title
             new_title = orig_title
-            for target, replacement in sorted_replacements:
-                if target in new_title:
-                    # Clean title safe for Excel (max 31 chars, no invalid chars)
+            for regex, replacement in compiled_rules:
+                if regex.search(new_title):
                     safe_repl = replacement.replace("{", "").replace("}", "")
-                    new_title = re.sub(re.escape(target), safe_repl, new_title, flags=re.IGNORECASE)[:31]
+                    new_title = regex.sub(safe_repl, new_title)[:31]
             if new_title != orig_title:
                 sheet.title = new_title
                 repl_count += 1
@@ -136,12 +141,11 @@ class XlsxHandler(BaseFormatHandler):
                 for cell in row:
                     val = cell.value
                     if val is not None and isinstance(val, str):
-                        # Avoid corrupting formulas starting with = unless explicitly matching
                         orig_val = val
                         new_val = orig_val
-                        for target, replacement in sorted_replacements:
-                            if target.lower() in new_val.lower():
-                                new_val = re.sub(re.escape(target), replacement, new_val, flags=re.IGNORECASE)
+                        for regex, replacement in compiled_rules:
+                            if regex.search(new_val):
+                                new_val = regex.sub(replacement, new_val)
                         if new_val != orig_val:
                             cell.value = new_val
                             repl_count += 1
@@ -150,9 +154,9 @@ class XlsxHandler(BaseFormatHandler):
                     if cell.comment and cell.comment.text:
                         orig_c = cell.comment.text
                         new_c = orig_c
-                        for target, replacement in sorted_replacements:
-                            if target.lower() in new_c.lower():
-                                new_c = re.sub(re.escape(target), replacement, new_c, flags=re.IGNORECASE)
+                        for regex, replacement in compiled_rules:
+                            if regex.search(new_c):
+                                new_c = regex.sub(replacement, new_c)
                         if new_c != orig_c:
                             cell.comment.text = new_c
                             repl_count += 1

@@ -40,7 +40,7 @@ graph LR
   end
 ```
 
-![Figure 1.1: Target Architecture & Reporting Dataflow Topology](output/diagrams/fsd_declarative/17_enterprise_lakehouse_topology.png)
+![Figure 1.1: Target Architecture & Reporting Dataflow Topology](../../../output/diagrams/fsd_declarative/17_enterprise_lakehouse_topology.png)
 
 ---
 

@@ -2,9 +2,9 @@
 
 > **Status:** Open Backlog / Architecture & Design Specification  
 > **Topic:** Presales Pitch Deck Modernization, Screenshot-to-Code Transformation, Vector Diagram Architecture, Window Mockup Containers  
-> **Target Template:** [`clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx`](../clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx)  
-> **Inspection Benchmark:** [`output/template_previews/pitch_deck/`](../output/template_previews/pitch_deck/) (Slides 01–36)  
-> **Target Subsystems:** [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py), [`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py), [`src/ppt_engine/image_engine.py`](../src/ppt_engine/image_engine.py), [`src/ppt_engine/theme_engine.py`](../src/ppt_engine/theme_engine.py)
+> **Target Template:** [`clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx`](../../clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx)  
+> **Inspection Benchmark:** [`output/template_previews/pitch_deck/`](../../output/template_previews/pitch_deck) (Slides 01–36)  
+> **Target Subsystems:** [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py), [`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py), [`src/ppt_engine/image_engine.py`](../../src/ppt_engine/image_engine.py), [`src/ppt_engine/theme_engine.py`](../../src/ppt_engine/theme_engine.py)
 
 ---
 

@@ -13,7 +13,7 @@ In our columnar diagram architecture (`flowchart LR`, where subgraphs represent 
 * **Example:** 4 distinct source nodes (`Mobile Loyalty App`, `In-Store POS`, `E-Commerce Webhooks`, `SAP ERP CDC`) all route to `AWS API Gateway` and `Apache Kafka`.
 
 ### The Visual Defect ("Mess of Cables")
-Currently, `HierarchicalLayoutEngine` and `DiagramRenderer` in [`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py) calculate orthogonal Manhattan routes (`L`-shaped segments) **independently for every individual edge**:
+Currently, `HierarchicalLayoutEngine` and `DiagramRenderer` in [`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py) calculate orthogonal Manhattan routes (`L`-shaped segments) **independently for every individual edge**:
 1. Each edge generates its own vertical drop and horizontal turn within the narrow inter-column channel (~125 px width).
 2. Multiple lines run parallel with awkward micro-offsets or directly overlap, creating visual clutter and confusing crossings.
 3. Downstream arrows converge at the exact same connector anchor, creating a thick, tangled blob of arrowhead artifacts.
@@ -71,7 +71,7 @@ Column 1 (Sources)           Gutter Channel             Column 2 (Streaming)
 
 ## 3. Technical Architecture & File Modification Points
 
-All required logic lives inside [`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py).
+All required logic lives inside [`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py).
 
 ### A. Bus Group Detection in `HierarchicalLayoutEngine`
 In `_compute_subgraph_columnar_layout()` or a new helper `_bundle_columnar_edges()`:

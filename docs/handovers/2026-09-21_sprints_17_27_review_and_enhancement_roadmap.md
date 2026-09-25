@@ -153,7 +153,7 @@ The user has formally instructed that **"Nusantara Global Logistics"** (short na
      - *Remedy:* Enforce `shape.shadow.inherit = False` across all timeline shapes.
    - *Micro-Typography Elimination:* Replace `Pt(7.5)` task fonts and `Pt(7.0)` tag fonts with a minimum floor of $\ge 11.0\text{pt}$ (or scaled appropriately with generous row height).
 4. **Slide 19 (Thank You / Closing) Staff Contacts vs. Clean Default:**
-   - *Observation:* Slide 19 currently hardcodes real employee names and emails (`Agus Suhanto`, `Dian Eka`, `Vicko Bhayyu`) as default contact cards in `build_thank_you_slide` (`consulting_archetypes.py:5406-5412`).
+   - *Observation:* Slide 19 currently hardcodes real employee names and emails (`Agus Pramono`, `Dian Eka`, `Vicko Bhayyu`) as default contact cards in `build_thank_you_slide` (`consulting_archetypes.py:5406-5412`).
    - *Remedy for Next Agent:* Modify `build_thank_you_slide` to default to a **clean corporate closing** (Thank You title, division tagline, office address/general contact) with `contacts=None` / `show_staff_contacts=False` by default. Individual staff contacts must be strictly opt-in and parameterized.
 5. **Asset Deduplication:** Avoid copy-pasting visual assets across different pitch and kickoff decks; each deliverable must feature tailored, distinct visuals.
 

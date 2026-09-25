@@ -26,11 +26,11 @@ reviewers:
     status: "APPROVED"
     date: "15 Jul 2026"
   - role: "Client Project Manager"
-    name: "Agus Suhanto"
+    name: "Dewi Lestari"
     status: "APPROVED"
     date: "16 Jul 2026"
   - role: "Steering Committee Sponsor"
-    name: "Arif Nanda Atmavidya"
+    name: "Hendra Setiawan"
     status: "APPROVED"
     date: "18 Jul 2026"
 ---

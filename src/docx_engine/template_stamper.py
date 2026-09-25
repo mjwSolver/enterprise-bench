@@ -42,10 +42,11 @@ class TemplateStamper:
         context: Union[Dict[str, Any], BaseModel],
         output_path: Union[str, Path],
         auto_lint: bool = True,
+        purge_elements: bool = True,
     ) -> Tuple[Path, Optional[LintReport]]:
         """
         Renders the template with the provided context dictionary or Pydantic model.
-        Saves output to output_path and runs verification lint.
+        Saves output to output_path, purges editorial artifacts, and runs verification lint.
         """
         if isinstance(context, BaseModel):
             if hasattr(context, "to_template_context"):
@@ -100,6 +101,10 @@ class TemplateStamper:
         out_p.parent.mkdir(parents=True, exist_ok=True)
         self.doc.save(str(out_p))
 
+        if purge_elements:
+            from src.core.docx_purger import purge_docx_elements
+            purge_docx_elements(out_p, out_p, purge_comments=True, purge_highlights=True, accept_revisions=True)
+
         report = None
         if auto_lint:
             report = lint_document(out_p)
@@ -112,7 +117,8 @@ def stamp_template(
     context: Union[Dict[str, Any], BaseModel],
     output_path: Union[str, Path],
     auto_lint: bool = True,
+    purge_elements: bool = True,
 ) -> Tuple[Path, Optional[LintReport]]:
     """Convenience helper to load, stamp, and validate a document in one call."""
     stamper = TemplateStamper(template_name_or_path)
-    return stamper.render(context=context, output_path=output_path, auto_lint=auto_lint)
+    return stamper.render(context=context, output_path=output_path, auto_lint=auto_lint, purge_elements=purge_elements)

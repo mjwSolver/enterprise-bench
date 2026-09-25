@@ -47,7 +47,7 @@ Tier 1: Ingress              Tier 2: Analytics             Tier 3: Control
 
 ## 2. Root Cause Mechanics
 
-The visual defect was not a single bug, but the superposition of two independent routing failures in [`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py) combined with a hardcoded port mapping in the Draw.io XML generator:
+The visual defect was not a single bug, but the superposition of two independent routing failures in [`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py) combined with a hardcoded port mapping in the Draw.io XML generator:
 
 ### Cause A: Midpoint Cross-Column Slicing
 In `DiagramRenderer.render_svg()`, horizontal orthogonal routing was calculated using naive midpoint interpolation:

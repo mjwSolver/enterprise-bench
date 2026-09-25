@@ -1010,8 +1010,10 @@ class HierarchicalLayoutEngine:
             # Sized proportionally to font_size
             calc_width = max(fs * 9.5, max_line_len * (fs * 0.65) + (fs * 2.8))
             if node.custom_style.get("icon") or node.custom_style.get("logo"):
-                calc_width += 56.0
-            calc_height = max(fs * 3.6, line_count * (fs * 1.50) + (fs * 1.8))
+                calc_width += 64.0
+            calc_height = max(fs * 3.8, line_count * (fs * 1.50) + (fs * 2.0))
+            if node.custom_style.get("icon") or node.custom_style.get("logo"):
+                calc_height = max(calc_height, 64.0)
 
             node.width = round(calc_width, 1)
             node.height = round(calc_height, 1)
@@ -1519,8 +1521,8 @@ class DrawIOConverter:
             resolved_icon_path = IconRegistry.resolve_icon(icon_key)
             if resolved_icon_path and resolved_icon_path.exists():
                 try:
-                    icon_sz = int(min(node.height * 0.52, 36.0))
-                    spacing_left = int(icon_sz + 18)
+                    icon_sz = int(min(max(node.height * 0.58, 40.0), 48.0))
+                    spacing_left = int(icon_sz + 20)
                     if resolved_icon_path.suffix.lower() == ".svg":
                         raw_svg = resolved_icon_path.read_text(encoding="utf-8")
                         is_dark = _is_dark_hex(self.theme.get("canvas_bg", "#F8FAFC")) or _is_dark_hex(fill)
@@ -1769,28 +1771,51 @@ class DiagramRenderer:
             is_vert = abs(dx) < max(src.width, tgt.width) * 0.45
             is_horiz = abs(dy) < max(src.height, tgt.height) * 0.45
 
-            if is_vert and dy > 0:
-                # Direct top-to-bottom edge in same column
-                obstacles = [
-                    n for n in diagram.nodes.values()
-                    if n.id != src.id and n.id != tgt.id
-                    and abs((n.x + n.width / 2.0) - (src.x + src.width / 2.0)) < max(src.width, n.width) * 0.45
-                    and src.y < n.y < tgt.y
-                ]
-                if obstacles:
-                    max_obst_r = max(n.x + n.width for n in [src, tgt] + obstacles)
-                    route_x = max_obst_r + 24.0
-                    sx, sy = src.x + src.width, src.y + src.height / 2.0
-                    tx, ty = tgt.x + tgt.width, tgt.y + tgt.height / 2.0
-                    d_path = f"M {sx:.1f} {sy:.1f} L {route_x:.1f} {sy:.1f} L {route_x:.1f} {ty:.1f} L {tx:.1f} {ty:.1f}"
-                    label_x = route_x + 10.0
-                    label_y = (sy + ty) / 2.0
+            if is_vert:
+                if dy > 0:
+                    # Direct top-to-bottom edge in same column
+                    obstacles = [
+                        n for n in diagram.nodes.values()
+                        if n.id != src.id and n.id != tgt.id
+                        and abs((n.x + n.width / 2.0) - (src.x + src.width / 2.0)) < max(src.width, n.width) * 0.45
+                        and src.y < n.y < tgt.y
+                    ]
+                    if obstacles:
+                        max_obst_r = max(n.x + n.width for n in [src, tgt] + obstacles)
+                        route_x = max_obst_r + 24.0
+                        sx, sy = src.x + src.width, src.y + src.height / 2.0
+                        tx, ty = tgt.x + tgt.width, tgt.y + tgt.height / 2.0
+                        d_path = f"M {sx:.1f} {sy:.1f} L {route_x:.1f} {sy:.1f} L {route_x:.1f} {ty:.1f} L {tx:.1f} {ty:.1f}"
+                        label_x = route_x + 10.0
+                        label_y = (sy + ty) / 2.0
+                    else:
+                        sx, sy = src.x + src.width / 2.0, src.y + src.height
+                        tx, ty = tgt.x + tgt.width / 2.0, tgt.y
+                        d_path = f"M {sx:.1f} {sy:.1f} L {tx:.1f} {ty:.1f}"
+                        label_x = (sx + tx) / 2.0 + 12.0
+                        label_y = (sy + ty) / 2.0
                 else:
-                    sx, sy = src.x + src.width / 2.0, src.y + src.height
-                    tx, ty = tgt.x + tgt.width / 2.0, tgt.y
-                    d_path = f"M {sx:.1f} {sy:.1f} L {tx:.1f} {ty:.1f}"
-                    label_x = (sx + tx) / 2.0 + 12.0
-                    label_y = (sy + ty) / 2.0
+                    # Direct bottom-to-top (upward/feedback) edge in same column
+                    obstacles = [
+                        n for n in diagram.nodes.values()
+                        if n.id != src.id and n.id != tgt.id
+                        and abs((n.x + n.width / 2.0) - (src.x + src.width / 2.0)) < max(src.width, n.width) * 0.45
+                        and tgt.y < n.y < src.y
+                    ]
+                    if obstacles:
+                        max_obst_r = max(n.x + n.width for n in [src, tgt] + obstacles)
+                        route_x = max_obst_r + 24.0
+                        sx, sy = src.x + src.width, src.y + src.height / 2.0
+                        tx, ty = tgt.x + tgt.width, tgt.y + tgt.height / 2.0
+                        d_path = f"M {sx:.1f} {sy:.1f} L {route_x:.1f} {sy:.1f} L {route_x:.1f} {ty:.1f} L {tx:.1f} {ty:.1f}"
+                        label_x = route_x + 10.0
+                        label_y = (sy + ty) / 2.0
+                    else:
+                        sx, sy = src.x + src.width / 2.0, src.y
+                        tx, ty = tgt.x + tgt.width / 2.0, tgt.y + tgt.height
+                        d_path = f"M {sx:.1f} {sy:.1f} L {tx:.1f} {ty:.1f}"
+                        label_x = (sx + tx) / 2.0 + 12.0
+                        label_y = (sy + ty) / 2.0
             elif is_horiz and dx > 0:
                 # Direct left-to-right edge in same row
                 sx, sy = src.x + src.width, src.y + src.height / 2.0
@@ -1933,7 +1958,7 @@ class DiagramRenderer:
 
         if image_data_uri and image_data_uri.startswith("data:image/"):
             try:
-                icon_sz = min(node.height * 0.52, 36.0)
+                icon_sz = min(max(node.height * 0.58, 40.0), 48.0)
                 icon_x = node.x + 18.0
                 icon_y = node.y + (node.height - icon_sz) / 2.0
                 lines.append(
@@ -1948,7 +1973,7 @@ class DiagramRenderer:
             icon_p = IconRegistry.resolve_icon(icon_path_str)
             if icon_p and icon_p.exists():
                 try:
-                    icon_sz = min(node.height * 0.52, 36.0)
+                    icon_sz = min(max(node.height * 0.58, 40.0), 48.0)
                     icon_x = node.x + 18.0
                     icon_y = node.y + (node.height - icon_sz) / 2.0
                     if icon_p.suffix.lower() == ".svg":

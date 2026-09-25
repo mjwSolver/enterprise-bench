@@ -33,7 +33,7 @@ slides:
     prepared_for_label: "PREPARED FOR"
     engagement_partner_label: "IMPLEMENTATION PARTNER"
     client_sublabel: "Executive Leadership & Financial Steering Committee"
-    vendor_sublabel: "Presented by Agus Suhanto, Project Manager, MII"
+    vendor_sublabel: "Presented by Agus Pramono, Project Manager, MII"
 
   # ----------------------------------------------------------------------------
   # Slide 02: Agenda / Table of Contents
@@ -218,13 +218,13 @@ slides:
     client_name: "[CLIENT_COMPANY_NAME]"
     vendor_name: "PT Mitra Integrasi Informatika"
     tier1_client_text: "Tadahiko Onaka ([CLIENT_SHORT_NAME] SteerCo), Mulyanah ([CLIENT_SHORT_NAME] Project Advisor)  |  Executive budget authorization & strategic sign-offs"
-    tier1_vendor_text: "Arif Nanda A. (MII SteerCo), Dian Eka Kusumawati & Ho Herly (Account Managers), Lucky & Herman (Presales)"
+    tier1_vendor_text: "Rudi Hermawan A. (MII SteerCo), Dian Permata & Ho Herly (Account Managers), Lucky & Herman (Presales)"
     client_pm_title: "Dewi Lestari - [CLIENT_SHORT_NAME] Project Manager"
     client_pm_bullets:
       - "Facilitates internal business access, data extracts, and UAT scheduling."
       - "Coordinates cross-functional reviews across Finance, Accounting, and IT."
       - "Primary client escalation gate for stage-gate approvals and sign-offs."
-    vendor_pm_title: "Agus Suhanto - MII Project Manager"
+    vendor_pm_title: "Agus Pramono - MII Project Manager"
     vendor_pm_bullets:
       - "Drives daily delivery cadence, sprint backlog, and milestone tracking."
       - "Maintains RAID logs, weekly progress S-curves, and formal Change Requests."
@@ -257,7 +257,7 @@ slides:
         stripe_color: "accent"
         bullets:
           - "Vicko Bhayyu (Technical Lead)."
-          - "Willyam Saputra (Data Engineer)."
+          - "Aditya Putra (Data Engineer)."
           - "Deploys Snowflake schema models, RBAC, and storage."
           - "Builds automated staging upload ingestion pipelines."
       - title: "Analytics & Streamlit Apps"
@@ -266,8 +266,8 @@ slides:
         badge_color: "accent"
         stripe_color: "accent"
         bullets:
-          - "Golden Ray Vistanu (Snowflake Streamlit Specialist)."
-          - "Marcel Jeremy Wiradinata (Data Scientist)."
+          - "Hendra Setiawan (Snowflake Streamlit Specialist)."
+          - "Reza Pratama (Data Scientist)."
           - "Builds 8 interactive Streamlit financial pages."
           - "Conducts user training and technical knowledge transfer."
 
@@ -777,10 +777,10 @@ slides:
         width: 1.833
         align: "LEFT"
     rows:
-      - ["01", "Mutual Non-Disclosure Agreement (NDA)", "PT MII / [CLIENT_SHORT_NAME]", "Dian Eka Kusumawati", "IN PROGRESS", "Final bilateral legal execution"]
+      - ["01", "Mutual Non-Disclosure Agreement (NDA)", "PT MII / [CLIENT_SHORT_NAME]", "Dian Permata", "IN PROGRESS", "Final bilateral legal execution"]
       - ["02", "Developer Laptops & Security Clearance", "PT MII", "All PIC / Consultants", "COMPLETE", "Hardware & security tools ready"]
       - ["03", "WhatsApp Group & Microsoft Teams Channels", "PT MII", "Lucky / PMO", "COMPLETE", "Coordination channels active"]
-      - ["04", "SharePoint Document Collaboration Repository", "PT MII", "Agus Suhanto (PM)", "COMPLETE", "Artifact workspace provisioned"]
+      - ["04", "SharePoint Document Collaboration Repository", "PT MII", "Agus Pramono (PM)", "COMPLETE", "Artifact workspace provisioned"]
 
   # ----------------------------------------------------------------------------
   # Slide 15: 13. Communication & Collaboration (Governance Cadence Table)
@@ -839,8 +839,8 @@ slides:
         width: 1.533
         align: "CENTER"
     rows:
-      - ["01", "Requirement Risk: Risiko penambahan fitur baru pada fase asesmen (planning) yang membuat estimasi timeline proyek bertambah.", "Stick pada requirement baseline; lakukan prioritisasi use case ketat (MoSCoW); rencanakan implementasi fitur sekunder pada fase berikutnya.", "Rebaseline timeline dan alokasi tim jika usulan penambahan fitur disetujui formal di level Steering Committee.", "Agus Suhanto (PM)"]
-      - ["02", "Change Risk: Permintaan perubahan spesifikasi sepanjang proyek berjalan setelah baseline disetujui bersama dalam dokumen FSD.", "Sosialisasikan batas ruang lingkup FSD baseline; tegakkan disiplin delivery; lakukan asesmen dampak teknis dan biaya sebelum persetujuan.", "Sesuaikan permintaan perubahan dengan prosedur Change Request resmi melalui addendum kontrak.", "Agus Suhanto (PM)"]
+      - ["01", "Requirement Risk: Risiko penambahan fitur baru pada fase asesmen (planning) yang membuat estimasi timeline proyek bertambah.", "Stick pada requirement baseline; lakukan prioritisasi use case ketat (MoSCoW); rencanakan implementasi fitur sekunder pada fase berikutnya.", "Rebaseline timeline dan alokasi tim jika usulan penambahan fitur disetujui formal di level Steering Committee.", "Agus Pramono (PM)"]
+      - ["02", "Change Risk: Permintaan perubahan spesifikasi sepanjang proyek berjalan setelah baseline disetujui bersama dalam dokumen FSD.", "Sosialisasikan batas ruang lingkup FSD baseline; tegakkan disiplin delivery; lakukan asesmen dampak teknis dan biaya sebelum persetujuan.", "Sesuaikan permintaan perubahan dengan prosedur Change Request resmi melalui addendum kontrak.", "Agus Pramono (PM)"]
       - ["03", "Data Readiness Risk: Potensi ketidaksesuaian format ekspor CSV dari modul SAP ERP atau keterlambatan penyediaan data bulanan.", "Tetapkan template data dictionary terstandarisasi sejak awal planning; lakukan validasi skema awal pada environment staging.", "Fokus pemrosesan pada mandatory attributes; eskalasi ketidaksesuaian format langsung ke PIC IT [CLIENT_SHORT_NAME].", "Vicko Bhayyu (Tech Lead)"]
 
   # ----------------------------------------------------------------------------

@@ -90,32 +90,50 @@ def resolve_diagram_uri(
         except Exception:
             return None
 
-        pages_cfg = raw.get("pages", {}) if isinstance(raw, dict) else {}
+        pages_cfg = raw.get("pages", []) if isinstance(raw, dict) else []
+        default_theme = raw.get("default_theme", raw.get("project", {}).get("theme", "modern_consulting")) if isinstance(raw, dict) else "modern_consulting"
+        default_font_size = float(raw.get("default_font_size", 18.0)) if isinstance(raw, dict) else 18.0
 
         # Match page by name or index
         page_data = None
-        if page_ref in pages_cfg:
-            page_data = pages_cfg[page_ref]
-        elif page_ref.isdigit() and int(page_ref) < len(pages_cfg):
-            page_data = list(pages_cfg.values())[int(page_ref)]
-        else:
-            for k, v in pages_cfg.items():
-                if k.lower() == page_ref.lower():
-                    page_data = v
-                    break
+        if isinstance(pages_cfg, list):
+            if page_ref.isdigit() and int(page_ref) < len(pages_cfg):
+                page_data = pages_cfg[int(page_ref)]
+            else:
+                for item in pages_cfg:
+                    if isinstance(item, dict):
+                        pname = item.get("name", "")
+                        if pname == page_ref or pname.lower() == page_ref.lower():
+                            page_data = item
+                            break
+        elif isinstance(pages_cfg, dict):
+            if page_ref in pages_cfg:
+                page_data = pages_cfg[page_ref]
+            elif page_ref.isdigit() and int(page_ref) < len(pages_cfg):
+                page_data = list(pages_cfg.values())[int(page_ref)]
+            else:
+                for k, v in pages_cfg.items():
+                    if k.lower() == page_ref.lower():
+                        page_data = v
+                        break
 
-        if not page_data or "mermaid" not in page_data:
+        if not page_data or not isinstance(page_data, dict) or "mermaid" not in page_data:
             return None
 
         project = DrawIOProject()
-        theme_name = page_data.get("theme", raw.get("project", {}).get("theme", "modern_consulting"))
-        font_size = page_data.get("font_size", 18.0)
+        theme_name = page_data.get("theme", default_theme)
+        font_size = float(page_data.get("font_size", default_font_size))
+        node_icons = page_data.get("node_icons")
+        custom_theme = page_data.get("custom_theme")
+
         try:
             project.add_mermaid_page(
                 name=page_ref,
                 mermaid_code=page_data["mermaid"],
                 theme=theme_name,
                 font_size=font_size,
+                node_icons=node_icons,
+                custom_theme=custom_theme,
             )
             return project.export_page(0, output_path=cached_png, format="png", scale=scale)
         except Exception:

@@ -37,17 +37,17 @@ typography:
   font_family: "Helvetica, Arial, sans-serif"
   font_family_header: "Helvetica, Arial, sans-serif"
   thresholds:
-    tracker_pt: 9.5
+    tracker_pt: 11.0
     action_title_pt: 20.0
-    subtitle_pt: 11.0
-    card_title_pt: 12.0
-    body_pt: 10.0
-    bullet_pt: 9.5
-    caption_pt: 8.5
-    metric_large_pt: 24.0
+    subtitle_pt: 12.5
+    card_title_pt: 14.0
+    body_pt: 12.0
+    bullet_pt: 11.5
+    caption_pt: 10.5
+    metric_large_pt: 26.0
     metric_medium_pt: 18.0
     metric_small_pt: 14.0
-    badge_pt: 8.0
+    badge_pt: 10.0
 
 diagram:
   canvas_bg: "#F0F9FF"

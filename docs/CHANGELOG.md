@@ -4,6 +4,31 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-09-26] - Milestone 28: Comprehensive System Anti-Pattern Compliance & Deep Universal PII / Real Names Purge
+
+### Summary
+Delivered enterprise-grade privacy protection, strict presentation geometry validation, robust diagram layout routing, and automated document element purging across `enterprise-bench`. Codified comprehensive regex personnel substitutions in `src/core/slug_registry.py` eliminating all real individual names in favor of canonical personas ("Agus Pramono", "Dewi Lestari", "Rudi Hermawan", "Dian Permata", "Aditya Putra", "Hendra Setiawan", "Reza Pratama", "Andi Wijaya"), and upgraded `src/core/pii/` handlers (`DocxHandler`, `PptxHandler`, `XlsxHandler`) with compiled regex pattern replacement passes across runs, paragraphs, table cells, and sheets. Hardened `src/ppt_engine/slide_validator.py` with AST checks under `CHECK_5_THEME_GEOMETRY` enforcing Cover Slide Architecture Compliance (zero footers/pagination on Slide 1) and the Geometric Alignment Rule (container cards with top stripes MUST be sharp rectangles `MSO_SHAPE.RECTANGLE`, strictly prohibiting `MSO_SHAPE.ROUNDED_RECTANGLE`). Upgraded `src/ppt_engine/diagram_engine.py` with standardized 40-48px icon sizing, minimum node height bounds, and upward/feedback edge bypass routing in `DiagramRenderer` to prevent straight lines through intervening containers. Integrated automated OpenXML element purging (`purge_docx_elements`) directly into `TemplateStamper.render` and `stamp_template` in `src/docx_engine/template_stamper.py` (`purge_elements=True` default) to automatically strip review comments, highlights, and tracked changes on deliverable stamping.
+
+### Milestones Delivered
+- **Deep Universal PII & Real Names Purge:**
+  - Enhanced [`src/core/slug_registry.py`](../src/core/slug_registry.py) with comprehensive regex normalization for all historical personnel names across client and vendor roles.
+  - Upgraded `substitute_slugs_in_document` and `substitute_slugs_in_workbook` with automatic context-aware regex substitution across body paragraphs, tables, headers, and footers.
+  - Upgraded [`src/core/pii/handlers/`](../src/core/pii/handlers/) (`DocxHandler`, `PptxHandler`, `XlsxHandler`) to compile replacement dictionaries into case-insensitive regex patterns (`compiled_rules`), executing run-level and paragraph-level substitutions to ensure complete entity purging across styled text boundaries.
+  - Sanitized manifests ([`clean_workspace/catalog_data.json`](../clean_workspace/catalog_data.json), [`clean_workspace/sanitization_manifest.json`](../clean_workspace/sanitization_manifest.json)), deck presets ([`presets/deck_configs/closing_deck.yaml`](../presets/deck_configs/closing_deck.yaml), [`presets/deck_configs/kickoff_presentation.yaml`](../presets/deck_configs/kickoff_presentation.yaml), [`presets/deck_configs/uat_briefing.yaml`](../presets/deck_configs/uat_briefing.yaml)), and specs ([`specs/tti_analytics/`](../specs/tti_analytics/)).
+- **Presentation Anti-Pattern Compliance & Slide Validator Hardening:**
+  - Added Cover Slide Architecture Compliance check (`CHECK_5_THEME_GEOMETRY`) in [`src/ppt_engine/slide_validator.py`](../src/ppt_engine/slide_validator.py) prohibiting footer bars and pagination shapes on Slide 1.
+  - Added Geometric Alignment Rule check (`CHECK_5_THEME_GEOMETRY`) in [`src/ppt_engine/slide_validator.py`](../src/ppt_engine/slide_validator.py) flagging rounded container cards (`MSO_SHAPE.ROUNDED_RECTANGLE`) paired with top accent stripes and enforcing sharp rectangles (`MSO_SHAPE.RECTANGLE`).
+- **Diagram Engine Layout & Edge Routing Hardening:**
+  - Standardized vector tech logo and icon dimensions to $40\text{px} - 48\text{px}$ (`icon_sz = min(max(node.height * 0.58, 40.0), 48.0)`) and left text padding (`spacing_left = icon_sz + 20`) in [`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py).
+  - Enhanced `HierarchicalLayoutEngine` card geometry to enforce minimum card volume and height ($\ge 64\text{px}$ when icons/logos are present).
+  - Implemented upward/feedback edge routing in `DiagramRenderer.render_svg` to bypass intermediate vertical obstacles ($X_{\text{route}} = X_{\max} + 24\text{px}$).
+  - Refactored [`presets/diagrams/fsd_architecture.yaml`](../presets/diagrams/fsd_architecture.yaml) to a balanced 3-column architecture topology with official SVG logos and clean gutter routing.
+- **Automated OpenXML Document Element Purging:**
+  - Integrated `purge_docx_elements` into `TemplateStamper.render` and `stamp_template` in [`src/docx_engine/template_stamper.py`](../src/docx_engine/template_stamper.py) (`purge_elements=True` default), ensuring comment, highlight, and revision stripping on all stamped DOCX deliverables.
+- Reference Handover: [`docs/handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`](handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md)
+
+---
+
 ## [2026-09-23] - Milestone 27 / Sprints 17–27 Feedback & Quality Enhancement Sprint: PII Scrubbing, Aspect QA & DrawingML Hardening
 
 ### Summary
@@ -87,7 +112,7 @@ Delivered the end-to-end automated generation, dynamic spreadsheet synchronizati
       - Slide 04: Top KPI summary bar (19 / 19 Deliverables, 8 Modules, SIT & UAT, BAST 1 & 2) + 4 category columns inventorying all 19 contractual deliverables with non-wrapping format badges (`[DOCX]`, `[PPTX]`, `[XLSX]`, `[CODE]`) and status pills.
       - Slide 05: Dynamic 8-gate closeout verification matrix with theme-resolved status pills + secure Google Drive package download card (with password pill `[ Metrodata2026! ]`) and CSS survey link card.
       - Slide 06: 3-metric KPI bar (30 Mandays, 0.5 Manday unit, 100% Rollover) + 3 deep-dive pillar cards (Capacity Metering, Rollover & Terms, Supported Scope).
-      - Slide 07: 4-step horizontal process lifecycle connected by native vector right arrows (`MSO_SHAPE.RIGHT_ARROW`) + designated technical leads (Adam Nevriyanto & Vicko Bhayyu) and official communication channels / SLA targets.
+      - Slide 07: 4-step horizontal process lifecycle connected by native vector right arrows (`MSO_SHAPE.RIGHT_ARROW`) + designated technical leads (Andi Wijaya & Vicko Bhayyu) and official communication channels / SLA targets.
       - Slide 08: 3 large delivery cards for Monthly Usage Recaps, Developer Timesheets, and Technical / CR Documentation.
       - Slide 09: Corporate closing slide with dual vertical brand stripes, leadership contacts, and corporate office address.
     - Exported in [`src/ppt_engine/__init__.py`](../src/ppt_engine/__init__.py).
@@ -303,7 +328,7 @@ Delivered high-fidelity consulting slide geometry refactoring with DirectWrite-m
   - Attendee Auto-Expansion ([`src/docx_engine/template_stamper.py`](../src/docx_engine/template_stamper.py)): Dynamically unpacks attendee lists into indexed scalar slots (`client_attendee_1..10`, `vendor_attendee_1..10`) during `docxtpl` rendering.
   - Universal Slug Registry & PII Linter ([`src/core/slug_registry.py`](../src/core/slug_registry.py)): Codified standard slug taxonomy (`[CLIENT_COMPANY_NAME]`, `[CONTRACT_NUMBER]`, etc.) and multi-format scanner (`.docx`, `.pptx`, `.xlsx`). CLI: `bench pii audit`. Verified 0 leaks across all outputs.
 - **Milestone 16: Tier 2 Modular Spec Compiler & Tier 5 Multi-Page Diagramming Engine:**
-  - Modular Spec Compiler ([`src/docx_engine/spec_compiler.py`](../src/docx_engine/spec_compiler.py)): Multi-chapter Markdown compiler parsing frontmatter, H1–H4 headings, callout alerts (`> [!NOTE]`), tables, and code callouts into styled Word deliverables with corporate cover pages. Added Markdown image parser (`![Caption](path)`) embedding centered high-DPI figures with italicized captions.
+  - Modular Spec Compiler ([`src/docx_engine/spec_compiler.py`](../src/docx_engine/spec_compiler.py)): Multi-chapter Markdown compiler parsing frontmatter, H1–H4 headings, callout alerts (`> [!NOTE]`), tables, and code callouts into styled Word deliverables with corporate cover pages. Added Markdown image parser (`![Caption](<path>)`) embedding centered high-DPI figures with italicized captions.
   - Linter Calibration ([`src/docx_engine/document_linter.py`](../src/docx_engine/document_linter.py)): Monospace `Consolas` callouts containing dbt Jinja macros (`{{ ref(...) }}`) recognized as literal code examples rather than unrendered template errors. Compiled TSD and SIT/UAT specs passing QA with 0 errors.
   - Multi-Page Draw.io Engine ([`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py)): Added `export_all_pages()` and `build_from_config()` to `DrawIOProject`. Added CLI commands `bench diagram export-all` and `bench diagram build-project`.
   - Declarative Diagram Specification ([`presets/diagrams/fsd_architecture.yaml`](../presets/diagrams/fsd_architecture.yaml)): Authored 17 reporting dataflows and entity models with vector tech logos (`snowflake`, `dbt`, `kafka`, `amazons3`, `vault`, `aws`, `pos_store`, `audit_log`, `soc2_badge`), compiled into 17-tab `.drawio` and exported to high-DPI PNGs.

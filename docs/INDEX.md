@@ -9,7 +9,7 @@ This directory contains the central documentation, architectural blueprints, sub
 ```text
 docs/
 ├── INDEX.md               # This master navigation index
-├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–27+)
+├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–28+)
 │
 ├── handovers/             # Historical sprint and session handover briefings
 │   ├── 2026-09-11_cli_skills_refactoring.md
@@ -27,7 +27,8 @@ docs/
 │   ├── 2026-09-21_project_closing_deck_modernization.md
 │   ├── 2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md
 │   ├── 2026-09-21_sprints_17_27_completion_briefing.md
-│   └── 2026-09-23_feedback_and_quality_enhancement_sprint.md
+│   ├── 2026-09-23_feedback_and_quality_enhancement_sprint.md
+│   └── 2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
 │   ├── adaptive_documentation_scout_protocol.md
@@ -114,4 +115,5 @@ docs/
 * [**`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`**](handovers/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md): Sprints 17–27 review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap.
 * [**`2026-09-21_sprints_17_27_completion_briefing.md`**](handovers/2026-09-21_sprints_17_27_completion_briefing.md): Sprints 17–27 closeout (Universal NGL slug & PII normalization, Closing Deck visual enrichment, Weekly Progress typography & English purity, Kick-off Slide 10/12/19 defect fixes, and automated Change Request suite).
 * [**`2026-09-23_feedback_and_quality_enhancement_sprint.md`**](handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): Milestone 27 / Sprints 17–27 Feedback & Quality Enhancement Sprint closeout (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML image aspect ratio QA engine & CLI, Slide 7 maintenance workflow architecture & OpenXML connectors, DrawingML bullet schema compliance, and Slide 6 KPI overflow fix).
+* [**`2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`**](handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md): Milestone 28 closeout (Comprehensive system anti-pattern compliance, deep universal PII / real names purge, Cover Slide footer and striped container sharp rectangle validation in `SlideValidator`, 40-48px icon sizing and upward edge bypass routing in `DiagramEngine`, and automated OpenXML element purging in `TemplateStamper`).
 

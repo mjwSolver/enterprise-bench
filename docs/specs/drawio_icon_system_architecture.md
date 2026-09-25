@@ -16,7 +16,7 @@ Enterprise architecture deliverables (Solution Blueprints, Functional Specs, Tec
 
 ### 1.1 The Current Implementation & The XML Export Defect
 
-In [`src/ppt_engine/diagram_engine.py`](src/ppt_engine/diagram_engine.py), the diagram subsystem generates both SVG/PNG images and `.drawio` XML from an internal abstract syntax tree (`ParsedDiagram`, `DiagramNode`, `DiagramEdge`).
+In [`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py), the diagram subsystem generates both SVG/PNG images and `.drawio` XML from an internal abstract syntax tree (`ParsedDiagram`, `DiagramNode`, `DiagramEdge`).
 
 #### Headless Pipeline (Functional)
 In `to_svg()` (lines 1515–1538), when a node defines an icon or logo via `node.custom_style["icon"]` (e.g. `assets/logos/snowflake.svg`), the engine reads the local SVG from disk, optionally recolors it, converts it to a base64 Data URI, and inlines an `<image xlink:href="data:image/svg+xml;base64,..." />` tag. When compiled through CairoSVG / Python Cairo, the resulting PNG renders crisp vector logos directly inside presentation cards.
@@ -207,7 +207,7 @@ To bridge headless slide deck compilation with rich Draw.io desktop editing, we 
 ### 3.1 Phase 1: Native Draw.io XML Export (Updating `DrawIOConverter`)
 
 #### Target File
-[src/ppt_engine/diagram_engine.py](src/ppt_engine/diagram_engine.py) (`DrawIOConverter._build_node_style` and `to_xml`).
+[`src/ppt_engine/diagram_engine.py`](../../src/ppt_engine/diagram_engine.py) (`DrawIOConverter._build_node_style` and `to_xml`).
 
 #### Architecture Strategy: Compound Label Shape vs. Child Cells
 We evaluate two architectural approaches for serializing icons in Draw.io XML:
