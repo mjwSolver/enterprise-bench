@@ -9,46 +9,44 @@
 
 ## 1. Active Platform Status & Completed Milestones
 
-Progress: `[██████████] 100%` (Master Deliverable Automation & System Compliance Complete)
+Progress: `[██████████] 100%` (Master Deliverables, Diagram Pipeline, Visual QA, Tier 1/2 Verification & Declarative Engine V2 Complete)
 - **Engine / Agent Status:** `Agent Reviewed & Validated (Static QA Passed)`
 - **User Review Status:** `PENDING USER DESKTOP REVIEW / Awaiting User Verification`
-- **Deliverables Awaiting User QA:** `1.1` Kickoff, `4.2` Weekly Progress, `5.1` Project Closing, and `CR_07` Change Request Suite.
+- **Deliverables Awaiting User QA:** `interwoven_migration.png` / `.drawio` / `.pptx`, `whitelist_system_interwoven_migration.png`, `open_interwoven_in_browser.html`, `architecture_evolution_cdsw_to_lambda.pptx` (Slides 1–3), and `bench diagram v2 audit/visual-qa` gates.
 
 - **Tiers 1–6 (Core Subsystems & Foundations):** Legal DOCX stamping, Markdown spec compiler (`src/docx_engine/`), Snowflake sizing & S-curve models (`src/xlsx_engine/`), consulting deck engines (`src/ppt_engine/`), Draw.io multi-page pipelines (`bench diagram`), and bilingual EN/ID engines (`src/core/locale_engine.py`).
-- **Tiers 7–13 (Modernized Presentation Suite — Milestones 18–27):** 36-slide presales pitch deck (`presales_pitch_deck.yaml`), 19-slide kick-off material (`kickoff_presentation.yaml`), 25-slide UAT briefing (`uat_briefing.yaml`), 11-slide weekly progress report (`weekly_progress.yaml`), and 9-slide project closing deck (`closing_deck.yaml`) with dynamic spreadsheet ingestion.
-- **Tier 14 (Sprints 17–27 Review & Defect Rectification):** Universal NGL slug normalization, optical font floor $\ge 11.0\text{pt}$, Kick-off Slide 10 3-column vector architecture, Gantt diamond flip, and CR_07 dynamic routing.
-- **Tier 15 (Feedback & Quality Enhancement Sprint — Milestone 27):** Dewi Lestari PII scrub, synthetic Gantt generator (`CR_07`), OpenXML aspect ratio QA engine & CLI (`bench doc check/fix-aspect`), Slide 7 maintenance workflow & OpenXML connectors, and DrawingML bullet schema compliance.
-- **Tier 16 (Comprehensive Anti-Pattern Compliance & Deep PII Purge — Milestone 28):** Full personnel regex purge across models/handlers (`slug_registry.py`, `detectors.py`, `docx/pptx/xlsx` handlers), Cover Slide footer & striped container sharp rectangle checks in `SlideValidator`, 40-48px icons & upward edge bypass in `DiagramEngine`, and automated OpenXML element purging in `TemplateStamper`.
+- **Tiers 7–16 (Modernized Presentation Suite & PII Purge — Milestones 18–28):** 36-slide pitch, 19-slide kick-off, 25-slide UAT, 11-slide weekly progress, 9-slide closing deck, Dewi Lestari persona, synthetic Gantt, OpenXML aspect ratio QA engine (`bench doc check/fix-aspect`), Cover Slide footer & sharp container validation, 40-48px icon floor, and automated OpenXML element purging.
+- **Tiers 17–19 (Diagram Pipeline, Visual QA & Flat Parity — Milestones 29–31):** Deterministic asset harvester & resolver (`bench asset resolve/harvest/list`), 72+ Databricks stencils, Cloudera/AWS vector marks, DrawingML collision linter (`PPTVisualLinter`), live window capture, flat aesthetic (`_flatten`), proportional padding (`_plan_card`), Databricks 3D cylinder body alignment, and single polyline routing (`add_routed_flow`).
+- **Tier 20 (Architecture Evolution & Consulting Archetypes — Milestone 32):** Full CDSW-to-Lambda migration deck (`architecture_evolution_cdsw_to_lambda.pptx`), decoupled flow routing, Databricks 3D cylinder parity, and high-density consulting archetypes (Gears 2 & 3: `build_dense_workstream_runbook_slide`, `build_target_architecture_swimlane_slide`).
+- **Tier 21 (Interwoven Migration Topology & Whitelisting Architecture — Milestone 33):** Unified interwoven migration diagram with single shared client origin (`app1`, `app2`, `app3`), database cylinder compression ($260\text{px} \to 170\text{px}$), connector spans ($140\text{px}\text{--}175\text{px}$), return loop below legacy cluster ($y=230\text{--}240$), vertical modernization bridges, and multi-format synchronization across Draw.io, SVG, PNG, and PowerPoint Slide 3.
+- **Tier 22 (Tier 1 Geometric Collision Linting & Tier 2 Adversarial Visual QA — Milestone 34):** Declarative Diagram Engine V2 (`src/ppt_engine/diagram_v2/`) codifying Milestone 33 post-mortem rules into `Tier1GeometricLinter` (11 spatial checks: node overlap, badge/label occlusion, arrow swallowing, spans, ceiling, cylinder $w \le 185\text{px}$, Liang-Barsky obstacle tests) and `Tier2VisualVerifier` (perceptual CV heuristics, ceiling ink scanner, 7-dimension weighted scorecard, adversarial subagent briefing). Unified CLI `bench diagram v2 audit/visual-qa` passing with 100.0/100 (`VERIFIED_PASS`).
 
 ---
 
 ## 2. Key Architecture Pointers (`docs/specs/`)
 
 - [**Adaptive Documentation Scout**](docs/specs/adaptive_documentation_scout_protocol.md): Subagent protocol, dynamic topology scouting & 5-stage closeout gate.
+- [**Adaptive Complexity Gears**](docs/specs/adaptive_complexity_gears_and_enterprise_density.md): 3-gear density standard (Exec 4-5/10, Pre-KOM 6.5-7.5/10, Workstream 8.5-9.5/10).
+- [**PowerPoint Slide Geometry**](docs/specs/powerpoint_slide_geometry.md): Sharp top stripes, cover typographic metadata, split chapter dividers, and diagram hierarchy.
 - [**Localization & Bilingual Subsystem**](docs/specs/localization_and_bilingual_subsystem.md): Dual EN/ID catalogs, hybrid phrase translation & localized decks.
-- [**Master Deliverable Recreation Plan**](docs/specs/master_deliverable_recreation_plan.md): 5-tier roadmap across 38 master templates.
-- [**OpenXML Document Purging**](docs/specs/openxml_purging_and_cleansing.md): Comment, highlight, and revision stripping.
 - [**Draw.io Edge Routing & Collision Prevention**](docs/specs/drawio_edge_routing_and_collision_prevention.md): Dynamic ports & gutter routing.
-- [**Ingress Bus Architecture**](docs/specs/ingress_bus_routing_architecture.md): Shared inter-column trunk-line routing.
-- [**Change Request Subsystem**](docs/specs/change_request_subsystem.md): Commercial addendums & CR workflows.
+- [**OpenXML Document Purging**](docs/specs/openxml_purging_and_cleansing.md): Comment, highlight, and revision stripping.
 
 ---
 
 ## 3. Transition Briefings Archive (`docs/handovers/`)
 
-- [`2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`](docs/handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md): **Milestone 28** (Deep universal PII / real names purge, SlideValidator anti-pattern checks, DiagramEngine upward edge routing, and TemplateStamper OpenXML element purging).
-- [`2026-09-23_feedback_and_quality_enhancement_sprint.md`](docs/handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): **Milestone 27** (Dewi Lestari PII scrub, synthetic Gantt generator, OpenXML aspect ratio QA engine & CLI, Slide 7 maintenance workflow, DrawingML bullets).
-- [`2026-09-21_sprints_17_27_completion_briefing.md`](docs/handovers/2026-09-21_sprints_17_27_completion_briefing.md): **Sprints 17–27 Closeout** (Universal NGL slugs, Closing Deck visual icons, Weekly Progress alignment, Kick-off Slide 10 vector architecture, CR dynamic routing).
-- [`2026-09-21_project_closing_deck_modernization.md`](docs/handovers/2026-09-21_project_closing_deck_modernization.md): Milestone 27 (9-slide project closing deck, ClosingDeckBuilder, 8-gate checklist matrix, dynamic spreadsheet ingestion).
-- [`2026-09-20_weekly_progress_report_deck_modernization.md`](docs/handovers/2026-09-20_weekly_progress_report_deck_modernization.md): Milestone 26 (11-slide weekly progress report deck, milestone row scaling, consulting S-curve generator).
-- [`2026-09-20_uat_briefing_presentation_modernization.md`](docs/handovers/2026-09-20_uat_briefing_presentation_modernization.md): Milestone 25 (25-slide bilingual UAT briefing deck, master YAML, advance width calibration).
-- [`2026-09-19_project_kickoff_presentation_modernization.md`](docs/handovers/2026-09-19_project_kickoff_presentation_modernization.md): Milestone 24 (19-slide kick-off deck, agenda/table/thank-you archetypes).
+- [`2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md`](docs/handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md): **Milestone 34** (Diagram Engine V2 Tier 1 geometric collision linter with 11 checks, Tier 2 adversarial visual QA subagent verifier, perceptual CV heuristics, 7-dimension scorecard, unified CLI `bench diagram v2 audit/visual-qa`, and 100.0/100 reference manifest).
+- [`2026-10-14_interwoven_migration_topology_and_whitelisting.md`](docs/handovers/2026-10-14_interwoven_migration_topology_and_whitelisting.md): **Milestone 33** (Unified Interwoven Migration Architecture diagram, database horizontal compression from 260px to 170px, expanded connector spans with 140-175px clearance, return loop repositioned below legacy cluster, and multi-format Draw.io/SVG/PNG/PowerPoint synchronization).
+- [`2026-10-14_cdsw_to_lambda_architecture_evolution.md`](docs/handovers/2026-10-14_cdsw_to_lambda_architecture_evolution.md): **Milestone 32** (CDSW-to-Lambda architecture evolution suite in `architecture_evolution_cdsw_to_lambda.pptx`, decoupled flow routing topology, Databricks 3D cylinder visual parity, Gear 2/3 consulting archetypes, and Diagnostic Status Triad).
+- [`2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`](docs/handovers/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md): **Milestone 31** (Flat DrawingML aesthetic standardization via `_flatten`, proportional padding engine `_plan_card`, Databricks 3D cylinder body alignment, single polyline routing, collinear boundary auditing).
+- [`2026-10-14_visual_qa_and_drawingml_collision_remediation.md`](docs/handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md): **Milestone 30** (DrawingML spatial collision linter, macOS live window screen capture, forward arrowhead orientation, card text overflow fixes, cylinder text clearance, and `bench ppt visual-qa` CLI).
 - Older handovers indexed in [`docs/INDEX.md`](docs/INDEX.md).
 
 ---
 
-## 4. Immediate Next Backlog
+## 4. Immediate Next Backlog (Fresh Chat)
 
-1. **User Desktop Verification & Visual QA (Awaiting User Sign-off):** Perform native desktop review (`open -a`) on updated artifacts: `output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx`, `output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized.pptx`, `output/presentations/5.1_Project_Closing_Deck_Modernized.pptx`, and `output/NGL_Snowflake_Analytics/change_requests/CR_07/`.
-2. **End-to-End Orchestrated Deliverable Lifecycle:** Chaining Kick-off (`1.1`) $\rightarrow$ Specs (FSD/TSD) $\rightarrow$ S-Curves $\rightarrow$ UAT (`3.4`) $\rightarrow$ Weekly (`4.2`) $\rightarrow$ BAST 1/2 $\rightarrow$ Closing Deck (`5.1`) with cross-cutting `EngagementContext`.
-3. **Operational Deployment Rundown & Technical Manuals:** Automate cutover checklist (`3.7_Rundown_Deployment_Template.xlsx`) and operational manuals (`3.6.1_User_Guide_Template.docx`, `3.6.2_Admin_Guide_Template.docx`).
+1. **User Desktop Verification & Feedback:** Conduct user desktop inspection on compiled PPTX slides and visual QA raster plates (`bench diagram v2 visual-qa ... --open`).
+2. **Consulting Deck Generator Integration:** Backport Diagram Engine V2 declarative compiler into consulting presentation builders (`src/ppt_engine/slide_builders.py`).
+3. **Multi-Track Enterprise Template Harvesting:** Expand declarative sample manifests to cover additional enterprise consulting topologies (medallion lakehouse, active-active failover).

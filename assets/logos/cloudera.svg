@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none" role="img" aria-label="Cloudera">
+  <title>Cloudera</title>
+  <!-- Modern Cloudera Enterprise Mark: Faceted Brand Geometry -->
+  <path d="M12 14C12 9.58172 15.5817 6 20 6H34C36.2091 6 38 7.79086 38 10V14C38 15.1046 37.1046 16 36 16H24C21.7909 16 20 17.7909 20 20V28C20 30.2091 21.7909 32 24 32H36C37.1046 32 38 32.8954 38 34V38C38 40.2091 36.2091 42 34 42H20C15.5817 42 12 38.4183 12 34V14Z" fill="#F15722"/>
+  <path d="M22 20H34C35.1046 20 36 20.8954 36 22V26C36 27.1046 35.1046 28 34 28H22C20.8954 28 20 27.1046 20 26V22C20 20.8954 20.8954 20 22 20Z" fill="#FF6A80"/>
+  <rect x="26" y="22" width="8" height="4" rx="1" fill="#FFFFFF" opacity="0.9"/>
+</svg>

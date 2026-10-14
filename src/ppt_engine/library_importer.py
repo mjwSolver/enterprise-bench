@@ -50,14 +50,10 @@ class MxLibraryDecoder:
         else:
             raw_text = str(content_or_path).strip()
 
-        # Extract content between <mxlibrary>...</mxlibrary> if present
-        if "<mxlibrary>" in raw_text and "</mxlibrary>" in raw_text:
-            start = raw_text.find("<mxlibrary>") + len("<mxlibrary>")
-            end = raw_text.find("</mxlibrary>")
-            payload = raw_text[start:end].strip()
-        elif "<mxlibrary>" in raw_text:
-            m = re.search(r"<mxlibrary>(.*?)</mxlibrary>", raw_text, re.DOTALL)
-            payload = m.group(1).strip() if m else raw_text
+        # Extract content between <mxlibrary...>...</mxlibrary> if present
+        m = re.search(r"<mxlibrary[^>]*>(.*?)</mxlibrary>", raw_text, re.DOTALL)
+        if m:
+            payload = m.group(1).strip()
         else:
             payload = raw_text
 
@@ -137,8 +133,26 @@ class MxLibraryDecoder:
             e_idx = xml_content.find("</shape>") + len("</shape>")
             stencil_xml = xml_content[s_idx:e_idx]
             svg_converted = MxLibraryDecoder._stencil_to_svg(stencil_xml, shape_item.get("w", 48), shape_item.get("h", 48))
-            if svg_converted:
-                return svg_converted, "svg"
+        # Check for remote image URL: image=https://... or image=http://...
+        m_http = re.search(r"image=(https?://[^;\"'\s]+)", xml_content)
+        if m_http:
+            img_url = m_http.group(1)
+            if img_url.lower().endswith(".svg"):
+                try:
+                    req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
+                    with urllib.request.urlopen(req, timeout=5.0) as resp:
+                        if getattr(resp, "status", 200) == 200:
+                            return resp.read().decode("utf-8"), "svg"
+                except Exception:
+                    pass
+            elif img_url.lower().endswith(".png"):
+                try:
+                    req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0"})
+                    with urllib.request.urlopen(req, timeout=5.0) as resp:
+                        if getattr(resp, "status", 200) == 200:
+                            return base64.b64encode(resp.read()).decode("ascii"), "png"
+                except Exception:
+                    pass
 
         return None, "unknown"
 
@@ -242,7 +256,16 @@ class IconRegistry:
         if not icon_key_or_path:
             return None
 
-        # 1. Direct path
+        # Delegate to unified AssetHarvester deterministic resolver
+        try:
+            from src.ppt_engine.asset_harvester import AssetHarvester
+            resolved = AssetHarvester.resolve_asset(icon_key_or_path)
+            if resolved and resolved.exists:
+                return resolved.absolute_path
+        except Exception:
+            pass
+
+        # 1. Direct path fallback
         p = Path(icon_key_or_path)
         if p.exists() and p.is_file():
             return p.resolve()

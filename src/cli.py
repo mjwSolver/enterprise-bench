@@ -57,14 +57,18 @@ ppt_app = typer.Typer(name="ppt", help="Generative Consulting Presentation Engin
 doc_app = typer.Typer(name="doc", help="Deterministic Document Compliance Engine", no_args_is_help=True)
 xlsx_app = typer.Typer(name="xlsx", help="Spreadsheet & Calculator Engine", no_args_is_help=True)
 diagram_app = typer.Typer(name="diagram", help="Multi-Page Draw.io & Mermaid Diagram Engine", no_args_is_help=True)
+diagram_v2_app = typer.Typer(name="v2", help="Diagram Engine V2 Subsystem (Declarative YAML to Draw.io, SVG, PPTX)", no_args_is_help=True)
 pii_app = typer.Typer(name="pii", help="Universal PII Sanitization & Slug Linter", no_args_is_help=True)
 locale_app = typer.Typer(name="locale", help="Bilingual & Hybrid Localization Engine", no_args_is_help=True)
 cr_app = typer.Typer(name="cr", help="Enterprise Change Request (CR) & Commercial Addendum Workflows", no_args_is_help=True)
+asset_app = typer.Typer(name="asset", help="Deterministic Vector Asset Harvester & Diagram Icon Registry", no_args_is_help=True)
 
 app.add_typer(ppt_app, name="ppt")
 app.add_typer(doc_app, name="doc")
 app.add_typer(xlsx_app, name="xlsx")
 app.add_typer(diagram_app, name="diagram")
+diagram_app.add_typer(diagram_v2_app, name="v2")
+app.add_typer(asset_app, name="asset")
 app.add_typer(pii_app, name="pii")
 app.add_typer(locale_app, name="locale")
 app.add_typer(cr_app, name="cr")
@@ -633,6 +637,44 @@ def export_preview_cli(
     if open_first and images:
         rprint(f"[cyan]ℹ Launching desktop Preview:[/cyan] [bold]{images[0].name}[/bold]")
         subprocess.run(["open", "-a", "Preview", str(images[0].resolve())], check=False)
+
+
+@ppt_app.command("visual-qa")
+def visual_qa_cli(
+    file: str = typer.Option("output/presentations/architecture_evolution_cdsw_to_lambda.pptx", "--file", "-f", help="Path to .pptx presentation file"),
+    capture_live: bool = typer.Option(True, "--capture-live/--no-capture-live", help="Capture live window screenshots from Microsoft PowerPoint if running on macOS"),
+    output_dir: Optional[str] = typer.Option(None, "--output-dir", "-o", help="Directory to save preview screenshots"),
+) -> None:
+    """Run automated visual inspection and DrawingML collision linting on PowerPoint slides."""
+    from src.ppt_engine.visual_qa import PPTVisualLinter, PowerPointScreenCaptureEngine
+
+    p_in = Path(file)
+    if not p_in.exists():
+        rprint(f"[red]Error:[/red] PowerPoint file not found: {file}")
+        raise typer.Exit(code=1)
+
+    out_dir = Path(output_dir) if output_dir else p_in.parent / "previews"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    rprint(f"[cyan]ℹ Running DrawingML Spatial Collision & Text Overflow Linter on:[/cyan] [bold]{p_in.name}[/bold]")
+    linter = PPTVisualLinter(p_in)
+    issues = linter.lint_presentation()
+
+    if issues:
+        rprint(f"[yellow]⚠ Found {len(issues)} spatial issue(s):[/yellow]")
+        for issue in issues:
+            color = "red" if issue.severity == "CRITICAL" else "yellow"
+            rprint(f"  • [Slide {issue.slide_index}] [{color} bold]{issue.issue_type}[/{color} bold] on [bold]{issue.shape_name}[/bold]: {issue.description}")
+            rprint(f"    [dim]↳ Fix: {issue.suggested_fix}[/dim]")
+    else:
+        rprint("[green]✓ Zero spatial collisions or text overflow hazards detected.[/green]")
+
+    if capture_live and PowerPointScreenCaptureEngine.is_powerpoint_running():
+        rprint(f"[cyan]ℹ Capturing live window screenshots from Microsoft PowerPoint...[/cyan]")
+        captured = PowerPointScreenCaptureEngine.capture_live_slides(p_in, out_dir)
+        rprint(f"[green]✓ Captured {len(captured)} slide image(s) to:[/green] [bold]{out_dir}[/bold]")
+        for c in captured:
+            rprint(f"  • {c.name}")
 
 
 
@@ -1422,6 +1464,21 @@ def delete_diagram_page(
         rprint(f"[yellow]Page '{page}' not found in:[/yellow] {target}")
 
 
+@diagram_app.command("export-pptx")
+def export_diagram_pptx_cli(
+    output: str = typer.Option("output/presentations/architecture_evolution_cdsw_to_lambda.pptx", "--output", "-o", help="Destination path for native .pptx deck"),
+    open_deck: bool = typer.Option(False, "--open", help="Launch presentation in Microsoft PowerPoint on macOS"),
+) -> None:
+    """Compile architecture evolution diagrams into 100% native, fully editable PowerPoint DrawingML slides."""
+    from src.ppt_engine.pptx_diagram_compiler import PowerPointDiagramCompiler
+    compiler = PowerPointDiagramCompiler()
+    out_p = compiler.compile_presentation(output)
+    rprint(f"[green]✓ Native PowerPoint presentation generated:[/green] [bold]{out_p}[/bold]")
+    if open_deck:
+        import subprocess
+        subprocess.run(["open", "-a", "Microsoft PowerPoint", str(out_p)])
+
+
 @diagram_app.command("import-library")
 def import_diagram_library(
     file: str = typer.Argument(..., help="Path to Draw.io .xml library file (<mxlibrary>)"),
@@ -1477,6 +1534,253 @@ def list_diagram_icons(
         table.add_row(ic["id"], ic.get("title", ""), ic.get("pack", "logos"), ic.get("format", "svg"), ic.get("file", ""))
 
     console.print(table)
+
+
+# ============================================================================
+# Diagram Engine V2 Commands (bench diagram v2 ...)
+# ============================================================================
+
+@diagram_v2_app.command("compile")
+def compile_diagram_v2_cli(
+    spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Destination file or directory for generated artifacts"),
+    format: str = typer.Option("all", "--format", "-f", help="Target output format: 'all', 'drawio', 'svg', 'png', or 'pptx'"),
+    open_deck: bool = typer.Option(False, "--open", help="Proactively launch generated PPTX slide deck on desktop"),
+) -> None:
+    """Compile a declarative YAML specification deterministically into Draw.io XML, SVG, PNG, and native PowerPoint slides."""
+    from src.ppt_engine.diagram_v2 import compile_diagram
+
+    spec_p = Path(spec)
+    if not spec_p.exists():
+        rprint(f"[red]Error:[/red] Diagram specification file not found: {spec}")
+        raise typer.Exit(code=1)
+
+    try:
+        formats_list = [f.strip() for f in format.split(",") if f.strip()]
+        result = compile_diagram(spec_path_or_dict=spec_p, output_dir_or_file=output, formats=formats_list, open_deck=open_deck)
+        rprint(f"[green]✓ Successfully compiled Diagram V2 topology:[/green] [bold]{result.spec.name}[/bold]")
+        if result.drawio_path:
+            rprint(f"  • Draw.io XML:  [bold]{result.drawio_path}[/bold]")
+        if result.svg_path:
+            rprint(f"  • Vector SVG:   [bold]{result.svg_path}[/bold]")
+        if result.png_path:
+            rprint(f"  • High-DPI PNG: [bold]{result.png_path}[/bold]")
+        if result.pptx_path:
+            rprint(f"  • Native PPTX:  [bold]{result.pptx_path}[/bold]")
+    except Exception as e:
+        rprint(f"[red]Error compiling diagram specification:[/red] {e}")
+        raise typer.Exit(code=1)
+
+
+@diagram_v2_app.command("validate")
+def validate_diagram_v2_cli(
+    spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification"),
+) -> None:
+    """Validate a declarative diagram YAML specification schema and check icon assets."""
+    from src.ppt_engine.diagram_v2 import validate_diagram_spec
+
+    spec_p = Path(spec)
+    if not spec_p.exists():
+        rprint(f"[red]Error:[/red] Diagram specification file not found: {spec}")
+        raise typer.Exit(code=1)
+
+    is_valid, issues, validated = validate_diagram_spec(spec_p)
+    if is_valid and validated:
+        rprint(f"[green]✓ Specification is valid:[/green] [bold]{validated.name}[/bold] (ID: {validated.id})")
+        rprint(f"  • Containers: {len(validated.containers)}")
+        rprint(f"  • Nodes:      {len(validated.nodes)}")
+        rprint(f"  • Flows:      {len(validated.flows)}")
+        rprint(f"  • Badges:     {len(validated.badges)}")
+    else:
+        rprint(f"[red]✗ Specification validation failed with {len(issues)} issue(s):[/red]")
+        for iss in issues:
+            rprint(f"  [red]•[/red] {iss}")
+        raise typer.Exit(code=1)
+
+
+@diagram_v2_app.command("sample")
+def sample_diagram_v2_cli(
+    name: str = typer.Option("aws_lambda", "--name", "-n", help="Sample template name: 'aws_lambda', 'cdsw', or 'interwoven'"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Destination path to write sample YAML"),
+) -> None:
+    """Emit a production-grade sample declarative diagram YAML specification."""
+    sample_dir = Path(__file__).resolve().parent / "ppt_engine" / "diagram_v2" / "samples"
+    file_map = {
+        "aws_lambda": sample_dir / "proposed_aws_lambda.yaml",
+        "cdsw": sample_dir / "cdsw_legacy_batch.yaml",
+        "interwoven": sample_dir / "interwoven_migration.yaml",
+    }
+    src_file = file_map.get(name.lower())
+    if not src_file or not src_file.exists():
+        rprint(f"[red]Error:[/red] Unknown sample '{name}'. Available: {list(file_map.keys())}")
+        raise typer.Exit(code=1)
+
+    content = src_file.read_text(encoding="utf-8")
+    if output:
+        out_p = Path(output)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        out_p.write_text(content, encoding="utf-8")
+        rprint(f"[green]✓ Sample YAML written to:[/green] [bold]{out_p}[/bold]")
+    else:
+        console.print(content)
+
+
+@diagram_v2_app.command("audit")
+def audit_diagram_v2_cli(
+    spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification"),
+    strict: bool = typer.Option(False, "--strict", help="Exit with code 1 if any critical issues or warnings are found"),
+) -> None:
+    """Run Tier 1 geometric collision and clearance linting on a declarative diagram specification."""
+    from src.ppt_engine.diagram_v2 import load_diagram_spec, Tier1GeometricLinter
+
+    spec_p = Path(spec)
+    if not spec_p.exists():
+        rprint(f"[red]Error:[/red] Diagram specification file not found: {spec}")
+        raise typer.Exit(code=1)
+
+    try:
+        diagram_spec = load_diagram_spec(spec_p)
+    except Exception as e:
+        rprint(f"[red]Error loading diagram specification:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    rprint(f"[cyan]ℹ Running Tier 1 Geometric Collision & Clearance Linter on:[/cyan] [bold]{diagram_spec.name}[/bold]")
+    linter = Tier1GeometricLinter(diagram_spec)
+    issues = linter.lint()
+
+    if not issues:
+        rprint(f"[green]✓ Tier 1 Geometric Audit Passed:[/green] Zero collisions, occlusions, or clearance violations in [bold]{diagram_spec.name}[/bold].")
+        return
+
+    table = Table(title=f"Tier 1 Geometric Collision Audit: {diagram_spec.name} ({diagram_spec.id})")
+    table.add_column("Severity", style="bold", width=12)
+    table.add_column("Category", style="cyan", width=28)
+    table.add_column("Element ID", style="magenta", width=22)
+    table.add_column("Description", style="white")
+    table.add_column("Suggested Fix", style="dim green")
+
+    critical_count = 0
+    warning_count = 0
+
+    for iss in issues:
+        if iss.severity == "CRITICAL":
+            sev_styled = "[red]CRITICAL[/red]"
+            critical_count += 1
+        elif iss.severity == "WARNING":
+            sev_styled = "[yellow]WARNING[/yellow]"
+            warning_count += 1
+        else:
+            sev_styled = "[cyan]INFO[/cyan]"
+
+        table.add_row(sev_styled, iss.category, iss.element_id, iss.description, iss.suggested_fix)
+
+    console.print(table)
+    rprint(f"\n[bold]Audit Summary:[/bold] {critical_count} critical issue(s), {warning_count} warning(s)")
+
+    if critical_count > 0 or (strict and warning_count > 0):
+        rprint("[red]✗ Tier 1 geometric audit failed.[/red]")
+        raise typer.Exit(code=1)
+    else:
+        rprint("[yellow]⚠ Tier 1 geometric audit passed with warnings.[/yellow]")
+
+
+@diagram_v2_app.command("visual-qa")
+def visual_qa_diagram_v2_cli(
+    spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification"),
+    tier: str = typer.Option("both", "--tier", "-t", help="Verification tier to run: '1' (geometric), '2' (adversarial visual), or 'both'"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Directory to save visual QA reports and rendered plates"),
+    open_plate: bool = typer.Option(False, "--open", help="Launch rendered raster image on desktop upon completion"),
+    strict: bool = typer.Option(False, "--strict", help="Exit with code 1 if any critical defect or FAIL verdict"),
+) -> None:
+    """Run Tier 1 geometric collision linting and Tier 2 adversarial Visual QA subagent verification per Milestone 33 post-mortem."""
+    from src.ppt_engine.diagram_v2 import load_diagram_spec, Tier1GeometricLinter, Tier2VisualVerifier
+
+    spec_p = Path(spec)
+    if not spec_p.exists():
+        rprint(f"[red]Error:[/red] Diagram specification file not found: {spec}")
+        raise typer.Exit(code=1)
+
+    try:
+        diagram_spec = load_diagram_spec(spec_p)
+    except Exception as e:
+        rprint(f"[red]Error loading diagram specification:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    tier_mode = tier.lower().strip()
+    out_dir = Path(output) if output else Path("TEMP/visual_qa") / diagram_spec.id
+
+    if tier_mode == "1":
+        linter = Tier1GeometricLinter(diagram_spec)
+        issues = linter.lint()
+        table = Table(title=f"Tier 1 Geometric Collision Audit: {diagram_spec.name}")
+        table.add_column("Severity", style="bold", width=12)
+        table.add_column("Category", style="cyan", width=28)
+        table.add_column("Element ID", style="magenta", width=22)
+        table.add_column("Description", style="white")
+        table.add_column("Suggested Fix", style="dim green")
+        for iss in issues:
+            sev_styled = "[red]CRITICAL[/red]" if iss.severity == "CRITICAL" else "[yellow]WARNING[/yellow]"
+            table.add_row(sev_styled, iss.category, iss.element_id, iss.description, iss.suggested_fix)
+        console.print(table)
+        crit = sum(1 for i in issues if i.severity == "CRITICAL")
+        if crit > 0 or (strict and len(issues) > 0):
+            raise typer.Exit(code=1)
+        return
+
+    rprint(f"[cyan]ℹ Running Tier 1 & Tier 2 Adversarial Visual QA Verification on:[/cyan] [bold]{diagram_spec.name}[/bold]")
+    verifier = Tier2VisualVerifier(diagram_spec)
+    result = verifier.verify(output_dir=out_dir)
+
+    verdict_colors = {
+        "VERIFIED_PASS": "green",
+        "CONDITIONAL_PASS": "yellow",
+        "REVISE_REQUIRED": "magenta",
+        "FAIL": "red",
+    }
+    v_color = verdict_colors.get(result.verdict, "white")
+
+    rprint(f"\n[bold]Visual QA Verdict:[/bold] [{v_color} bold]{result.verdict}[/{v_color} bold] | [bold]Adversarial Score:[/bold] [{v_color}]{result.score:.1f}/100[/{v_color}]")
+
+    dim_table = Table(title="Adversarial Dimension Scorecard (Milestone 33 Standards)")
+    dim_table.add_column("Evaluation Dimension", style="cyan")
+    dim_table.add_column("Score", style="bold")
+    dim_table.add_column("Status", style="bold")
+
+    for dim, score in result.dimension_scores.items():
+        status = "[green]EXCELLENT[/green]" if score >= 90 else ("[yellow]ADEQUATE[/yellow]" if score >= 75 else "[red]DEFECTIVE[/red]")
+        dim_table.add_row(dim.replace("_", " ").title(), f"{score:.1f}", status)
+
+    console.print(dim_table)
+
+    all_findings = result.tier2_findings
+    if all_findings:
+        find_table = Table(title=f"Adversarial Visual Findings ({len(all_findings)} total)")
+        find_table.add_column("Severity", style="bold", width=12)
+        find_table.add_column("Dimension", style="cyan", width=26)
+        find_table.add_column("Element / Region", style="magenta", width=22)
+        find_table.add_column("Observable Flaw", style="white")
+        find_table.add_column("Prescriptive YAML Fix", style="dim green")
+
+        for f in all_findings:
+            sev = f"[red]{f.severity}[/red]" if f.severity == "CRITICAL" else (f"[yellow]{f.severity}[/yellow]" if f.severity == "WARNING" else f"[dim]{f.severity}[/dim]")
+            find_table.add_row(sev, f.dimension, f.element_or_region, f.flaw_description, f.prescriptive_fix)
+
+        console.print(find_table)
+    else:
+        rprint("[green]✓ Zero adversarial defects or optical imbalances detected.[/green]")
+
+    if result.raster_image_path:
+        rprint(f"\n  • High-DPI Render:     [bold]{result.raster_image_path}[/bold]")
+    if result.subagent_prompt_path:
+        rprint(f"  • Subagent Briefing:   [bold]{result.subagent_prompt_path}[/bold]")
+
+    if open_plate and result.raster_image_path and result.raster_image_path.exists():
+        import subprocess
+        subprocess.run(["open", "-a", "Preview", str(result.raster_image_path)])
+
+    if strict and (result.verdict == "FAIL" or result.total_critical_count > 0):
+        rprint(f"[red]✗ Visual QA verification failed with {result.total_critical_count} critical defect(s).[/red]")
+        raise typer.Exit(code=1)
 
 
 # ============================================================================
@@ -1641,6 +1945,134 @@ def file_change_request_cli(
     rprint(f"  Mandays Scoping:  {res.mandays_sheet_path}")
     rprint(f"  BAST CR Draft:    {res.bast_draft_path}")
     rprint(f"  Total Mandays:    {res.total_mandays} days")
+
+
+# ============================================================================
+# Deterministic Asset Harvester & Resolver Commands (bench asset ...)
+# ============================================================================
+
+@asset_app.command("resolve")
+def resolve_asset_cli(
+    key: str = typer.Argument(..., help="Icon identifier, alias, or path (e.g. 'databricks', 'cloudera:cdsw', 'dbx:unity_catalog')"),
+    as_json: bool = typer.Option(False, "--json", help="Output resolution result in JSON format"),
+    strict: bool = typer.Option(False, "--strict", help="Exit with code 1 if the asset cannot be resolved"),
+) -> None:
+    """Deterministically resolve an asset key, vendor alias, or path without web scraping."""
+    from src.ppt_engine.asset_harvester import AssetHarvester
+
+    res = AssetHarvester.resolve_asset(key)
+    if not res:
+        if as_json:
+            import json
+            print(json.dumps({"resolved": False, "key": key}))
+        else:
+            rprint(f"[red]✗ Asset could not be resolved:[/red] [bold]{key}[/bold]")
+            rprint("[dim]  Query was checked against manifest.json, vendor packs, and local icon roots with zero web scraping.[/dim]")
+        if strict:
+            raise typer.Exit(code=1)
+        return
+
+    if as_json:
+        import json
+        print(json.dumps({"resolved": True, **res.to_dict()}, indent=2))
+        return
+
+    table = Table(title=f"Asset Resolution: {key}")
+    table.add_column("Property", style="cyan")
+    table.add_column("Value", style="bold green")
+
+    table.add_row("Status", "[green]✓ RESOLVED[/green]")
+    table.add_row("Query Key", key)
+    table.add_row("Canonical ID", res.id)
+    table.add_row("Title", res.title)
+    table.add_row("Pack", res.pack)
+    table.add_row("Category", res.category)
+    table.add_row("Format", res.format.upper())
+    table.add_row("Brand Weight", res.weight)
+    table.add_row("Relative Path", res.file)
+    table.add_row("File Size", f"{res.size_bytes:,} bytes")
+    table.add_row("Absolute Path", str(res.absolute_path))
+
+    console.print(table)
+
+
+@asset_app.command("harvest")
+def harvest_assets_cli(
+    pack: str = typer.Option("all", "--pack", "-p", help="Pack to harvest ('databricks', 'cloudera', or 'all')"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force re-harvest of stencils even if present locally"),
+) -> None:
+    """Harvest official vector stencils and vendor packs into local assets catalog."""
+    from src.ppt_engine.asset_harvester import AssetHarvester
+
+    pack_lower = pack.lower().strip()
+    rprint(f"[cyan]ℹ Harvesting vector assets for pack:[/cyan] [bold]{pack_lower}[/bold]")
+
+    if pack_lower in ("databricks", "dbx", "all"):
+        rprint("[dim]  • Ingesting Databricks architecture stencils...[/dim]")
+        res_dbx = AssetHarvester.harvest_databricks_stencils(force=force)
+        rprint(f"[green]✓ Databricks:[/green] Ingested {res_dbx['total_harvested']} vector stencils into {res_dbx['dest_dir']}")
+
+    if pack_lower in ("cloudera", "all"):
+        rprint("[dim]  • Standardizing Cloudera CDP & CDSW marks...[/dim]")
+        res_cld = AssetHarvester.harvest_cloudera_pack()
+        rprint(f"[green]✓ Cloudera:[/green] Verified {res_cld['total_registered']} modern marks and CDSW product emblems")
+
+    rprint("[green]✓ Asset harvesting completed successfully.[/green]")
+
+
+@asset_app.command("list")
+def list_assets_cli(
+    pack: Optional[str] = typer.Option(None, "--pack", "-p", help="Filter by pack/category name"),
+    query: Optional[str] = typer.Option(None, "--query", "-q", help="Search query on icon title or ID"),
+) -> None:
+    """List or search all registered technology icons available in the workbench."""
+    from src.ppt_engine.library_importer import IconRegistry
+
+    icons = IconRegistry.list_icons(pack=pack, query=query)
+    if not icons:
+        rprint(f"[yellow]No icons found matching query '{query or ''}' in pack '{pack or 'all'}'[/yellow]")
+        return
+
+    table = Table(title=f"Registered Diagram Icons ({len(icons)} total)")
+    table.add_column("Icon ID / Key", style="cyan")
+    table.add_column("Title", style="bold green")
+    table.add_column("Pack", style="magenta")
+    table.add_column("Format", style="yellow")
+    table.add_column("Category", style="blue")
+    table.add_column("File Path", style="dim")
+
+    for ic in icons:
+        table.add_row(
+            ic["id"],
+            ic.get("title", ""),
+            ic.get("pack", "logos"),
+            ic.get("format", "svg"),
+            ic.get("category", "general"),
+            ic.get("file", ""),
+        )
+
+    console.print(table)
+
+
+@asset_app.command("import-library")
+def import_asset_library_cli(
+    file: str = typer.Argument(..., help="Path to Draw.io .xml library file (<mxlibrary>)"),
+    pack: str = typer.Option(..., "--pack", "-p", help="Pack name / vendor category (e.g. cloudera, snowflake, databricks)"),
+) -> None:
+    """Import an external Draw.io <mxlibrary> XML package, extract SVGs, and register into icon catalog."""
+    from src.ppt_engine.library_importer import import_drawio_library
+
+    lib_p = Path(file)
+    if not lib_p.exists():
+        rprint(f"[red]Error:[/red] Library file not found: {file}")
+        raise typer.Exit(code=1)
+
+    try:
+        res = import_drawio_library(lib_p, pack_name=pack)
+        rprint(f"[green]✓ Successfully imported {res['imported']} icons into pack '[bold]{pack}[/bold]'![/green]")
+    except Exception as e:
+        rprint(f"[red]Error importing library:[/red] {e}")
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

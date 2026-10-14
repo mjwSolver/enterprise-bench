@@ -4,6 +4,194 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-10-14] - Milestone 34: Tier 1 Geometric Collision Linting & Tier 2 Adversarial Visual QA Verification in Diagram Engine V2
+
+### Summary
+Delivered an automated, two-tier verification harness within Diagram Engine V2 (`src/ppt_engine/diagram_v2/`), systematically codifying the empirical layout rules and failure modes established in the Milestone 33 post-mortem into deterministic geometric checks and adversarial visual QA. Implemented the Tier 1 Geometric Collision Linter (`src/ppt_engine/diagram_v2/auditor.py` - `Tier1GeometricLinter` / `DiagramAuditor`) executing 11 spatial checks across uniform isotropic pixel space to detect entity collisions, label badge occlusions, arrow swallowing, insufficient connector spans, ceiling collisions, shape sizing defects, and Liang-Barsky obstacle penetrations. Engineered the Tier 2 Adversarial Visual QA Subagent Verifier (`src/ppt_engine/diagram_v2/visual_verifier.py` - `Tier2VisualVerifier`, `PerceptualImageAnalyzer`, `AdversarialVisualQASubagent`), uniting computer vision perceptual heuristics (300+ DPI rasterization, ink density heatmaps, ceiling band pixel scanning, color spectrum histograms) with adversarial subagent evaluation prompts scored across 7 weighted dimensions (0.0 to 100.0) with strict verdict classifications (`VERIFIED_PASS`, `CONDITIONAL_PASS`, `REVISE_REQUIRED`, `FAIL`). Integrated unified CLI commands in `src/cli.py` (`bench diagram v2 audit` and `bench diagram v2 visual-qa`) with `--tier`, `--strict`, `--output`, and `--open` desktop review flags. Validated against reference manifests in `src/ppt_engine/diagram_v2/samples/interwoven_migration.yaml`, achieving a perfect 100.0/100 composite score with zero geometric collisions and verified Diagnostic Status Triad compliance.
+
+### Milestones Delivered
+- **Codification of Milestone 33 Post-Mortem Failure Modes:**
+  - Codified 6 architectural invariants learned from the interwoven migration layout: (1) Database cylinder compression ($w \le 185\text{px}$, $w/h \le 1.6$), (2) Expanded connector clearances ($140\text{px}\text{--}175\text{px}$ spans, $\ge 20\text{px}$ arrowhead tip clearance), (3) Return loop gutter placement ($y \ge 25\text{px}$ from ceiling, $y \approx 230\text{--}240\text{px}$ in gutters), (4) Solid vertical modernization bridges ($\Delta x \le 2\text{px}$), (5) Container boundary edge clearance ($\ge 8\text{px}$ inset), and (6) Diagnostic Status Triad semantic coloring (Red defect, Amber wait/boundary, Blue active/DB, Green target).
+- **Tier 1 Geometric Collision Linter (`auditor.py`):**
+  - Engineered `Tier1GeometricLinter` (with backward-compatible alias `DiagramAuditor`) operating on `DiagramSpec` in uniform isotropic pixel space via `GeometryNormalizer`.
+  - Implemented 11 coordinate-level inspection checks:
+    - `check_node_collisions`: Direct bounding box overlap ($ox > 1\text{px}, oy > 1\text{px}$) and insufficient node gutters ($< 12\text{px}$).
+    - `check_container_badge_occlusion`: Child node intrusions into container category badges.
+    - `check_container_label_occlusion`: Enforces $\ge 30\text{px}$ clearance beneath container header title bands.
+    - `check_boundary_intersections`: Detects label pills or nodes colliding with or escaping container borders.
+    - `check_arrow_swallowing_and_crowding`: Prevents label pills from smothering connector lines and enforces $\ge 20\text{px}$ ($0.22''$) clearance from destination arrowhead tips.
+    - `check_connector_span_clearance`: Enforces $\ge 120\text{--}140\text{px}$ minimum horizontal spans between interconnected nodes.
+    - `check_ceiling_and_header_clearance`: Flags connector routes or return loops along canvas ceiling ($y < 25\text{px}$).
+    - `check_parallel_flow_clustering`: Enforces $\ge 35\text{px}$ separation between parallel or bidirectional connector lines.
+    - `check_shape_proportions_and_database_sizing`: Enforces database cylinder width limits ($w \le 185\text{px}$) and aspect ratios ($w/h \le 1.6$).
+    - `check_flow_obstacle_penetration`: Parametric Liang-Barsky line-segment tests detecting connectors penetrating unrelated cards.
+    - `check_node_text_overflow`: Models Arial typography line-wrapping and padding budgets to detect internal text overflow.
+- **Tier 2 Adversarial Visual QA Subagent Verifier (`visual_verifier.py`):**
+  - Implemented `PerceptualImageAnalyzer` extracting computer vision metrics on rasterized 300+ DPI PNG plates (ink density heatmaps, ceiling band non-background pixel scanning, perimeter edge clearance, Diagnostic Status Triad color histogram).
+  - Engineered `AdversarialVisualQASubagent` generating structured adversarial briefing prompts and local algorithmic scoring.
+  - Formulated 7-dimension weighted scoring engine (Geometric Clearance 20%, Arrow Flow Integrity 20%, Component Proportions 15%, Ceiling & Gutter Safety 15%, Vertical Bridges 10%, Typography Legibility 10%, Diagnostic Color Hierarchy 10%).
+  - Built strict verdict engine: `VERIFIED_PASS` ($\ge 85\%$, zero critical/warning), `CONDITIONAL_PASS` ($80\text{--}84\%$), `REVISE_REQUIRED` ($65\text{--}79\%$), and `FAIL` ($< 65\%$ or any critical defect).
+- **Unified CLI Commands (`src/cli.py`):**
+  - Registered `bench diagram v2 audit <spec.yaml> [--strict]` for coordinate-level Tier 1 spatial linting.
+  - Registered `bench diagram v2 visual-qa <spec.yaml> [--tier 1|2|both] [--output <dir>] [--open] [--strict]` for multi-tier adversarial visual QA.
+  - Registered `bench diagram v2 compile`, `validate`, and `sample` subcommands under `bench diagram v2`.
+- **Declarative Reference Manifests & Verification:**
+  - Validated canonical multi-track specification in [`src/ppt_engine/diagram_v2/samples/interwoven_migration.yaml`](../src/ppt_engine/diagram_v2/samples/interwoven_migration.yaml), achieving 100.0/100 score with zero collisions and zero warnings.
+- **Reference Handover:** [`docs/handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md`](handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md)
+
+---
+
+## [2026-10-14] - Milestone 33: Interwoven Migration Topology & Whitelisting Architecture Suite
+
+### Summary
+Delivered the unified Interwoven Migration Architecture diagram, horizontal database compression, expanded connector clearances, and multi-format synchronization across `enterprise-bench`. Synthesized the discrete legacy synchronous Cloudera Data Science Workbench (CDSW) batch flow and the proposed modern AWS serverless pipeline into a single, comprehensive multi-track topology anchored to a shared client ingress origin (`app1`, `app2`, `app3`). Resolved canvas crowding by horizontally compressing database cylinder components by 35% (width reduced from $260\text{px}$ to $170\text{px}$) across both legacy cluster storage (`wsaidsu_exp`) and modern Databricks Delta Lake. Expanded inter-column connector spans ($140\text{px}\text{--}175\text{px}$ clearance), eliminating badge text overlap over arrow stems, arrowhead endpoints, and adjacent node boundaries. Repositioned the serialized synchronous return loop (`3a. Serialized Sync Return (>30-60s)`) from the cramped top ceiling down to the open gutter directly below the legacy cluster ($y=230\text{--}240$), flowing cleanly from the base of Legacy Storage across to Client Ingress Origin. Maintained solid, unclipped vertical modernization bridges for script refactoring (Col 2: 1-Task Script ➔ Serverless Lambda) and data replication (Col 3: Legacy HDFS ➔ Databricks Delta). Synchronized all diagram assets simultaneously across native Draw.io XML, clean W3C companion SVG, hybrid `.drawio.svg`, 300+ DPI PNG (`_v4.png`), multi-page master Draw.io project (`device_whitelist_system.drawio`), browser launcher HTML, and native PowerPoint presentation decks (`pptx_diagram_compiler.py`).
+
+### Milestones Delivered
+- **Unified Interwoven Architecture Topology:**
+  - Designed and generated the unified multi-track migration architecture diagram in [`scripts/generate_interwoven_migration.py`](../scripts/generate_interwoven_migration.py).
+  - Built Shared Client Ingress Origin grouping client applications (`app1`, `app2`, `app3` with `recon_tool binary`) issuing both legacy batch calls and modern REST requests.
+  - Upper Track: Encapsulates Legacy CDSW Batch processing, featuring Cloudera CDSW Job runner, Col 2 1-Task bottleneck card with warning badges (`⚠️ BOTTLENECK`, `⚠️ SYNCHRONOUS`) and 5-step execution bullet list, and Col 3 Legacy Storage cylinder.
+  - Lower Track: Encapsulates Target AWS Serverless architecture, featuring Col 1 unified API Gateway (`Managed HTTPS Endpoints`, `Managed Ingress & Egress`), Col 2 deployed code and Secrets Manager security injection, AWS Lambda serverless compute, and Col 3 Databricks Delta cylinder.
+- **Database Horizontal Compression ($260\text{px} \to 170\text{px}$):**
+  - Compressed cylinder shape widths from $260\text{px}$ down to $170\text{px}$ (`x=1090`, `width=170`) across both legacy and modern tracks.
+  - Resolved canvas crowding in column 3 while maintaining clean internal typography, logo placement, and 3D rim perspective clearance.
+- **Expanded Connector Clearances ($140\text{px}\text{--}175\text{px}$ Spans):**
+  - Expanded inter-column spans across all horizontal data connectors:
+    - Client Boundary ➔ Col 1 CDSW/API GW: $175\text{px}$ clearance.
+    - Col 1 ➔ Col 2 Compute (CDSW ➔ 1 Task / API GW ➔ Lambda): $140\text{px}\text{--}145\text{px}$ clearance.
+    - Col 2 ➔ Col 3 Storage (1 Task ➔ Legacy DB / Lambda ➔ DBX): $150\text{px}$ clearance.
+    - Return Egress (Lambda ➔ API GW) & Fast Response (API GW ➔ Client): $140\text{px}$ and $175\text{px}$ clearances.
+  - Completely eliminated badge overlap over arrow stems and arrowheads.
+- **Repositioned Return Loop Below Legacy Cluster ($y=230\text{--}240$):**
+  - Relocated `3a. Serialized Sync Return (>30-60s)` from top canvas ceiling down to the inter-track gutter directly below the legacy cluster ($y=230$).
+  - Exits cleanly from the base of the Legacy Storage cylinder (`exitX=0.25`, `exitY=1`, $x=1132$, $y=195$) and routes horizontally at $y=230$ into Client Ingress Boundary (`entryX=1`, `entryY=0.33` at $x=230$).
+  - Eliminated ceiling border congestion and visual interference above the CDSW runner.
+- **Solid Vertical Migration Bridges:**
+  - Modernize Bridge (Col 2): Direct unclipped vertical flow from legacy script track down to AWS Lambda card (`#D97706`).
+  - Data Migration Bridge (Col 3): Direct unclipped vertical flow from Legacy Storage down to Databricks Delta cylinder (`#0284C7`).
+- **Multi-Format Presentation & Asset Synchronization:**
+  - Generated native Draw.io XML: [`output/diagrams/whitelist_system_interwoven_migration.drawio`](../output/diagrams/whitelist_system_interwoven_migration.drawio) and [`TEMP/whitelist_system_interwoven_migration.drawio`](../TEMP/whitelist_system_interwoven_migration.drawio).
+  - Generated high-DPI companion SVG: [`output/diagrams/whitelist_system_interwoven_migration.svg`](../output/diagrams/whitelist_system_interwoven_migration.svg).
+  - Generated hybrid `.drawio.svg`: [`output/diagrams/whitelist_system_interwoven_migration.drawio.svg`](../output/diagrams/whitelist_system_interwoven_migration.drawio.svg) embedding compressed `<mxfile>` metadata for drag-and-drop editing in Draw.io.
+  - Rendered 300+ DPI PNG via `rsvg-convert`: [`output/diagrams/whitelist_system_interwoven_migration.png`](../output/diagrams/whitelist_system_interwoven_migration.png) and cache-busted `_v4.png`.
+  - Updated multi-page master Draw.io project: [`TEMP/device_whitelist_system.drawio`](../TEMP/device_whitelist_system.drawio) (Page 7).
+  - Provided 1-click browser launcher: [`TEMP/open_interwoven_in_browser.html`](../TEMP/open_interwoven_in_browser.html).
+  - Integrated into PowerPoint compiler: [`src/ppt_engine/pptx_diagram_compiler.py`](../src/ppt_engine/pptx_diagram_compiler.py) `build_slide_interwoven_migration` compiling Slide 3 in [`TEMP/architecture_evolution_cdsw_to_lambda.pptx`](../TEMP/architecture_evolution_cdsw_to_lambda.pptx).
+- **Reference Handover:** [`docs/handovers/2026-10-14_interwoven_migration_topology_and_whitelisting.md`](handovers/2026-10-14_interwoven_migration_topology_and_whitelisting.md)
+
+---
+
+## [2026-10-14] - Milestone 32: CDSW to Lambda Architecture Diagram Evolution, Decoupled Flow Routing & Databricks Visual Parity
+
+### Summary
+Delivered the end-to-end CDSW-to-Lambda architectural migration presentation suite, decoupled flow routing topology, and high-density enterprise consulting archetypes across `enterprise-bench`. Realized the complete transformation narrative from monolithic synchronous Cloudera Data Science Workbench (CDSW) batch execution (Slide 1) to modern event-driven serverless target architecture (Slide 2) in [`output/presentations/architecture_evolution_cdsw_to_lambda.pptx`](../output/presentations/architecture_evolution_cdsw_to_lambda.pptx). Engineered a decoupled orthogonal flow routing system in `src/ppt_engine/pptx_diagram_compiler.py` utilizing single editable polyline freeforms (`build_freeform`) with rounded line joins (`<a:round>`), forward destination arrowheads (`<a:tailEnd>`), central inter-zone gutter routing (`_GUTTER_X = 4.15`), and automated collinear route boundary auditing (`_audit_route`, `_audit_label`). Perfected Databricks (DBX) visual parity by isolating 3D cylinder perspective geometry on `MSO_SHAPE.CAN` (reserving top rim ellipse and bottom arc margins) and activating a horizontal side-slot layout centering official vector logos on the body face. Codified high-density enterprise consulting archetypes in `src/ppt_engine/consulting_archetypes.py`, introducing the Gear 3 4-quadrant Workstream Runbook with named counterpart (PIC) accountability matrix (`build_dense_workstream_runbook_slide`) and Gear 2 3-column target architecture swimlanes (`build_target_architecture_swimlane_slide`), standardized with the Diagnostic Status Triad.
+
+### Milestones Delivered
+- **CDSW to Lambda Architecture Evolution Presentation Suite:**
+  - Compiled native 2-slide architectural migration deck in [`output/presentations/architecture_evolution_cdsw_to_lambda.pptx`](../output/presentations/architecture_evolution_cdsw_to_lambda.pptx).
+  - Slide 1: Current Legacy CDSW Job Execution featuring Client Applications zone (app1, app2, app3), Backend Execution Boundary container, Cloudera CDSW Job runner with authentic SVG mark, crimson-bordered 1-Task bottleneck card (`#DC2626`), warning badges (`⚠️ BOTTLENECK`, `⚠️ SYNCHRONOUS`), and routed bottom return channels.
+  - Slide 2: Proposed AWS Lambda Serverless Target Architecture featuring unified API Gateway for ingress and egress, AWS Cloud container boundary, deployed code, Secrets Manager security injection, AWS Lambda compute, and Databricks SQL database cylinder.
+- **Decoupled Flow Routing & Gutter-Channel Architecture:**
+  - Standardized multi-bend connectors as unified single-shape polyline freeforms (`add_routed_flow`) with rounded corners (`<a:round>`), forward destination arrowheads (`<a:tailEnd type="triangle"/>`), and empty drop shadow override (`_flatten`).
+  - Implemented gutter-based routing channels (`_GUTTER_X = 4.15`, `mid_gutter_x = 7.50`) and centered auto-sized label pills (`add_flow_label`).
+  - Embedded collinear boundary auditing (`_audit_route`, `_audit_label`) enforcing $\ge 0.12''$ clearance from container/card borders.
+- **Databricks (DBX) Visual Parity & 3D Cylinder Precision:**
+  - Reserved top perspective rim ellipse (`0.25 · ss`) and bottom arc (`0.125 · ss`) on `MSO_SHAPE.CAN` in `_plan_card`.
+  - Engineered horizontal side-slot layout (`[icon] [left-aligned text]`), centering official Databricks vector logo cleanly on the cylinder body face with zero rim crowding.
+- **Enterprise Consulting Archetypes & Complexity Gears (Gears 2 & 3):**
+  - Engineered `build_dense_workstream_runbook_slide` in [`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py) (Gear 3, 8.5–9.5/10 density) with 4-quadrant container discipline (Objective, MII Actions, Client Actions, Cross-Stream Dependencies) and bottom Named Counterpart (PIC) Governance Matrix.
+  - Engineered `build_target_architecture_swimlane_slide` (Gear 2, 6.5–7.5/10 baseline) with 3-column boundary swimlanes (On-Premises ➔ Cloud ➔ Consumers), labeled workstream paths (WS1, WS2, WS4), and out-of-scope boundaries.
+  - Standardized Diagnostic Status Triad: Red (`#DC2626`) for Defect/Bottleneck/P1 Debt, Amber (`#D97706`) for Boundary/Sync/Wait, Blue (`#0284C7`) for Ingress/Active Flow, Green (`#16A34A`) for Target/Reconciled State.
+- **Unified CLI & Visual QA Verification:**
+  - Exported deck via `uv run bench diagram export-pptx` in [`src/cli.py`](../src/cli.py).
+  - Verified 0 spatial collisions and 0 text overflow hazards via `uv run bench ppt visual-qa`.
+  - Captured pixel-perfect macOS live window previews in [`output/presentations/previews/slide_1.png`](../output/presentations/previews/slide_1.png) and [`output/presentations/previews/slide_2.png`](../output/presentations/previews/slide_2.png).
+- **Reference Handover:** [`docs/handovers/2026-10-14_cdsw_to_lambda_architecture_evolution.md`](handovers/2026-10-14_cdsw_to_lambda_architecture_evolution.md)
+
+---
+
+## [2026-10-14] - Milestone 31: Flat DrawingML Aesthetic, Proportional Content Padding Engine, DBX Cylinder Alignment & Orthogonal Flow Parity
+
+### Summary
+Delivered enterprise visual refinement and layout engine enhancements across native PowerPoint DrawingML presentations in `enterprise-bench`. Standardized a 100% flat vector aesthetic in `src/ppt_engine/pptx_diagram_compiler.py` via `_flatten(shape)`, stripping theme drop shadows by injecting explicit empty `<a:effectLst/>` nodes across autoshapes, pictures, text frames, and connectors. Engineered an adaptive proportional content padding engine (`_plan_card` and `measure_card_height`) that calculates dynamic vertical (`0.11 · ss`) and horizontal (`0.07 · w`) margins, models Arial character advance widths and word-wrapping stack heights, and executes an iterative font and icon down-scaling loop to ensure zero border collision while maintaining optical centering. Resolved Databricks (DBX) database cylinder crowding on `MSO_SHAPE.CAN` by reserving 3D top rim ellipse (`0.25 · ss`) and bottom arc (`0.125 · ss`) margins, and automatically activating a horizontal side-slot layout (`[icon] [left-aligned text]`) centered on the body face. Upgraded connector flows to single editable polyline freeforms (`add_routed_flow`) with rounded joins (`<a:round>`), forward destination arrowheads (`<a:tailEnd>`), and integrated collinear route and label clearance auditing (`_audit_route`, `_audit_label`). Verified 0 collisions and zero text overflow hazards across generated deliverables.
+
+### Milestones Delivered
+- **Flat DrawingML Aesthetic Standardization (`_flatten`):**
+  - Engineered `_flatten(shape)` in [`src/ppt_engine/pptx_diagram_compiler.py`](../src/ppt_engine/pptx_diagram_compiler.py) setting `shape.shadow.inherit = False` and injecting explicit empty `<a:effectLst/>` tags.
+  - Overrode default PowerPoint template theme drop shadow references (`<p:style><a:effectRef idx="2">`), producing flat, clean enterprise consulting presentation graphics.
+  - Applied universally across cards, boundaries, pills, badges, SVG picture shapes, and routed connector polylines.
+- **Proportional Content Padding Engine (`_plan_card` & `measure_card_height`):**
+  - Engineered dynamic margin calculation scaling proportionally with card short side (`pad_v = clamp(0.11 · ss, 0.10, 0.20)`) and width (`pad_h = clamp(0.07 · w, 0.08, 0.18)`).
+  - Built Arial typography width estimation (`_text_width_in`, `_wrapped_line_count`) and stack height modeling for kicker, title, and subtitle paragraphs.
+  - Implemented 16-step graceful shrinking loop scaling title font ($12.5\text{pt} \to 9.5\text{pt}$), subtitle ($9.0\text{pt} \to 7.5\text{pt}$), and icon size ($0.26\text{in} \to 0.24\text{in}$) to ensure content never overflows container boundaries.
+  - Achieved exact optical vertical centering of card contents across varied card aspect ratios.
+- **Databricks (DBX) Database Cylinder Layout & Alignment:**
+  - Redesigned `MSO_SHAPE.CAN` geometry in `_plan_card` by reserving the top perspective rim ellipse (`region_top = 0.25 · ss + pv`) and bottom front arc (`region_bottom = h - 0.125 · ss - pv`).
+  - Switched cylinder icon layout to horizontal side-slot (`[icon] [left-aligned text]`), centering the Databricks official vector logo cleanly inside the lower cylinder body face with zero rim crowding.
+- **Orthogonal Flow Routing Parity & Collinear Boundary Auditing:**
+  - Standardized multi-bend connectors in `add_routed_flow` as single editable PowerPoint freeforms (`build_freeform`) with rounded line joins (`<a:round>`), eliminating disjoint lines.
+  - Added port attachment helpers to `Box` (`left_at`, `right_at`, `top_at`, `bottom_at`, `left(t)`, `right(t)`).
+  - Engineered `_audit_route` and `_audit_label` to detect collinear overlap with zone boundaries and cards (`_BORDER_CLEARANCE = 0.12''`, `_LABEL_CLEARANCE = 0.10''`).
+- **Verified Deliverables & High-DPI Previews:**
+  - Verified [`output/presentations/architecture_evolution_cdsw_to_lambda.pptx`](../output/presentations/architecture_evolution_cdsw_to_lambda.pptx) passes visual linter with zero collisions and zero collinear warnings.
+  - Slide window previews verified in [`output/presentations/previews/slide_1.png`](../output/presentations/previews/slide_1.png) and [`output/presentations/previews/slide_2.png`](../output/presentations/previews/slide_2.png).
+- **Reference Handover:** [`docs/handovers/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`](handovers/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md)
+
+---
+
+## [2026-10-14] - Milestone 30: Visual QA Pipeline, DrawingML Collision Remediation & Live Window Inspection
+
+### Summary
+Delivered an automated visual inspection and DrawingML collision remediation pipeline across `enterprise-bench`. Engineered `PPTVisualLinter` and `PowerPointScreenCaptureEngine` in `src/ppt_engine/visual_qa.py`, alongside the unified CLI command `bench ppt visual-qa` in `src/cli.py`, providing automated detection and diagnostic reporting for container text overflows and label pill boundary collisions. Resolved critical DrawingML shape defects in `src/ppt_engine/pptx_diagram_compiler.py`: flipped reversed connector arrowheads to point forward toward destination nodes by correctly assigning `<a:tailEnd type="triangle"/>` tags, calibrated container heights and font sizing to prevent text overflow crossing bottom card borders, offset database cylinder text to clear 3D top rim geometry, and offset connector label pills away from dashed boundary borders. Integrated live desktop inspection with AppleScript (`osascript`) and macOS native `screencapture` to capture pixel-perfect slide window frames directly from Microsoft PowerPoint (`output/presentations/previews/slide_1.png` and `slide_2.png`), achieving 0 spatial collisions and 0 text overflow hazards across compiled presentation decks.
+
+### Milestones Delivered
+- **DrawingML Spatial Collision & Text Overflow Linter:**
+  - Engineered [`src/ppt_engine/visual_qa.py`](../src/ppt_engine/visual_qa.py) providing `PPTVisualLinter` and `VisualIssue` models.
+  - Implemented automated scanning for text frame overflow inside container cards based on estimated text heights vs available container bounds.
+  - Implemented boundary collision detection identifying dashed zone containers (`APPLICATIONS`, `BOUNDARY`, `CLOUD`) and calculating spatial overlap with small label pills ($\pm 0.15''$ threshold).
+- **macOS Live PowerPoint Window Screen Capture Engine:**
+  - Built `PowerPointScreenCaptureEngine` in [`src/ppt_engine/visual_qa.py`](../src/ppt_engine/visual_qa.py) using `pgrep`, `osascript`, and `screencapture -R{bounds}` for automated slide-by-slide window image capture.
+  - Added headless fallback thumbnail extraction via macOS `qlmanage -t -s 2000`.
+- **DrawingML Shape & Geometry Remediation:**
+  - Rectified connector arrowhead orientation in [`src/ppt_engine/pptx_diagram_compiler.py`](../src/ppt_engine/pptx_diagram_compiler.py) by setting `<a:tailEnd type="triangle"/>` for destination arrowheads.
+  - Calibrated card typography ($12.5\text{pt}$ / $11.0\text{pt}$ title sizing, $9\text{pt}$ subtitle) and container heights to eliminate card border collisions.
+  - Offset database cylinder shapes (`MSO_SHAPE.CAN`) text frame by `y + 0.28` to clear the 3D top rim.
+  - Shifted return flow and response label badges away from dashed boundary borders.
+- **Unified CLI Expansion:**
+  - Added `bench ppt visual-qa` in [`src/cli.py`](../src/cli.py) with automated diagnostic table output and live window capture flags (`--capture-live`).
+- **Verified Deliverables & High-DPI Previews:**
+  - Verified [`output/presentations/architecture_evolution_cdsw_to_lambda.pptx`](../output/presentations/architecture_evolution_cdsw_to_lambda.pptx) passes visual linter with zero collisions.
+  - Captured live slide previews in [`output/presentations/previews/slide_1.png`](../output/presentations/previews/slide_1.png) and [`output/presentations/previews/slide_2.png`](../output/presentations/previews/slide_2.png).
+- **Reference Handover:** [`docs/handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md`](handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md)
+
+---
+
+## [2026-10-13] - Milestone 29: Unified Diagram Pipeline, Deterministic Asset Harvester & Hybrid .drawio.svg / Native DrawingML Parity
+
+### Summary
+Delivered an end-to-end modernization of diagram workflows, enterprise vector asset ingestion, and presentation parity across `enterprise-bench`. Eliminated the "two-brain" rendering drift anti-pattern and web scraping roulette by establishing a deterministic asset harvesting and resolution layer, a hybrid editable `.drawio.svg` format embedding compressed `<mxfile>` metadata, and a native Microsoft PowerPoint DrawingML shape compiler. Engineered `AssetHarvester` in `src/ppt_engine/asset_harvester.py` and unified CLI commands (`bench asset resolve`, `bench asset harvest`, `bench asset list`, `bench asset import-library`) to deterministically ingest 72+ Databricks (DBX) vector stencils, authentic modern Cloudera CDP/CDSW marks, and AWS cloud stencils into `assets/logos/` and `assets/icons/manifest.json`. Upgraded `DrawIOConverter.to_drawio_svg` in `src/ppt_engine/diagram_engine.py` to emit valid W3C vector SVG embedding `<mxfile>` XML in the root `content` attribute and `<desc>` CDATA blocks, achieving 100% visual parity across CairoSVG/rsvg-convert while enabling instant drag-and-drop editing in Draw.io Desktop and VS Code. Engineered `PowerPointDiagramCompiler` in `src/ppt_engine/pptx_diagram_compiler.py` and CLI command `bench diagram export-pptx` to compile diagram ASTs directly into native PowerPoint DrawingML shape trees, containers, top-striped cards, and directional connectors.
+
+### Milestones Delivered
+- **Deterministic Asset Harvester & Registry:**
+  - Built [`src/ppt_engine/asset_harvester.py`](../src/ppt_engine/asset_harvester.py) providing `AssetHarvester`, `ResolvedAsset`, and automated stencil fetching/normalization with zero web scraping.
+  - Ingested 72 official Databricks vector stencils into [`assets/logos/databricks/`](../assets/logos/databricks/) and cached `vendor_packs/databricks_icons.xml`.
+  - Harmonized authentic modern Cloudera marks ([`assets/logos/cloudera/cloudera_official.svg`](../assets/logos/cloudera/cloudera_official.svg)) and CDSW product emblems ([`assets/logos/cloudera/cloudera_cdsw.svg`](../assets/logos/cloudera/cloudera_cdsw.svg)).
+  - Cataloged AWS cloud vector stencils (Lambda, API Gateway, Secrets Manager, S3) into [`assets/logos/aws/`](../assets/logos/aws/).
+  - Centralized catalog metadata in [`assets/icons/manifest.json`](../assets/icons/manifest.json) with canonical namespaces and vendor aliases (`dbx:`, `cloudera:`, `aws:`).
+  - Enhanced [`src/ppt_engine/library_importer.py`](../src/ppt_engine/library_importer.py) to delegate to `AssetHarvester.resolve_asset` and support remote SVG/PNG URLs in Draw.io `<mxlibrary>` packages.
+  - Added CLI command suite under `bench asset` in [`src/cli.py`](../src/cli.py): `resolve`, `harvest`, `list`, `import-library`.
+- **Hybrid Editable `.drawio.svg` Engine:**
+  - Implemented `DrawIOConverter.to_drawio_svg` in [`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py), embedding escaped `<mxfile>` XML in the root SVG `content` attribute and `<desc>` metadata tag.
+  - Extended `DrawIOProject.export` to support `drawio.svg` format and auto-detect `*.drawio.svg` outputs.
+  - Verified visual parity and drag-and-drop editability across [`output/diagrams/current_process_cdsw.drawio.svg`](../output/diagrams/current_process_cdsw.drawio.svg) and [`output/diagrams/proposed_aws_lambda.drawio.svg`](../output/diagrams/proposed_aws_lambda.drawio.svg).
+- **Native PowerPoint DrawingML Shape Compiler:**
+  - Built [`src/ppt_engine/pptx_diagram_compiler.py`](../src/ppt_engine/pptx_diagram_compiler.py) providing `PowerPointDiagramCompiler`.
+  - Compiled diagram nodes into native `python-pptx` DrawingML shapes: dashed container boundaries (`MSO_SHAPE.RECTANGLE`), sharp rectangular cards with colored top accent stripes, dual brand accent stripes (1:2 ratio), rasterized 300 DPI vector icons, and directional connectors with triangle arrowheads (`MSO_CONNECTOR.STRAIGHT`).
+  - Added CLI command `bench diagram export-pptx` in [`src/cli.py`](../src/cli.py), compiling the 2-slide architectural evolution deck in [`output/presentations/architecture_evolution_cdsw_to_lambda.pptx`](../output/presentations/architecture_evolution_cdsw_to_lambda.pptx).
+- **Reference Handover:** [`docs/handovers/2026-10-13_diagram_pipeline_and_asset_integration.md`](handovers/2026-10-13_diagram_pipeline_and_asset_integration.md)
+
+---
+
 ## [2026-09-26] - Milestone 28: Comprehensive System Anti-Pattern Compliance & Deep Universal PII / Real Names Purge
 
 ### Summary

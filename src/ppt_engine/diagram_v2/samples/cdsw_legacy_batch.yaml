@@ -1,0 +1,200 @@
+id: "cdsw_legacy_batch"
+name: "CDSW Legacy Batch Bottleneck"
+theme: "metrodata"
+
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: "in"
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+
+header:
+  show: true
+  action_title: "Current Process: CDSW"
+  subtitle: "Batch Processing & Synchronous Bottleneck Architecture"
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+
+containers:
+  - id: "group_apps"
+    label: "Client Applications"
+    x: 0.60
+    y: 1.35
+    w: 2.90
+    h: 5.25
+    border_hex: "#94A3B8"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "center"
+    vertical_align: "top"
+
+  - id: "group_cdsw"
+    label: "Cloudera CDSW Cluster"
+    x: 4.80
+    y: 1.35
+    w: 8.10
+    h: 5.25
+    border_hex: "#0284C7"
+    fill_hex: "#F0F9FF"
+    fill_opacity: 0.35
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    tag_badge: "CLOUDERA CDSW"
+    tag_bg_hex: "#E0F2FE"
+    tag_text_hex: "#0369A1"
+    align: "left"
+    vertical_align: "top"
+
+nodes:
+  - id: "node_app1"
+    container_id: "group_apps"
+    title: "app1"
+    subtitle: "Device 1"
+    x: 1.35
+    y: 1.95
+    w: 1.40
+    h: 1.10
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_app2"
+    container_id: "group_apps"
+    title: "app2"
+    subtitle: "Device 2"
+    x: 0.80
+    y: 5.15
+    w: 1.15
+    h: 1.20
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_app3"
+    container_id: "group_apps"
+    title: "app3"
+    subtitle: "Device 3"
+    x: 2.15
+    y: 5.15
+    w: 1.15
+    h: 1.20
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_cdsw_job"
+    container_id: "group_cdsw"
+    title: "CDSW JOB"
+    subtitle: "Cloudera Data Science\nWorkbench Job Runner"
+    x: 5.15
+    y: 2.15
+    w: 3.50
+    h: 2.50
+    icon: "assets/logos/cloudera/cloudera_cdsw.svg"
+    stroke_hex: "#0284C7"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_task"
+    container_id: "group_cdsw"
+    title: "1 Task"
+    title_pt: 20.0
+    valign: "top"
+    x: 9.35
+    y: 2.15
+    w: 3.10
+    h: 4.10
+    stroke_hex: "#DC2626"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.5
+
+badges:
+  - id: "badge_bottleneck"
+    x: 9.35
+    y: 1.70
+    w: 1.45
+    h: 0.28
+    text: "⚠️ BOTTLENECK"
+    bg_hex: "#FEE2E2"
+    text_hex: "#DC2626"
+    border_hex: "#FECACA"
+
+  - id: "badge_sync"
+    x: 10.90
+    y: 1.70
+    w: 1.55
+    h: 0.28
+    text: "⚠️ SYNCHRONOUS"
+    bg_hex: "#FEF3C7"
+    text_hex: "#B45309"
+    border_hex: "#FDE68A"
+
+bullet_lists:
+  - id: "steps_list"
+    x: 9.55
+    y: 2.80
+    w: 2.75
+    h: 1.65
+    items:
+      - "Input metadata"
+      - "SQL Query"
+      - "Filter & Search Dev. ADD"
+      - "Logging"
+      - "Return to sender"
+    font_size: 11.5
+    font_color: "#0F172A"
+
+flows:
+  - id: "flow_request"
+    source: "node_app1"
+    target: "node_cdsw_job"
+    points:
+      - [2.75, 2.50]
+      - [5.15, 2.50]
+    label: "1. Request"
+    label_at: [3.95, 2.50]
+    label_position: "above"
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1D4ED8"
+
+  - id: "flow_trigger"
+    source: "node_cdsw_job"
+    target: "node_task"
+    points:
+      - [8.65, 3.40]
+      - [9.35, 3.40]
+    label: "2. Trigger"
+    label_at: [9.00, 3.40]
+    label_position: "above"
+    stroke_hex: "#DC2626"
+    stroke_width: 2.5
+    label_bg_hex: "#FEF2F2"
+    label_text_hex: "#B91C1C"
+
+  - id: "flow_response"
+    source: "node_cdsw_job"
+    target: "node_app3"
+    points:
+      - [5.15, 4.30]
+      - [4.15, 4.30]
+      - [4.15, 5.75]
+      - [3.30, 5.75]
+    label: "4. Response"
+    label_at: [4.15, 5.02]
+    label_position: "left"
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1D4ED8"

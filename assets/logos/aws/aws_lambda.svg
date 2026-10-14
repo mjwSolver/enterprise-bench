@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none" role="img" aria-label="AWS Lambda">
+  <title>AWS Lambda</title>
+  <rect width="48" height="48" rx="8" fill="#FF9900"/>
+  <!-- Greek Lambda Glyph -->
+  <path d="M14 36L22.5 18H27L35.5 36H30.5L25 24L18.5 36H14Z" fill="#FFFFFF"/>
+  <path d="M21 21.5L16.5 12H12L17.5 23.5L21 21.5Z" fill="#FFFFFF"/>
+</svg>

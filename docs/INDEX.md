@@ -31,7 +31,10 @@ docs/
 │   ├── 2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md
 │   ├── 2026-10-13_diagram_pipeline_and_asset_integration.md
 │   ├── 2026-10-14_visual_qa_and_drawingml_collision_remediation.md
-│   └── 2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md
+│   ├── 2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md
+│   ├── 2026-10-14_cdsw_to_lambda_architecture_evolution.md
+│   ├── 2026-10-14_interwoven_migration_topology_and_whitelisting.md
+│   └── 2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
 │   ├── adaptive_complexity_gears_and_enterprise_density.md
@@ -128,5 +131,9 @@ docs/
 * [**`2026-10-13_diagram_pipeline_and_asset_integration.md`**](handovers/2026-10-13_diagram_pipeline_and_asset_integration.md): Milestone 29 closeout (Diagram pipeline and asset integration Phases 1–4, deterministic asset harvester and resolver CLI, Databricks/Cloudera/AWS stencils, hybrid editable `.drawio.svg` parity, and native PowerPoint DrawingML shape compiler).
 * [**`2026-10-14_visual_qa_and_drawingml_collision_remediation.md`**](handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md): Milestone 30 closeout (Automated PowerPoint visual inspection & spatial collision linter `PPTVisualLinter`, live macOS PowerPoint window capture `PowerPointScreenCaptureEngine`, forward connector arrowhead fixes, card text overflow bounds, cylinder text clearance, and `bench ppt visual-qa` CLI).
 * [**`2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`**](handovers/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md): Milestone 31 closeout (Flat DrawingML aesthetic standardization via `_flatten`, proportional content padding engine `_plan_card` & `measure_card_height`, Databricks 3D cylinder body alignment with side-slot icon layout, single polyline orthogonal flow routing, and collinear boundary auditing `_audit_route`).
+* [**`2026-10-14_cdsw_to_lambda_architecture_evolution.md`**](handovers/2026-10-14_cdsw_to_lambda_architecture_evolution.md): Milestone 32 closeout (CDSW-to-Lambda architecture evolution presentation suite in `architecture_evolution_cdsw_to_lambda.pptx`, decoupled flow routing topology, Databricks 3D cylinder visual parity, Gear 2/3 high-density consulting archetypes `build_dense_workstream_runbook_slide` and `build_target_architecture_swimlane_slide`, and Diagnostic Status Triad).
+* [**`2026-10-14_interwoven_migration_topology_and_whitelisting.md`**](handovers/2026-10-14_interwoven_migration_topology_and_whitelisting.md): Milestone 33 closeout (Unified Interwoven Migration Architecture diagram, horizontal database compression from 260px to 170px, expanded connector spans with 140-175px clearance, return loop repositioned below legacy cluster, and multi-format Draw.io/SVG/PNG/PowerPoint synchronization).
+* [**`2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md`**](handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md): Milestone 34 closeout (Diagram Engine V2 Tier 1 geometric collision linter `Tier1GeometricLinter` with 11 spatial checks, Tier 2 adversarial visual QA verifier `Tier2VisualVerifier`, perceptual computer vision heuristics, 7-dimension weighted scorecard, `bench diagram v2 audit/visual-qa` CLI, and 100.0/100 reference manifest).
+
 
 

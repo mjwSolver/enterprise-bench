@@ -1,0 +1,302 @@
+id: "interwoven_migration"
+name: "Device Whitelisting: Interwoven Migration Topology"
+theme: "metrodata"
+
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: "in"
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+
+header:
+  show: true
+  action_title: "Device Whitelisting: Interwoven Migration Topology"
+  subtitle: "Unified Architectural Mapping from Monolithic Batch Processing to Event-Driven Serverless Pipeline"
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+
+containers:
+  - id: "group_clients"
+    label: "Shared Client Ingress Origin"
+    x: 0.50
+    y: 1.25
+    w: 2.30
+    h: 5.75
+    border_hex: "#94A3B8"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "center"
+    vertical_align: "top"
+
+  - id: "group_legacy"
+    label: "UPPER TRACK: LEGACY CDSW BATCH"
+    x: 3.65
+    y: 1.25
+    w: 9.15
+    h: 2.45
+    border_hex: "#FCA5A5"
+    fill_hex: "#FFFDFB"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "left"
+    vertical_align: "top"
+
+  - id: "group_modern"
+    label: "LOWER TRACK: TARGET AWS SERVERLESS"
+    x: 3.65
+    y: 4.45
+    w: 9.15
+    h: 2.55
+    border_hex: "#BAE6FD"
+    fill_hex: "#F0F9FF"
+    fill_opacity: 0.4
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    tag_badge: "AWS SERVERLESS"
+    tag_bg_hex: "#E0F2FE"
+    tag_text_hex: "#0369A1"
+    align: "left"
+    vertical_align: "top"
+
+nodes:
+  # Client Origin
+  - id: "node_app1"
+    container_id: "group_clients"
+    title: "app1"
+    subtitle: "Device 1 • recon_tool"
+    x: 0.70
+    y: 1.65
+    w: 1.90
+    h: 1.05
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_app2"
+    container_id: "group_clients"
+    title: "app2"
+    subtitle: "Device 2 • recon_tool"
+    x: 0.70
+    y: 3.55
+    w: 1.90
+    h: 1.05
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_app3"
+    container_id: "group_clients"
+    title: "app3"
+    subtitle: "Device 3 • recon_tool"
+    x: 0.70
+    y: 5.45
+    w: 1.90
+    h: 1.05
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  # Upper Track: Legacy
+  - id: "node_cdsw"
+    container_id: "group_legacy"
+    title: "CDSW JOB"
+    subtitle: "Cloudera CDSW Job Runner"
+    x: 3.95
+    y: 1.65
+    w: 1.95
+    h: 1.45
+    icon: "assets/logos/cloudera/cloudera_cdsw.svg"
+    stroke_hex: "#0284C7"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_task"
+    container_id: "group_legacy"
+    title: "1-Task Script"
+    subtitle: "Synchronous Bottleneck"
+    kicker: "⚠️ BOTTLENECK"
+    role: "defect"
+    x: 7.35
+    y: 1.65
+    w: 1.95
+    h: 1.45
+    stroke_hex: "#DC2626"
+    fill_hex: "#FEF2F2"
+    stroke_width: 2.2
+
+  - id: "node_legacy_db"
+    container_id: "group_legacy"
+    title: "Legacy Storage"
+    subtitle: "wsaidsu_exp DB"
+    shape: "cylinder"
+    role: "defect"
+    x: 10.75
+    y: 1.65
+    w: 1.70
+    h: 1.35
+    stroke_hex: "#EF4444"
+    fill_hex: "#FEF2F2"
+    stroke_width: 2.0
+
+  # Lower Track: Modern AWS Serverless
+  - id: "node_api_gw"
+    container_id: "group_modern"
+    title: "API Gateway"
+    subtitle: "Managed Ingress & Egress"
+    x: 3.95
+    y: 5.00
+    w: 1.95
+    h: 1.45
+    icon: "assets/logos/aws/aws_api_gateway.svg"
+    role: "gateway"
+    stroke_hex: "#8B5CF6"
+    fill_hex: "#F5F3FF"
+    stroke_width: 2.0
+
+  - id: "node_lambda"
+    container_id: "group_modern"
+    title: "AWS Lambda"
+    subtitle: "Event-Driven Serverless"
+    x: 7.35
+    y: 5.00
+    w: 1.95
+    h: 1.45
+    icon: "assets/logos/aws/aws_lambda.svg"
+    role: "compute"
+    stroke_hex: "#D97706"
+    fill_hex: "#FFFBEB"
+    stroke_width: 2.0
+
+  - id: "node_dbx"
+    container_id: "group_modern"
+    title: "Databricks Delta"
+    subtitle: "ACID Lakehouse SQL"
+    shape: "cylinder"
+    role: "database"
+    x: 10.75
+    y: 5.00
+    w: 1.70
+    h: 1.45
+    icon: "assets/logos/databricks/databricks.svg"
+    stroke_hex: "#0284C7"
+    fill_hex: "#F0F9FF"
+    stroke_width: 2.2
+
+flows:
+  # Upper Track Flows
+  - id: "flow_1a"
+    source: "node_app1"
+    target: "node_cdsw"
+    points:
+      - [2.60, 2.15]
+      - [3.95, 2.15]
+    label: "1a. EXE Call"
+    label_position: "above"
+    stroke_hex: "#DC2626"
+    stroke_width: 2.2
+
+  - id: "flow_2a"
+    source: "node_cdsw"
+    target: "node_task"
+    points:
+      - [5.90, 2.35]
+      - [7.35, 2.35]
+    label: "2a. Batch Run"
+    label_position: "above"
+    stroke_hex: "#DC2626"
+    stroke_width: 2.2
+
+  - id: "flow_sql_query"
+    source: "node_task"
+    target: "node_legacy_db"
+    points:
+      - [9.30, 2.35]
+      - [10.75, 2.35]
+    label: "SQL Sync"
+    label_position: "above"
+    stroke_hex: "#DC2626"
+    stroke_width: 2.0
+
+  # Milestone 33: Repositioned Return Loop Below Legacy Cluster in Inter-Track Gutter (y=3.85in / y=230px)
+  - id: "flow_3a_return"
+    source: "node_legacy_db"
+    target: "node_app2"
+    points:
+      - [11.20, 3.00]
+      - [11.20, 3.90]
+      - [2.60, 3.90]
+    label: "3a. Serialized Sync Return (>30-60s)"
+    label_at: [6.90, 3.90]
+    label_position: "above"
+    stroke_hex: "#DC2626"
+    stroke_width: 2.2
+    dashed: true
+
+  # Solid Vertical Modernization Bridges
+  - id: "bridge_script"
+    source: "node_task"
+    target: "node_lambda"
+    points:
+      - [8.32, 3.10]
+      - [8.32, 5.00]
+    label: "Modernize: Script ➔ Lambda"
+    label_position: "side"
+    stroke_hex: "#D97706"
+    stroke_width: 2.5
+
+  - id: "bridge_data"
+    source: "node_legacy_db"
+    target: "node_dbx"
+    points:
+      - [11.60, 3.00]
+      - [11.60, 5.00]
+    label: "Data Migration: HDFS ➔ Delta"
+    label_position: "side"
+    stroke_hex: "#0284C7"
+    stroke_width: 2.5
+
+  # Lower Track: Serverless Flows
+  - id: "flow_1b"
+    source: "node_app3"
+    target: "node_api_gw"
+    points:
+      - [2.60, 5.75]
+      - [3.95, 5.75]
+    label: "1b. REST Call"
+    label_position: "above"
+    stroke_hex: "#2563EB"
+    stroke_width: 2.2
+
+  - id: "flow_2b"
+    source: "node_api_gw"
+    target: "node_lambda"
+    points:
+      - [5.90, 5.75]
+      - [7.35, 5.75]
+    label: "2b. Event Invoke"
+    label_position: "above"
+    stroke_hex: "#D97706"
+    stroke_width: 2.2
+
+  - id: "flow_3b"
+    source: "node_lambda"
+    target: "node_dbx"
+    points:
+      - [9.30, 5.75]
+      - [10.75, 5.75]
+    label: "3b. SQL Warehouse"
+    label_position: "above"
+    stroke_hex: "#0284C7"
+    stroke_width: 2.2

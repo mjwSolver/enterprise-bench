@@ -20,6 +20,20 @@
       "id": "cloudera",
       "name": "Cloudera",
       "vendor": "Cloudera"
+    },
+    {
+      "id": "databricks",
+      "name": "Databricks Intelligence Platform",
+      "vendor": "Databricks",
+      "brand_color": "#FF3621",
+      "source": "Official Vector Architecture Stencils"
+    },
+    {
+      "id": "aws",
+      "name": "Amazon Web Services (AWS)",
+      "vendor": "Amazon",
+      "brand_color": "#FF9900",
+      "source": "Official Cloud Architecture Stencils"
     }
   ],
   "icons": [
@@ -39,10 +53,11 @@
     },
     {
       "id": "aws",
-      "title": "Aws",
+      "title": "Amazon Web Services",
       "pack": "logos",
       "file": "assets/logos/aws.svg",
-      "format": "svg"
+      "format": "svg",
+      "category": "cloud"
     },
     {
       "id": "cloudera:cloudera_manager",
@@ -50,7 +65,7 @@
       "pack": "cloudera",
       "file": "assets/logos/cloudera/cloudera_manager.svg",
       "format": "svg",
-      "category": "general"
+      "category": "management"
     },
     {
       "id": "dbt",
@@ -107,7 +122,7 @@
       "pack": "cloudera",
       "file": "assets/logos/cloudera/cloudera_cdp_data_hub.svg",
       "format": "svg",
-      "category": "general"
+      "category": "platform"
     },
     {
       "id": "cloudera:cloudera_data_flow",
@@ -119,11 +134,11 @@
     },
     {
       "id": "cloudera:cloudera_ai",
-      "title": "Cloudera AI",
+      "title": "Cloudera Machine Learning / AI",
       "pack": "cloudera",
-      "file": "assets/logos/cloudera/cloudera_ai.png",
-      "format": "png",
-      "category": "general"
+      "file": "assets/logos/cloudera/cloudera_ai.svg",
+      "format": "svg",
+      "category": "data_science"
     },
     {
       "id": "cloudera:cloudera_data_catalog",
@@ -196,6 +211,1686 @@
       "file": "assets/logos/cloudera/cloudera_long_icon.png",
       "format": "png",
       "category": "general"
+    },
+    {
+      "id": "cloudera",
+      "title": "Cloudera",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_official.svg",
+      "format": "svg",
+      "category": "corporate"
+    },
+    {
+      "id": "cloudera:official",
+      "title": "Cloudera",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_official.svg",
+      "format": "svg",
+      "category": "corporate"
+    },
+    {
+      "id": "cloudera:cdsw",
+      "title": "Cloudera Data Science Workbench (CDSW)",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_cdsw.svg",
+      "format": "svg",
+      "category": "data_science"
+    },
+    {
+      "id": "cloudera:cloudera_cdsw",
+      "title": "Cloudera Data Science Workbench",
+      "pack": "cloudera",
+      "file": "assets/logos/cloudera/cloudera_cdsw.svg",
+      "format": "svg",
+      "category": "data_science"
+    },
+    {
+      "id": "databricks",
+      "title": "Databricks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:databricks",
+      "title": "Databricks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx",
+      "title": "Databricks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:databricks",
+      "title": "Databricks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:photon",
+      "title": "Photon",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/photon.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:photon",
+      "title": "Photon",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/photon.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:lakeflow",
+      "title": "Lakeflow",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:lakeflow",
+      "title": "Lakeflow",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:apache_spark",
+      "title": "Apache Spark",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/apache_spark.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:apache-spark",
+      "title": "Apache Spark",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/apache_spark.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:apache_spark",
+      "title": "Apache Spark",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/apache_spark.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:compute_clusters",
+      "title": "Compute (Clusters)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/compute_clusters.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:compute-clusters",
+      "title": "Compute (Clusters)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/compute_clusters.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:compute_clusters",
+      "title": "Compute (Clusters)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/compute_clusters.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:lakehouse",
+      "title": "Lakehouse Architecture",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:lakehouse",
+      "title": "Lakehouse Architecture",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:databricks_runtime",
+      "title": "Databricks Runtime",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_runtime.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:databricks-runtime",
+      "title": "Databricks Runtime",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_runtime.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:databricks_runtime",
+      "title": "Databricks Runtime",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_runtime.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:multicloud",
+      "title": "Multicloud Deployment",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/multicloud.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:multicloud",
+      "title": "Multicloud Deployment",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/multicloud.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:spark_real_time_mode",
+      "title": "Real-Time Mode for Apache Spark",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/spark_real_time_mode.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:spark-real-time-mode",
+      "title": "Real-Time Mode for Apache Spark",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/spark_real_time_mode.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:spark_real_time_mode",
+      "title": "Real-Time Mode for Apache Spark",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/spark_real_time_mode.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:data_intelligence_platform",
+      "title": "Data Intelligence Platform",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_intelligence_platform.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:data-intelligence-platform",
+      "title": "Data Intelligence Platform",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_intelligence_platform.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:data_intelligence_platform",
+      "title": "Data Intelligence Platform",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_intelligence_platform.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:serverless_compute",
+      "title": "Serverless Compute",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/serverless_compute.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:serverless-compute",
+      "title": "Serverless Compute",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/serverless_compute.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "dbx:serverless_compute",
+      "title": "Serverless Compute",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/serverless_compute.svg",
+      "format": "svg",
+      "category": "platform"
+    },
+    {
+      "id": "databricks:lakeflow_connect",
+      "title": "Lakeflow Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_connect.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:lakeflow-connect",
+      "title": "Lakeflow Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_connect.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:lakeflow_connect",
+      "title": "Lakeflow Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_connect.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:delta_lake",
+      "title": "Delta Lake",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/delta_lake.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:delta-lake",
+      "title": "Delta Lake",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/delta_lake.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "dbx:delta_lake",
+      "title": "Delta Lake",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/delta_lake.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:zerobus_ingest",
+      "title": "Zerobus Ingest",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/zerobus_ingest.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:zerobus-ingest",
+      "title": "Zerobus Ingest",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/zerobus_ingest.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:zerobus_ingest",
+      "title": "Zerobus Ingest",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/zerobus_ingest.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:lakeflow_jobs",
+      "title": "Lakeflow Jobs",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_jobs.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:lakeflow-jobs",
+      "title": "Lakeflow Jobs",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_jobs.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:lakeflow_jobs",
+      "title": "Lakeflow Jobs",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_jobs.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:spark_declarative_pipelines",
+      "title": "Apache Spark Declarative Pipelines",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/spark_declarative_pipelines.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:spark-declarative-pipelines",
+      "title": "Apache Spark Declarative Pipelines",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/spark_declarative_pipelines.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:spark_declarative_pipelines",
+      "title": "Apache Spark Declarative Pipelines",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/spark_declarative_pipelines.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:structured_streaming",
+      "title": "Structured Streaming",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/structured_streaming.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:structured-streaming",
+      "title": "Structured Streaming",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/structured_streaming.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:structured_streaming",
+      "title": "Structured Streaming",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/structured_streaming.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:lakebridge",
+      "title": "Lakebridge",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakebridge.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:lakebridge",
+      "title": "Lakebridge",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakebridge.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:lakeflow_designer",
+      "title": "Lakeflow Designer",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_designer.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:lakeflow-designer",
+      "title": "Lakeflow Designer",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_designer.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:lakeflow_designer",
+      "title": "Lakeflow Designer",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakeflow_designer.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:auto_loader",
+      "title": "Auto Loader",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/auto_loader.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:auto-loader",
+      "title": "Auto Loader",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/auto_loader.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "dbx:auto_loader",
+      "title": "Auto Loader",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/auto_loader.svg",
+      "format": "svg",
+      "category": "engineering"
+    },
+    {
+      "id": "databricks:apache_iceberg",
+      "title": "Apache Iceberg",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/apache_iceberg.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:apache-iceberg",
+      "title": "Apache Iceberg",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/apache_iceberg.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "dbx:apache_iceberg",
+      "title": "Apache Iceberg",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/apache_iceberg.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:liquid_clustering",
+      "title": "Liquid Clustering",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/liquid_clustering.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:liquid-clustering",
+      "title": "Liquid Clustering",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/liquid_clustering.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "dbx:liquid_clustering",
+      "title": "Liquid Clustering",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/liquid_clustering.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:lakehouse_storage",
+      "title": "Lakehouse Storage (Managed Tables)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_storage.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:lakehouse-storage",
+      "title": "Lakehouse Storage (Managed Tables)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_storage.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "dbx:lakehouse_storage",
+      "title": "Lakehouse Storage (Managed Tables)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_storage.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:predictive_optimization",
+      "title": "Predictive Optimization",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/predictive_optimization.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:predictive-optimization",
+      "title": "Predictive Optimization",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/predictive_optimization.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "dbx:predictive_optimization",
+      "title": "Predictive Optimization",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/predictive_optimization.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:lakebase",
+      "title": "Lakebase",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakebase.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "dbx:lakebase",
+      "title": "Lakebase",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakebase.svg",
+      "format": "svg",
+      "category": "storage"
+    },
+    {
+      "id": "databricks:data_warehousing",
+      "title": "Databricks Lakehouse (Data Warehousing)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_warehousing.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:data-warehousing",
+      "title": "Databricks Lakehouse (Data Warehousing)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_warehousing.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "dbx:data_warehousing",
+      "title": "Databricks Lakehouse (Data Warehousing)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_warehousing.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:databricks_sql",
+      "title": "Databricks SQL",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_sql.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:databricks-sql",
+      "title": "Databricks SQL",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_sql.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "dbx:databricks_sql",
+      "title": "Databricks SQL",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_sql.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:lakehouse_federation",
+      "title": "Lakehouse Federation",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_federation.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:lakehouse-federation",
+      "title": "Lakehouse Federation",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_federation.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "dbx:lakehouse_federation",
+      "title": "Lakehouse Federation",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_federation.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:genie",
+      "title": "Databricks Genie",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:genie",
+      "title": "Databricks Genie",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:ai_bi_dashboards",
+      "title": "AI/BI Dashboards",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_bi_dashboards.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:ai-bi-dashboards",
+      "title": "AI/BI Dashboards",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_bi_dashboards.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "dbx:ai_bi_dashboards",
+      "title": "AI/BI Dashboards",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_bi_dashboards.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:lakehouse_rt",
+      "title": "Lakehouse//RT",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_rt.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:lakehouse-rt",
+      "title": "Lakehouse//RT",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_rt.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "dbx:lakehouse_rt",
+      "title": "Lakehouse//RT",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakehouse_rt.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:ai_bi",
+      "title": "Databricks AI/BI",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_bi.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:ai-bi",
+      "title": "Databricks AI/BI",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_bi.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "dbx:ai_bi",
+      "title": "Databricks AI/BI",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_bi.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:genie_agents",
+      "title": "Genie Agents",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_agents.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:genie-agents",
+      "title": "Genie Agents",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_agents.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:genie_agents",
+      "title": "Genie Agents",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_agents.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:sql_warehouse",
+      "title": "SQL Warehouse",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/sql_warehouse.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:sql-warehouse",
+      "title": "SQL Warehouse",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/sql_warehouse.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "dbx:sql_warehouse",
+      "title": "SQL Warehouse",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/sql_warehouse.svg",
+      "format": "svg",
+      "category": "analytics"
+    },
+    {
+      "id": "databricks:genie_one",
+      "title": "Genie One",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_one.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:genie-one",
+      "title": "Genie One",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_one.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:genie_one",
+      "title": "Genie One",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_one.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:genie_code",
+      "title": "Genie Code",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_code.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:genie-code",
+      "title": "Genie Code",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_code.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:genie_code",
+      "title": "Genie Code",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_code.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:genie_deep_research",
+      "title": "Genie Deep Research",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_deep_research.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:genie-deep-research",
+      "title": "Genie Deep Research",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_deep_research.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:genie_deep_research",
+      "title": "Genie Deep Research",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/genie_deep_research.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:agent_bricks",
+      "title": "Agent Bricks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/agent_bricks.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:agent-bricks",
+      "title": "Agent Bricks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/agent_bricks.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:agent_bricks",
+      "title": "Agent Bricks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/agent_bricks.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:ai_search",
+      "title": "Databricks AI Search",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_search.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:ai-search",
+      "title": "Databricks AI Search",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_search.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:ai_search",
+      "title": "Databricks AI Search",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_search.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:document_intelligence",
+      "title": "Document Intelligence",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/document_intelligence.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:document-intelligence",
+      "title": "Document Intelligence",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/document_intelligence.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:document_intelligence",
+      "title": "Document Intelligence",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/document_intelligence.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:unity_ai_gateway",
+      "title": "Unity AI Gateway",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_ai_gateway.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:unity-ai-gateway",
+      "title": "Unity AI Gateway",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_ai_gateway.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:unity_ai_gateway",
+      "title": "Unity AI Gateway",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_ai_gateway.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:model_training",
+      "title": "Databricks Model Training",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/model_training.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:model-training",
+      "title": "Databricks Model Training",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/model_training.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:model_training",
+      "title": "Databricks Model Training",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/model_training.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:mlflow",
+      "title": "Managed MLflow",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/mlflow.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:mlflow",
+      "title": "Managed MLflow",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/mlflow.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:ai_functions",
+      "title": "AI Functions",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_functions.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:ai-functions",
+      "title": "AI Functions",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_functions.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:ai_functions",
+      "title": "AI Functions",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ai_functions.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:unity_catalog",
+      "title": "Unity Catalog",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_catalog.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:unity-catalog",
+      "title": "Unity Catalog",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_catalog.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "dbx:unity_catalog",
+      "title": "Unity Catalog",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_catalog.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:model_serving",
+      "title": "Databricks Model Serving",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/model_serving.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:model-serving",
+      "title": "Databricks Model Serving",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/model_serving.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:model_serving",
+      "title": "Databricks Model Serving",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/model_serving.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:feature_store",
+      "title": "Databricks Feature Store",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/feature_store.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:feature-store",
+      "title": "Databricks Feature Store",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/feature_store.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:feature_store",
+      "title": "Databricks Feature Store",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/feature_store.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:automl",
+      "title": "Databricks AutoML",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/automl.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:automl",
+      "title": "Databricks AutoML",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/automl.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:data_quality_monitoring",
+      "title": "Data Quality Monitoring",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_quality_monitoring.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:data-quality-monitoring",
+      "title": "Data Quality Monitoring",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_quality_monitoring.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "dbx:data_quality_monitoring",
+      "title": "Data Quality Monitoring",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_quality_monitoring.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:abac",
+      "title": "Attribute-Based Access Control",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/abac.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "dbx:abac",
+      "title": "Attribute-Based Access Control",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/abac.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:customerlake",
+      "title": "CustomerLake",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/customerlake.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "dbx:customerlake",
+      "title": "CustomerLake",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/customerlake.svg",
+      "format": "svg",
+      "category": "ai"
+    },
+    {
+      "id": "databricks:lakewatch",
+      "title": "Lakewatch",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakewatch.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "dbx:lakewatch",
+      "title": "Lakewatch",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/lakewatch.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:data_lineage",
+      "title": "Data & AI Lineage",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_lineage.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:data-lineage",
+      "title": "Data & AI Lineage",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_lineage.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "dbx:data_lineage",
+      "title": "Data & AI Lineage",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/data_lineage.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:enterprise_security",
+      "title": "Enterprise Security",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/enterprise_security.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:enterprise-security",
+      "title": "Enterprise Security",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/enterprise_security.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "dbx:enterprise_security",
+      "title": "Enterprise Security",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/enterprise_security.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:delta_sharing",
+      "title": "Delta Sharing",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/delta_sharing.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "databricks:delta-sharing",
+      "title": "Delta Sharing",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/delta_sharing.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "dbx:delta_sharing",
+      "title": "Delta Sharing",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/delta_sharing.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "databricks:system_tables",
+      "title": "System Tables",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/system_tables.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:system-tables",
+      "title": "System Tables",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/system_tables.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "dbx:system_tables",
+      "title": "System Tables",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/system_tables.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:unity_catalog_semantics",
+      "title": "Unity Catalog Semantics",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_catalog_semantics.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:unity-catalog-semantics",
+      "title": "Unity Catalog Semantics",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_catalog_semantics.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "dbx:unity_catalog_semantics",
+      "title": "Unity Catalog Semantics",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/unity_catalog_semantics.svg",
+      "format": "svg",
+      "category": "governance"
+    },
+    {
+      "id": "databricks:opensharing",
+      "title": "OpenSharing",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/opensharing.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "dbx:opensharing",
+      "title": "OpenSharing",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/opensharing.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "databricks:marketplace",
+      "title": "Databricks Marketplace",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/marketplace.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "dbx:marketplace",
+      "title": "Databricks Marketplace",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/marketplace.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "databricks:partner_connect",
+      "title": "Partner Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/partner_connect.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "databricks:partner-connect",
+      "title": "Partner Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/partner_connect.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "dbx:partner_connect",
+      "title": "Partner Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/partner_connect.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "databricks:databricks_apps",
+      "title": "Databricks Apps",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_apps.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:databricks-apps",
+      "title": "Databricks Apps",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_apps.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:databricks_apps",
+      "title": "Databricks Apps",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_apps.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:clean_rooms",
+      "title": "Databricks Clean Rooms",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/clean_rooms.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "databricks:clean-rooms",
+      "title": "Databricks Clean Rooms",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/clean_rooms.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "dbx:clean_rooms",
+      "title": "Databricks Clean Rooms",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/clean_rooms.svg",
+      "format": "svg",
+      "category": "sharing"
+    },
+    {
+      "id": "databricks:notebooks",
+      "title": "Databricks Notebooks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/notebooks.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:notebooks",
+      "title": "Databricks Notebooks",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/notebooks.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:workspace",
+      "title": "Databricks Workspace",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/workspace.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:workspace",
+      "title": "Databricks Workspace",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/workspace.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:git_folders",
+      "title": "Git Folders (Repos)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/git_folders.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:git-folders",
+      "title": "Git Folders (Repos)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/git_folders.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:git_folders",
+      "title": "Git Folders (Repos)",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/git_folders.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:databricks_connect",
+      "title": "Databricks Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_connect.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:databricks-connect",
+      "title": "Databricks Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_connect.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:databricks_connect",
+      "title": "Databricks Connect",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_connect.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:asset_bundles",
+      "title": "Databricks Asset Bundles",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/asset_bundles.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:asset-bundles",
+      "title": "Databricks Asset Bundles",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/asset_bundles.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:asset_bundles",
+      "title": "Databricks Asset Bundles",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/asset_bundles.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:databricks_cli",
+      "title": "Databricks CLI",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_cli.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:databricks-cli",
+      "title": "Databricks CLI",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_cli.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:databricks_cli",
+      "title": "Databricks CLI",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/databricks_cli.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:ide_integrations",
+      "title": "IDE Integrations",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ide_integrations.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:ide-integrations",
+      "title": "IDE Integrations",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ide_integrations.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:ide_integrations",
+      "title": "IDE Integrations",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/ide_integrations.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:rest_api",
+      "title": "REST API & SDKs",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/rest_api.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:rest-api",
+      "title": "REST API & SDKs",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/rest_api.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:rest_api",
+      "title": "REST API & SDKs",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/rest_api.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:terraform_provider",
+      "title": "Databricks Terraform Provider",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/terraform_provider.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "databricks:terraform-provider",
+      "title": "Databricks Terraform Provider",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/terraform_provider.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "dbx:terraform_provider",
+      "title": "Databricks Terraform Provider",
+      "pack": "databricks",
+      "file": "assets/logos/databricks/terraform_provider.svg",
+      "format": "svg",
+      "category": "devtools"
+    },
+    {
+      "id": "aws:lambda",
+      "title": "AWS Lambda Serverless",
+      "pack": "aws",
+      "file": "assets/logos/aws/aws_lambda.svg",
+      "format": "svg",
+      "category": "compute"
+    },
+    {
+      "id": "aws:aws_lambda",
+      "title": "AWS Lambda",
+      "pack": "aws",
+      "file": "assets/logos/aws/aws_lambda.svg",
+      "format": "svg",
+      "category": "compute"
+    },
+    {
+      "id": "lambda",
+      "title": "AWS Lambda",
+      "pack": "aws",
+      "file": "assets/logos/aws/aws_lambda.svg",
+      "format": "svg",
+      "category": "compute"
+    },
+    {
+      "id": "aws:api_gateway",
+      "title": "Amazon API Gateway",
+      "pack": "aws",
+      "file": "assets/logos/aws/aws_api_gateway.svg",
+      "format": "svg",
+      "category": "integration"
+    },
+    {
+      "id": "api_gateway",
+      "title": "Amazon API Gateway",
+      "pack": "aws",
+      "file": "assets/logos/aws/aws_api_gateway.svg",
+      "format": "svg",
+      "category": "integration"
+    },
+    {
+      "id": "aws:secrets_manager",
+      "title": "AWS Secrets Manager / KMS",
+      "pack": "aws",
+      "file": "assets/logos/aws/aws_secrets_manager.svg",
+      "format": "svg",
+      "category": "security"
+    },
+    {
+      "id": "secrets_manager",
+      "title": "AWS Secrets Manager",
+      "pack": "aws",
+      "file": "assets/logos/aws/aws_secrets_manager.svg",
+      "format": "svg",
+      "category": "security"
+    },
+    {
+      "id": "aws:s3",
+      "title": "Amazon S3 Object Storage",
+      "pack": "aws",
+      "file": "assets/logos/amazons3.svg",
+      "format": "svg",
+      "category": "storage"
     }
   ]
 }

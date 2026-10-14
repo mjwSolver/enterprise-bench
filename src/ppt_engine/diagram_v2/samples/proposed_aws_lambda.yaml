@@ -1,0 +1,256 @@
+id: "proposed_aws_lambda"
+name: "Proposed AWS Lambda Architecture"
+theme: "metrodata"
+
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: "in"
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+
+header:
+  show: true
+  action_title: "Proposed: AWS Lambda"
+  subtitle: "Serverless Architecture & Execution Lifecycle Dataflow"
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+
+containers:
+  - id: "group_apps"
+    label: "Client Applications"
+    x: 0.60
+    y: 1.35
+    w: 2.90
+    h: 5.25
+    border_hex: "#94A3B8"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "center"
+    vertical_align: "top"
+
+  - id: "group_aws"
+    label: "AWS Cloud"
+    x: 8.10
+    y: 1.35
+    w: 4.80
+    h: 3.85
+    border_hex: "#F59E0B"
+    fill_hex: "#FFFBEB"
+    fill_opacity: 0.35
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    tag_badge: "AWS CLOUD"
+    tag_bg_hex: "#FEF3C7"
+    tag_text_hex: "#B45309"
+    align: "right"
+    vertical_align: "top"
+
+nodes:
+  - id: "node_app1"
+    container_id: "group_apps"
+    title: "app1"
+    subtitle: "Device 1"
+    x: 1.35
+    y: 1.95
+    w: 1.40
+    h: 1.10
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_app2"
+    container_id: "group_apps"
+    title: "app2"
+    subtitle: "Device 2"
+    x: 0.80
+    y: 5.15
+    w: 1.15
+    h: 1.20
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_app3"
+    container_id: "group_apps"
+    title: "app3"
+    subtitle: "Device 3"
+    x: 2.15
+    y: 5.15
+    w: 1.15
+    h: 1.20
+    icon_emoji: "🖥️"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_api_gw"
+    title: "API Gateway"
+    subtitle: "HTTP / REST Endpoints\n& Response Delivery"
+    kicker: "API Gateway"
+    x: 4.80
+    y: 2.10
+    w: 2.10
+    h: 2.70
+    icon: "assets/logos/aws/aws_api_gateway.svg"
+    stroke_hex: "#8B5CF6"
+    fill_hex: "#F5F3FF"
+    stroke_width: 2.2
+
+  - id: "node_code"
+    container_id: "group_aws"
+    title: "Code"
+    subtitle: "DEPLOYED"
+    x: 8.45
+    y: 1.85
+    w: 1.60
+    h: 1.30
+    stroke_hex: "#10B981"
+    fill_hex: "#ECFDF5"
+    stroke_width: 1.8
+
+  - id: "node_secrets"
+    container_id: "group_aws"
+    title: "Secret Management"
+    subtitle: "KMS / Secrets Manager"
+    kicker: "Security"
+    x: 10.60
+    y: 1.85
+    w: 2.00
+    h: 1.30
+    icon: "assets/logos/aws/aws_secrets_manager.svg"
+    stroke_hex: "#EF4444"
+    fill_hex: "#FEF2F2"
+    stroke_width: 2.0
+
+  - id: "node_lambda"
+    container_id: "group_aws"
+    title: "AWS Lambda"
+    subtitle: "(Aws Lamda)\nServerless Compute"
+    x: 8.45
+    y: 3.65
+    w: 4.15
+    h: 1.30
+    icon: "assets/logos/aws/aws_lambda.svg"
+    stroke_hex: "#D97706"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.5
+
+  - id: "node_dbx"
+    title: "DBX"
+    subtitle: "Databricks / DB"
+    shape: "cylinder"
+    is_cylinder: true
+    x: 10.75
+    y: 5.75
+    w: 1.70
+    h: 1.35
+    icon: "assets/logos/databricks/databricks.svg"
+    stroke_hex: "#0284C7"
+    fill_hex: "#F0F9FF"
+    stroke_width: 2.0
+
+flows:
+  - id: "flow_request"
+    source: "node_app1"
+    target: "node_api_gw"
+    points:
+      - [2.75, 2.50]
+      - [4.80, 2.50]
+    label: "1. Request"
+    label_at: [3.75, 2.50]
+    label_position: "above"
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1D4ED8"
+
+  - id: "flow_invoke"
+    source: "node_api_gw"
+    target: "node_lambda"
+    points:
+      - [6.90, 3.90]
+      - [8.45, 3.90]
+    label: "2. Invoke"
+    label_at: [7.65, 3.90]
+    label_position: "above"
+    stroke_hex: "#7C3AED"
+    stroke_width: 2.5
+    label_bg_hex: "#F5F3FF"
+    label_text_hex: "#6D28D9"
+
+  - id: "flow_code_deploy"
+    source: "node_code"
+    target: "node_lambda"
+    points:
+      - [9.25, 3.15]
+      - [9.25, 3.65]
+    stroke_hex: "#10B981"
+    stroke_width: 2.2
+
+  - id: "flow_secrets"
+    source: "node_secrets"
+    target: "node_lambda"
+    points:
+      - [11.60, 3.15]
+      - [11.60, 3.65]
+    label: "3. Secrets"
+    label_at: [11.60, 3.40]
+    label_position: "right"
+    dashed: true
+    stroke_hex: "#EF4444"
+    stroke_width: 2.0
+    label_bg_hex: "#FEF2F2"
+    label_text_hex: "#991B1B"
+
+  - id: "flow_dbx_query"
+    source: "node_lambda"
+    target: "node_dbx"
+    points:
+      - [11.60, 4.95]
+      - [11.60, 5.75]
+    label: "4. DBX Query"
+    label_at: [11.60, 5.35]
+    label_position: "right"
+    stroke_hex: "#0284C7"
+    stroke_width: 2.2
+    label_bg_hex: "#F0F9FF"
+    label_text_hex: "#0369A1"
+
+  - id: "flow_deliver"
+    source: "node_lambda"
+    target: "node_api_gw"
+    points:
+      - [8.45, 4.55]
+      - [6.90, 4.55]
+    label: "5. Deliver"
+    label_at: [7.65, 4.55]
+    label_position: "below"
+    stroke_hex: "#7C3AED"
+    stroke_width: 2.5
+    label_bg_hex: "#F5F3FF"
+    label_text_hex: "#6D28D9"
+
+  - id: "flow_response"
+    source: "node_api_gw"
+    target: "node_app3"
+    points:
+      - [4.80, 4.30]
+      - [4.15, 4.30]
+      - [4.15, 5.75]
+      - [3.30, 5.75]
+    label: "6. Response"
+    label_at: [4.15, 5.02]
+    label_position: "left"
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1D4ED8"

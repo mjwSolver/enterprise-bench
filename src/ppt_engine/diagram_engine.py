@@ -1494,6 +1494,40 @@ class DrawIOConverter:
         parsed_xml = minidom.parseString(raw_xml)
         return parsed_xml.toprettyxml(indent="  ", encoding="utf-8").decode("utf-8")
 
+    def to_drawio_svg(self, diagram: ParsedDiagram, svg_content: Optional[str] = None) -> str:
+        """
+        Compiles the diagram into Draw.io's hybrid .drawio.svg format.
+        Contains valid, high-DPI W3C vector SVG graphics while embedding compressed/escaped
+        <mxfile> XML in its root 'content' attribute and <desc> metadata tag.
+        Renders crisply in browsers/cairosvg, and opens as a drag-and-drop editable file in Draw.io.
+        """
+        xml_content = self.to_xml(diagram)
+
+        if not svg_content:
+            renderer = DiagramRenderer(theme=self.theme_name)
+            svg_content = renderer.render_svg(diagram)
+
+        escaped_xml = html.escape(xml_content, quote=True)
+
+        # Inject content="..." into root <svg> tag if not already present
+        if "content=" not in svg_content:
+            svg_with_content = re.sub(
+                r"<svg(\s+)",
+                rf'<svg content="{escaped_xml}"\1',
+                svg_content,
+                count=1,
+            )
+        else:
+            svg_with_content = svg_content
+
+        # Embed <desc> tag before closing </svg>
+        desc_tag = f'\n  <desc><![CDATA[{xml_content}]]></desc>\n'
+        if "</desc>" not in svg_with_content and "</svg>" in svg_with_content:
+            idx = svg_with_content.rfind("</svg>")
+            svg_with_content = svg_with_content[:idx] + desc_tag + svg_with_content[idx:]
+
+        return svg_with_content
+
     def _build_node_style(self, node: DiagramNode) -> str:
         icon_key = node.custom_style.get("icon") or node.custom_style.get("logo") or ""
         is_native_stencil = (
@@ -2025,8 +2059,21 @@ class DiagramRenderer:
         return lines
 
     def export_png(self, svg_content: str, output_png_path: Path, scale: float = 3.0) -> bool:
-        """Rasterize SVG to high-resolution 300+ DPI PNG via resvg-py / CairoSVG."""
+        """Rasterize SVG to high-resolution 300+ DPI PNG via rsvg-convert / resvg-py / CairoSVG."""
         output_png_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # 1. Try rsvg-convert CLI if present
+        rsvg_bin = shutil.which("rsvg-convert") or ("/opt/homebrew/bin/rsvg-convert" if os.path.exists("/opt/homebrew/bin/rsvg-convert") else None)
+        if rsvg_bin:
+            try:
+                import subprocess
+                cmd = [rsvg_bin, "-z", str(scale), "-o", str(output_png_path)]
+                subprocess.run(cmd, input=svg_content.encode("utf-8"), check=True, capture_output=True)
+                if output_png_path.exists():
+                    return True
+            except Exception:
+                pass
+
         try:
             import resvg_py
             png_bytes = resvg_py.svg_to_bytes(svg_content, zoom=scale)
@@ -2576,14 +2623,19 @@ class DrawIOProject:
         renderer = DiagramRenderer(theme_name=theme, custom_theme=c_theme)
         svg_str = renderer.render_svg(ast, transparent=transparent, canvas_bg=canvas_bg)
 
-        if fmt == "svg":
-            out_p.write_text(svg_str, encoding="utf-8")
+        if fmt in ("svg", "drawio.svg") or out_p.name.endswith(".drawio.svg"):
+            if fmt == "drawio.svg" or out_p.name.endswith(".drawio.svg"):
+                converter = DrawIOConverter(theme_name=theme)
+                hybrid_svg = converter.to_drawio_svg(ast, svg_content=svg_str)
+                out_p.write_text(hybrid_svg, encoding="utf-8")
+            else:
+                out_p.write_text(svg_str, encoding="utf-8")
             return out_p
         elif fmt == "png":
             renderer.export_png(svg_str, out_p, scale=scale)
             return out_p
         else:
-            raise ValueError(f"Unsupported export format: {format}. Use 'png' or 'svg'.")
+            raise ValueError(f"Unsupported export format: {format}. Use 'png', 'svg', or 'drawio.svg'.")
 
     def _try_cli_export(
         self,
