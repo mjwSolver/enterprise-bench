@@ -4,6 +4,7 @@
 > **Mission:** Universal multi-engine enterprise automation workbench (DOCX, PPTX, XLSX, Draw.io).  
 > **Architecture Ledger:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | **Index:** [`docs/INDEX.md`](docs/INDEX.md)  
 > **Operating Guardrails:** [`AGENTS.md`](AGENTS.md) (Strict ZERO INTERMEDIATE UNIT TESTING).  
+> **Retention Rule:** Retain strictly the **latest 10 active / legacy handovers** at all times ($\le 80$ lines). When a new active handover is written, the oldest legacy handover must be rotated into [`docs/handovers/handover_archive/`](docs/handovers/handover_archive/README.md) with its completion timestamp.
 
 ---
 
@@ -41,7 +42,12 @@ Progress: `[██████████] 100%` (Master Deliverables, Diagram 
 - [`2026-10-14_cdsw_to_lambda_architecture_evolution.md`](docs/handovers/2026-10-14_cdsw_to_lambda_architecture_evolution.md): **Milestone 32** (CDSW-to-Lambda architecture evolution suite in `architecture_evolution_cdsw_to_lambda.pptx`, decoupled flow routing topology, Databricks 3D cylinder visual parity, Gear 2/3 consulting archetypes, and Diagnostic Status Triad).
 - [`2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`](docs/handovers/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md): **Milestone 31** (Flat DrawingML aesthetic standardization via `_flatten`, proportional padding engine `_plan_card`, Databricks 3D cylinder body alignment, single polyline routing, collinear boundary auditing).
 - [`2026-10-14_visual_qa_and_drawingml_collision_remediation.md`](docs/handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md): **Milestone 30** (DrawingML spatial collision linter, macOS live window screen capture, forward arrowhead orientation, card text overflow fixes, cylinder text clearance, and `bench ppt visual-qa` CLI).
-- Older handovers indexed in [`docs/INDEX.md`](docs/INDEX.md).
+- [`2026-10-13_diagram_pipeline_and_asset_integration.md`](docs/handovers/2026-10-13_diagram_pipeline_and_asset_integration.md): **Milestone 29** (Diagram pipeline and asset integration Phases 1–4, deterministic asset harvester and resolver CLI, Databricks/Cloudera/AWS stencils, hybrid editable `.drawio.svg` parity, and native PowerPoint DrawingML shape compiler).
+- [`2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`](docs/handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md): **Milestone 28** (Comprehensive system anti-pattern compliance, deep universal PII purge, Cover Slide footer & container validation, 40-48px icon floor, and automated OpenXML element purging).
+- [`2026-09-23_feedback_and_quality_enhancement_sprint.md`](docs/handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): **Feedback Sprint** (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML aspect ratio QA engine & CLI, Slide 7 maintenance workflow, DrawingML bullet compliance).
+- [`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`](docs/handovers/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md): **Sprints 17–27 Review** (Review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap).
+- [`2026-09-21_sprints_17_27_completion_briefing.md`](docs/handovers/2026-09-21_sprints_17_27_completion_briefing.md): **Sprints 17–27 Closeout** (Universal NGL slug & PII normalization, Closing Deck visual enrichment, Kick-off Slide 10/12/19 fixes, and automated Change Request suite).
+- *Historical handovers archived in [`docs/handovers/handover_archive/`](docs/handovers/handover_archive/README.md) (13 archived briefs).*
 
 ---
 

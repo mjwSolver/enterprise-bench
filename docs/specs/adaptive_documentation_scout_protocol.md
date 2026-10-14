@@ -83,13 +83,15 @@ Before writing files, the Scout runs a drift check:
 
 ### Stage 4: Master Index & Active Pointer Reconciliation
 - Update `docs/INDEX.md`:
-  - Add new transition briefing link under `### Session Handovers`.
+  - Add new transition briefing link under `### Active Session Handovers`.
+  - If total active handovers exceed 10, rotate the oldest handover to `docs/handovers/handover_archive/`, update `docs/handovers/handover_archive/README.md` with timestamps, and update `docs/INDEX.md`.
   - Update any status markers on sprint backlog items.
 - Update root `HANDOVER.md`:
   - Update `## 1. Active Platform Status` with new completed milestone.
-  - Add the new handover link to `## 3. Transition Briefings Archive`.
+  - Add the new handover link to `## 3. Transition Briefings Archive`, retaining strictly the latest 10 handovers.
   - Ensure immediate next backlog reflects current priorities.
   - **Strict Line Budget:** Enforce $\le 80$ lines total.
+  - **Retention Constraint:** Retain strictly $\le 10$ active handovers; rotate overflow handovers to `docs/handovers/handover_archive/`.
 
 ### Stage 5: Relative Link Integrity Gate
 - Verify all markdown links are relative (e.g. `[INDEX.md](../INDEX.md)` or `[spec](lifecycle_architecture.md)`).

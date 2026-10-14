@@ -11,22 +11,12 @@ docs/
 ├── INDEX.md               # This master navigation index
 ├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–28+)
 │
-├── handovers/             # Historical sprint and session handover briefings
-│   ├── 2026-09-11_cli_skills_refactoring.md
-│   ├── 2026-09-15_presentation_modernization.md
-│   ├── 2026-09-16_universal_deliverable_recreation.md
-│   ├── 2026-09-16_slide3_corporate_equity_tree.md
-│   ├── 2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md
-│   ├── 2026-09-18_localization_and_bilingual_subsystems.md
-│   ├── 2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md
-│   ├── 2026-09-19_visual_harmonization_and_directwrite_preview_parity.md
-│   ├── 2026-09-19_presales_pitch_deck_modernization.md
-│   ├── 2026-09-19_project_kickoff_presentation_modernization.md
-│   ├── 2026-09-20_uat_briefing_presentation_modernization.md
-│   ├── 2026-09-20_weekly_progress_report_deck_modernization.md
-│   ├── 2026-09-21_project_closing_deck_modernization.md
-│   ├── 2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md
+├── handovers/             # Historical sprint and session handover briefings (Latest 10 active)
+│   ├── handover_archive/  # Completed briefings rotated out to preserve 10-handover limit
+│   │   ├── README.md      # Archive catalog with completion timestamps
+│   │   └── ...            # 13 archived briefings
 │   ├── 2026-09-21_sprints_17_27_completion_briefing.md
+│   ├── 2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md
 │   ├── 2026-09-23_feedback_and_quality_enhancement_sprint.md
 │   ├── 2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md
 │   ├── 2026-10-13_diagram_pipeline_and_asset_integration.md
@@ -70,9 +60,9 @@ docs/
 ## 🏛️ Documentation Standards for Agents
 
 1. **Active State vs. Historical Log:**
-   - **Root [`HANDOVER.md`](../HANDOVER.md)** is strictly a **lean pointer** to the current active sprint state and immediate next tasks ($\le 80$ lines).
+   - **Root [`HANDOVER.md`](../HANDOVER.md)** is strictly a **lean pointer** to the current active sprint state and immediate next tasks ($\le 80$ lines). Retains strictly the **latest 10 active / legacy handovers**; older handovers are rotated into [`docs/handovers/handover_archive/`](handovers/handover_archive/README.md).
    - All historical milestone completions are logged in [`docs/CHANGELOG.md`](CHANGELOG.md).
-   - End-of-sprint transition briefings are archived in [`docs/handovers/`](handovers/) with the naming pattern `YYYY-MM-DD_<topic>.md`.
+   - End-of-sprint transition briefings are authored in [`docs/handovers/`](handovers/) with the naming pattern `YYYY-MM-DD_<topic>.md`.
 2. **Subsystem Specifications:**
    - Technical documentation explaining *how a subsystem or engine functions* must live in [`docs/specs/`](specs/). Never prefix technical specifications with `HANDOVER_`.
 3. **Roadmaps and Proposals:**
@@ -110,22 +100,9 @@ docs/
 * [**`sprint_20_visual_archetypes_and_deck_builders.md`**](backlog/sprint_20_visual_archetypes_and_deck_builders.md) `[COMPLETED - 2026-09-19]`: Sprint 20 Runbook: Delivery Gantt roadmap archetype and Harvey Balls feature scorecard.
 * [**`template_variable_and_slug_consolidation.md`**](backlog/template_variable_and_slug_consolidation.md): Unified slug catalog and pre-commit PII audit specifications.
 
-### 3. Session Handovers (`docs/handovers/`)
-* [**`2026-09-11_cli_skills_refactoring.md`**](handovers/2026-09-11_cli_skills_refactoring.md): Initial CLI routing and skill unification handover.
-* [**`2026-09-15_presentation_modernization.md`**](handovers/2026-09-15_presentation_modernization.md): Slide containment, chapter divider archetype, and asset resolution handover.
-* [**`2026-09-16_universal_deliverable_recreation.md`**](handovers/2026-09-16_universal_deliverable_recreation.md): Deliverable recreation Milestones 13–15, financial XLSX suite, and PII linter.
-* [**`2026-09-16_slide3_corporate_equity_tree.md`**](handovers/2026-09-16_slide3_corporate_equity_tree.md): Task delegation brief for the multi-tier corporate shareholding and equity tree archetype.
-* [**`2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md`**](handovers/2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md): Platform upgrade and security hardening master audit.
-* [**`2026-09-18_localization_and_bilingual_subsystems.md`**](handovers/2026-09-18_localization_and_bilingual_subsystems.md): Dual-catalog localization, hybrid translation engine, and paired reference decks.
-* [**`2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md`**](handovers/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md): Sprints 17–20 closeout (Milestones 18–21), security fixes, CR CLI, diagram URI pipeline, and Gantt/Harvey Balls archetypes.
-* [**`2026-09-19_visual_harmonization_and_directwrite_preview_parity.md`**](handovers/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md): Milestone 22 closeout (Presentation & diagram visual harmonization, icon engine tokens, DirectWrite typography calibration, and preview CLI).
-* [**`2026-09-19_presales_pitch_deck_modernization.md`**](handovers/2026-09-19_presales_pitch_deck_modernization.md): Milestone 23 closeout (Automated 36-slide presales consulting pitch deck modernization, PitchDeckBuilder, new archetypes, master YAML config, and preview verification).
-* [**`2026-09-19_project_kickoff_presentation_modernization.md`**](handovers/2026-09-19_project_kickoff_presentation_modernization.md): Milestone 24 closeout (Automated 19-slide project kick-off presentation modernization, agenda/table/thank-you archetypes, governance org overrides, Gantt deserialization, and preview verification).
-* [**`2026-09-20_uat_briefing_presentation_modernization.md`**](handovers/2026-09-20_uat_briefing_presentation_modernization.md): Milestone 25 closeout (Automated 25-slide bilingual UAT briefing presentation modernization, forensic template analysis, master YAML config, slide exporter whitespace advance calibration, Gantt normalization, and preview verification).
-* [**`2026-09-20_weekly_progress_report_deck_modernization.md`**](handovers/2026-09-20_weekly_progress_report_deck_modernization.md): Milestone 26 closeout (Automated 11-slide weekly progress report presentation modernization, forensic template analysis, dynamic milestone row height scaling, consulting S-curve chart generator, spreadsheet ingestion pipeline, and dual-mode preview verification).
-* [**`2026-09-21_project_closing_deck_modernization.md`**](handovers/2026-09-21_project_closing_deck_modernization.md): Milestone 27 closeout (Automated 9-slide project closing & maintenance transition deck modernization, forensic template & checklist audit, ClosingDeckBuilder, dynamic spreadsheet ingestion, and preview verification).
+### 3. Active Session Handovers (`docs/handovers/` — Latest 10)
+* [**`2026-09-21_sprints_17_27_completion_briefing.md`**](handovers/2026-09-21_sprints_17_27_completion_briefing.md): Sprints 17–27 closeout (Universal NGL slug & PII normalization, Closing Deck visual enrichment, Kick-off fixes).
 * [**`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`**](handovers/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md): Sprints 17–27 review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap.
-* [**`2026-09-21_sprints_17_27_completion_briefing.md`**](handovers/2026-09-21_sprints_17_27_completion_briefing.md): Sprints 17–27 closeout (Universal NGL slug & PII normalization, Closing Deck visual enrichment, Weekly Progress typography & English purity, Kick-off Slide 10/12/19 defect fixes, and automated Change Request suite).
 * [**`2026-09-23_feedback_and_quality_enhancement_sprint.md`**](handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): Milestone 27 / Sprints 17–27 Feedback & Quality Enhancement Sprint closeout (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML image aspect ratio QA engine & CLI, Slide 7 maintenance workflow architecture & OpenXML connectors, DrawingML bullet schema compliance, and Slide 6 KPI overflow fix).
 * [**`2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`**](handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md): Milestone 28 closeout (Comprehensive system anti-pattern compliance, deep universal PII / real names purge, Cover Slide footer and striped container sharp rectangle validation in `SlideValidator`, 40-48px icon sizing and upward edge bypass routing in `DiagramEngine`, and automated OpenXML element purging in `TemplateStamper`).
 * [**`2026-10-13_diagram_pipeline_and_asset_integration.md`**](handovers/2026-10-13_diagram_pipeline_and_asset_integration.md): Milestone 29 closeout (Diagram pipeline and asset integration Phases 1–4, deterministic asset harvester and resolver CLI, Databricks/Cloudera/AWS stencils, hybrid editable `.drawio.svg` parity, and native PowerPoint DrawingML shape compiler).
@@ -134,6 +111,22 @@ docs/
 * [**`2026-10-14_cdsw_to_lambda_architecture_evolution.md`**](handovers/2026-10-14_cdsw_to_lambda_architecture_evolution.md): Milestone 32 closeout (CDSW-to-Lambda architecture evolution presentation suite in `architecture_evolution_cdsw_to_lambda.pptx`, decoupled flow routing topology, Databricks 3D cylinder visual parity, Gear 2/3 high-density consulting archetypes `build_dense_workstream_runbook_slide` and `build_target_architecture_swimlane_slide`, and Diagnostic Status Triad).
 * [**`2026-10-14_interwoven_migration_topology_and_whitelisting.md`**](handovers/2026-10-14_interwoven_migration_topology_and_whitelisting.md): Milestone 33 closeout (Unified Interwoven Migration Architecture diagram, horizontal database compression from 260px to 170px, expanded connector spans with 140-175px clearance, return loop repositioned below legacy cluster, and multi-format Draw.io/SVG/PNG/PowerPoint synchronization).
 * [**`2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md`**](handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md): Milestone 34 closeout (Diagram Engine V2 Tier 1 geometric collision linter `Tier1GeometricLinter` with 11 spatial checks, Tier 2 adversarial visual QA verifier `Tier2VisualVerifier`, perceptual computer vision heuristics, 7-dimension weighted scorecard, `bench diagram v2 audit/visual-qa` CLI, and 100.0/100 reference manifest).
+
+### 4. Archived Session Handovers (`docs/handovers/handover_archive/`)
+* [**`handover_archive/README.md`**](handovers/handover_archive/README.md): Master Handover Archive Catalog with completion timestamps and retention audit.
+* [**`2026-09-11_cli_skills_refactoring.md`**](handovers/handover_archive/2026-09-11_cli_skills_refactoring.md): Initial CLI routing and skill unification handover.
+* [**`2026-09-15_presentation_modernization.md`**](handovers/handover_archive/2026-09-15_presentation_modernization.md): Slide containment, chapter divider archetype, and asset resolution handover.
+* [**`2026-09-16_slide3_corporate_equity_tree.md`**](handovers/handover_archive/2026-09-16_slide3_corporate_equity_tree.md): Task delegation brief for the multi-tier corporate shareholding and equity tree archetype.
+* [**`2026-09-16_universal_deliverable_recreation.md`**](handovers/handover_archive/2026-09-16_universal_deliverable_recreation.md): Deliverable recreation Milestones 13–15, financial XLSX suite, and PII linter.
+* [**`2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md`**](handovers/handover_archive/2026-09-18_comprehensive_platform_upgrade_and_hardening_audit.md): Platform upgrade and security hardening master audit.
+* [**`2026-09-18_localization_and_bilingual_subsystems.md`**](handovers/handover_archive/2026-09-18_localization_and_bilingual_subsystems.md): Dual-catalog localization, hybrid translation engine, and paired reference decks.
+* [**`2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md`**](handovers/handover_archive/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md): Sprints 17–20 closeout (Milestones 18–21), security fixes, CR CLI, diagram URI pipeline, and Gantt/Harvey Balls archetypes.
+* [**`2026-09-19_visual_harmonization_and_directwrite_preview_parity.md`**](handovers/handover_archive/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md): Milestone 22 closeout (Presentation & diagram visual harmonization, icon engine tokens, DirectWrite typography calibration, and preview CLI).
+* [**`2026-09-19_presales_pitch_deck_modernization.md`**](handovers/handover_archive/2026-09-19_presales_pitch_deck_modernization.md): Milestone 23 closeout (Automated 36-slide presales consulting pitch deck modernization, PitchDeckBuilder, new archetypes, master YAML config, and preview verification).
+* [**`2026-09-19_project_kickoff_presentation_modernization.md`**](handovers/handover_archive/2026-09-19_project_kickoff_presentation_modernization.md): Milestone 24 closeout (Automated 19-slide project kick-off presentation modernization, agenda/table/thank-you archetypes, governance org overrides, Gantt deserialization, and preview verification).
+* [**`2026-09-20_uat_briefing_presentation_modernization.md`**](handovers/handover_archive/2026-09-20_uat_briefing_presentation_modernization.md): Milestone 25 closeout (Automated 25-slide bilingual UAT briefing presentation modernization, forensic template analysis, master YAML config, slide exporter whitespace advance calibration, Gantt normalization, and preview verification).
+* [**`2026-09-20_weekly_progress_report_deck_modernization.md`**](handovers/handover_archive/2026-09-20_weekly_progress_report_deck_modernization.md): Milestone 26 closeout (Automated 11-slide weekly progress report presentation modernization, forensic template analysis, dynamic milestone row height scaling, consulting S-curve chart generator, spreadsheet ingestion pipeline, and dual-mode preview verification).
+* [**`2026-09-21_project_closing_deck_modernization.md`**](handovers/handover_archive/2026-09-21_project_closing_deck_modernization.md): Milestone 27 closeout (Automated 9-slide project closing & maintenance transition deck modernization, forensic template & checklist audit, ClosingDeckBuilder, dynamic spreadsheet ingestion, and preview verification).
 
 
 

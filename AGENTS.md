@@ -33,9 +33,9 @@ Inspect relevant skill before authoring deliverables, changing engines, or writi
 - **Asset Resolution Guarantee:** Missing slide images/logos fall back to typographic pills or gradient scrims; logged to `missing_resources.md`. Verify via `uv run bench ppt check-resources`.
 
 ### 📚 Documentation Architecture & Subagent Delegation Protocol
-- **4-Tier Partitioning:** Root [`HANDOVER.md`](HANDOVER.md) is strictly an **Active State Pointer** ($\le 80$ lines). [`docs/CHANGELOG.md`](docs/CHANGELOG.md) is the canonical milestone ledger. Transition briefings live in [`docs/handovers/`], architectural specs in [`docs/specs/`], and future proposals in [`docs/backlog/`].
+- **4-Tier Partitioning:** Root [`HANDOVER.md`](HANDOVER.md) is strictly an **Active State Pointer** ($\le 80$ lines) retaining strictly the **latest 10 active handovers** (older briefs rotate to `docs/handovers/handover_archive/`). [`docs/CHANGELOG.md`](docs/CHANGELOG.md) is the canonical milestone ledger. Transition briefings live in [`docs/handovers/`], architectural specs in [`docs/specs/`], and future proposals in [`docs/backlog/`].
 - **Zero In-Situ Administrative Bookkeeping:** Main agents must **NEVER** perform end-of-sprint documentation bookkeeping in an active development context.
-- **Mandatory Delegation Gate:** On milestone completion, invoke subagent `Role="Adaptive Documentation Scout"` (`TypeName="self"`) to scout topology, author transition briefings, update `INDEX.md`/`CHANGELOG.md`, and trim `HANDOVER.md` ($\le 80$ lines). See [`docs/specs/adaptive_documentation_scout_protocol.md`](docs/specs/adaptive_documentation_scout_protocol.md).
+- **Mandatory Delegation Gate:** On milestone completion, invoke subagent `Role="Adaptive Documentation Scout"` (`TypeName="self"`) to scout topology, author transition briefings, update `INDEX.md`/`CHANGELOG.md`, rotate older briefs to `docs/handovers/handover_archive/` (maintaining 10 active), and trim `HANDOVER.md` ($\le 80$ lines). See [`docs/specs/adaptive_documentation_scout_protocol.md`](docs/specs/adaptive_documentation_scout_protocol.md).
 - **Scratch & Git Hygiene:** Prior to commit/push, inspect `scratch/`. Report and obtain user greenlight before deleting. Delete prior to finalizing git operations.
 
 ### 📊 Adaptive Complexity Gears & Enterprise Density Standard
