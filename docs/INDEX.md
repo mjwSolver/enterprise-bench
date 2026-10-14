@@ -28,9 +28,13 @@ docs/
 │   ├── 2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md
 │   ├── 2026-09-21_sprints_17_27_completion_briefing.md
 │   ├── 2026-09-23_feedback_and_quality_enhancement_sprint.md
-│   └── 2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md
+│   ├── 2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md
+│   ├── 2026-10-13_diagram_pipeline_and_asset_integration.md
+│   ├── 2026-10-14_visual_qa_and_drawingml_collision_remediation.md
+│   └── 2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
+│   ├── adaptive_complexity_gears_and_enterprise_density.md
 │   ├── adaptive_documentation_scout_protocol.md
 │   ├── adr_drawio_pipeline_vs_mcp.md
 │   ├── change_request_subsystem.md
@@ -41,11 +45,13 @@ docs/
 │   ├── localization_and_bilingual_subsystem.md
 │   ├── manual_identity_guide.md
 │   ├── master_deliverable_recreation_plan.md
-│   └── openxml_purging_and_cleansing.md
+│   ├── openxml_purging_and_cleansing.md
+│   └── powerpoint_slide_geometry.md
 │
 └── backlog/               # Future sprint roadmaps, design proposals & backlogs
     ├── cover_slide_hero_and_opening_modernization.md
     ├── diagram_architecture.md
+    ├── diagram_pipeline_and_asset_integration_roadmap.md
     ├── localization_and_bilingual_deck_subsystem.md
     ├── pitch_deck_screenshot_modernization.md
     ├── slide_design_variety.md
@@ -74,6 +80,7 @@ docs/
 ## 📚 Master Index
 
 ### 1. Active Specifications & Architecture Runbooks (`docs/specs/`)
+* [**`adaptive_complexity_gears_and_enterprise_density.md`**](specs/adaptive_complexity_gears_and_enterprise_density.md): 3-tier complexity gears (Exec 4-5/10, Pre-KOM 6.5-7.5/10, Workstream Runbook 8.5-9.5/10), diagnostic status triad, and casual routing contract.
 * [**`adaptive_documentation_scout_protocol.md`**](specs/adaptive_documentation_scout_protocol.md): 5-stage automated closeout procedure, dynamic topology scouting, and subagent delegation runbook.
 * [**`adr_drawio_pipeline_vs_mcp.md`**](specs/adr_drawio_pipeline_vs_mcp.md): Architecture Decision Record on Draw.io headless export pipeline vs MCP.
 * [**`change_request_subsystem.md`**](specs/change_request_subsystem.md): Operational guide to the enterprise Change Request workflow, commercial addendums, and case studies.
@@ -85,10 +92,12 @@ docs/
 * [**`manual_identity_guide.md`**](specs/manual_identity_guide.md): Visual identity tokens, Metrodata brand standards, and color usage.
 * [**`master_deliverable_recreation_plan.md`**](specs/master_deliverable_recreation_plan.md): Master strategy for recreating the 38 real-world enterprise consulting templates across 5 delivery tiers.
 * [**`openxml_purging_and_cleansing.md`**](specs/openxml_purging_and_cleansing.md): Zero-corruption comment, highlight, tracked revision, and author profile stripping for `.docx`.
+* [**`powerpoint_slide_geometry.md`**](specs/powerpoint_slide_geometry.md): Deterministic container geometry, sharp top stripes, cover typographic metadata, split chapter dividers, and diagram hierarchy.
 
 ### 2. Backlogs & Proposals (`docs/backlog/`)
 * [**`cover_slide_hero_and_opening_modernization.md`**](backlog/cover_slide_hero_and_opening_modernization.md): Clean typographic metadata, dual vertical brand stripes, and hero covers.
 * [**`diagram_architecture.md`**](backlog/diagram_architecture.md): Aspect ratio containment and columnar subgraph partitioning.
+* [**`diagram_pipeline_and_asset_integration_roadmap.md`**](backlog/diagram_pipeline_and_asset_integration_roadmap.md) `[COMPLETED - 2026-10-13]`: Architectural roadmap for eliminating SVG/Draw.io drift, deterministic Draw.io stencil harvesting, and native PowerPoint shape generation.
 * [**`localization_and_bilingual_deck_subsystem.md`**](backlog/localization_and_bilingual_deck_subsystem.md): Indonesian/English dual-language string catalogs and layout adaptations.
 * [**`pitch_deck_screenshot_modernization.md`**](backlog/pitch_deck_screenshot_modernization.md): High-fidelity UI mockups and screenshot frames in pitch decks.
 * [**`slide_design_variety.md`**](backlog/slide_design_variety.md): Archetype expansion (case study split screens, quote cards, timeline tracks).
@@ -116,4 +125,8 @@ docs/
 * [**`2026-09-21_sprints_17_27_completion_briefing.md`**](handovers/2026-09-21_sprints_17_27_completion_briefing.md): Sprints 17–27 closeout (Universal NGL slug & PII normalization, Closing Deck visual enrichment, Weekly Progress typography & English purity, Kick-off Slide 10/12/19 defect fixes, and automated Change Request suite).
 * [**`2026-09-23_feedback_and_quality_enhancement_sprint.md`**](handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): Milestone 27 / Sprints 17–27 Feedback & Quality Enhancement Sprint closeout (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML image aspect ratio QA engine & CLI, Slide 7 maintenance workflow architecture & OpenXML connectors, DrawingML bullet schema compliance, and Slide 6 KPI overflow fix).
 * [**`2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`**](handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md): Milestone 28 closeout (Comprehensive system anti-pattern compliance, deep universal PII / real names purge, Cover Slide footer and striped container sharp rectangle validation in `SlideValidator`, 40-48px icon sizing and upward edge bypass routing in `DiagramEngine`, and automated OpenXML element purging in `TemplateStamper`).
+* [**`2026-10-13_diagram_pipeline_and_asset_integration.md`**](handovers/2026-10-13_diagram_pipeline_and_asset_integration.md): Milestone 29 closeout (Diagram pipeline and asset integration Phases 1–4, deterministic asset harvester and resolver CLI, Databricks/Cloudera/AWS stencils, hybrid editable `.drawio.svg` parity, and native PowerPoint DrawingML shape compiler).
+* [**`2026-10-14_visual_qa_and_drawingml_collision_remediation.md`**](handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md): Milestone 30 closeout (Automated PowerPoint visual inspection & spatial collision linter `PPTVisualLinter`, live macOS PowerPoint window capture `PowerPointScreenCaptureEngine`, forward connector arrowhead fixes, card text overflow bounds, cylinder text clearance, and `bench ppt visual-qa` CLI).
+* [**`2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`**](handovers/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md): Milestone 31 closeout (Flat DrawingML aesthetic standardization via `_flatten`, proportional content padding engine `_plan_card` & `measure_card_height`, Databricks 3D cylinder body alignment with side-slot icon layout, single polyline orthogonal flow routing, and collinear boundary auditing `_audit_route`).
+
 

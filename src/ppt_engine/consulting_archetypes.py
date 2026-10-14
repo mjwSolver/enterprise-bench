@@ -5577,7 +5577,780 @@ def build_thank_you_slide(
     op2.font.name = theme.font_family
     op2.font.size = Pt(11.0)
     op2.font.color.rgb = theme.get_rgb("muted")
-    op2.space_before = Pt(3)
+    return slide
+
+
+# ============================================================================
+# 14. Archetypes: High-Density Enterprise Consulting (Gears 2 & 3)
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 14A. Archetype: Dense Technical Workstream Runbook (Gear 3 - BSIM Pattern)
+# ----------------------------------------------------------------------------
+
+@dataclass
+class PICRowData:
+    """Row in the named counterpart (PIC) governance matrix."""
+    discipline: str
+    vendor_pic: str
+    client_pic: str
+    accountability: str
+    status: str = "CONFIRMED"
+    status_bg_key: str = "badge_green_fill"
+    status_text_key: str = "badge_green_text"
+
+
+@dataclass
+class RunbookQuadrantData:
+    """Definition of one quadrant in the 4-Quadrant Workstream Runbook."""
+    title: str
+    tagline: str
+    items: List[str]
+    accent_key: str = "accent"
+    badge: Optional[str] = None
+    icon: Optional[str] = None
+
+
+@dataclass
+class DenseWorkstreamRunbookData:
+    """Structured data model for a dense technical workstream runbook slide (Gear 3)."""
+    workstream_id: str = "WS1"
+    workstream_name: str = "AWS Landing Zone Foundation"
+    phase: str = "PHASE 1  |  SPRINTS 1-3"
+    sla_target: str = "99.99% Availability"
+    objective: Optional[RunbookQuadrantData] = None
+    vendor_actions: Optional[RunbookQuadrantData] = None
+    client_actions: Optional[RunbookQuadrantData] = None
+    dependencies: Optional[RunbookQuadrantData] = None
+    pic_matrix: Optional[List[PICRowData]] = None
+    notice: Optional[str] = None
+
+
+def build_dense_workstream_runbook_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "WORKSTREAM RUNBOOK  |  WS1: AWS LANDING ZONE FOUNDATION",
+    action_title: str = "AWS Landing Zone Foundation Establishes Multi-Account Isolation and Transit Mesh",
+    subtitle: Optional[str] = "Contractual engineering execution runbook defining technical deliverables, counterpart PICs, and cross-stream dependencies.",
+    runbook_data: Optional[DenseWorkstreamRunbookData] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: str = "Enterprise Architecture & Modernization Practice  |  Confidential & Contractual",
+) -> Any:
+    """
+    Builds a Gear 3 Technical Workstream Runbook slide (BSIM Slide 4 pattern).
+    Enforces the 4-quadrant container discipline (Objective, MII Actions, Client Actions,
+    Cross-Stream Dependencies) plus a bottom Named Counterpart (PIC) Accountability Matrix.
+    """
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+
+    # Resolve Default Dataset if not provided
+    if runbook_data is None:
+        runbook_data = DenseWorkstreamRunbookData(
+            workstream_id="WS1",
+            workstream_name="AWS Landing Zone Foundation",
+            phase="PHASE 1  |  SPRINTS 1-3",
+            sla_target="99.99% Availability",
+            objective=RunbookQuadrantData(
+                title="1. OBJECTIVE & ARCHITECTURE SCOPE",
+                tagline="Multi-account topology, Transit Gateway mesh & security baseline",
+                accent_key="primary",
+                badge="WS1 MANDATE",
+                items=[
+                    "Dedicated VPC topology with isolated CIDR /20 blocks per workload tier",
+                    "AWS Organizations multi-account hierarchy with strict SCP boundary enforcement",
+                    "Centralized Transit Gateway routing for on-premises DirectConnect peering",
+                    "Automated Terraform Landing Zone modules with zero-trust IAM baselines",
+                ],
+            ),
+            dependencies=RunbookQuadrantData(
+                title="2. CROSS-STREAM DEPENDENCIES & PREREQUISITES",
+                tagline="Upstream inputs, change advisory windows & platform blockers",
+                accent_key="danger",
+                badge="CRITICAL PATH",
+                items=[
+                    "Network Team: Dedicated 10 Gbps DirectConnect circuit termination & BGP route peering",
+                    "Security / CISO: KMS customer-managed key (CMK) policy approval & KMS key custodians",
+                    "Enterprise CAB: Scheduled production change freeze window waiver for Transit Gateway cutover",
+                    "WS2 Ingress Sync: Schema registry & private VPC interface endpoints deployed prior to sprint 4",
+                ],
+            ),
+            vendor_actions=RunbookQuadrantData(
+                title="3. MII ACTIONS & ENGINEERING DELIVERABLES",
+                tagline="Lead delivery responsibilities, automation scripts & configuration runbooks",
+                accent_key="accent",
+                badge="VENDOR SOW",
+                items=[
+                    "Deploy modular Terraform IaC for Core Network, Security Hub & Audit Logging accounts",
+                    "Configure AWS Network Firewall with stateful inspection rules for outbound internet egress",
+                    "Provision AWS Secrets Manager with automatic credential rotation for lakehouse service roles",
+                    "Conduct automated CIS AWS Benchmark security compliance assessment and deliver BAST evidence",
+                ],
+            ),
+            client_actions=RunbookQuadrantData(
+                title="4. CLIENT ACTIONS & GOVERNANCE APPROVALS",
+                tagline="Client counterpart responsibilities, enterprise approvals & boundary prerequisites",
+                accent_key="warning",
+                badge="CLIENT PIC",
+                items=[
+                    "Allocate non-overlapping corporate IP CIDR subnets (/20 range) in Enterprise IPAM",
+                    "Authorize Active Directory Federation Service (ADFS) / SAML 2.0 integration for enterprise SSO",
+                    "Assign designated enterprise security and network engineering counterparts for weekly standups",
+                    "Execute User Acceptance Testing (UAT) signoff and issue formal BAST milestone certificate",
+                ],
+            ),
+            pic_matrix=[
+                PICRowData(
+                    discipline="Cloud & Network Architecture",
+                    vendor_pic="Dewi Lestari (Lead Architect)",
+                    client_pic="Budi Santoso (VP Enterprise Infra)",
+                    accountability="Transit Gateway, VPC Topology & DirectConnect",
+                    status="CONFIRMED",
+                    status_bg_key="badge_green_fill",
+                    status_text_key="badge_green_text",
+                ),
+                PICRowData(
+                    discipline="Cyber Security & IAM Governance",
+                    vendor_pic="Agus Pratama (Security Engineer)",
+                    client_pic="Hendra Wijaya (Head of Cyber Defense)",
+                    accountability="SCP Guardrails, IAM Roles & KMS Encryption",
+                    status="CONFIRMED",
+                    status_bg_key="badge_green_fill",
+                    status_text_key="badge_green_text",
+                ),
+                PICRowData(
+                    discipline="Infrastructure as Code (Terraform)",
+                    vendor_pic="Rizky Setiawan (DevOps Specialist)",
+                    client_pic="Ferry Kurniawan (Lead Cloud Ops)",
+                    accountability="Terraform State Pipeline & CI/CD Deployment",
+                    status="CONFIRMED",
+                    status_bg_key="badge_green_fill",
+                    status_text_key="badge_green_text",
+                ),
+                PICRowData(
+                    discipline="Program PMO & Governance",
+                    vendor_pic="Siti Nurhaliza (Engagement PM)",
+                    client_pic="Ratna Sari (Enterprise PMO Lead)",
+                    accountability="Sprint Gates, BAST Milestone Approval & CAB",
+                    status="ACTION REQ",
+                    status_bg_key="badge_amber_fill",
+                    status_text_key="badge_amber_text",
+                ),
+            ],
+        )
+
+    # 1. Workstream Status Strip (Pills)
+    strip_y = Inches(1.36)
+    pills = [
+        (f"WORKSTREAM: {runbook_data.workstream_id}", "accent"),
+        (f"PHASE: {runbook_data.phase}", "secondary"),
+        (f"SLA: {runbook_data.sla_target}", "success"),
+        ("COMPLEXITY: GEAR 3 (TECHNICAL RUNBOOK)", "neutral"),
+    ]
+    cur_x = Inches(0.80)
+    for text, c_key in pills:
+        pill_w = Inches(0.12 * len(text) + 0.40)
+        _add_status_pill(
+            slide,
+            theme,
+            left=cur_x,
+            top=strip_y,
+            width=pill_w,
+            height=Inches(0.24),
+            status=text,
+            font_size_pt=7.5,
+            override_color_key=c_key,
+        )
+        cur_x += pill_w + Inches(0.10)
+
+    # 2. 4-Quadrant Container Grid
+    # Col 1: Left (0.80"), Col 2: Right (6.766"), Width: 5.766", Gap: 0.20"
+    col1_x = Inches(0.80)
+    col2_x = Inches(6.766)
+    quad_w = Inches(5.766)
+    quad_h = Inches(1.68)
+    row1_y = Inches(1.68)
+    row2_y = Inches(3.46)
+
+    quadrants = [
+        (runbook_data.objective, col1_x, row1_y, "primary", RGBColor(30, 41, 59)),
+        (runbook_data.dependencies, col2_x, row1_y, "danger", RGBColor(220, 38, 38)),
+        (runbook_data.vendor_actions, col1_x, row2_y, "accent", RGBColor(2, 132, 199)),
+        (runbook_data.client_actions, col2_x, row2_y, "warning", RGBColor(217, 119, 6)),
+    ]
+
+    for q_data, q_x, q_y, accent_key, stripe_rgb in quadrants:
+        if not q_data:
+            continue
+        # Strict sharp rectangle geometry for containers with top stripes
+        add_card_with_top_stripe(
+            slide=slide,
+            theme=theme,
+            left=q_x,
+            top=q_y,
+            width=quad_w,
+            height=quad_h,
+            accent_rgb=stripe_rgb,
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+            stripe_height_in=0.045,
+        )
+
+        # Content Text Box (Zero internal margins for tight technical density)
+        tb = slide.shapes.add_textbox(q_x + Inches(0.16), q_y + Inches(0.10), quad_w - Inches(0.32), quad_h - Inches(0.18))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+
+        # Title line
+        p_title = tf.paragraphs[0]
+        p_title.text = q_data.title
+        p_title.font.name = theme.font_family_header
+        p_title.font.size = Pt(10.0)
+        p_title.font.bold = True
+        p_title.font.color.rgb = theme.get_rgb("primary")
+
+        # Optional Badge Pill at top right of card
+        if q_data.badge:
+            _add_status_pill(
+                slide,
+                theme,
+                left=q_x + quad_w - Inches(1.35),
+                top=q_y + Inches(0.08),
+                width=Inches(1.20),
+                height=Inches(0.20),
+                status=q_data.badge,
+                font_size_pt=7.0,
+                override_color_key=accent_key,
+            )
+
+        # Tagline / Subtitle
+        p_tag = tf.add_paragraph()
+        p_tag.text = q_data.tagline
+        p_tag.font.name = theme.font_family
+        p_tag.font.size = Pt(8.0)
+        p_tag.font.color.rgb = theme.get_rgb("muted")
+        p_tag.space_before = Pt(1.5)
+
+        # Bullet items (tight 8.5pt micro-typography)
+        for itm in q_data.items[:4]:
+            p_itm = tf.add_paragraph()
+            p_itm.text = f"•  {itm}"
+            p_itm.font.name = theme.font_family
+            p_itm.font.size = Pt(8.5)
+            p_itm.font.color.rgb = theme.get_rgb("secondary")
+            p_itm.space_before = Pt(2.0)
+
+    # 3. Bottom Row: Named Counterpart & PIC Accountability Matrix
+    table_x = Inches(0.80)
+    table_y = Inches(5.24)
+    table_w = Inches(11.733)
+    table_h = Inches(1.70)
+
+    add_card_with_top_stripe(
+        slide=slide,
+        theme=theme,
+        left=table_x,
+        top=table_y,
+        width=table_w,
+        height=table_h,
+        accent_rgb=RGBColor(22, 163, 74),  # Reconciled Target State Green
+        bg_color=theme.get_rgb("surface"),
+        border_color=theme.get_rgb("border"),
+        stripe_height_in=0.045,
+    )
+
+    # Section Header inside PIC Container
+    h_tb = slide.shapes.add_textbox(table_x + Inches(0.16), table_y + Inches(0.10), table_w - Inches(0.32), Inches(0.24))
+    h_tf = h_tb.text_frame
+    h_tf.word_wrap = True
+    h_tf.margin_left = h_tf.margin_right = h_tf.margin_top = h_tf.margin_bottom = 0
+    hp = h_tf.paragraphs[0]
+    hp.text = "5. GOVERNANCE & NAMED COUNTERPART (PIC) ACCOUNTABILITY MATRIX"
+    hp.font.name = theme.font_family_header
+    hp.font.size = Pt(10.0)
+    hp.font.bold = True
+    hp.font.color.rgb = theme.get_rgb("primary")
+
+    _add_status_pill(
+        slide,
+        theme,
+        left=table_x + table_w - Inches(1.85),
+        top=table_y + Inches(0.08),
+        width=Inches(1.70),
+        height=Inches(0.20),
+        status="BAST STAGE-GATE ALIGNED",
+        font_size_pt=7.0,
+        override_color_key="success",
+    )
+
+    # Table Column Grid Coordinates:
+    # Discipline (2.2"), Vendor PIC (2.3"), Client PIC (2.3"), Scope (3.5"), Status (1.1")
+    col_x_offsets = [Inches(0.16), Inches(2.36), Inches(4.76), Inches(7.16), Inches(10.46)]
+    col_widths = [Inches(2.10), Inches(2.30), Inches(2.30), Inches(3.20), Inches(1.10)]
+    headers = [
+        "TECHNICAL DISCIPLINE",
+        "VENDOR PIC (MII)",
+        "CLIENT PIC (BANK)",
+        "CONTRACTUAL SCOPE & DELIVERABLES",
+        "STATUS",
+    ]
+
+    # Render Header Row
+    header_row_y = table_y + Inches(0.36)
+    for c_idx, (off_x, c_w, h_text) in enumerate(zip(col_x_offsets, col_widths, headers)):
+        th_box = slide.shapes.add_textbox(table_x + off_x, header_row_y, c_w, Inches(0.20))
+        th_tf = th_box.text_frame
+        th_tf.margin_left = th_tf.margin_right = th_tf.margin_top = th_tf.margin_bottom = 0
+        p_th = th_tf.paragraphs[0]
+        p_th.text = h_text
+        p_th.font.name = theme.font_family_header
+        p_th.font.size = Pt(7.5)
+        p_th.font.bold = True
+        p_th.font.color.rgb = theme.get_rgb("muted")
+
+    # Render Separator Hairline
+    sep = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_x + Inches(0.16), header_row_y + Inches(0.20), table_w - Inches(0.32), Pt(0.75))
+    sep.shadow.inherit = False
+    sep.fill.solid()
+    sep.fill.fore_color.rgb = theme.get_rgb("border")
+    sep.line.fill.background()
+
+    # Render PIC Data Rows
+    row_start_y = header_row_y + Inches(0.24)
+    row_height = Inches(0.26)
+    if runbook_data.pic_matrix:
+        for r_idx, row in enumerate(runbook_data.pic_matrix[:4]):
+            curr_y = row_start_y + (r_idx * row_height)
+            row_vals = [row.discipline, row.vendor_pic, row.client_pic, row.accountability]
+
+            for c_idx, (off_x, c_w, val) in enumerate(zip(col_x_offsets[:4], col_widths[:4], row_vals)):
+                r_box = slide.shapes.add_textbox(table_x + off_x, curr_y, c_w, Inches(0.22))
+                r_tf = r_box.text_frame
+                r_tf.margin_left = r_tf.margin_right = r_tf.margin_top = r_tf.margin_bottom = 0
+                p_r = r_tf.paragraphs[0]
+                p_r.text = val
+                p_r.font.name = theme.font_family
+                p_r.font.size = Pt(8.0)
+                if c_idx == 0:
+                    p_r.font.bold = True
+                    p_r.font.color.rgb = theme.get_rgb("primary")
+                else:
+                    p_r.font.color.rgb = theme.get_rgb("secondary")
+
+            # Status Pill in Col 5
+            _add_status_pill(
+                slide,
+                theme,
+                left=table_x + col_x_offsets[4],
+                top=curr_y,
+                width=col_widths[4],
+                height=Inches(0.20),
+                status=row.status,
+                font_size_pt=7.0,
+                override_color_key="success" if "CONFIRM" in row.status else "warning",
+            )
+
+    return slide
+
+
+# ----------------------------------------------------------------------------
+# 14B. Archetype: Target Architecture Boundary Swimlanes (Gear 2 - BSIM Pattern)
+# ----------------------------------------------------------------------------
+
+@dataclass
+class SwimlaneNodeData:
+    """A single service or component node within an architecture swimlane."""
+    title: str
+    subtitle: str
+    category: Optional[str] = None
+    icon: Optional[str] = None
+    is_out_of_scope: bool = False
+    status_badge: Optional[str] = None
+    badge_bg_key: str = "badge_blue_fill"
+    badge_text_key: str = "badge_blue_text"
+
+
+@dataclass
+class SwimlanePathConnector:
+    """Workstream path routing connector between swimlanes."""
+    workstream_tag: str
+    label: str
+    from_swimlane: str
+    to_swimlane: str
+    latency_sla: Optional[str] = None
+
+
+@dataclass
+class ArchitectureSwimlaneColumn:
+    """Definition of one boundary swimlane column in the 3-column target architecture."""
+    swimlane_title: str
+    tagline: str
+    nodes: List[SwimlaneNodeData] = field(default_factory=list)
+    accent_key: str = "primary"
+    is_target_platform: bool = False
+    boundary_notice: Optional[str] = None
+
+
+@dataclass
+class TargetArchitectureSwimlaneData:
+    """Structured data model for a 3-column target architecture swimlane slide (Gear 2)."""
+    columns: Optional[List[ArchitectureSwimlaneColumn]] = None
+    workstream_connectors: Optional[List[SwimlanePathConnector]] = None
+    out_of_scope_callout: Optional[str] = None
+
+
+def build_target_architecture_swimlane_slide(
+    prs: Presentation,
+    theme: Theme,
+    tracker: str = "TARGET ARCHITECTURE  |  3-COLUMN BOUNDARY SWIMLANES",
+    action_title: str = "Target Lakehouse Architecture Establishes Unified Medallion Ingestion and Semantic Serving",
+    subtitle: Optional[str] = "Three-column boundary architecture isolating on-premises feeds, managed cloud lakehouse core, and consumer analytics.",
+    swimlane_data: Optional[TargetArchitectureSwimlaneData] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: str = "Enterprise Architecture & Modernization Practice  |  Confidential & Contractual",
+) -> Any:
+    """
+    Builds a Gear 2 Target Architecture Swimlane slide (BSIM Slide 6 pattern).
+    Enforces a 3-column boundary topology (Source Ingress -> Target Lakehouse -> Consumers),
+    labeled workstream pathways (WS1, WS2, WS3, WS4), and explicit out-of-scope boundaries.
+    """
+    slide = add_slide_with_background(prs, theme)
+    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+
+    # Resolve Default Dataset if not provided
+    if swimlane_data is None:
+        swimlane_data = TargetArchitectureSwimlaneData(
+            columns=[
+                ArchitectureSwimlaneColumn(
+                    swimlane_title="1. ON-PREMISES & SOURCES",
+                    tagline="Core banking databases, file feeds & transactional message queues",
+                    accent_key="neutral",
+                    is_target_platform=False,
+                    boundary_notice="Boundary: Private DirectConnect 10 Gbps",
+                    nodes=[
+                        SwimlaneNodeData(
+                            title="Core Banking Oracle DB",
+                            subtitle="Primary OLTP database running transactional deposits & GL",
+                            category="DATABASE",
+                            status_badge="ACTIVE SOURCE",
+                        ),
+                        SwimlaneNodeData(
+                            title="Enterprise Kafka Stream",
+                            subtitle="Event message bus streaming real-time debit card telemetry",
+                            category="STREAMING BUS",
+                            status_badge="REAL-TIME",
+                        ),
+                        SwimlaneNodeData(
+                            title="Legacy Batch File Shares",
+                            subtitle="End-of-day balance reconciliations & external partner CSVs",
+                            category="SFTP / NFS",
+                            is_out_of_scope=True,
+                            status_badge="OUT OF SCOPE",
+                        ),
+                    ],
+                ),
+                ArchitectureSwimlaneColumn(
+                    swimlane_title="2. TARGET CLOUD LAKEHOUSE (CORE)",
+                    tagline="Centralized AWS/Databricks/Snowflake governed medallion architecture",
+                    accent_key="primary",
+                    is_target_platform=True,
+                    boundary_notice="Unity Catalog / Cross-Account IAM Mesh",
+                    nodes=[
+                        SwimlaneNodeData(
+                            title="Bronze Ingestion Landing Zone",
+                            subtitle="Raw append-only storage with automated schema drift validation",
+                            category="RAW INGESTION",
+                            status_badge="WS2: CDC INGEST",
+                        ),
+                        SwimlaneNodeData(
+                            title="Silver Curated Lakehouse Tier",
+                            subtitle="Cleaned, deduplicated & validated conformance tables (dbt Core)",
+                            category="CURATED ENGINE",
+                            status_badge="WS3: DBT MODELING",
+                        ),
+                        SwimlaneNodeData(
+                            title="Gold Dimensional Data Marts",
+                            subtitle="Business domain star schemas, aggregation marts & feature stores",
+                            category="SEMANTIC CORE",
+                            status_badge="TARGET STATE",
+                        ),
+                    ],
+                ),
+                ArchitectureSwimlaneColumn(
+                    swimlane_title="3. ANALYTICS & CONSUMERS",
+                    tagline="Executive dashboards, machine learning endpoints & regulatory reporting",
+                    accent_key="accent",
+                    is_target_platform=False,
+                    boundary_notice="Role-Based Row/Column Security",
+                    nodes=[
+                        SwimlaneNodeData(
+                            title="Executive Power BI Dashboards",
+                            subtitle="Direct Lake semantic models providing sub-second KPI exploration",
+                            category="BI / REPORTING",
+                            status_badge="WS4: SERVING",
+                        ),
+                        SwimlaneNodeData(
+                            title="AI / ML Feature Serving Core",
+                            subtitle="Real-time credit scoring, fraud classification & inference APIs",
+                            category="DATA SCIENCE",
+                            status_badge="WS4: SERVING",
+                        ),
+                        SwimlaneNodeData(
+                            title="OJK Regulatory Compliance Marts",
+                            subtitle="Standardized statutory reporting feeds and automated audit extracts",
+                            category="REGULATORY",
+                            status_badge="AUDITED",
+                        ),
+                    ],
+                ),
+            ],
+            workstream_connectors=[
+                SwimlanePathConnector(
+                    workstream_tag="WS1",
+                    label="AWS Landing Zone & Transit Gateway Mesh (DirectConnect 10 Gbps)",
+                    from_swimlane="On-Premises",
+                    to_swimlane="Cloud Platform",
+                    latency_sla="< 5ms Latency",
+                ),
+                SwimlanePathConnector(
+                    workstream_tag="WS2",
+                    label="Debezium CDC Streaming & Batch File Ingestion Pipeline",
+                    from_swimlane="Source Databases",
+                    to_swimlane="Bronze Storage",
+                    latency_sla="Near Real-Time",
+                ),
+                SwimlanePathConnector(
+                    workstream_tag="WS3",
+                    label="dbt Core Automated Medallion Transformations (Bronze ➔ Silver ➔ Gold)",
+                    from_swimlane="Bronze Layer",
+                    to_swimlane="Gold Marts",
+                    latency_sla="Hourly / Daily",
+                ),
+                SwimlanePathConnector(
+                    workstream_tag="WS4",
+                    label="Semantic Delivery to Executive Power BI & Real-Time ML APIs",
+                    from_swimlane="Gold Data Marts",
+                    to_swimlane="Consumers",
+                    latency_sla="Sub-Second SQL",
+                ),
+            ],
+            out_of_scope_callout="* Out-of-scope boundaries (e.g., Legacy Batch File Shares) remain client-managed under separate CAB change control.",
+        )
+
+    # 1. 3-Column Swimlane Geometry
+    # Left: 0.80", Widths: Col1 3.40", Col2 4.80" (Hero), Col3 3.133", Gaps 0.20"
+    col_x_list = [Inches(0.80), Inches(4.40), Inches(9.40)]
+    col_w_list = [Inches(3.40), Inches(4.80), Inches(3.133)]
+    lane_y = Inches(1.42)
+    lane_h = Inches(4.68)
+
+    stripe_colors = [
+        RGBColor(71, 85, 105),   # Slate for Ingress
+        RGBColor(2, 132, 199),   # Sky Blue for Target Lakehouse
+        RGBColor(16, 185, 129),  # Emerald/Teal for Consumers
+    ]
+
+    for c_idx, col_data in enumerate(swimlane_data.columns[:3]):
+        cx = col_x_list[c_idx]
+        cw = col_w_list[c_idx]
+        st_color = stripe_colors[c_idx]
+
+        # Background container for swimlane
+        bg_tint = theme.get_rgb("surface") if col_data.is_target_platform else theme.get_rgb("surface_muted")
+        b_color = theme.get_rgb("primary") if col_data.is_target_platform else theme.get_rgb("border")
+
+        add_card_with_top_stripe(
+            slide=slide,
+            theme=theme,
+            left=cx,
+            top=lane_y,
+            width=cw,
+            height=lane_h,
+            accent_rgb=st_color,
+            bg_color=bg_tint,
+            border_color=b_color,
+            border_width_pt=1.5 if col_data.is_target_platform else 1.0,
+            stripe_height_in=0.05,
+        )
+
+        # Swimlane Header
+        h_tb = slide.shapes.add_textbox(cx + Inches(0.16), lane_y + Inches(0.10), cw - Inches(0.32), Inches(0.48))
+        h_tf = h_tb.text_frame
+        h_tf.word_wrap = True
+        h_tf.margin_left = h_tf.margin_right = h_tf.margin_top = h_tf.margin_bottom = 0
+
+        p1 = h_tf.paragraphs[0]
+        p1.text = col_data.swimlane_title
+        p1.font.name = theme.font_family_header
+        p1.font.size = Pt(10.5)
+        p1.font.bold = True
+        p1.font.color.rgb = theme.get_rgb("primary")
+
+        p2 = h_tf.add_paragraph()
+        p2.text = col_data.tagline
+        p2.font.name = theme.font_family
+        p2.font.size = Pt(8.0)
+        p2.font.color.rgb = theme.get_rgb("muted")
+        p2.space_before = Pt(1.5)
+
+        # Optional Boundary Tag Pill at top right of column
+        if col_data.boundary_notice:
+            _add_status_pill(
+                slide,
+                theme,
+                left=cx + cw - Inches(1.85),
+                top=lane_y + Inches(0.08),
+                width=Inches(1.70),
+                height=Inches(0.18),
+                status=col_data.boundary_notice,
+                font_size_pt=6.5,
+                override_color_key="accent" if col_data.is_target_platform else "neutral",
+            )
+
+        # Component Node Cards inside Swimlane
+        node_start_y = lane_y + Inches(0.66)
+        node_h = Inches(1.18)
+        node_gap = Inches(0.12)
+        node_w = cw - Inches(0.32)
+        node_x = cx + Inches(0.16)
+
+        for n_idx, node in enumerate(col_data.nodes[:3]):
+            curr_node_y = node_start_y + (n_idx * (node_h + node_gap))
+
+            # Out of scope border styling (Amber dashed or warning badge)
+            if node.is_out_of_scope:
+                n_border_rgb = RGBColor(217, 119, 6)
+                n_bg_rgb = theme.get_rgb("badge_amber_fill")
+            else:
+                n_border_rgb = theme.get_rgb("border")
+                n_bg_rgb = theme.get_rgb("surface")
+
+            node_card = add_card(
+                slide=slide,
+                theme=theme,
+                left=node_x,
+                top=curr_node_y,
+                width=node_w,
+                height=node_h,
+                bg_color=n_bg_rgb,
+                border_color=n_border_rgb,
+                force_rectangle=True,
+            )
+
+            # Text content inside node card
+            n_tb = slide.shapes.add_textbox(node_x + Inches(0.14), curr_node_y + Inches(0.10), node_w - Inches(0.28), node_h - Inches(0.18))
+            n_tf = n_tb.text_frame
+            n_tf.word_wrap = True
+            n_tf.margin_left = n_tf.margin_right = n_tf.margin_top = n_tf.margin_bottom = 0
+
+            # Category Tag
+            if node.category:
+                p_cat = n_tf.paragraphs[0]
+                p_cat.text = node.category.upper()
+                p_cat.font.name = theme.font_family_header
+                p_cat.font.size = Pt(7.0)
+                p_cat.font.bold = True
+                p_cat.font.color.rgb = theme.get_rgb("accent")
+
+                p_ntitle = n_tf.add_paragraph()
+            else:
+                p_ntitle = n_tf.paragraphs[0]
+
+            # Node Title
+            p_ntitle.text = node.title
+            p_ntitle.font.name = theme.font_family_header
+            p_ntitle.font.size = Pt(9.5)
+            p_ntitle.font.bold = True
+            p_ntitle.font.color.rgb = theme.get_rgb("primary")
+            if node.category:
+                p_ntitle.space_before = Pt(1.5)
+
+            # Node Subtitle
+            p_nsub = n_tf.add_paragraph()
+            p_nsub.text = node.subtitle
+            p_nsub.font.name = theme.font_family
+            p_nsub.font.size = Pt(8.0)
+            p_nsub.font.color.rgb = theme.get_rgb("secondary")
+            p_nsub.space_before = Pt(2.0)
+
+            # Status / Workstream Badge Pill on Node
+            if node.status_badge:
+                badge_color = "warning" if node.is_out_of_scope else ("success" if "TARGET" in node.status_badge else "accent")
+                _add_status_pill(
+                    slide,
+                    theme,
+                    left=node_x + node_w - Inches(1.30),
+                    top=curr_node_y + Inches(0.08),
+                    width=Inches(1.18),
+                    height=Inches(0.18),
+                    status=node.status_badge,
+                    font_size_pt=6.5,
+                    override_color_key=badge_color,
+                )
+
+    # 2. Bottom Banner: Workstream Routing Pathways
+    banner_x = Inches(0.80)
+    banner_y = Inches(6.18)
+    banner_w = Inches(11.733)
+    banner_h = Inches(0.78)
+
+    add_card_with_top_stripe(
+        slide=slide,
+        theme=theme,
+        left=banner_x,
+        top=banner_y,
+        width=banner_w,
+        height=banner_h,
+        accent_rgb=RGBColor(2, 132, 199),  # Sky Blue
+        bg_color=theme.get_rgb("surface"),
+        border_color=theme.get_rgb("border"),
+        stripe_height_in=0.035,
+    )
+
+    # Banner Header
+    b_tb = slide.shapes.add_textbox(banner_x + Inches(0.14), banner_y + Inches(0.06), banner_w - Inches(0.28), Inches(0.20))
+    b_tf = b_tb.text_frame
+    b_tf.margin_left = b_tf.margin_right = b_tf.margin_top = b_tf.margin_bottom = 0
+    bp = b_tf.paragraphs[0]
+    bp.text = "WORKSTREAM INTEGRATION & ROUTING PATHWAYS"
+    bp.font.name = theme.font_family_header
+    bp.font.size = Pt(8.5)
+    bp.font.bold = True
+    bp.font.color.rgb = theme.get_rgb("primary")
+
+    # Render Workstream Connectors as 4 Horizontal Flow Blocks
+    flow_x_offsets = [Inches(0.14), Inches(2.98), Inches(5.82), Inches(8.66)]
+    flow_w = Inches(2.70)
+    flow_y = banner_y + Inches(0.28)
+
+    if swimlane_data.workstream_connectors:
+        for f_idx, conn in enumerate(swimlane_data.workstream_connectors[:4]):
+            fx = banner_x + flow_x_offsets[f_idx]
+            f_box = slide.shapes.add_textbox(fx, flow_y, flow_w, Inches(0.42))
+            f_tf = f_box.text_frame
+            f_tf.word_wrap = True
+            f_tf.margin_left = f_tf.margin_right = f_tf.margin_top = f_tf.margin_bottom = 0
+
+            # Line 1: [WS1] Tag + From -> To
+            fp1 = f_tf.paragraphs[0]
+            fp1.text = f"[{conn.workstream_tag}]  {conn.from_swimlane} ➔ {conn.to_swimlane}"
+            fp1.font.name = theme.font_family_header
+            fp1.font.size = Pt(8.0)
+            fp1.font.bold = True
+            fp1.font.color.rgb = theme.get_rgb("accent")
+
+            # Line 2: Label / Protocol
+            fp2 = f_tf.add_paragraph()
+            fp2.text = conn.label
+            fp2.font.name = theme.font_family
+            fp2.font.size = Pt(7.5)
+            fp2.font.color.rgb = theme.get_rgb("secondary")
+            fp2.space_before = Pt(1.0)
 
     return slide
 
@@ -5585,6 +6358,7 @@ def build_thank_you_slide(
 # ============================================================================
 # 15. High-Level Consulting Archetype Deck Generator
 # ============================================================================
+
 
 class ConsultingDeckBuilder:
     """High-level builder for assembling full multi-slide consulting decks."""
@@ -6001,6 +6775,48 @@ class ConsultingDeckBuilder:
             takeaways=takeaways,
             current_idx=idx,
             total_slides=idx,
+        )
+
+    def add_dense_workstream_runbook_slide(
+        self,
+        tracker: str = "WORKSTREAM RUNBOOK  |  WS1: AWS LANDING ZONE FOUNDATION",
+        action_title: str = "AWS Landing Zone Foundation Establishes Multi-Account Isolation and Transit Mesh",
+        subtitle: Optional[str] = "Contractual engineering execution runbook defining technical deliverables, counterpart PICs, and cross-stream dependencies.",
+        runbook_data: Optional[DenseWorkstreamRunbookData] = None,
+        notice: str = "Enterprise Architecture & Modernization Practice  |  Confidential & Contractual",
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_dense_workstream_runbook_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            runbook_data=runbook_data,
+            current_idx=idx,
+            total_slides=idx,
+            notice=notice,
+        )
+
+    def add_target_architecture_swimlane_slide(
+        self,
+        tracker: str = "TARGET ARCHITECTURE  |  3-COLUMN BOUNDARY SWIMLANES",
+        action_title: str = "Target Lakehouse Architecture Establishes Unified Medallion Ingestion and Semantic Serving",
+        subtitle: Optional[str] = "Three-column boundary architecture isolating on-premises feeds, managed cloud lakehouse core, and consumer analytics.",
+        swimlane_data: Optional[TargetArchitectureSwimlaneData] = None,
+        notice: str = "Enterprise Architecture & Modernization Practice  |  Confidential & Contractual",
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_target_architecture_swimlane_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            swimlane_data=swimlane_data,
+            current_idx=idx,
+            total_slides=idx,
+            notice=notice,
         )
 
     def update_pagination(self) -> None:

@@ -42,7 +42,41 @@ A comprehensive guide for generating high-impact, professional presentations usi
 ### Phase 1: Narrative & Deck Architecture
 - **Define Slide Roles**: Every slide must have a distinct functional purpose (e.g., Cover, Problem Framing, Regulatory Context, Research Gap, Theoretical Framework, Methodology, Empirical Results, Robustness, Implications, Q&A).
 - **Takeaway Headlines**: Write action titles that express the conclusion, not just category labels (e.g., *"ESG Disclosure Significantly Enhances Financial Reporting Quality in High-Scrutiny Sectors"* instead of *"Results"*).
-- **Pacing & Breathing Room**: Limit to 1 core idea per slide. Avoid dense wall-of-text paragraphs; use structured cards, columns, and visual callouts.
+- **Pacing & Information Density**: Match information density to audience using the 3-Gear standard. Avoid artificial truncation of contractual scope.
+
+---
+
+## 🎛️ The 3 Adaptive Complexity Gears & Enterprise Density Standard
+
+> **THE ENTERPRISE DENSITY INVARIANT:** In enterprise IT consulting, **high information density ($7.0/10$ to $9.5/10$) is a functional requirement, not a design defect.** Legibility is maintained through **hierarchical containerization, strict typographic scaling, and boundary swimlanes**, never by artificially deleting necessary technical scope. Reference: [`docs/specs/adaptive_complexity_gears_and_enterprise_density.md`](../../docs/specs/adaptive_complexity_gears_and_enterprise_density.md).
+
+### The 3 Complexity Gears:
+1. **Gear 1 (Executive / Pitch, 4.0–5.0/10):**
+   - **Audience:** Board of Directors, Steering Committee kickoff, executive sponsor.
+   - **Pattern:** Generous whitespace, 1 primary focal anchor, max 3 takeaway cards (e.g., 3-Horizon Modernization, Core Strategic Pillars).
+2. **Gear 2 (Pre-KOM / Alignment, 6.5–7.5/10 - DEFAULT BASELINE):**
+   - **Audience:** Technical Directors, Enterprise Architects, PMOs.
+   - **Pattern:** 3-column boundary swimlanes (On-Premises ➔ Cloud ➔ Consumers), labeled path connectors (WS1, WS2, WS4), out-of-scope boundaries.
+3. **Gear 3 (Technical Workstream Runbook, 8.5–9.5/10):**
+   - **Audience:** Lead Engineers, DBAs, Security Officers, SysAdmins.
+   - **Pattern:** 4-quadrant container discipline (Objective, MII Actions, Client Actions, Dependencies, Named PIC Table), 8.5–9.5pt micro-typography.
+
+### Diagnostic Status Triad:
+Deterministic semantic signaling replaces arbitrary 1-accent aesthetic caps:
+- **Critical Defect / Bottleneck (`#DC2626` / `#FEE2E2`):** P1 bottleneck, single-point-of-failure, legacy debt.
+- **Warning / Boundary / Sync (`#D97706` / `#FEF3C7`):** Synchronous wait, temporary VPN, freeze window, boundary fence.
+- **Client Ingress / Active Flow (`#0284C7` / `#EFF6FF`):** Ingress data streams, client requests, active runtime triggers.
+- **Target State / Reconciled (`#16A34A` / `#DCFCE7`):** Target cloud platform, reconciled data, approved state.
+- **Neutral Container / Structural (`#CBD5E1` / `#F8FAFC`):** Standard storage, structural containers, boundary boxes.
+
+### Casual Ingress & 1-Word Steering Triggers:
+- **Default Baseline:** Unspecified or casual requests (*"make a slide on migration"*) default to **Gear 2 (Pre-KOM Alignment)**.
+- **Domain-Noun Auto-Elevation:** Prompts containing enterprise nouns (VPC/CIDR, PrivateLink, CAB, PIC, BAST milestones, named counterpart teams) auto-elevate to **Gear 3 (Technical Workstream)**.
+- **1-Word Steering Levers:**
+  - `"pack it"` / `"full BSIM"` &rarr; Elevate to **Gear 3**.
+  - `"simplify"` / `"board view"` &rarr; Drop to **Gear 1**.
+  - `"swimlane it"` &rarr; Convert topology to 3-column boundary architecture.
+
 
 ### Phase 2: Engine Integration (When Extending Beyond CLI Defaults)
 When building customized decks in Python, import directly from the engine primitives rather than writing raw `python-pptx` scripts:
@@ -102,6 +136,8 @@ Refer to detailed implementation recipes in [`references/slide_archetypes.md`](.
 5. **Balanced Scorecard KPI Matrix**: 4 quadrants (Financial, Customer, Operational, Resilience) with metric chips.
 6. **Key Metrics / Stat Highlights**: Large 36–48pt numbers paired with concise 12pt descriptive labels.
 7. **De-Squared Chapter Divider / Section Header**: Asymmetric split (1/3 white typographic narrative panel + 2/3 photographic plate) with 45% dark translucent scrim overlay (`#0B132B`), center-anchored square brand mark, and graceful fallbacks. Use `build_chapter_divider_slide(...)` or `ConsultingDeckBuilder.add_chapter_divider_slide(...)`.
+8. **Dense Workstream Runbook (Gear 3)**: 4-quadrant container discipline (Objective, Vendor Actions, Client Actions, Dependencies, Named PIC Matrix) with 8.5–9.5pt micro-typography and tight card layouts. Use `ConsultingDeckBuilder.add_dense_workstream_runbook_slide(...)`.
+9. **Target Architecture Swimlane (Gear 2)**: 3-column boundary swimlanes (Source Systems ➔ Modern Cloud Platform ➔ Consumers & Analytics) with labeled workstream route badges (WS1, WS2, WS4) and out-of-scope fences. Use `ConsultingDeckBuilder.add_target_architecture_swimlane_slide(...)`.
 
 ---
 
