@@ -57,17 +57,34 @@ def _clamp(val: float, lo: float, hi: float) -> float:
 
 def _flatten(shape: Any) -> None:
     """
-    Strips default theme drop shadows from a shape for the flat consulting aesthetic.
-    Writes an explicit empty <a:effectLst/> into spPr.
+    OpenXML Sanitizer that strips default theme drop shadows and style effects.
+    Guarantees flat consulting aesthetic with zero drop shadow inheritance:
+    1. Sets shape.shadow.inherit = False (if attribute exists).
+    2. Overrides <p:style>/<a:effectRef idx="0"> so theme drop shadows aren't inherited.
+    3. Cleans any existing effectLst or outerShdw in spPr and writes an explicit empty <a:effectLst/>.
     """
     try:
-        shape.shadow.inherit = False
-        return
+        if hasattr(shape, "shadow"):
+            shape.shadow.inherit = False
     except Exception:
         pass
+
     try:
-        sp_pr = shape._element.spPr
-        if sp_pr.find("{http://schemas.openxmlformats.org/drawingml/2006/main}effectLst") is None:
+        sp = getattr(shape, "_element", getattr(shape, "element", shape))
+
+        # 1. Reset theme style effectRef to idx="0"
+        style = sp.find("{http://schemas.openxmlformats.org/presentationml/2006/main}style")
+        if style is not None:
+            effect_ref = style.find("{http://schemas.openxmlformats.org/drawingml/2006/main}effectRef")
+            if effect_ref is not None:
+                effect_ref.set("idx", "0")
+
+        # 2. Clear out any existing effectLst / outerShdw and inject an explicit empty <a:effectLst/>
+        sp_pr = getattr(sp, "spPr", None)
+        if sp_pr is not None:
+            for child in list(sp_pr):
+                if child.tag.endswith("effectLst") or child.tag.endswith("outerShdw"):
+                    sp_pr.remove(child)
             sp_pr.append(OxmlElement("a:effectLst"))
     except Exception as e:
         logger.debug("Could not flatten shape: %s", e)
@@ -317,15 +334,9 @@ class PPTXCompiler:
             if spec.space_before_pt:
                 p.space_before = Pt(spec.space_before_pt)
 
-    def compile_presentation(self, output_path: Union[str, Path]) -> Path:
-        """Compiles the diagram specification into a native PowerPoint .pptx file."""
-        out_p = Path(output_path)
-        out_p.parent.mkdir(parents=True, exist_ok=True)
-
-        prs = Presentation()
-        prs.slide_width = Inches(13.333)
-        prs.slide_height = Inches(7.5)
-        slide = prs.slides.add_slide(prs.slide_layouts[6])
+    def compile_slide(self, slide: Any) -> None:
+        """Compiles the diagram specification elements onto an existing PowerPoint slide."""
+        self._node_boxes.clear()
 
         # 1. Header & Brand Stripes
         if self.spec.header.show:
@@ -350,6 +361,18 @@ class PPTXCompiler:
         # 6. Routed Connectors / Flows
         for f in self.spec.flows:
             self._compile_flow(slide, f)
+
+    def compile_presentation(self, output_path: Union[str, Path]) -> Path:
+        """Compiles the diagram specification into a native PowerPoint .pptx file."""
+        out_p = Path(output_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+
+        prs = Presentation()
+        prs.slide_width = Inches(13.333)
+        prs.slide_height = Inches(7.5)
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+        self.compile_slide(slide)
 
         prs.save(str(out_p))
         return out_p

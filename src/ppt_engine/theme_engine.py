@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
 from pptx.dml.color import RGBColor
+from pptx.oxml.xmlchemy import OxmlElement
 
 
 # Helper: convert hex string to pptx RGBColor
@@ -34,6 +35,45 @@ def hex_to_rgb(hex_code: str) -> RGBColor:
 def rgb_to_hex(color: RGBColor) -> str:
     """Convert pptx RGBColor to uppercase hex string (e.g. '#2563EB')."""
     return f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
+
+
+def strip_shape_shadows(shape: Any) -> None:
+    """
+    OpenXML Sanitizer that strips default theme drop shadows and style effects.
+    Guarantees flat consulting aesthetic with zero drop shadow inheritance:
+    1. Sets shape.shadow.inherit = False (if attribute exists).
+    2. Overrides <p:style>/<a:effectRef idx="0"> so theme drop shadows aren't inherited.
+    3. Cleans any existing effectLst or outerShdw in spPr and writes an explicit empty <a:effectLst/>.
+    """
+    try:
+        if hasattr(shape, "shadow"):
+            shape.shadow.inherit = False
+    except Exception:
+        pass
+
+    try:
+        sp = getattr(shape, "_element", getattr(shape, "element", shape))
+
+        # 1. Reset theme style effectRef to idx="0"
+        style = sp.find("{http://schemas.openxmlformats.org/presentationml/2006/main}style")
+        if style is not None:
+            effect_ref = style.find("{http://schemas.openxmlformats.org/drawingml/2006/main}effectRef")
+            if effect_ref is not None:
+                effect_ref.set("idx", "0")
+
+        # 2. Clear out any existing effectLst / outerShdw and inject an explicit empty <a:effectLst/>
+        sp_pr = getattr(sp, "spPr", None)
+        if sp_pr is not None:
+            for child in list(sp_pr):
+                if child.tag.endswith("effectLst") or child.tag.endswith("outerShdw"):
+                    sp_pr.remove(child)
+            sp_pr.append(OxmlElement("a:effectLst"))
+    except Exception:
+        pass
+
+
+# Canonical alias
+_flatten = strip_shape_shadows
 
 
 # Color Key Aliases for maximum cross-compatibility

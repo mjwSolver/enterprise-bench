@@ -37,8 +37,10 @@ class EngineV2Result:
         return [p for p in (self.drawio_path, self.svg_path, self.png_path, self.pptx_path) if p is not None]
 
 
-def load_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any]]) -> DiagramSpec:
-    """Loads and validates a DiagramSpec from a YAML file, JSON string, or Python dictionary."""
+def load_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any], DiagramSpec]) -> DiagramSpec:
+    """Loads and validates a DiagramSpec from a DiagramSpec instance, YAML file, JSON string, or Python dictionary."""
+    if isinstance(spec_path_or_dict, DiagramSpec):
+        return spec_path_or_dict
     if isinstance(spec_path_or_dict, dict):
         return DiagramSpec.model_validate(spec_path_or_dict)
 

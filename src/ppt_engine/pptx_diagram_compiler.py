@@ -64,18 +64,34 @@ def _clamp(value: float, lo: float, hi: float) -> float:
 
 def _flatten(shape) -> None:
     """
-    Strips drop shadows / theme effects from a shape for a flat consulting aesthetic.
-    Writes an explicit empty ``<a:effectLst/>`` into ``spPr`` which overrides the
-    ``<p:style><a:effectRef idx="2">`` shadow inherited from the default theme.
+    OpenXML Sanitizer that strips default theme drop shadows and style effects.
+    Guarantees flat consulting aesthetic with zero drop shadow inheritance:
+    1. Sets shape.shadow.inherit = False (if attribute exists).
+    2. Overrides <p:style>/<a:effectRef idx="0"> so theme drop shadows aren't inherited.
+    3. Cleans any existing effectLst or outerShdw in spPr and writes an explicit empty <a:effectLst/>.
     """
     try:
-        shape.shadow.inherit = False
-        return
+        if hasattr(shape, "shadow"):
+            shape.shadow.inherit = False
     except Exception:
         pass
+
     try:
-        sp_pr = shape._element.spPr
-        if sp_pr.find("{http://schemas.openxmlformats.org/drawingml/2006/main}effectLst") is None:
+        sp = getattr(shape, "_element", getattr(shape, "element", shape))
+
+        # 1. Reset theme style effectRef to idx="0"
+        style = sp.find("{http://schemas.openxmlformats.org/presentationml/2006/main}style")
+        if style is not None:
+            effect_ref = style.find("{http://schemas.openxmlformats.org/drawingml/2006/main}effectRef")
+            if effect_ref is not None:
+                effect_ref.set("idx", "0")
+
+        # 2. Clear out any existing effectLst / outerShdw and inject an explicit empty <a:effectLst/>
+        sp_pr = getattr(sp, "spPr", None)
+        if sp_pr is not None:
+            for child in list(sp_pr):
+                if child.tag.endswith("effectLst") or child.tag.endswith("outerShdw"):
+                    sp_pr.remove(child)
             sp_pr.append(OxmlElement("a:effectLst"))
     except Exception as e:  # pragma: no cover - defensive
         logger.debug("Could not flatten shape effects: %s", e)
@@ -938,6 +954,317 @@ class PowerPointDiagramCompiler:
             font_size=11.5,
         )
 
+    def build_slide_1_expanded_cdsw_process(self, prs: Presentation) -> None:
+        """
+        Compiles Slide 1 (Expanded Copy): Legacy CDSW Job Execution with detailed hardware
+        Safe-Checker topology: User origin, Local Device EXE trigger, Safe Checker evaluation
+        (Connect to CDSW, Get MAC Address, Send API, Receive Status, Allowed / Not Allowed fork),
+        and Cloudera CDSW backend execution boundary with 1 Task bottleneck.
+        """
+        slide = self._new_slide(prs)
+
+        # 1. Header
+        self.add_unified_header(
+            slide,
+            action_title="Current: Legacy CDSW Job Execution",
+            subtitle="Client Hardware Whitelist Verification, Monolithic Batch Execution & Bottleneck Lifecycle Dataflow",
+        )
+        self.add_pill_badge(
+            slide, x=10.00, y=0.35, w=2.80, h=0.32,
+            text="EXPANDED HARDWARE SAFE-CHECKER",
+            bg_hex="#EFF6FF", text_hex="#1D4ED8", border_hex="#BFDBFE", font_pt=8.0,
+        )
+
+        # 2. Zones (Container Boundaries with verified non-colliding gutters)
+        self.add_container_boundary(
+            slide, x=0.50, y=1.35, w=1.50, h=5.75,
+            label="User Origin", border_hex="#94A3B8", fill_hex="#F8FAFC",
+        )
+        self.add_container_boundary(
+            slide, x=3.10, y=1.35, w=4.20, h=5.75,
+            label="Local Device", border_hex="#64748B", fill_hex="#F8FAFC",
+            tag_badge="CLIENT HOST", tag_bg_hex="#E2E8F0", tag_text_hex="#475569",
+        )
+        self.add_container_boundary(
+            slide, x=8.85, y=1.35, w=4.00, h=5.75,
+            label="Backend Execution Boundary", border_hex="#F59E0B", fill_hex="#FFFBEB",
+            tag_badge="CLOUDERA CDSW", tag_bg_hex="#FEF3C7", tag_text_hex="#B45309",
+        )
+
+        # 3. Node Geometry
+        user_box = Box(0.58, 1.80, 1.34, 1.60)
+        exe_box = Box(3.20, 1.80, 1.30, 1.60)
+        safe_box = Box(4.80, 1.65, 2.35, 5.25)
+        cdsw_box = Box(9.00, 2.10, 1.65, 1.55)
+        task_box = Box(10.95, 2.10, 1.75, 0.88)
+        self._cards = [user_box, exe_box, safe_box, cdsw_box, task_box]
+
+        # 4. Flows
+        # Flow 1: User -> EXE (Trigger) in 1.10" Gutter (center x=2.55)
+        self.add_routed_flow(
+            slide, [user_box.right_at(2.60), exe_box.left_at(2.60)],
+            stroke_hex="#2563EB", label="Trigger", label_at=(2.55, 2.60),
+            label_bg_hex="#EFF6FF", label_text_hex="#1D4ED8",
+        )
+        # Flow 2: EXE -> Safe Checker (runs) inside Local Device
+        self.add_routed_flow(
+            slide, [exe_box.right_at(2.60), safe_box.left_at(2.60)],
+            stroke_hex="#2563EB", label="runs", label_at=(4.65, 2.60),
+            label_bg_hex="#EFF6FF", label_text_hex="#1D4ED8",
+        )
+        # Flow 3: Safe Checker Send API -> CDSW JOB in 1.55" Gutter (center x=8.075)
+        self.add_routed_flow(
+            slide,
+            [(7.05, 3.40), (8.075, 3.40), (8.075, 2.875), (9.00, 2.875)],
+            stroke_hex="#0284C7", label="1. API Request", label_at=(8.075, 3.14),
+            label_bg_hex="#F0F9FF", label_text_hex="#0369A1",
+        )
+        # Flow 4: CDSW JOB -> 1 Task (2. Run)
+        self.add_routed_flow(
+            slide, [cdsw_box.right_at(2.54), task_box.left_at(2.54)],
+            stroke_hex="#0284C7", label="2. Run", label_at=(10.80, 2.54),
+            label_bg_hex="#F0F9FF", label_text_hex="#0369A1",
+        )
+        # Flow 5: CDSW JOB -> Safe Checker Receive Status (3. Return Status) in 1.55" Gutter (center x=8.075)
+        self.add_routed_flow(
+            slide,
+            [(9.00, 3.35), (8.075, 3.35), (8.075, 4.00), (7.05, 4.00)],
+            stroke_hex="#D97706", label="3. Return Status", label_at=(8.075, 3.68),
+            label_bg_hex="#FFFBEB", label_text_hex="#B45309",
+        )
+
+        # 5. Render Cards & Detailed Content
+        self.add_card(
+            slide, user_box.x, user_box.y, user_box.w, user_box.h,
+            title="User", subtitle="Operator / Client", icon_emoji="👤",
+            stroke_hex="#3B82F6", fill_hex="#FFFFFF",
+        )
+        notes_shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.58), Inches(3.55), Inches(1.34), Inches(3.35))
+        notes_shape.fill.solid()
+        notes_shape.fill.fore_color.rgb = _hex_to_rgb("#FFFFFF")
+        notes_shape.line.color.rgb = _hex_to_rgb("#CBD5E1")
+        notes_shape.line.width = Pt(1.5)
+        _flatten(notes_shape)
+        tf_n = notes_shape.text_frame
+        tf_n.word_wrap = True
+        tf_n.margin_left = tf_n.margin_right = Inches(0.08)
+        tf_n.margin_top = Inches(0.12)
+        p0 = tf_n.paragraphs[0]
+        p0.text = "DEPT / ROLES"
+        p0.font.name = "Arial"
+        p0.font.size = Pt(8.5)
+        p0.font.bold = True
+        p0.font.color.rgb = _hex_to_rgb("#64748B")
+
+        for role_title, role_sub in [("• Security", "SecOps"), ("• Finance", "Recon"), ("• Fraud", "Audit")]:
+            pr = tf_n.add_paragraph()
+            pr.text = f"{role_title} ({role_sub})"
+            pr.font.name = "Arial"
+            pr.font.size = Pt(8.5)
+            pr.font.bold = True
+            pr.font.color.rgb = _hex_to_rgb("#0F172A")
+            pr.space_before = Pt(4)
+
+        p_desc = tf_n.add_paragraph()
+        p_desc.text = "Triggers local executables on host workstation requiring hardware authorization."
+        p_desc.font.name = "Arial"
+        p_desc.font.size = Pt(7.5)
+        p_desc.font.color.rgb = _hex_to_rgb("#475569")
+        p_desc.space_before = Pt(8)
+
+        self.add_card(
+            slide, exe_box.x, exe_box.y, exe_box.w, exe_box.h,
+            title="EXE", subtitle="Client Executable\nCan be more than 1 type\nwith different programs",
+            icon_emoji="⚙️", stroke_hex="#3B82F6", fill_hex="#FFFFFF",
+        )
+
+        sc_container = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(safe_box.x), Inches(safe_box.y), Inches(safe_box.w), Inches(safe_box.h))
+        sc_container.fill.solid()
+        sc_container.fill.fore_color.rgb = _hex_to_rgb("#FFFFFF")
+        sc_container.line.color.rgb = _hex_to_rgb("#0284C7")
+        sc_container.line.width = Pt(1.5)
+        _flatten(sc_container)
+
+        sc_hdr = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.90), Inches(1.80), Inches(2.15), Inches(0.42))
+        sc_hdr.fill.solid()
+        sc_hdr.fill.fore_color.rgb = _hex_to_rgb("#E0F2FE")
+        sc_hdr.line.color.rgb = _hex_to_rgb("#BAE6FD")
+        sc_hdr.line.width = Pt(1.0)
+        _flatten(sc_hdr)
+        tf_sc = sc_hdr.text_frame
+        tf_sc.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p_sc0 = tf_sc.paragraphs[0]
+        p_sc0.text = "🛡️ Safe Checker"
+        p_sc0.alignment = PP_ALIGN.CENTER
+        p_sc0.font.name = "Arial"
+        p_sc0.font.size = Pt(11)
+        p_sc0.font.bold = True
+        p_sc0.font.color.rgb = _hex_to_rgb("#0369A1")
+        p_sc1 = tf_sc.add_paragraph()
+        p_sc1.text = "Pre-Run Whitelist Verifier"
+        p_sc1.alignment = PP_ALIGN.CENTER
+        p_sc1.font.name = "Arial"
+        p_sc1.font.size = Pt(8.5)
+        p_sc1.font.color.rgb = _hex_to_rgb("#64748B")
+
+        for step_y, step_text in [(2.32, "• Connect to CDSW"), (2.72, "• Get MAC Addresses")]:
+            step_box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.90), Inches(step_y), Inches(2.15), Inches(0.32))
+            step_box.fill.solid()
+            step_box.fill.fore_color.rgb = _hex_to_rgb("#F8FAFC")
+            step_box.line.color.rgb = _hex_to_rgb("#E2E8F0")
+            step_box.line.width = Pt(1.0)
+            _flatten(step_box)
+            tf_s = step_box.text_frame
+            tf_s.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_s.margin_left = Inches(0.10)
+            ps = tf_s.paragraphs[0]
+            ps.text = step_text
+            ps.font.name = "Arial"
+            ps.font.size = Pt(9.0)
+            ps.font.bold = True
+            ps.font.color.rgb = _hex_to_rgb("#0F172A")
+
+        send_api_box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.90), Inches(3.14), Inches(2.15), Inches(0.52))
+        send_api_box.fill.solid()
+        send_api_box.fill.fore_color.rgb = _hex_to_rgb("#F0F9FF")
+        send_api_box.line.color.rgb = _hex_to_rgb("#0284C7")
+        send_api_box.line.width = Pt(1.5)
+        _flatten(send_api_box)
+        tf_api = send_api_box.text_frame
+        tf_api.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p_api = tf_api.paragraphs[0]
+        p_api.text = "📤 Send request API ke CDSW"
+        p_api.alignment = PP_ALIGN.CENTER
+        p_api.font.name = "Arial"
+        p_api.font.size = Pt(9.0)
+        p_api.font.bold = True
+        p_api.font.color.rgb = _hex_to_rgb("#0369A1")
+        p_api2 = tf_api.add_paragraph()
+        p_api2.text = "Payload: MAC + Client Identity"
+        p_api2.alignment = PP_ALIGN.CENTER
+        p_api2.font.name = "Arial"
+        p_api2.font.size = Pt(7.5)
+        p_api2.font.color.rgb = _hex_to_rgb("#0284C7")
+
+        rec_box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.90), Inches(3.76), Inches(2.15), Inches(0.48))
+        rec_box.fill.solid()
+        rec_box.fill.fore_color.rgb = _hex_to_rgb("#FFFBEB")
+        rec_box.line.color.rgb = _hex_to_rgb("#F59E0B")
+        rec_box.line.width = Pt(1.5)
+        _flatten(rec_box)
+        tf_rec = rec_box.text_frame
+        tf_rec.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p_rec = tf_rec.paragraphs[0]
+        p_rec.text = "📥 Receive Status"
+        p_rec.alignment = PP_ALIGN.CENTER
+        p_rec.font.name = "Arial"
+        p_rec.font.size = Pt(9.0)
+        p_rec.font.bold = True
+        p_rec.font.color.rgb = _hex_to_rgb("#B45309")
+        p_rec2 = tf_rec.add_paragraph()
+        p_rec2.text = "Status: Allowed / Not Allowed"
+        p_rec2.alignment = PP_ALIGN.CENTER
+        p_rec2.font.name = "Arial"
+        p_rec2.font.size = Pt(7.5)
+        p_rec2.font.color.rgb = _hex_to_rgb("#D97706")
+
+        tb_ie = slide.shapes.add_textbox(Inches(4.90), Inches(4.30), Inches(2.15), Inches(0.25))
+        _flatten(tb_ie)
+        tf_ie = tb_ie.text_frame
+        tf_ie.margin_left = tf_ie.margin_top = tf_ie.margin_right = tf_ie.margin_bottom = 0
+        pie = tf_ie.paragraphs[0]
+        pie.text = "• If / Else Evaluation:"
+        pie.font.name = "Arial"
+        pie.font.size = Pt(8.5)
+        pie.font.bold = True
+        pie.font.color.rgb = _hex_to_rgb("#475569")
+
+        b_allowed = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.90), Inches(4.58), Inches(1.02), Inches(2.15))
+        b_allowed.fill.solid()
+        b_allowed.fill.fore_color.rgb = _hex_to_rgb("#F0FDF4")
+        b_allowed.line.color.rgb = _hex_to_rgb("#16A34A")
+        b_allowed.line.width = Pt(1.5)
+        _flatten(b_allowed)
+        tf_al = b_allowed.text_frame
+        tf_al.margin_left = tf_al.margin_right = Inches(0.04)
+        tf_al.margin_top = Inches(0.08)
+        pal0 = tf_al.paragraphs[0]
+        pal0.text = "Allowed"
+        pal0.alignment = PP_ALIGN.CENTER
+        pal0.font.name = "Arial"
+        pal0.font.size = Pt(9.0)
+        pal0.font.bold = True
+        pal0.font.color.rgb = _hex_to_rgb("#15803D")
+        pal1 = tf_al.add_paragraph()
+        pal1.text = "↓"
+        pal1.alignment = PP_ALIGN.CENTER
+        pal1.font.size = Pt(13)
+        pal1.font.bold = True
+        pal1.font.color.rgb = _hex_to_rgb("#16A34A")
+        pal2 = tf_al.add_paragraph()
+        pal2.text = "Continue with\nthe rest\nof exe"
+        pal2.alignment = PP_ALIGN.CENTER
+        pal2.font.name = "Arial"
+        pal2.font.size = Pt(8.0)
+        pal2.font.bold = True
+        pal2.font.color.rgb = _hex_to_rgb("#166534")
+
+        b_not = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.03), Inches(4.58), Inches(1.02), Inches(2.15))
+        b_not.fill.solid()
+        b_not.fill.fore_color.rgb = _hex_to_rgb("#FEF2F2")
+        b_not.line.color.rgb = _hex_to_rgb("#DC2626")
+        b_not.line.width = Pt(1.5)
+        _flatten(b_not)
+        tf_not = b_not.text_frame
+        tf_not.margin_left = tf_not.margin_right = Inches(0.04)
+        tf_not.margin_top = Inches(0.08)
+        pnot0 = tf_not.paragraphs[0]
+        pnot0.text = "not Allowed"
+        pnot0.alignment = PP_ALIGN.CENTER
+        pnot0.font.name = "Arial"
+        pnot0.font.size = Pt(8.5)
+        pnot0.font.bold = True
+        pnot0.font.color.rgb = _hex_to_rgb("#B91C1C")
+        pnot1 = tf_not.add_paragraph()
+        pnot1.text = "↓"
+        pnot1.alignment = PP_ALIGN.CENTER
+        pnot1.font.size = Pt(13)
+        pnot1.font.bold = True
+        pnot1.font.color.rgb = _hex_to_rgb("#DC2626")
+        pnot2 = tf_not.add_paragraph()
+        pnot2.text = "Stopped\n(Execution\nAborted)"
+        pnot2.alignment = PP_ALIGN.CENTER
+        pnot2.font.name = "Arial"
+        pnot2.font.size = Pt(8.0)
+        pnot2.font.bold = True
+        pnot2.font.color.rgb = _hex_to_rgb("#991B1B")
+
+        cdsw_svg = _REPO_ROOT / "assets" / "logos" / "cloudera" / "cloudera_cdsw.svg"
+        self.add_card(
+            slide, cdsw_box.x, cdsw_box.y, cdsw_box.w, cdsw_box.h,
+            title="CDSW JOB",
+            subtitle="Cloudera Data Science\nWorkbench Job Runner",
+            stroke_hex="#0284C7", fill_hex="#FFFFFF",
+            icon_path=cdsw_svg if cdsw_svg.exists() else None,
+        )
+
+        self.add_card(
+            slide, task_box.x, task_box.y, task_box.w, task_box.h,
+            title="1 Task", title_pt=22, stroke_hex="#DC2626", fill_hex="#FFFFFF", stroke_pt=2.5,
+        )
+
+        pill_y = task_box.y - 0.45
+        self.add_pill_badge(slide, x=task_box.x, y=pill_y, w=0.85, h=0.28, text="⚠️ BOTTLENECK",
+                            bg_hex="#FEE2E2", text_hex="#DC2626", border_hex="#FECACA", font_pt=7.5)
+        self.add_pill_badge(slide, x=task_box.x + 0.90, y=pill_y, w=0.85, h=0.28, text="⚠️ SYNCHRONOUS",
+                            bg_hex="#FEF3C7", text_hex="#B45309", border_hex="#FDE68A", font_pt=7.5)
+
+        self.add_bullet_list(
+            slide, x=task_box.x, y=3.20, w=1.75, h=1.65,
+            items=["Input metadata", "SQL Query (Filter & Search)", "Filter & Search Dev. ADD", "Logging", "Return Result"],
+            font_size=9.0,
+        )
+
     def build_slide_2_aws_lambda(self, prs: Presentation) -> None:
         """Compiles Slide 2: Proposed AWS Lambda Serverless Architecture into native PowerPoint shapes."""
         slide = self._new_slide(prs)
@@ -1233,17 +1560,22 @@ class PowerPointDiagramCompiler:
                     p.font.color.rgb = _hex_to_rgb("#334155")
 
     def build_slide_interwoven_migration(self, prs: Presentation) -> None:
-        """Compiles Slide 3: Unified Interwoven Migration Architecture with single shared client origin."""
+        """Compiles Slide 3: Unified Interwoven Migration Architecture reconstructed with 100% native PowerPoint DrawingML elements."""
         slide = self._new_slide(prs)
-        self.add_unified_header(
-            slide,
-            action_title="Device Whitelisting: Interwoven Migration Topology",
-            subtitle="Unified Architecture: Decommissioning Monolithic CDSW Batch (Upper Track) vs. Activating AWS Serverless (Lower Track)",
-        )
-        img_path = _REPO_ROOT / "TEMP" / "whitelist_system_interwoven_migration.png"
-        if img_path.exists():
-            pic = slide.shapes.add_picture(str(img_path), Inches(0.60), Inches(1.25), width=Inches(12.13))
-            _flatten(pic)
+
+        from src.ppt_engine.diagram_v2.compiler import load_diagram_spec
+        from src.ppt_engine.diagram_v2.pptx_compiler import PPTXCompiler
+
+        yaml_path = _REPO_ROOT / "src" / "ppt_engine" / "diagram_v2" / "samples" / "interwoven_migration.yaml"
+        if not yaml_path.exists():
+            yaml_path = _REPO_ROOT / "TEMP" / "sample_interwoven.yaml"
+
+        spec = load_diagram_spec(yaml_path)
+        spec.header.action_title = "Device Whitelisting: Interwoven Migration Topology"
+        spec.header.subtitle = "Unified Architecture: Decommissioning Monolithic CDSW Batch (Upper Track) vs. Activating AWS Serverless (Lower Track)"
+
+        compiler = PPTXCompiler(spec)
+        compiler.compile_slide(slide)
 
     def build_slide_4_visual_plate(self, prs: Presentation) -> None:
         """Embeds the full high-resolution Before & After architecture visual plate."""
@@ -1259,12 +1591,13 @@ class PowerPointDiagramCompiler:
             _flatten(pic)
 
     def compile_presentation(self, output_path: Union[str, Path]) -> Path:
-        """Compiles the complete 5-slide editable architecture presentation."""
+        """Compiles the complete 6-slide editable architecture presentation."""
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
 
         prs = self.create_deck()
         self.build_slide_1_cdsw_process(prs)
+        self.build_slide_1_expanded_cdsw_process(prs)
         self.build_slide_2_aws_lambda(prs)
         self.build_slide_interwoven_migration(prs)
         self.build_slide_3_comparison(prs)

@@ -2648,6 +2648,8 @@ class DrawIOProject:
     ) -> bool:
         cli_candidates = [
             "drawio",
+            "/opt/homebrew/bin/drawio",
+            "/usr/local/bin/drawio",
             "draw.io",
             "/Applications/draw.io.app/Contents/MacOS/draw.io",
         ]
@@ -2660,18 +2662,19 @@ class DrawIOProject:
                         "--format",
                         fmt,
                         "--page-index",
-                        str(page_index),
-                        "--scale",
-                        str(scale),
+                        str(page_index + 1),  # draw.io CLI requires 1-based page index
+                        "--crop",
                         "--output",
                         str(output_path),
                     ]
+                    if fmt.lower() in ("png", "jpg", "jpeg"):
+                        args.extend(["--scale", str(scale)])
                     if transparent:
                         args.append("--transparent")
                     args.append(str(drawio_path))
 
                     res = subprocess.run(
-                        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=12
+                        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=25
                     )
                     if res.returncode == 0 and output_path.exists():
                         return True
@@ -2763,5 +2766,70 @@ class DrawIOProject:
 
     # Alias for convenience
     from_yaml = build_from_config
+
+
+def export_drawio_stencil_to_svg(
+    drawio_input: Union[str, Path],
+    output_svg: Union[str, Path],
+    page_index: int = 1,
+    crop: bool = True,
+    transparent: bool = True,
+    timeout: int = 25,
+) -> Path:
+    """
+    Headlessly extracts Draw.io stencils and shapes into standalone W3C vector SVG
+    using the native Draw.io CLI (`drawio -x -f svg`).
+    Preserves 100% vector stencil fidelity for AWS, Databricks, Cloudera, and custom stencils.
+    """
+    in_p = Path(drawio_input)
+    if not in_p.exists():
+        raise FileNotFoundError(f"Input .drawio file not found: {in_p}")
+
+    out_p = Path(output_svg)
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+
+    cli_candidates = [
+        "drawio",
+        "/opt/homebrew/bin/drawio",
+        "/usr/local/bin/drawio",
+        "draw.io",
+        "/Applications/draw.io.app/Contents/MacOS/draw.io",
+    ]
+    drawio_bin = None
+    for cand in cli_candidates:
+        if shutil.which(cand) or os.path.exists(cand):
+            drawio_bin = cand
+            break
+
+    if not drawio_bin:
+        raise RuntimeError(
+            "Draw.io executable not found. Install via 'brew install --cask drawio' "
+            "to enable headless stencil extraction."
+        )
+
+    args = [
+        drawio_bin,
+        "-x",
+        "-f", "svg",
+        "-p", str(page_index),
+        "-o", str(out_p),
+    ]
+    if crop:
+        args.append("--crop")
+    if transparent:
+        args.append("--transparent")
+    args.append(str(in_p))
+
+    res = subprocess.run(
+        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout
+    )
+    if res.returncode != 0 or not out_p.exists():
+        stderr_msg = res.stderr.decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"Draw.io headless SVG export failed (code {res.returncode}): {stderr_msg}"
+        )
+
+    return out_p
+
 
 

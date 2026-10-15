@@ -7,6 +7,7 @@ from .diagram_engine import (
     mxgraph_to_ast,
     compile_mermaid,
     THEME_PRESETS,
+    export_drawio_stencil_to_svg,
 )
 from .theme_engine import (
     Theme,
@@ -16,6 +17,7 @@ from .theme_engine import (
     load_theme,
     get_theme,
     list_available_themes,
+    strip_shape_shadows,
 )
 from .consulting_archetypes import (
     ConsultingDeckBuilder,

@@ -38,7 +38,7 @@ from pptx.oxml import parse_xml
 from pptx.util import Inches, Pt
 from PIL import Image
 
-from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
+from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 from src.ppt_engine.icon_engine import (
     get_brand_icon,
     normalize_color,
@@ -3927,11 +3927,7 @@ def build_timeline_gantt_slide(
 
     # Enforce flat vector geometry by stripping drop shadows across all slide shapes
     for sh in slide.shapes:
-        if hasattr(sh, "shadow"):
-            try:
-                sh.shadow.inherit = False
-            except Exception:
-                pass
+        strip_shape_shadows(sh)
 
     return slide
 

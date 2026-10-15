@@ -81,7 +81,7 @@ class ContainerSpec(BaseModel):
     stroke_width: float = 2.0
     dashed: bool = True
     dash_pattern: str = "8 6"
-    corner_radius: float = 16.0
+    corner_radius: float = 0.0  # Sharp boundary swimlanes (MSO_SHAPE.RECTANGLE)
     tag_badge: Optional[str] = None
     tag_bg_hex: str = "#FEF3C7"
     tag_text_hex: str = "#B45309"
@@ -123,7 +123,7 @@ class NodeSpec(BaseModel):
     title_pt: Optional[float] = None
     is_cylinder: bool = False
     is_rounded: bool = True
-    shadow: bool = True
+    shadow: bool = False
     valign: Literal["middle", "top", "bottom"] = "middle"
 
     @field_validator("is_cylinder", mode="before")
