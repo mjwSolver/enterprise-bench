@@ -36,9 +36,9 @@ containers:
 
   - id: "group_device"
     label: "Local Device"
-    x: 3.05
+    x: 3.35
     y: 1.35
-    w: 4.30
+    w: 4.80
     h: 5.75
     border_hex: "#64748B"
     fill_hex: "#F8FAFC"
@@ -51,7 +51,7 @@ containers:
 
   - id: "group_safe_checker"
     label: ""
-    x: 4.70
+    x: 5.45
     y: 1.68
     w: 2.55
     h: 5.27
@@ -66,9 +66,9 @@ containers:
 
   - id: "group_backend"
     label: "Backend Execution Boundary"
-    x: 8.85
+    x: 9.25
     y: 1.35
-    w: 4.00
+    w: 3.80
     h: 5.75
     border_hex: "#F59E0B"
     fill_hex: "#FFFBEB"
@@ -115,9 +115,9 @@ nodes:
   - id: "node_exe"
     container_id: "group_device"
     title: "EXE"
-    subtitle: "Client Executable\nCan be more than 1 type\nwith different programs\n(recon_tool, audit)"
+    subtitle: "Client Executable\nSupports multiple types\n(recon_tool, audit)"
     icon: "assets/icons/lucide/cpu_0052CC.svg"
-    x: 3.20
+    x: 3.50
     y: 1.80
     w: 1.25
     h: 1.55
@@ -132,7 +132,7 @@ nodes:
     subtitle: "Pre-Run Whitelist Verifier"
     icon: "assets/icons/lucide/shield_0052CC.svg"
     icon_layout: "side"
-    x: 4.85
+    x: 5.62
     y: 1.82
     w: 2.20
     h: 0.56
@@ -147,8 +147,8 @@ nodes:
   - id: "node_step_connect"
     container_id: "group_safe_checker"
     title: "• Connect to CDSW"
-    x: 4.85
-    y: 2.54
+    x: 5.62
+    y: 2.56
     w: 2.20
     h: 0.38
     stroke_hex: "#E2E8F0"
@@ -161,8 +161,8 @@ nodes:
   - id: "node_step_mac"
     container_id: "group_safe_checker"
     title: "• Get MAC Addresses"
-    x: 4.85
-    y: 3.08
+    x: 5.62
+    y: 3.12
     w: 2.20
     h: 0.38
     stroke_hex: "#E2E8F0"
@@ -176,8 +176,8 @@ nodes:
     container_id: "group_safe_checker"
     title: "Send request API ke CDSW"
     subtitle: "Payload: MAC + Client Identity"
-    x: 4.85
-    y: 3.62
+    x: 5.62
+    y: 3.68
     w: 2.20
     h: 0.56
     stroke_hex: "#0284C7"
@@ -192,8 +192,8 @@ nodes:
     container_id: "group_safe_checker"
     title: "Receive Status"
     subtitle: "Response: Allowed / Not Allowed"
-    x: 4.85
-    y: 4.34
+    x: 5.62
+    y: 4.42
     w: 2.20
     h: 0.56
     stroke_hex: "#F59E0B"
@@ -210,10 +210,10 @@ nodes:
     title: "Continue"
     subtitle: "Continue with\nthe rest of exe"
     icon: "assets/icons/lucide/check-circle_10B981.svg"
-    x: 4.85
-    y: 5.34
+    x: 5.58
+    y: 5.44
     w: 1.05
-    h: 1.45
+    h: 1.38
     stroke_hex: "#16A34A"
     fill_hex: "#F0FDF4"
     stroke_width: 1.5
@@ -229,10 +229,10 @@ nodes:
     title: "Stopped"
     subtitle: "Execution\nAborted"
     icon: "assets/icons/lucide/shield-alert.svg"
-    x: 6.08
-    y: 5.34
+    x: 6.81
+    y: 5.44
     w: 1.05
-    h: 1.45
+    h: 1.38
     stroke_hex: "#DC2626"
     fill_hex: "#FEF2F2"
     stroke_width: 1.5
@@ -247,9 +247,9 @@ nodes:
     title: "CDSW JOB"
     subtitle: "Cloudera Data Science\nWorkbench Job Runner"
     icon: "assets/logos/cloudera/cloudera_cdsw.svg"
-    x: 9.00
+    x: 9.40
     y: 2.10
-    w: 1.65
+    w: 1.55
     h: 1.55
     stroke_hex: "#0284C7"
     fill_hex: "#FFFFFF"
@@ -260,9 +260,9 @@ nodes:
     container_id: "group_backend"
     title: "1 Task"
     title_pt: 22.0
-    x: 10.95
+    x: 11.50
     y: 2.10
-    w: 1.75
+    w: 1.40
     h: 0.88
     stroke_hex: "#DC2626"
     fill_hex: "#FFFFFF"
@@ -282,7 +282,7 @@ badges:
     font_pt: 8.0
 
   - id: "badge_client_host"
-    x: 6.00
+    x: 6.15
     y: 1.42
     w: 1.15
     h: 0.22
@@ -293,7 +293,7 @@ badges:
     font_pt: 7.5
 
   - id: "badge_runs"
-    x: 4.47
+    x: 4.91
     y: 2.30
     w: 0.36
     h: 0.20
@@ -304,8 +304,8 @@ badges:
     font_pt: 7.5
 
   - id: "badge_if_else"
-    x: 4.85
-    y: 5.06
+    x: 5.62
+    y: 5.12
     w: 2.20
     h: 0.20
     text: "• If / Else Evaluation:"
@@ -315,7 +315,7 @@ badges:
     font_pt: 8.5
 
   - id: "badge_run"
-    x: 10.63
+    x: 11.035
     y: 2.30
     w: 0.38
     h: 0.20
@@ -326,9 +326,9 @@ badges:
     font_pt: 7.5
 
   - id: "badge_bottleneck"
-    x: 10.95
+    x: 11.50
     y: 1.72
-    w: 0.85
+    w: 0.68
     h: 0.28
     text: "BOTTLENECK"
     bg_hex: "#FEE2E2"
@@ -337,9 +337,9 @@ badges:
     font_pt: 7.5
 
   - id: "badge_sync"
-    x: 11.85
+    x: 12.22
     y: 1.72
-    w: 0.85
+    w: 0.68
     h: 0.28
     text: "SYNCHRONOUS"
     bg_hex: "#FEF3C7"
@@ -349,9 +349,9 @@ badges:
 
 bullet_lists:
   - id: "steps_list"
-    x: 10.95
+    x: 11.50
     y: 3.15
-    w: 1.75
+    w: 1.40
     h: 1.65
     items:
       - "Input metadata"
@@ -368,9 +368,9 @@ flows:
     target: "node_exe"
     points:
       - [1.92, 2.58]
-      - [3.20, 2.58]
+      - [3.50, 2.58]
     label: "Trigger"
-    label_at: [2.56, 2.38]
+    label_at: [2.71, 2.38]
     label_position: "above"
     stroke_hex: "#2563EB"
     stroke_width: 2.5
@@ -381,8 +381,8 @@ flows:
     source: "node_exe"
     target: "group_safe_checker"
     points:
-      - [4.45, 2.58]
-      - [4.70, 2.58]
+      - [4.75, 2.58]
+      - [5.45, 2.58]
     stroke_hex: "#2563EB"
     stroke_width: 2.5
 
@@ -390,12 +390,12 @@ flows:
     source: "node_step_send_api"
     target: "node_cdsw_job"
     points:
-      - [7.05, 3.90]
-      - [8.00, 3.90]
-      - [8.00, 2.88]
-      - [9.00, 2.88]
+      - [7.82, 3.96]
+      - [8.61, 3.96]
+      - [8.61, 2.88]
+      - [9.40, 2.88]
     label: "1. API Request"
-    label_at: [8.00, 2.68]
+    label_at: [8.61, 2.68]
     label_position: "above"
     stroke_hex: "#0284C7"
     stroke_width: 2.5
@@ -406,8 +406,8 @@ flows:
     source: "node_cdsw_job"
     target: "node_task"
     points:
-      - [10.65, 2.54]
       - [10.95, 2.54]
+      - [11.50, 2.54]
     stroke_hex: "#0284C7"
     stroke_width: 2.5
 
@@ -415,12 +415,12 @@ flows:
     source: "node_cdsw_job"
     target: "node_step_receive"
     points:
-      - [9.00, 3.35]
-      - [8.00, 3.35]
-      - [8.00, 4.62]
-      - [7.05, 4.62]
+      - [9.40, 3.35]
+      - [8.61, 3.35]
+      - [8.61, 4.70]
+      - [7.82, 4.70]
     label: "3. Return Status"
-    label_at: [8.00, 4.84]
+    label_at: [8.61, 4.92]
     label_position: "below"
     stroke_hex: "#D97706"
     stroke_width: 2.5

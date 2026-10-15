@@ -33,6 +33,7 @@ tests/project_outputs/
 assets/images/
 scratch/
 missing_resources.md
+TEMP/
 
 # Local Identity Vaults & Credentials (Strictly gitignored privacy boundary)
 *.local.json
