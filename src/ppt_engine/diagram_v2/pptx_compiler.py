@@ -303,16 +303,29 @@ class PPTXCompiler:
                 break
         return plan
 
-    def _add_icon(self, slide: Any, x: float, y: float, size: float, icon_path: Optional[Path], icon_emoji: Optional[str]) -> None:
+    def _add_icon(
+        self,
+        slide: Any,
+        x: float,
+        y: float,
+        size: float,
+        icon_path: Optional[Path],
+        icon_emoji: Optional[str],
+        shape_name: Optional[str] = None,
+    ) -> None:
         if icon_path and icon_path.exists():
             png_bytes = _svg_to_png_bytes(icon_path) if icon_path.suffix.lower() == ".svg" else icon_path.read_bytes()
             if png_bytes:
                 pic = slide.shapes.add_picture(io.BytesIO(png_bytes), Inches(x), Inches(y), width=Inches(size), height=Inches(size))
+                if shape_name:
+                    pic.name = shape_name
                 _flatten(pic)
                 return
 
         if icon_emoji:
             em_box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(size), Inches(size))
+            if shape_name:
+                em_box.name = shape_name
             _flatten(em_box)
             tf = em_box.text_frame
             tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
@@ -326,13 +339,18 @@ class PPTXCompiler:
         for i, spec in enumerate(paras):
             p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
             p.text = spec.text
-            p.alignment = align
+            if spec.text.strip().startswith("•") or align == PP_ALIGN.LEFT:
+                p.alignment = PP_ALIGN.LEFT
+            else:
+                p.alignment = align
             p.font.name = "Arial"
             p.font.size = Pt(spec.pt)
             p.font.bold = spec.bold
             p.font.color.rgb = _hex_to_rgb(spec.color_hex)
             if spec.space_before_pt:
                 p.space_before = Pt(spec.space_before_pt)
+            elif spec.text.strip().startswith("•") and i > 0:
+                p.space_before = Pt(3)
 
     def compile_slide(self, slide: Any) -> None:
         """Compiles the diagram specification elements onto an existing PowerPoint slide."""
@@ -351,16 +369,16 @@ class PPTXCompiler:
             self._compile_node(slide, n)
 
         # 4. Badges
-        for b in self.spec.badges:
-            self._compile_badge(slide, b)
+        for i, b in enumerate(self.spec.badges):
+            self._compile_badge(slide, b, idx=i)
 
         # 5. Bullet Lists
-        for bl in self.spec.bullet_lists:
-            self._compile_bullet_list(slide, bl)
+        for i, bl in enumerate(self.spec.bullet_lists):
+            self._compile_bullet_list(slide, bl, idx=i)
 
         # 6. Routed Connectors / Flows
-        for f in self.spec.flows:
-            self._compile_flow(slide, f)
+        for i, f in enumerate(self.spec.flows):
+            self._compile_flow(slide, f, idx=i)
 
     def compile_presentation(self, output_path: Union[str, Path]) -> Path:
         """Compiles the diagram specification into a native PowerPoint .pptx file."""
@@ -385,12 +403,14 @@ class PPTXCompiler:
 
         if h.brand_stripes:
             s_red = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(box.x), Inches(box.y), Inches(0.045), Inches(0.55))
+            s_red.name = "header:stripe:red"
             s_red.fill.solid()
             s_red.fill.fore_color.rgb = _hex_to_rgb(h.red_hex)
             s_red.line.fill.background()
             _flatten(s_red)
 
             s_blue = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(box.x + 0.065), Inches(box.y), Inches(0.090), Inches(0.55))
+            s_blue.name = "header:stripe:blue"
             s_blue.fill.solid()
             s_blue.fill.fore_color.rgb = _hex_to_rgb(h.blue_hex)
             s_blue.line.fill.background()
@@ -398,8 +418,10 @@ class PPTXCompiler:
             tx = box.x + 0.25
         else:
             tx = box.x
-
-        tb = slide.shapes.add_textbox(Inches(tx), Inches(box.y - 0.05), Inches(11.5), Inches(0.85))
+ 
+        header_w = min(9.8, max(6.0, box.w - tx - 2.8))
+        tb = slide.shapes.add_textbox(Inches(tx), Inches(box.y - 0.05), Inches(header_w), Inches(0.85))
+        tb.name = "header:title"
         _flatten(tb)
         tf = tb.text_frame
         tf.word_wrap = True
@@ -422,6 +444,7 @@ class PPTXCompiler:
     def _compile_container(self, slide: Any, c: ContainerSpec) -> None:
         box = self.norm.to_inches(c.x, c.y, c.w, c.h)
         shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(box.x), Inches(box.y), Inches(box.w), Inches(box.h))
+        shape.name = f"container:{c.id}"
         shape.fill.solid()
         shape.fill.fore_color.rgb = _hex_to_rgb(c.fill_hex)
         shape.line.color.rgb = _hex_to_rgb(c.border_hex)
@@ -431,21 +454,27 @@ class PPTXCompiler:
         _flatten(shape)
 
         # Boundary Label
-        tb = slide.shapes.add_textbox(Inches(box.x + 0.2), Inches(box.y + 0.10), Inches(box.w - 0.4), Inches(0.45))
-        _flatten(tb)
-        tf = tb.text_frame
-        tf.word_wrap = True
-        tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
-        p = tf.paragraphs[0]
-        p.text = c.label.upper()
-        p.font.name = "Arial"
-        p.font.size = Pt(10)
-        p.font.bold = True
-        p.font.color.rgb = _hex_to_rgb(c.border_hex if c.border_hex != "#94A3B8" else "#64748B")
+        if c.label and c.label.strip():
+            label_w = (box.w - 2.1) if c.tag_badge else (box.w - 0.4)
+            estimated_text_w = max(1.2, min(label_w, len(c.label) * 0.11 + 0.35)) if label_w >= 1.2 else max(0.5, label_w)
+            tb = slide.shapes.add_textbox(Inches(box.x + 0.2), Inches(box.y + 0.08), Inches(estimated_text_w), Inches(0.26))
+            tb.name = f"container:{c.id}:label"
+            _flatten(tb)
+            tf = tb.text_frame
+            tf.word_wrap = True
+            tf.vertical_anchor = MSO_ANCHOR.TOP
+            tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
+            p = tf.paragraphs[0]
+            p.text = c.label.upper()
+            p.font.name = "Arial"
+            p.font.size = Pt(10)
+            p.font.bold = True
+            p.font.color.rgb = _hex_to_rgb(c.border_hex if c.border_hex != "#94A3B8" else "#64748B")
 
         # Top-Right Badge
         if c.tag_badge:
             badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(box.x2 - 1.8), Inches(box.y + 0.12), Inches(1.6), Inches(0.28))
+            badge.name = f"container:{c.id}:tag_badge"
             badge.fill.solid()
             badge.fill.fore_color.rgb = _hex_to_rgb(c.tag_bg_hex)
             badge.line.color.rgb = _hex_to_rgb(c.tag_text_hex)
@@ -483,6 +512,7 @@ class PPTXCompiler:
         shape_type = MSO_SHAPE.CAN if is_cylinder else (MSO_SHAPE.ROUNDED_RECTANGLE if n.is_rounded else MSO_SHAPE.RECTANGLE)
 
         card = slide.shapes.add_shape(shape_type, Inches(box.x), Inches(box.y), Inches(box.w), Inches(box.h))
+        card.name = f"node:{n.id}"
         card.fill.solid()
         card.fill.fore_color.rgb = _hex_to_rgb(n.fill_hex)
         card.line.color.rgb = _hex_to_rgb(n.stroke_hex)
@@ -498,10 +528,11 @@ class PPTXCompiler:
             group_w = plan.icon_size + plan.icon_gap * 1.5 + natural_w
             gx = box.x + plan.pad_h + max(0.0, (box.w - 2 * plan.pad_h - group_w) / 2.0)
             icon_y = region_top + (region_h - plan.icon_size) / 2.0
-            self._add_icon(slide, gx, icon_y, plan.icon_size, icon_path, n.icon_emoji)
+            self._add_icon(slide, gx, icon_y, plan.icon_size, icon_path, n.icon_emoji, shape_name=f"node:{n.id}:icon")
 
             tx = gx + plan.icon_size + plan.icon_gap * 1.5
             tb = slide.shapes.add_textbox(Inches(tx), Inches(region_top), Inches(natural_w), Inches(region_h))
+            tb.name = f"node:{n.id}:text"
             _flatten(tb)
             tf = tb.text_frame
             tf.word_wrap = True
@@ -510,28 +541,33 @@ class PPTXCompiler:
             self._render_paras(tf, plan.paras, PP_ALIGN.LEFT)
         elif has_icon:
             start_y = region_top + max(0.0, (region_h - plan.content_h) / 2.0)
-            self._add_icon(slide, box.x + (box.w - plan.icon_size) / 2.0, start_y, plan.icon_size, icon_path, n.icon_emoji)
+            self._add_icon(slide, box.x + (box.w - plan.icon_size) / 2.0, start_y, plan.icon_size, icon_path, n.icon_emoji, shape_name=f"node:{n.id}:icon")
             text_top = start_y + plan.icon_size + plan.icon_gap
             text_h = max(0.30, (box.y2 - 0.04) - text_top)
             tb = slide.shapes.add_textbox(Inches(box.x + plan.pad_h), Inches(text_top), Inches(plan.text_width), Inches(text_h))
+            tb.name = f"node:{n.id}:text"
             _flatten(tb)
             tf = tb.text_frame
             tf.word_wrap = True
             tf.vertical_anchor = MSO_ANCHOR.TOP
-            tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
-            self._render_paras(tf, plan.paras, PP_ALIGN.CENTER)
+            align_choice = PP_ALIGN.LEFT if getattr(n, "align", "center") == "left" else PP_ALIGN.CENTER
+            self._render_paras(tf, plan.paras, align_choice)
         else:
             tb = slide.shapes.add_textbox(Inches(box.x + plan.pad_h), Inches(region_top), Inches(plan.text_width), Inches(region_h))
+            tb.name = f"node:{n.id}:text"
             _flatten(tb)
             tf = tb.text_frame
             tf.word_wrap = True
             tf.vertical_anchor = MSO_ANCHOR.TOP if n.valign == "top" else (MSO_ANCHOR.BOTTOM if n.valign == "bottom" else MSO_ANCHOR.MIDDLE)
             tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
-            self._render_paras(tf, plan.paras, PP_ALIGN.CENTER)
+            align_choice = PP_ALIGN.LEFT if getattr(n, "align", "center") == "left" else PP_ALIGN.CENTER
+            self._render_paras(tf, plan.paras, align_choice)
 
-    def _compile_badge(self, slide: Any, b: BadgeSpec) -> None:
+    def _compile_badge(self, slide: Any, b: BadgeSpec, idx: int = 0) -> None:
+        badge_id = b.id or f"badge_{idx}"
         box = self.norm.to_inches(b.x, b.y, b.w, b.h)
         pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(box.x), Inches(box.y), Inches(box.w), Inches(box.h))
+        pill.name = f"badge:{badge_id}"
         pill.fill.solid()
         pill.fill.fore_color.rgb = _hex_to_rgb(b.bg_hex)
         pill.line.color.rgb = _hex_to_rgb(b.border_hex)
@@ -539,6 +575,7 @@ class PPTXCompiler:
         _flatten(pill)
 
         tf = pill.text_frame
+        tf.word_wrap = False
         tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         p = tf.paragraphs[0]
@@ -549,9 +586,11 @@ class PPTXCompiler:
         p.font.bold = True
         p.font.color.rgb = _hex_to_rgb(b.text_hex)
 
-    def _compile_bullet_list(self, slide: Any, bl: BulletListSpec) -> None:
+    def _compile_bullet_list(self, slide: Any, bl: BulletListSpec, idx: int = 0) -> None:
+        bl_id = bl.id or f"bullet_list_{idx}"
         box = self.norm.to_inches(bl.x, bl.y, bl.w, bl.h)
         tb = slide.shapes.add_textbox(Inches(box.x), Inches(box.y), Inches(box.w), Inches(box.h))
+        tb.name = f"bullet_list:{bl_id}"
         _flatten(tb)
         tf = tb.text_frame
         tf.word_wrap = True
@@ -567,7 +606,8 @@ class PPTXCompiler:
             if i > 0:
                 p.space_before = Pt(5)
 
-    def _compile_flow(self, slide: Any, f: FlowSpec) -> None:
+    def _compile_flow(self, slide: Any, f: FlowSpec, idx: int = 0) -> None:
+        flow_id = f.id or (f"{f.source}->{f.target}" if f.source and f.target else f"flow_{idx}")
         pts: List[Point] = []
         if f.points:
             pts = [self.norm.point_to_inches(p) for p in f.points]
@@ -590,6 +630,7 @@ class PPTXCompiler:
             line.fill.background()
             _set_round_join(line)
 
+        line.name = f"flow:{flow_id}"
         line.line.color.rgb = _hex_to_rgb(f.stroke_hex)
         line.line.width = Pt(f.stroke_width)
         if f.dashed:
@@ -608,38 +649,33 @@ class PPTXCompiler:
 
             if f.label_at:
                 lx, ly = self.norm.point_to_inches(f.label_at)
-                is_on_line = (is_horiz and abs(ly - p1[1]) < 0.06) or (is_vert and abs(lx - p1[0]) < 0.06)
             else:
                 lx = (best_seg[0][0] + best_seg[1][0]) / 2.0
                 ly = (best_seg[0][1] + best_seg[1][1]) / 2.0
-                is_on_line = True
-
-            pos = f.label_position
-            if pos == "auto":
-                if is_on_line:
+                pos = f.label_position
+                if pos == "auto":
                     if is_horiz:
                         pos = "above" if p2[0] > p1[0] else "below"
                     elif is_vert:
                         pos = "side"
                     else:
                         pos = "above"
-                else:
-                    pos = "none"
 
-            offset_in = f.label_offset if f.label_offset is not None else 0.16
+                offset_in = f.label_offset if f.label_offset is not None else 0.16
 
-            if pos == "above":
-                ly -= offset_in
-            elif pos == "below":
-                ly += offset_in
-            elif pos in ("side", "right"):
-                lx += (offset_in * 2.5)
-            elif pos == "left":
-                lx -= (offset_in * 2.5)
+                if pos == "above":
+                    ly -= offset_in
+                elif pos == "below":
+                    ly += offset_in
+                elif pos in ("side", "right"):
+                    lx += (offset_in * 2.5)
+                elif pos == "left":
+                    lx -= (offset_in * 2.5)
 
             lw = round(_text_width_in(f.label, f.font_pt, bold=True) + 0.20, 2)
             lh = 0.22
             pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(lx - lw / 2.0), Inches(ly - lh / 2.0), Inches(lw), Inches(lh))
+            pill.name = f"flow:{flow_id}:label"
             pill.fill.solid()
             pill.fill.fore_color.rgb = _hex_to_rgb(f.label_bg_hex)
             pill.line.color.rgb = _hex_to_rgb(f.label_border_hex or f.stroke_hex)
@@ -647,6 +683,7 @@ class PPTXCompiler:
             _flatten(pill)
 
             tf = pill.text_frame
+            tf.word_wrap = False
             tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
             tf.vertical_anchor = MSO_ANCHOR.MIDDLE
             p = tf.paragraphs[0]

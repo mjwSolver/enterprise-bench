@@ -89,6 +89,8 @@ class ContainerSpec(BaseModel):
     font_color: str = "#64748B"
     align: str = "center"  # "center" | "left" | "right"
     vertical_align: str = "top"  # "top" | "bottom"
+    parent_id: Optional[str] = None
+    container_id: Optional[str] = None
 
     def model_post_init(self, __context: Any) -> None:
         if self.role and self.role.lower() in DIAGNOSTIC_ROLE_PALETTES:
@@ -105,6 +107,7 @@ class NodeSpec(BaseModel):
     container_id: Optional[str] = None
     title: str
     subtitle: Optional[str] = None
+    bullets: Optional[List[str]] = None
     kicker: Optional[str] = None
     shape: str = "rounded"  # "rounded", "rect", "cylinder", "database", "circle", "pill"
     role: Optional[str] = None
@@ -125,6 +128,7 @@ class NodeSpec(BaseModel):
     is_rounded: bool = True
     shadow: bool = False
     valign: Literal["middle", "top", "bottom"] = "middle"
+    align: Literal["center", "left", "right"] = "center"
 
     @field_validator("is_cylinder", mode="before")
     @classmethod
