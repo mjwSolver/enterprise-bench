@@ -1557,6 +1557,12 @@ class ReferenceDeckBuilder:
         self.add_snowflake_data_pipeline()
         self.update_pagination()
 
+        # Enforce flat consulting vector geometry: purge theme drop shadows across all shapes
+        from src.ppt_engine.theme_engine import strip_shape_shadows
+        for s in self.prs.slides:
+            for sh in s.shapes:
+                strip_shape_shadows(sh)
+
     def update_pagination(self) -> None:
         """Synchronizes bottom slide numbers (e.g. '02 / 05')."""
         import re

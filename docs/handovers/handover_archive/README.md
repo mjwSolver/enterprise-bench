@@ -22,6 +22,8 @@
 | **2026-09-20** | Milestone 25 | [`2026-09-20_uat_briefing_presentation_modernization.md`](2026-09-20_uat_briefing_presentation_modernization.md) | Automated bilingual 25-slide UAT briefing presentation modernization (`3.4_Sosialisasi_UAT_Briefing_Modernized.pptx`). |
 | **2026-09-20** | Milestone 26 | [`2026-09-20_weekly_progress_report_deck_modernization.md`](2026-09-20_weekly_progress_report_deck_modernization.md) | Automated 11-slide weekly progress report presentation modernization (`4.2_Weekly_Progress_Report_Deck_Template.pptx`). |
 | **2026-09-21** | Milestone 27 | [`2026-09-21_project_closing_deck_modernization.md`](2026-09-21_project_closing_deck_modernization.md) | Automated 9-slide project closing & maintenance transition deck modernization (`5.1_Project_Closing_Deck_Template.pptx`). |
+| **2026-09-21** | Sprints 17–27 Closeout | [`2026-09-21_sprints_17_27_completion_briefing.md`](2026-09-21_sprints_17_27_completion_briefing.md) | Universal NGL slug & PII normalization, Closing Deck visual enrichment, Kick-off fixes, and automated Change Request suite. |
+| **2026-09-21** | Sprints 17–27 Roadmap | [`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`](2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md) | Sprints 17–27 staged review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap. |
 
 ---
 

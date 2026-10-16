@@ -39,6 +39,14 @@ from src.ppt_engine.diagram_v2.visual_verifier import (
     AdversarialVisualQASubagent,
     Tier2VisualVerifier,
 )
+from src.ppt_engine.diagram_v2.reconciler import (
+    ReconciledChange,
+    ReconciliationResult,
+    PPTXDiagramDecompiler,
+    DiagramReconciler,
+    reconcile_diagram,
+    dump_diagram_yaml,
+)
 
 __all__ = [
     "DiagramSpec",
@@ -67,4 +75,10 @@ __all__ = [
     "PerceptualImageAnalyzer",
     "AdversarialVisualQASubagent",
     "Tier2VisualVerifier",
+    "ReconciledChange",
+    "ReconciliationResult",
+    "PPTXDiagramDecompiler",
+    "DiagramReconciler",
+    "reconcile_diagram",
+    "dump_diagram_yaml",
 ]

@@ -36,8 +36,21 @@ A comprehensive guide for generating high-impact, professional presentations usi
 ## 1. Core Workflow
 
 ```
-1. Outline & Narrative Architecture  →  2. Design System & Palette  →  3. Archetype Selection  →  4. CLI / Engine Execution  →  5. Asset & Visual QA
+0. Sketch/Image Ingestion Contract (Gate)  →  1. Outline & Narrative Architecture  →  2. Design System & Palette  →  3. Archetype Selection  →  4. CLI / Engine Execution  →  5. Asset & Visual QA
 ```
+
+### Phase 0: Sketch & Image Ingestion Contract (Pre-Compilation Confirmation Gate)
+> **MANDATORY GATE FOR IMAGE/SKETCH INPUTS:**
+> When the user supplies an image attachment, whiteboard snapshot, or hand sketch:
+> 1. **Do NOT Jump to Compilation:** Never immediately write code, compile slides, or assume matching legacy scripts in `TEMP/`.
+> 2. **Pre-Compilation Structural Graph Output:** The agent MUST immediately output a structured, bulleted structural graph contract confirming the interpreted topology before executing compilation:
+>    - **Containers & Boundaries:** Outermost canvas boundaries, swimlanes, and containment zones.
+>    - **Nodes & Components:** Entities, exact labels, icon glyphs, and diagnostic semantic colors (`#DC2626` bottleneck, `#D97706` wait/boundary, `#0284C7` ingress/active, `#16A34A` target).
+>    - **Connectors & Dataflows:** Directed source $\to$ target paths, trigger/protocol labels (`run-now`, REST, JDBC), and synchronous vs asynchronous channels.
+> 3. **Single-Slide Scope Ceiling Invariant:**
+>    - Any request for "a visualization", "a slide", "diagram this sketch", or single architecture drawing has an absolute ceiling of **exactly 1 slide** (or single standalone diagram).
+>    - **Strictly Prohibited:** Generating unsolicited multi-slide pitch decks (no unprompted cover slides, context slides, or closing slides).
+>    - **Zero Static Raster Injection:** Never inject flat PNG/raster screenshots of diagrams into `.pptx` slides. Diagrams must compile to 100% native editable DrawingML vector shapes and connectors via `diagram_v2`.
 
 ### Phase 1: Narrative & Deck Architecture
 - **Define Slide Roles**: Every slide must have a distinct functional purpose (e.g., Cover, Problem Framing, Regulatory Context, Research Gap, Theoretical Framework, Methodology, Empirical Results, Robustness, Implications, Q&A).
@@ -174,6 +187,9 @@ Detailed code templates are available in [`references/python_pptx_recipes.md`](.
 6. **Unified Title & Subtitle Frame (Zero Coordinate Guessing)**:
    - 🚨 **ANTI-PATTERN TO PREVENT**: Never place Action Title and Subtitle in separate textboxes with hardcoded Y positions. When titles wrap to 2 lines, the subtitle collides or crowds the headline.
    - **Enforcement Rule**: Place Action Title and Subtitle as sequential paragraphs within the **SAME text frame**. Use `p_subtitle.space_before = Pt(10)` to enforce an exact 10pt offset regardless of how many lines the title spans.
+7. **Single-Slide Scope Ceiling & Native Vector Fidelity**:
+   - 🚨 **ANTI-PATTERN TO PREVENT**: Never generate multi-slide pitch decks (cover, diagram, closing) or insert raster PNG screenshots when asked to produce a visualization from a sketch/diagram.
+   - **Enforcement Rule**: Requests for single visualizations or diagrams are strictly capped at **exactly 1 slide**. All shapes and connectors must be 100% native DrawingML vector elements compiled from declarative YAML (`bench diagram v2`), ensuring full user editability.
 
 ---
 

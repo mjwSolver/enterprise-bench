@@ -2111,6 +2111,12 @@ class WeeklyProgressDeckBuilder:
             self.build_qa_discussion()
             self.build_thank_you()
 
+        # Enforce flat consulting vector geometry: purge theme drop shadows across all shapes
+        from src.ppt_engine.theme_engine import strip_shape_shadows
+        for s in self.prs.slides:
+            for sh in s.shapes:
+                strip_shape_shadows(sh)
+
         return self.prs
 
     def update_pagination(self) -> None:

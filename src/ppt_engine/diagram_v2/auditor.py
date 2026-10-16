@@ -422,15 +422,18 @@ class Tier1GeometricLinter:
             if not c_box:
                 continue
 
-            # Inner content box boundaries
-            header_zone = 36.0 if (c.label or c.tag_badge or c.vertical_align == "top") else 12.0
+            has_header = bool((c.label and c.label.strip()) or c.tag_badge)
+            header_zone = 36.0 if has_header else 12.0
             pad = 12.0
 
-            if c.vertical_align == "bottom":
+            if has_header and c.vertical_align == "bottom":
                 inner_top = c_box.y + pad
                 inner_bottom = c_box.y2 - header_zone
-            else:
+            elif has_header:
                 inner_top = c_box.y + header_zone
+                inner_bottom = c_box.y2 - pad
+            else:
+                inner_top = c_box.y + pad
                 inner_bottom = c_box.y2 - pad
 
             inner_left = c_box.x + pad

@@ -6,7 +6,7 @@
 **Status:** Agent Verified (Automated Static QA) | Awaiting Human User Review  
 **Engine / Agent Status:** Agent Reviewed & Validated (Static QA Passed)  
 **User Review Status:** PENDING USER DESKTOP REVIEW / Awaiting User Verification  
-**Operating Directives:** [`AGENTS.md`](../../AGENTS.md) (Strict ZERO INTERMEDIATE UNIT TESTING)
+**Operating Directives:** [`AGENTS.md`](../../../AGENTS.md) (Strict ZERO INTERMEDIATE UNIT TESTING)
 
 ---
 
@@ -16,22 +16,22 @@
 > While all engines, schemas, OpenXML generators, and PII normalizations passed static verification and AST inspection with zero errors, **human user desktop review in native office applications has NOT yet occurred**.
 > 
 > Stakeholders/users are requested to perform visual QA using local desktop applications (`open -a` on macOS):
-> 1. **Project Kick-off Material (`1.1`):** [`output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx`](../../output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx) — Inspect Slide 10 native 3-column OpenXML vector architecture, Slide 12 Gantt diamond flip (Week 24 milestone bleed fix), and Slide 19 clean corporate closing card.
-> 2. **Weekly Progress Report (`4.2`):** [`output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized.pptx`](../../output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized.pptx) — Verify Slide 07 middle vertical alignment on milestone rows, Slide 08 DrawingML hanging indents for risk mitigations, and 100% English language purity.
-> 3. **Project Closing Deck (`5.1`):** [`output/presentations/5.1_Project_Closing_Deck_Modernized.pptx`](../../output/presentations/5.1_Project_Closing_Deck_Modernized.pptx) — Inspect Slides 02–05 Lucide vector icon badges, Slide 07 3-swimlane maintenance workflow, and Slide 09 corporate closing.
-> 4. **Change Request Suite (`CR_07`):** [`output/NGL_Snowflake_Analytics/change_requests/CR_07/`](../../output/NGL_Snowflake_Analytics/change_requests/CR_07/) — Inspect DOCX/XLSX forms, updated change log ledger, scoping sheets, and BAST change request draft for NGL entity branding and zero legacy logos.
+> 1. **Project Kick-off Material (`1.1`):** [`output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx`](../../../output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx) — Inspect Slide 10 native 3-column OpenXML vector architecture, Slide 12 Gantt diamond flip (Week 24 milestone bleed fix), and Slide 19 clean corporate closing card.
+> 2. **Weekly Progress Report (`4.2`):** [`output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized.pptx`](../../../output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized.pptx) — Verify Slide 07 middle vertical alignment on milestone rows, Slide 08 DrawingML hanging indents for risk mitigations, and 100% English language purity.
+> 3. **Project Closing Deck (`5.1`):** [`output/presentations/5.1_Project_Closing_Deck_Modernized.pptx`](../../../output/presentations/5.1_Project_Closing_Deck_Modernized.pptx) — Inspect Slides 02–05 Lucide vector icon badges, Slide 07 3-swimlane maintenance workflow, and Slide 09 corporate closing.
+> 4. **Change Request Suite (`CR_07`):** [`output/NGL_Snowflake_Analytics/change_requests/CR_07/`](../../../output/NGL_Snowflake_Analytics/change_requests/CR_07/) — Inspect DOCX/XLSX forms, updated change log ledger, scoping sheets, and BAST change request draft for NGL entity branding and zero legacy logos.
 
 ## 1. Executive Summary
 
-This transition briefing documents the comprehensive implementation and verification of the **Sprints 17–27 Review & Enhancement Sprint (Phases 1–5)**, executing the authoritative architectural blueprint established in [`docs/handovers/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`](2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md).
+This transition briefing documents the comprehensive implementation and verification of the **Sprints 17–27 Review & Enhancement Sprint (Phases 1–5)**, executing the authoritative architectural blueprint established in [`docs/handovers/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`](../2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md).
 
 All five implementation phases have been delivered, statically verified, and harmonized across `enterprise-bench` engines (`src/ppt_engine`, `src/docx_engine`, `src/xlsx_engine`, `src/core`):
 
-1. **Phase 1 — Universal Slug & PII Normalization:** Established **"Nusantara Global Logistics"** (`NGL`) as the system-wide canonical default client entity in [`src/core/slug_registry.py`](../../src/core/slug_registry.py). Implemented recursive slide shape and group shape traversal in `substitute_slugs_in_presentation`. Sanitized all master YAML presets and enforced a global optical font floor ($\ge 11.0\text{pt}$).
-2. **Phase 2 — Project Closing Deck (`5.1`) Visual Enrichment:** Integrated Lucide vector icons tinted with theme accents across Agenda, Capability, Deliverable, and Checklist slides in [`src/ppt_engine/closing_deck.py`](../../src/ppt_engine/closing_deck.py). Upgraded Slide 07 from flat boxes into a formal 3-swimlane maintenance workflow. Re-architected Slide 09 to default to a clean corporate closing.
+1. **Phase 1 — Universal Slug & PII Normalization:** Established **"Nusantara Global Logistics"** (`NGL`) as the system-wide canonical default client entity in [`src/core/slug_registry.py`](../../../src/core/slug_registry.py). Implemented recursive slide shape and group shape traversal in `substitute_slugs_in_presentation`. Sanitized all master YAML presets and enforced a global optical font floor ($\ge 11.0\text{pt}$).
+2. **Phase 2 — Project Closing Deck (`5.1`) Visual Enrichment:** Integrated Lucide vector icons tinted with theme accents across Agenda, Capability, Deliverable, and Checklist slides in [`src/ppt_engine/closing_deck.py`](../../../src/ppt_engine/closing_deck.py). Upgraded Slide 07 from flat boxes into a formal 3-swimlane maintenance workflow. Re-architected Slide 09 to default to a clean corporate closing.
 3. **Phase 3 — Weekly Progress Report (`4.2`) Typography & Language Purity:** Resolved the Slide 07 milestone row vertical alignment defect using `MSO_ANCHOR.MIDDLE` on full row height text frames. Upgraded Slide 08 risk mitigations with DrawingML bullet glyphs and hanging indents. Enforced a 100% pure English baseline across presets and builders, eliminating bilingual language contamination.
-4. **Phase 4 — Project Kick-off Material (`1.1`) Defect Rectification:** Deprecated the static raster architecture screenshot on Slide 10 in [`src/ppt_engine/reference_slides.py`](../../src/ppt_engine/reference_slides.py), replacing it with a native 3-column OpenXML vector architecture featuring official SVG logos and high-visibility orange callout boxes. Resolved Slide 12 Gantt canvas bleed via dynamic milestone diamond label flipping, prevented duration bar text overflow, stripped drop shadows, and set Slide 19 to clean corporate closing defaults.
-5. **Phase 5 — Automated Change Request Suite (`CR_07`):** Enhanced [`src/core/change_request.py`](../../src/core/change_request.py) with dynamic client routing to `output/NGL_Snowflake_Analytics/change_requests/CR_07/`. Integrated `_substitute_docx` and `_substitute_xlsx` for recursive post-generation document sanitization. Confirmed zero legacy logos across all CR deliverables and clean workspace templates.
+4. **Phase 4 — Project Kick-off Material (`1.1`) Defect Rectification:** Deprecated the static raster architecture screenshot on Slide 10 in [`src/ppt_engine/reference_slides.py`](../../../src/ppt_engine/reference_slides.py), replacing it with a native 3-column OpenXML vector architecture featuring official SVG logos and high-visibility orange callout boxes. Resolved Slide 12 Gantt canvas bleed via dynamic milestone diamond label flipping, prevented duration bar text overflow, stripped drop shadows, and set Slide 19 to clean corporate closing defaults.
+5. **Phase 5 — Automated Change Request Suite (`CR_07`):** Enhanced [`src/core/change_request.py`](../../../src/core/change_request.py) with dynamic client routing to `output/NGL_Snowflake_Analytics/change_requests/CR_07/`. Integrated `_substitute_docx` and `_substitute_xlsx` for recursive post-generation document sanitization. Confirmed zero legacy logos across all CR deliverables and clean workspace templates.
 
 ---
 
@@ -39,7 +39,7 @@ All five implementation phases have been delivered, statically verified, and har
 
 ### Phase 1: Universal Slug & PII Normalization
 
-- **Canonical Slug Constants & Default Registry ([`src/core/slug_registry.py`](../../src/core/slug_registry.py)):**
+- **Canonical Slug Constants & Default Registry ([`src/core/slug_registry.py`](../../../src/core/slug_registry.py)):**
   - Codified canonical constants:
     - `DEFAULT_CLIENT_COMPANY_NAME = "Nusantara Global Logistics"`
     - `DEFAULT_CLIENT_SHORT_NAME = "NGL"`
@@ -51,12 +51,12 @@ All five implementation phases have been delivered, statically verified, and har
   - Added `EngagementContext.default_ngl()` and updated `EngagementContext` model fields to bind to canonical constants.
   - Implemented `EngagementContext.substitute(text: str)` performing complete slug token expansion alongside regex scrubbing of legacy client variants (`PT Toyota Tsusho Indonesia`, `Toyota Tsusho Indonesia`, `Toyota Tsusho`, `TTLC`, `TTI`).
 
-- **Recursive Slide Shape & Group Shape Traversal ([`src/core/slug_registry.py`](../../src/core/slug_registry.py)):**
+- **Recursive Slide Shape & Group Shape Traversal ([`src/core/slug_registry.py`](../../../src/core/slug_registry.py)):**
   - Updated `substitute_slugs_in_presentation(prs, replacement_map)`:
     - Implemented recursive `_process_shape(shape)` traversing simple shapes, tables, and nested group shapes (`shape.shapes`).
     - Traverses all paragraphs and runs within shape text frames and table cells, substituting slug tokens at run level where present (to preserve run styling) or paragraph level when tokens span across runs.
 
-- **Master YAML Preset Sanitization ([`presets/deck_configs/`](../../presets/deck_configs/)):**
+- **Master YAML Preset Sanitization ([`presets/deck_configs/`](../../../presets/deck_configs/)):**
   - Normalized `closing_deck.yaml`, `kickoff_presentation.yaml`, `presales_pitch_deck.yaml`, `uat_briefing.yaml`, and `weekly_progress.yaml`.
   - Replaced hardcoded legacy client names with `[CLIENT_COMPANY_NAME]` and `[CLIENT_SHORT_NAME]`.
   - Updated confidentiality notices to standard format: `"[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Confidential"`.
@@ -69,14 +69,14 @@ All five implementation phases have been delivered, statically verified, and har
 
 ### Phase 2: Project Closing Deck (`5.1`) Visual Enrichment
 
-- **Lucide Icon Integration ([`src/ppt_engine/closing_deck.py`](../../src/ppt_engine/closing_deck.py)):**
+- **Lucide Icon Integration ([`src/ppt_engine/closing_deck.py`](../../../src/ppt_engine/closing_deck.py)):**
   - Added vector Lucide glyphs tinted with `theme.accent` across key slide layouts:
     - **Slide 02 (Agenda):** Categorical icons paired with numbered badges (`compass`, `package-check`, `file-signature`, `shield-check`, `git-pull-request`, `bar-chart-3`).
     - **Slide 03 (Capability Review):** Integrated `add_card_with_harmonized_icon` across delivered architecture phases.
     - **Slide 04 (Deliverables Register):** Replaced plain text format tags with distinct vector format badges (`file-text` for DOCX, `presentation` for PPTX, `table` for XLSX, `code` for SQL/Python).
     - **Slide 05 (Closing Checklist & Access):** Embedded security and repository icons for Google Drive archive download and CSS customer feedback cards.
 
-- **3-Swimlane Maintenance Support Workflow ([`src/ppt_engine/closing_deck.py`](../../src/ppt_engine/closing_deck.py)):**
+- **3-Swimlane Maintenance Support Workflow ([`src/ppt_engine/closing_deck.py`](../../../src/ppt_engine/closing_deck.py)):**
   - Re-architected Slide 07 from flat sequential boxes into a formal 3-swimlane operational flowchart:
     - **Swimlane 1 (Client Organization):** Incident Logging & Initial Qualification.
     - **Swimlane 2 (Metrodata L1/L2 Managed Services):** Triage, SLA Dispatch & Root Cause Analysis.
@@ -90,7 +90,7 @@ All five implementation phases have been delivered, statically verified, and har
 
 ### Phase 3: Weekly Progress Report (`4.2`) Typography & Language Purity
 
-- **Slide 07 Milestone Status Row Vertical Alignment Defect Fix ([`src/ppt_engine/weekly_progress_deck.py`](../../src/ppt_engine/weekly_progress_deck.py)):**
+- **Slide 07 Milestone Status Row Vertical Alignment Defect Fix ([`src/ppt_engine/weekly_progress_deck.py`](../../../src/ppt_engine/weekly_progress_deck.py)):**
   - *Diagnosis:* Text frames `tb0`, `tb1`, `tb2`, `tb3` previously defaulted to `MSO_ANCHOR.TOP` with top padding, causing text (`01`, `Kick-off Meeting`, dates) to stick to the upper border while the `COMPLETED` status pill was vertically centered.
   - *Resolution:*
     - Created text boxes with full row height: `add_textbox(x, cur_ry, col_w, row_h)`.
@@ -98,11 +98,11 @@ All five implementation phases have been delivered, statically verified, and har
     - Zeroed out text frame margins: `tf.margin_top = tf.margin_bottom = 0`.
     - Harmonized typography font floor to $11.0\text{pt}$.
 
-- **Slide 08 Risk Register Native Bullets & Hanging Indents ([`src/ppt_engine/weekly_progress_deck.py`](../../src/ppt_engine/weekly_progress_deck.py)):**
+- **Slide 08 Risk Register Native Bullets & Hanging Indents ([`src/ppt_engine/weekly_progress_deck.py`](../../../src/ppt_engine/weekly_progress_deck.py)):**
   - Replaced unstructured text paragraphs with `_add_bullet_paragraph`.
   - Added DrawingML hanging indents (`marL="288000"`, `indent="-288000"`) and bullet glyphs (`•`), ensuring multi-line mitigations wrap neatly beneath text without crowding bullet points.
 
-- **100% Pure English Baseline ([`presets/deck_configs/weekly_progress.yaml`](../../presets/deck_configs/weekly_progress.yaml)):**
+- **100% Pure English Baseline ([`presets/deck_configs/weekly_progress.yaml`](../../../presets/deck_configs/weekly_progress.yaml)):**
   - Replaced Indonesian phrases in master presets with pure English equivalents:
     - Root cause: *"AKAR MASALAH"* $\rightarrow$ *"ROOT CAUSE & ANALYSIS"*
     - Impact: *"ANALISIS DAMPAK"* $\rightarrow$ *"SCHEDULE & DELIVERY IMPACT"*
@@ -114,7 +114,7 @@ All five implementation phases have been delivered, statically verified, and har
 
 ### Phase 4: Project Kick-off Material (`1.1`) Defect Rectification
 
-- **Slide 10 Native 3-Column Vector Architecture ([`src/ppt_engine/reference_slides.py`](../../src/ppt_engine/reference_slides.py)):**
+- **Slide 10 Native 3-Column Vector Architecture ([`src/ppt_engine/reference_slides.py`](../../../src/ppt_engine/reference_slides.py)):**
   - Completely removed the static raster image embed (`snowflake_solution_architecture.png`).
   - Rebuilt `build_snowflake_data_pipeline_slide` with native OpenXML vector shapes:
     - 3 primary vertical container cards with sharp top stripes:
@@ -124,13 +124,13 @@ All five implementation phases have been delivered, statically verified, and har
     - High-DPI official SVG tech logos resolved via `_resolve_logo_png`: `kafka.svg`, `snowflake.svg`, `dbt.svg`, `streamlit.svg`, `vault.svg`, `layout-dashboard.svg`, `sparkles.svg`, `shield-check.svg`.
     - Prominent bottom callout cards rendered in high-contrast orange (`#FFF7ED` fill, `#EA580C` border, `1.5pt` stroke) highlighting key architectural capabilities (Snowpipe streaming, elastic compute zero-scaling, Horizon RBAC).
 
-- **Slide 12 Delivery Gantt Timeline Defect Rectification ([`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py)):**
+- **Slide 12 Delivery Gantt Timeline Defect Rectification ([`src/ppt_engine/consulting_archetypes.py`](../../../src/ppt_engine/consulting_archetypes.py)):**
   - **Milestone Diamond Dynamic Label Flipping:** Fixed canvas bleed for Week 24 milestone. If `mx + diam_size + label_w > Inches(12.70)`, the label text box dynamically flips to the left of the diamond (`mx - label_w - Inches(0.06)`) with right alignment, guaranteeing $X < 13.333''$.
   - **Narrow Duration Bar Handling:** Prevented text overflow on 1–2 week bars by evaluating text width and adjusting label layout.
   - **Shadow Stripping:** Enforced `shape.shadow.inherit = False` across all timeline shapes, eliminating default drop shadows and ensuring flat vector geometry.
   - **Font Size Floor:** Upgraded timeline milestone tags, legends, and footnotes from $7.0\text{pt}$/$7.5\text{pt}$ to $\ge 11.0\text{pt}$.
 
-- **Slide 19 Clean Corporate Closing Card ([`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py)):**
+- **Slide 19 Clean Corporate Closing Card ([`src/ppt_engine/consulting_archetypes.py`](../../../src/ppt_engine/consulting_archetypes.py)):**
   - Re-architected `build_thank_you_slide` to default to a clean corporate contact card (`contacts=None` / `show_staff_contacts=False`).
   - Renders Practice leadership branding and general inquiry alias (`enterprise.consulting@metrodata.co.id`) without exposing personal staff names unless explicitly requested.
 
@@ -138,7 +138,7 @@ All five implementation phases have been delivered, statically verified, and har
 
 ### Phase 5: Automated Change Request Suite (`CR_07`)
 
-- **Dynamic Client Routing ([`src/core/change_request.py`](../../src/core/change_request.py)):**
+- **Dynamic Client Routing ([`src/core/change_request.py`](../../../src/core/change_request.py)):**
   - Updated `ChangeRequestProcessor.__init__` to accept `context: Optional[EngagementContext]`.
   - Configured output path resolution:
     ```python
@@ -147,7 +147,7 @@ All five implementation phases have been delivered, statically verified, and har
     ```
   - Standard CR generation now defaults cleanly to `output/NGL_Snowflake_Analytics/change_requests/CR_07/`.
 
-- **Automated OpenXML & Workbook Sanitization ([`src/core/change_request.py`](../../src/core/change_request.py)):**
+- **Automated OpenXML & Workbook Sanitization ([`src/core/change_request.py`](../../../src/core/change_request.py)):**
   - Implemented `_substitute_docx(doc, context)`: recursively scrubs legacy slug tokens and client entities across body paragraphs, tables, and nested table cells.
   - Implemented `_substitute_xlsx(wb, context)`: iterates all worksheets and cell values in openpyxl workbooks, substituting legacy tokens.
   - Bound sanitization into `process_cr()` across all four output deliverables:
@@ -166,13 +166,13 @@ All five implementation phases have been delivered, statically verified, and har
 
 | Component / Subsystem | Primary Path | Role & Changes Delivered |
 | :--- | :--- | :--- |
-| **Slug Registry & PII** | [`src/core/slug_registry.py`](../../src/core/slug_registry.py) | Canonical NGL defaults, regex normalizer, recursive slide shape scanner. |
-| **CR Automation Suite** | [`src/core/change_request.py`](../../src/core/change_request.py) | Dynamic NGL output routing, `_substitute_docx`, `_substitute_xlsx`. |
-| **Closing Deck Engine** | [`src/ppt_engine/closing_deck.py`](../../src/ppt_engine/closing_deck.py) | Lucide icons, 3-swimlane maintenance workflow, clean closing card. |
-| **Weekly Deck Engine** | [`src/ppt_engine/weekly_progress_deck.py`](../../src/ppt_engine/weekly_progress_deck.py) | Slide 07 vertical centering, DrawingML hanging bullets, English baseline. |
-| **Consulting Archetypes**| [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py) | Gantt diamond flip, shadow stripping, font floor $\ge 11\text{pt}$, clean closing. |
-| **Pipeline Architecture**| [`src/ppt_engine/reference_slides.py`](../../src/ppt_engine/reference_slides.py) | Slide 10 native 3-column OpenXML vector architecture, SVG logos, orange callouts. |
-| **Deck Configurations**  | [`presets/deck_configs/*.yaml`](../../presets/deck_configs/) | Complete YAML sanitization replacing legacy client strings with slug tokens. |
+| **Slug Registry & PII** | [`src/core/slug_registry.py`](../../../src/core/slug_registry.py) | Canonical NGL defaults, regex normalizer, recursive slide shape scanner. |
+| **CR Automation Suite** | [`src/core/change_request.py`](../../../src/core/change_request.py) | Dynamic NGL output routing, `_substitute_docx`, `_substitute_xlsx`. |
+| **Closing Deck Engine** | [`src/ppt_engine/closing_deck.py`](../../../src/ppt_engine/closing_deck.py) | Lucide icons, 3-swimlane maintenance workflow, clean closing card. |
+| **Weekly Deck Engine** | [`src/ppt_engine/weekly_progress_deck.py`](../../../src/ppt_engine/weekly_progress_deck.py) | Slide 07 vertical centering, DrawingML hanging bullets, English baseline. |
+| **Consulting Archetypes**| [`src/ppt_engine/consulting_archetypes.py`](../../../src/ppt_engine/consulting_archetypes.py) | Gantt diamond flip, shadow stripping, font floor $\ge 11\text{pt}$, clean closing. |
+| **Pipeline Architecture**| [`src/ppt_engine/reference_slides.py`](../../../src/ppt_engine/reference_slides.py) | Slide 10 native 3-column OpenXML vector architecture, SVG logos, orange callouts. |
+| **Deck Configurations**  | [`presets/deck_configs/*.yaml`](../../../presets/deck_configs/) | Complete YAML sanitization replacing legacy client strings with slug tokens. |
 
 ---
 
@@ -180,7 +180,7 @@ All five implementation phases have been delivered, statically verified, and har
 
 - **Static Analysis & Inspection:**
   - All modified Python source files compile cleanly with zero syntax or import errors.
-  - Zero unit test suites were executed, strictly adhering to the repository guardrail in [`AGENTS.md`](../../AGENTS.md).
+  - Zero unit test suites were executed, strictly adhering to the repository guardrail in [`AGENTS.md`](../../../AGENTS.md).
   - All relative links verified against the 4-tier documentation topology.
 - **Review Classification & Sign-Off Status:**
   - **Engine / Agent Status:** `Agent Reviewed & Validated (Static QA Passed)`

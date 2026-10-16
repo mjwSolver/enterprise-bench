@@ -336,21 +336,28 @@ class PPTXCompiler:
             p.font.size = Pt(round(size * 72 * 0.78, 1))
 
     def _render_paras(self, tf: Any, paras: Sequence[_ParaSpec], align: Any) -> None:
+        first_p = True
         for i, spec in enumerate(paras):
-            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-            p.text = spec.text
-            if spec.text.strip().startswith("•") or align == PP_ALIGN.LEFT:
-                p.alignment = PP_ALIGN.LEFT
-            else:
-                p.alignment = align
-            p.font.name = "Arial"
-            p.font.size = Pt(spec.pt)
-            p.font.bold = spec.bold
-            p.font.color.rgb = _hex_to_rgb(spec.color_hex)
-            if spec.space_before_pt:
-                p.space_before = Pt(spec.space_before_pt)
-            elif spec.text.strip().startswith("•") and i > 0:
-                p.space_before = Pt(3)
+            lines = spec.text.split("\n") if "\n" in spec.text else [spec.text]
+            for j, line_text in enumerate(lines):
+                if first_p:
+                    p = tf.paragraphs[0]
+                    first_p = False
+                else:
+                    p = tf.add_paragraph()
+                p.text = line_text
+                if line_text.strip().startswith("•") or align == PP_ALIGN.LEFT:
+                    p.alignment = PP_ALIGN.LEFT
+                else:
+                    p.alignment = align
+                p.font.name = "Arial"
+                p.font.size = Pt(spec.pt)
+                p.font.bold = spec.bold
+                p.font.color.rgb = _hex_to_rgb(spec.color_hex)
+                if j == 0 and spec.space_before_pt:
+                    p.space_before = Pt(spec.space_before_pt)
+                elif line_text.strip().startswith("•") and not (i == 0 and j == 0):
+                    p.space_before = Pt(2.5)
 
     def compile_slide(self, slide: Any) -> None:
         """Compiles the diagram specification elements onto an existing PowerPoint slide."""

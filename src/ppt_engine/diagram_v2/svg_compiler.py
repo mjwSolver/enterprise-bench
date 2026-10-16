@@ -301,13 +301,24 @@ class SVGCompiler:
             cur_y += icon_h
 
         # Title
-        lines.append(f'    <text x="{box.cx:.1f}" y="{cur_y + t_pt:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{t_pt:.1f}" font-weight="800" fill="{n.title_color}" text-anchor="middle">{html.escape(n.title)}</text>')
+        t_align = "start" if getattr(n, "align", "center") == "left" else "middle"
+        t_x = (box.x + 16.0) if t_align == "start" else box.cx
+        lines.append(f'    <text x="{t_x:.1f}" y="{cur_y + t_pt:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{t_pt:.1f}" font-weight="800" fill="{n.title_color}" text-anchor="{t_align}">{html.escape(n.title)}</text>')
         cur_y += title_h
 
         # Subtitle
+        max_sub_len = max((len(sl.strip()) for sl in sub_lines), default=0)
+        sub_font_size = 10.5
+        if max_sub_len > 0:
+            usable_w = box.w - 24.0
+            if max_sub_len * 6.2 > usable_w:
+                sub_font_size = max(8.0, min(10.5, usable_w / (max_sub_len * 0.60)))
+
         for sl in sub_lines:
-            cur_y += 14.0
-            lines.append(f'    <text x="{box.cx:.1f}" y="{cur_y:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="{n.subtitle_color}" text-anchor="middle">{html.escape(sl)}</text>')
+            cur_y += max(12.0, sub_font_size * 1.35)
+            sub_align = "start" if (sl.strip().startswith("•") or getattr(n, "align", "center") == "left") else "middle"
+            sub_x = (box.x + 12.0) if sub_align == "start" else box.cx
+            lines.append(f'    <text x="{sub_x:.1f}" y="{cur_y:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{sub_font_size:.1f}" font-weight="600" fill="{n.subtitle_color}" text-anchor="{sub_align}">{html.escape(sl)}</text>')
 
         lines.append('  </g>')
         return "\n".join(lines)
@@ -384,34 +395,28 @@ class SVGCompiler:
 
             if f.label_at:
                 lx, ly = self.norm.point_to_pixels(f.label_at)
-                is_on_line = (is_horiz and abs(ly - p1[1]) < 6.0) or (is_vert and abs(lx - p1[0]) < 6.0)
             else:
                 lx = (best_seg[0][0] + best_seg[1][0]) / 2.0
                 ly = (best_seg[0][1] + best_seg[1][1]) / 2.0
-                is_on_line = True
-
-            pos = f.label_position
-            if pos == "auto":
-                if is_on_line:
+                pos = f.label_position
+                if pos == "auto":
                     if is_horiz:
                         pos = "above" if p2[0] > p1[0] else "below"
                     elif is_vert:
                         pos = "side"
                     else:
                         pos = "above"
-                else:
-                    pos = "none"
 
-            offset_px = f.label_offset * self.norm.scale_to_px_y if f.label_offset is not None else 14.0
+                offset_px = f.label_offset * self.norm.scale_to_px_y if f.label_offset is not None else 14.0
 
-            if pos == "above":
-                ly -= offset_px
-            elif pos == "below":
-                ly += offset_px
-            elif pos in ("side", "right"):
-                lx += (offset_px * 2.5)
-            elif pos == "left":
-                lx -= (offset_px * 2.5)
+                if pos == "above":
+                    ly -= offset_px
+                elif pos == "below":
+                    ly += offset_px
+                elif pos in ("side", "right"):
+                    lx += (offset_px * 2.5)
+                elif pos == "left":
+                    lx -= (offset_px * 2.5)
 
             font_pt = f.font_pt or 9.0
             text_w = len(f.label) * font_pt * 0.55

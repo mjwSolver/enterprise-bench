@@ -41,6 +41,7 @@ Progress: `[██████████] 100%` (Master Deliverables, Diagram 
 
 ## 3. Transition Briefings Archive (`docs/handovers/`)
 
+- [`2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md`](docs/handovers/2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md): **Milestone 36** (Bidirectional PPTX decompiler & YAML reconciliation engine, deterministic OpenXML shape naming taxonomy, lossless slide decompiler, AST diffing & pruning cascade, and `bench diagram v2 reconcile` CLI).
 - [`2026-10-15_visual_vector_refinement_and_openxml_purge.md`](docs/handovers/2026-10-15_visual_vector_refinement_and_openxml_purge.md): **Milestone 35** (Visual & vector system refinement, sharp container swimlanes enclosing rounded icon+title cards, universal OpenXML drop shadow sanitizer `strip_shape_shadows()` reducing 821 defects across 874 shapes to 0, headless Draw.io vector stencil extraction CLI `export_drawio_stencil_to_svg()`, and Diagram Engine V2 spatial auditor vertical auto-offset calibration).
 - [`2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md`](docs/handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md): **Milestone 34** (Diagram Engine V2 Tier 1 geometric collision linter with 11 checks, Tier 2 adversarial visual QA subagent verifier, perceptual CV heuristics, 7-dimension scorecard, unified CLI `bench diagram v2 audit/visual-qa`, and 100.0/100 reference manifest).
 - [`2026-10-14_interwoven_migration_topology_and_whitelisting.md`](docs/handovers/2026-10-14_interwoven_migration_topology_and_whitelisting.md): **Milestone 33** (Unified Interwoven Migration Architecture diagram, database horizontal compression from 260px to 170px, expanded connector spans with 140-175px clearance, return loop repositioned below legacy cluster, and multi-format Draw.io/SVG/PNG/PowerPoint synchronization).
@@ -50,8 +51,7 @@ Progress: `[██████████] 100%` (Master Deliverables, Diagram 
 - [`2026-10-13_diagram_pipeline_and_asset_integration.md`](docs/handovers/2026-10-13_diagram_pipeline_and_asset_integration.md): **Milestone 29** (Diagram pipeline and asset integration Phases 1–4, deterministic asset harvester and resolver CLI, Databricks/Cloudera/AWS stencils, hybrid editable `.drawio.svg` parity, and native PowerPoint DrawingML shape compiler).
 - [`2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`](docs/handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md): **Milestone 28** (Comprehensive system anti-pattern compliance, deep universal PII purge, Cover Slide footer & container validation, 40-48px icon floor, and automated OpenXML element purging).
 - [`2026-09-23_feedback_and_quality_enhancement_sprint.md`](docs/handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): **Feedback Sprint** (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML aspect ratio QA engine & CLI, Slide 7 maintenance workflow, DrawingML bullet compliance).
-- [`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`](docs/handovers/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md): **Sprints 17–27 Review** (Review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap).
-- *Historical handovers archived in [`docs/handovers/handover_archive/`](docs/handovers/handover_archive/README.md) (14 archived briefs).*
+- *Historical handovers archived in [`docs/handovers/handover_archive/`](docs/handovers/handover_archive/README.md) (15 archived briefs).*
 
 ---
 

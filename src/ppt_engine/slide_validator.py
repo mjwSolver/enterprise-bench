@@ -686,6 +686,6 @@ if __name__ == "__main__":
         theme_arg = sys.argv[2] if len(sys.argv) > 2 else "snowblue"
         report = validate_presentation(deck_path, theme=theme_arg)
         report.print_summary()
-        sys.exit(0 if report.passed else 1)
+        raise SystemExit(0 if report.passed else 1)
     else:
         print("Usage: python src/slide_validator.py <presentation.pptx> [theme_name]")

@@ -1,55 +1,77 @@
 ---
 name: local-app-preview
 description: >-
-  Launches and previews locally generated documents (Word .docx, Excel .xlsx, PowerPoint .pptx, PDF, Draw.io) on the user's desktop application environment using macOS CLI (`open`) and AppleScript (`osascript`). Use whenever the user asks to view/open deliverables on their device, or proactively suggest opening artifacts for rapid visual QA, stakeholder reviews, and feedback iterations.
+  Launches local desktop applications (Word, Excel, PowerPoint, Preview, Draw.io) on macOS ONLY upon explicit user command ("pop it", "show me", "open on desktop", "open in finder"). Enforces headless-first verification: NEVER launch or activate desktop apps autonomously, proactively, or during automated test/audit loops.
 ---
 
 # Local Desktop Application Preview & Review Skill (`local-app-preview`)
 
 > **Target Agent Role:** Review Coordinator / Solutions Consultant / Pair Programming Assistant  
-> **Mission:** Seamlessly launch and focus generated project deliverables in native desktop applications (Microsoft Office, Preview, Draw.io) on macOS using shell commands and AppleScript, accelerating user feedback and visual sign-offs.
+> **Mission:** Provide on-demand desktop preview of generated deliverables in native macOS applications (Microsoft Office, Preview, Draw.io) strictly when requested by the user, while enforcing headless-first verification across all automated agent workflows.
 
 ---
 
-## 1. When to Use This Skill
+## 🚨 MANDATORY INVARIANT: HEADLESS-FIRST VERIFICATION
 
-1. **Explicit User Request:**
-   - *"open that doc in Word"*, *"show me the spreadsheet in Excel"*, *"launch the deck in PowerPoint"*, *"open the BAST certificate"*.
-2. **Proactive Suggestion on Milestone / Delivery Completion:**
-   - After generating or stamping deliverables, offer to launch them directly:
-     > *"Would you like me to open `01_Project_XYZ_Executive_Strategy_Deck.pptx` in PowerPoint or the signed `01_PKS_Contract_Apex_Global.docx` in Word for your review?"*
+> [!CRITICAL]
+> **ZERO DISRUPTIVE WINDOW POPS DURING AUTONOMOUS WORKFLOWS**
+> All agent visual verification, spatial clearance audits, and artifact quality checks must be 100% headless (using background CLI tools like `uv run bench diagram v2 audit`, headless SVG/PNG exports, and code inspection).
+> 
+> Agents must **NEVER** proactively launch desktop applications (`open -a`) or execute window-focusing AppleScript (`osascript -e 'tell application "<App>" to activate'`) during generation, verification, or sprint execution. Disrupting the user's active screen during meetings or deep work is strictly prohibited.
+
+---
+
+## 1. When to Use This Skill (Explicit Triggers ONLY)
+
+Launch desktop applications **ONLY** when the user explicitly issues an intentional desktop review trigger:
+
+1. **Intentional Casual Shorthand:**
+   - `"pop it"`
+   - `"show me"`
+   - `"open on desktop"`
+   - `"open in finder"`
+2. **Explicit Format/App Requests:**
+   - *"open that doc in Word"*
+   - *"show me the spreadsheet in Excel"*
+   - *"launch the deck in PowerPoint"*
+   - *"open the diagram in Draw.io"*
+
+### 🚫 Strictly Prohibited Actions:
+- Auto-launching applications upon file creation or milestone completion.
+- Proactively invoking `open` or `osascript activate` as part of "checking" visual quality.
+- Stealing window focus from user applications during background tool runs.
 
 ---
 
 ## 2. Command Reference by Deliverable Format
 
-All commands execute cleanly in zsh via `run_command`:
+Execute these commands in zsh via `run_command` **only after receiving an explicit user trigger**:
 
 ### 📄 Microsoft Word (`.docx`)
 ```bash
-# Open directly in Microsoft Word and bring window to front:
-open -a "Microsoft Word" "<path_to_file.docx>" && osascript -e 'tell application "Microsoft Word" to activate'
+# Open in Microsoft Word (explicit trigger only):
+open -a "Microsoft Word" "<path_to_file.docx>"
 
-# Fallback (system default handler):
-open "<path_to_file.docx>"
+# Bring window to front only if user explicitly asked to focus/view it:
+osascript -e 'tell application "Microsoft Word" to activate'
 ```
 
 ### 📊 Microsoft Excel (`.xlsx`)
 ```bash
-# Open directly in Microsoft Excel and bring window to front:
-open -a "Microsoft Excel" "<path_to_file.xlsx>" && osascript -e 'tell application "Microsoft Excel" to activate'
+# Open in Microsoft Excel (explicit trigger only):
+open -a "Microsoft Excel" "<path_to_file.xlsx>"
 
-# Fallback (system default handler):
-open "<path_to_file.xlsx>"
+# Bring window to front only if user explicitly asked to focus/view it:
+osascript -e 'tell application "Microsoft Excel" to activate'
 ```
 
 ### 📽 Microsoft PowerPoint (`.pptx`)
 ```bash
-# Open directly in Microsoft PowerPoint and bring window to front:
-open -a "Microsoft PowerPoint" "<path_to_file.pptx>" && osascript -e 'tell application "Microsoft PowerPoint" to activate'
+# Open in Microsoft PowerPoint (explicit trigger only):
+open -a "Microsoft PowerPoint" "<path_to_file.pptx>"
 
-# Fallback (system default handler):
-open "<path_to_file.pptx>"
+# Bring window to front only if user explicitly asked to focus/view it:
+osascript -e 'tell application "Microsoft PowerPoint" to activate'
 ```
 
 ### 📐 Diagrams (`.drawio`, `.svg`, `.png`) & Images
@@ -57,8 +79,11 @@ open "<path_to_file.pptx>"
 # Open vector diagrams or images in macOS Preview:
 open -a "Preview" "<path_to_file.png>"
 
-# Open diagrams in Draw.io (if desktop app installed) or default browser/viewer:
+# Open diagrams in Draw.io (if installed) or default viewer:
 open "<path_to_file.drawio>"
+
+# Reveal in macOS Finder:
+open -R "<path_to_file>"
 ```
 
 ---
@@ -66,10 +91,13 @@ open "<path_to_file.drawio>"
 ## 3. Best Practices & Safety Guardrails
 
 1. **Verify File Existence:**
-   Always confirm the target file exists before issuing the `open` command.
+   Always confirm the target file exists before issuing an `open` command.
 2. **Path Quoting:**
-   Wrap all file paths in double quotes to handle directory names with spaces or underscores properly.
-3. **Non-Blocking Execution:**
-   The `open` command launches applications asynchronously in macOS without blocking terminal execution.
-4. **App Activation with `osascript`:**
-   Chaining `osascript -e 'tell application "<AppName>" to activate'` ensures macOS immediately raises and focuses the newly opened window rather than leaving it minimized behind other applications.
+   Wrap all file paths in double quotes to handle paths with spaces or symbols.
+3. **Headless Verification Gate:**
+   Prior to offering desktop preview or answering queries about layout correctness, always perform headless verification:
+   ```bash
+   uv run bench diagram v2 audit <spec.yaml> --strict
+   ```
+4. **Respect User Focus:**
+   Never invoke AppleScript activation in unattended loops or without explicit user direction.

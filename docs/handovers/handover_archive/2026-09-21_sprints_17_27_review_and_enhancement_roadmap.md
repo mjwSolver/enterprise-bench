@@ -5,7 +5,7 @@
 > **Audience:** Subsequent Feature / Platform Implementation Subagents  
 > **Author:** Review Coordinator & Enterprise Pair Programming Assistant  
 > **Repository:** `enterprise-bench` | **Branch:** `main`  
-> **Operating Directives:** [`AGENTS.md`](../../AGENTS.md) (Strict ZERO INTERMEDIATE UNIT TESTING)
+> **Operating Directives:** [`AGENTS.md`](../../../AGENTS.md) (Strict ZERO INTERMEDIATE UNIT TESTING)
 
 ---
 
@@ -71,9 +71,9 @@ The user has formally instructed that **"Nusantara Global Logistics"** (short na
 
 ## 3. Stage 1: Project Closing & Maintenance Transition Deck (`5.1`)
 
-- **Artifact Reviewed:** [`output/presentations/5.1_Project_Closing_Deck_Modernized.pptx`](../../output/presentations/5.1_Project_Closing_Deck_Modernized.pptx) (9 slides)
-- **Source Configuration:** [`presets/deck_configs/closing_deck.yaml`](../../presets/deck_configs/closing_deck.yaml)
-- **Builder Implementation:** [`src/ppt_engine/closing_deck.py`](../../src/ppt_engine/closing_deck.py)
+- **Artifact Reviewed:** [`output/presentations/5.1_Project_Closing_Deck_Modernized.pptx`](../../../output/presentations/5.1_Project_Closing_Deck_Modernized.pptx) (9 slides)
+- **Source Configuration:** [`presets/deck_configs/closing_deck.yaml`](../../../presets/deck_configs/closing_deck.yaml)
+- **Builder Implementation:** [`src/ppt_engine/closing_deck.py`](../../../src/ppt_engine/closing_deck.py)
 
 ### User Feedback
 1. **Zero Visual Elements:** The closing deck currently contains no icons, no images, and no flowcharts—it is exclusively shape cards and typography.
@@ -105,10 +105,10 @@ The user has formally instructed that **"Nusantara Global Logistics"** (short na
 
 ## 4. Stage 2: Weekly Progress Report & S-Curve Synchronization (`4.2`)
 
-- **Artifact Reviewed:** [`output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx`](../../output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx) (11 slides)
-- **High-DPI Chart:** [`output/presentations/charts/s_curve_weekly.png`](../../output/presentations/charts/s_curve_weekly.png)
-- **Spreadsheet Source:** [`clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Timeline_Update_Template.xlsx`](../../clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Timeline_Update_Template.xlsx)
-- **Builder Implementation:** [`src/ppt_engine/weekly_progress_deck.py`](../../src/ppt_engine/weekly_progress_deck.py)
+- **Artifact Reviewed:** [`output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx`](../../../output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx) (11 slides)
+- **High-DPI Chart:** [`output/presentations/charts/s_curve_weekly.png`](../../../output/presentations/charts/s_curve_weekly.png)
+- **Spreadsheet Source:** [`clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Timeline_Update_Template.xlsx`](../../../clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Timeline_Update_Template.xlsx)
+- **Builder Implementation:** [`src/ppt_engine/weekly_progress_deck.py`](../../../src/ppt_engine/weekly_progress_deck.py)
 
 ### User Feedback & Approvals
 1. **Slide 04 (Overall Progress & S-Curve):** **APPROVED**. The embedded high-DPI S-Curve line chart and KPI header cards significantly elevate presentation quality.
@@ -132,9 +132,9 @@ The user has formally instructed that **"Nusantara Global Logistics"** (short na
 
 ## 5. Stage 3: Testing Onboarding & Initiation Collateral (`1.1` & `3.4`)
 
-- **Artifact Reviewed:** [`output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx`](../../output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx) (19 slides)
-- **Source Configuration:** [`presets/deck_configs/kickoff_presentation.yaml`](../../presets/deck_configs/kickoff_presentation.yaml)
-- **Builder Implementation:** [`src/ppt_engine/pitch_deck.py`](../../src/ppt_engine/pitch_deck.py) / [`src/ppt_engine/consulting_archetypes.py`](../../src/ppt_engine/consulting_archetypes.py)
+- **Artifact Reviewed:** [`output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx`](../../../output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx) (19 slides)
+- **Source Configuration:** [`presets/deck_configs/kickoff_presentation.yaml`](../../../presets/deck_configs/kickoff_presentation.yaml)
+- **Builder Implementation:** [`src/ppt_engine/pitch_deck.py`](../../../src/ppt_engine/pitch_deck.py) / [`src/ppt_engine/consulting_archetypes.py`](../../../src/ppt_engine/consulting_archetypes.py)
 
 ### User Feedback & Critical Defect Register
 
@@ -162,11 +162,11 @@ The user has formally instructed that **"Nusantara Global Logistics"** (short na
 ## 6. Stage 4: Automated Change Request Governance Suite (`CR_07`)
 
 - **Artifacts Under Review:**
-  - Form: [`output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Request_Form_CR_07.docx`](../../output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Request_Form_CR_07.docx)
-  - Scoping Workbook: [`output/TTI_Snowflake_Analytics/change_requests/CR_07/CR_Scoping_and_Mandays_CR_07.xlsx`](../../output/TTI_Snowflake_Analytics/change_requests/CR_07/CR_Scoping_and_Mandays_CR_07.xlsx)
-  - BAST Certificate: [`output/TTI_Snowflake_Analytics/change_requests/CR_07/BAST_Change_Request_Draft_CR_07.docx`](../../output/TTI_Snowflake_Analytics/change_requests/CR_07/BAST_Change_Request_Draft_CR_07.docx)
-  - Change Log Ledger: [`output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Log_Ledger_Updated_CR_07.xlsx`](../../output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Log_Ledger_Updated_CR_07.xlsx)
-- **Engine Implementation:** [`src/core/change_request.py`](../../src/core/change_request.py) | CLI: `bench cr file`
+  - Form: [`output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Request_Form_CR_07.docx`](../../../output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Request_Form_CR_07.docx)
+  - Scoping Workbook: [`output/TTI_Snowflake_Analytics/change_requests/CR_07/CR_Scoping_and_Mandays_CR_07.xlsx`](../../../output/TTI_Snowflake_Analytics/change_requests/CR_07/CR_Scoping_and_Mandays_CR_07.xlsx)
+  - BAST Certificate: [`output/TTI_Snowflake_Analytics/change_requests/CR_07/BAST_Change_Request_Draft_CR_07.docx`](../../../output/TTI_Snowflake_Analytics/change_requests/CR_07/BAST_Change_Request_Draft_CR_07.docx)
+  - Change Log Ledger: [`output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Log_Ledger_Updated_CR_07.xlsx`](../../../output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Log_Ledger_Updated_CR_07.xlsx)
+- **Engine Implementation:** [`src/core/change_request.py`](../../../src/core/change_request.py) | CLI: `bench cr file`
 - **Status:** **Active Review In Progress (Opened on User Desktop)**
 
 ### Review Focus Points & User Watchouts
@@ -184,7 +184,7 @@ The user has formally instructed that **"Nusantara Global Logistics"** (short na
 1. **Overall Verification:** **APPROVED**. Single-command generation (`bench cr file`), synchronized scope descriptions, and manday calculation formulas across Word and Excel verified and confirmed.
 2. **Toyota Logo Defect in Header:**
    - *Observation:* `Change_Request_Form_CR_07.docx` still contained the legacy Toyota Tsusho Indonesia logo banner (`image3.png`) embedded inside the top-right header table cell (`word/header2.xml`).
-   - *Action Completed:* The reviewing agent immediately purged `<w:drawing>` and stripped `image3.png` from both [`output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Request_Form_CR_07.docx`](../../output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Request_Form_CR_07.docx) and master template [`clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.4_Change_Request_Form_Template.docx`](../../clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.4_Change_Request_Form_Template.docx). Integrity verified with 19 paragraphs and 7 tables.
+   - *Action Completed:* The reviewing agent immediately purged `<w:drawing>` and stripped `image3.png` from both [`output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Request_Form_CR_07.docx`](../../../output/TTI_Snowflake_Analytics/change_requests/CR_07/Change_Request_Form_CR_07.docx) and master template [`clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.4_Change_Request_Form_Template.docx`](../../../clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.4_Change_Request_Form_Template.docx). Integrity verified with 19 paragraphs and 7 tables.
 3. **Directory Path & Client Normalization:**
    - Next agent must ensure output paths resolve via `EngagementContext` to `output/NGL_Snowflake_Analytics/change_requests/` or `output/change_requests/` rather than hardcoded `TTI_Snowflake_Analytics`.
 

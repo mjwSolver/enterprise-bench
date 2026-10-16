@@ -54,8 +54,8 @@ DEFAULT_METADATA = {
     },
     "local-app-preview": {
         "role": "Review Coordinator, Enterprise Consultant, Pair Programming Assistant.",
-        "when": "Whenever tasked with opening or previewing Word (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF, or diagram (.drawio, .png) deliverables on the user's local machine, or proactively suggesting desktop reviews to accelerate feedback.",
-        "protocol": "Uses open -a and osascript to focus application windows without blocking subshells.",
+        "when": "ONLY when explicitly prompted by the user ('pop it', 'show me', 'open on desktop', 'open in finder'). Never run autonomously or during verification.",
+        "protocol": "Strictly on-demand preview. Headless-first verification is enforced everywhere else.",
     },
     "setup-agents": {
         "role": "Repository Administrator, Multi-Agent Architect, Pair Programming Coordinator.",

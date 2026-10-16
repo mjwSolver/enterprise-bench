@@ -27,6 +27,7 @@ build/
 raw_source_files/
 clean_workspace/projects/
 output/
+doc_output/
 work_archive/
 project_outputs/
 tests/project_outputs/

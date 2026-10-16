@@ -1,0 +1,405 @@
+id: "cdsw_expanded"
+name: "Current: Legacy CDSW Job Execution (Expanded Hardware Safe-Checker)"
+theme: "metrodata"
+
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: "in"
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+
+header:
+  show: true
+  action_title: "Current: Legacy CDSW Job Execution (Expanded Hardware Safe-Checker)"
+  subtitle: "Client Hardware Whitelist Verification, Model Serving & Bottleneck Execution Dataflow"
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+
+containers:
+  - id: "group_user"
+    label: "USER ORIGIN"
+    x: 0.45
+    y: 1.30
+    w: 1.60
+    h: 5.92
+    border_hex: "#94A3B8"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "center"
+    vertical_align: "top"
+
+  - id: "group_device"
+    label: "Local Device"
+    x: 3.35
+    y: 1.30
+    w: 4.80
+    h: 5.92
+    border_hex: "#64748B"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "left"
+    vertical_align: "top"
+
+  - id: "group_safe_checker"
+    label: ""
+    x: 5.45
+    y: 1.72
+    w: 2.55
+    h: 5.34
+    border_hex: "#0284C7"
+    fill_hex: "#FFFFFF"
+    fill_opacity: 1.0
+    stroke_width: 2.0
+    dashed: false
+    corner_radius: 12.0
+    align: "center"
+    vertical_align: "top"
+
+  - id: "group_backend"
+    label: "Backend Execution"
+    x: 9.25
+    y: 1.30
+    w: 3.80
+    h: 5.92
+    border_hex: "#F59E0B"
+    fill_hex: "#FFFBEB"
+    fill_opacity: 0.35
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    tag_badge: "CLOUDERA CML"
+    tag_bg_hex: "#FEF3C7"
+    tag_text_hex: "#B45309"
+    align: "left"
+    vertical_align: "top"
+
+nodes:
+  - id: "node_user"
+    container_id: "group_user"
+    title: "User"
+    subtitle: "Operator / Client"
+    icon: "assets/icons/lucide/users_2563EB.svg"
+    x: 0.58
+    y: 1.86
+    w: 1.34
+    h: 1.55
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+    shape: "rounded"
+
+  - id: "node_user_roles"
+    container_id: "group_user"
+    title: "EXAMPLE USERS"
+    subtitle: "• Security\n• Finance\n• Fraud\n• etc."
+    x: 0.58
+    y: 3.65
+    w: 1.34
+    h: 1.85
+    stroke_hex: "#CBD5E1"
+    fill_hex: "#FFFFFF"
+    stroke_width: 1.5
+    valign: "top"
+    align: "left"
+    title_pt: 10.0
+    shape: "rounded"
+
+  - id: "node_exe"
+    container_id: "group_device"
+    title: "EXE"
+    subtitle: "Client Executable\nSupports multiple types\n(recon_tool, audit)"
+    icon: "assets/icons/lucide/cpu_0052CC.svg"
+    x: 3.50
+    y: 1.86
+    w: 1.25
+    h: 1.70
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+    shape: "rounded"
+
+  - id: "node_safe_header"
+    container_id: "group_safe_checker"
+    title: "Safe Checker"
+    subtitle: "Pre-Run Whitelist Verifier"
+    icon: "assets/icons/lucide/shield_0052CC.svg"
+    icon_layout: "side"
+    x: 5.62
+    y: 1.86
+    w: 2.20
+    h: 0.52
+    stroke_hex: "#BAE6FD"
+    fill_hex: "#E0F2FE"
+    stroke_width: 1.0
+    title_color: "#0369A1"
+    subtitle_color: "#64748B"
+    title_pt: 11.0
+    shape: "rounded"
+
+  - id: "node_step_connect"
+    container_id: "group_safe_checker"
+    title: "• Connect to Model Serving"
+    x: 5.62
+    y: 2.59
+    w: 2.20
+    h: 0.36
+    stroke_hex: "#E2E8F0"
+    fill_hex: "#F8FAFC"
+    stroke_width: 1.0
+    title_color: "#0F172A"
+    title_pt: 9.5
+    shape: "rounded"
+
+  - id: "node_step_mac"
+    container_id: "group_safe_checker"
+    title: "• Get MAC Addresses"
+    x: 5.62
+    y: 3.16
+    w: 2.20
+    h: 0.36
+    stroke_hex: "#E2E8F0"
+    fill_hex: "#F8FAFC"
+    stroke_width: 1.0
+    title_color: "#0F172A"
+    title_pt: 9.5
+    shape: "rounded"
+
+  - id: "node_step_send_api"
+    container_id: "group_safe_checker"
+    title: "Send request API to Model Serving"
+    subtitle: "Payload: MAC + Client Identity"
+    x: 5.62
+    y: 3.73
+    w: 2.20
+    h: 0.68
+    stroke_hex: "#0284C7"
+    fill_hex: "#F0F9FF"
+    stroke_width: 1.5
+    title_color: "#0369A1"
+    subtitle_color: "#0284C7"
+    title_pt: 9.5
+    shape: "rounded"
+
+  - id: "node_step_receive"
+    container_id: "group_safe_checker"
+    title: "Receive Status"
+    subtitle: "Response: Allowed / Not Allowed"
+    x: 5.62
+    y: 4.62
+    w: 2.20
+    h: 0.54
+    stroke_hex: "#F59E0B"
+    fill_hex: "#FFFBEB"
+    stroke_width: 1.5
+    title_color: "#B45309"
+    subtitle_color: "#D97706"
+    title_pt: 9.5
+    shape: "rounded"
+
+  - id: "node_allowed"
+    container_id: "group_safe_checker"
+    kicker: "ALLOWED"
+    title: "Continue"
+    subtitle: "Rest of client\nexecution"
+    icon: "assets/icons/lucide/check-circle_10B981.svg"
+    x: 5.58
+    y: 5.42
+    w: 1.02
+    h: 1.45
+    stroke_hex: "#16A34A"
+    fill_hex: "#F0FDF4"
+    stroke_width: 1.5
+    title_color: "#16A34A"
+    subtitle_color: "#166534"
+    valign: "top"
+    title_pt: 11.0
+    shape: "rounded"
+
+  - id: "node_not_allowed"
+    container_id: "group_safe_checker"
+    kicker: "NOT ALLOWED"
+    title: "Stopped"
+    subtitle: "Execution\nAborted"
+    icon: "assets/icons/lucide/shield-alert.svg"
+    x: 6.82
+    y: 5.42
+    w: 1.02
+    h: 1.45
+    stroke_hex: "#DC2626"
+    fill_hex: "#FEF2F2"
+    stroke_width: 1.5
+    title_color: "#DC2626"
+    subtitle_color: "#991B1B"
+    valign: "top"
+    title_pt: 11.0
+    shape: "rounded"
+
+  - id: "node_model_serving"
+    container_id: "group_backend"
+    title: "Model Serving"
+    subtitle: "Cloudera Machine Learning\nModel Serving Endpoint"
+    icon: "assets/logos/cloudera/cloudera_ai.svg"
+    x: 9.40
+    y: 2.10
+    w: 1.45
+    h: 1.55
+    stroke_hex: "#0284C7"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.5
+    shape: "rounded"
+
+  - id: "node_task"
+    container_id: "group_backend"
+    title: "1 Task"
+    subtitle: "• Input metadata\n• SQL Query (Filter & Search)\n• Filter & Search Dev. ADD\n• Logging\n• Return Result"
+    title_pt: 18.0
+    valign: "top"
+    align: "left"
+    x: 11.20
+    y: 2.10
+    w: 1.65
+    h: 3.10
+    stroke_hex: "#DC2626"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.5
+    shape: "rounded"
+
+badges:
+  - id: "badge_header"
+    x: 11.00
+    y: 0.35
+    w: 1.85
+    h: 0.34
+    text: "CLIENT INGRESS EXPANSION"
+    bg_hex: "#EFF6FF"
+    text_hex: "#1D4ED8"
+    border_hex: "#BFDBFE"
+    font_pt: 8.0
+
+  - id: "badge_runs"
+    x: 4.88
+    y: 2.28
+    w: 0.44
+    h: 0.22
+    text: "runs"
+    bg_hex: "#EFF6FF"
+    text_hex: "#1D4ED8"
+    border_hex: "#BFDBFE"
+    font_pt: 7.5
+
+  - id: "badge_if_else"
+    x: 5.62
+    y: 5.20
+    w: 2.20
+    h: 0.18
+    text: "• If / Else Evaluation:"
+    bg_hex: "#FFFFFF"
+    text_hex: "#475569"
+    border_hex: "#FFFFFF"
+    font_pt: 8.5
+
+  - id: "badge_run"
+    x: 10.85
+    y: 2.48
+    w: 0.35
+    h: 0.22
+    text: "2. Run"
+    bg_hex: "#F0F9FF"
+    text_hex: "#0369A1"
+    border_hex: "#BAE6FD"
+    font_pt: 7.5
+
+  - id: "badge_bottleneck"
+    x: 11.12
+    y: 1.76
+    w: 0.78
+    h: 0.26
+    text: "BOTTLENECK"
+    bg_hex: "#FEE2E2"
+    text_hex: "#DC2626"
+    border_hex: "#FECACA"
+    font_pt: 7.0
+
+  - id: "badge_sync"
+    x: 11.98
+    y: 1.76
+    w: 0.82
+    h: 0.26
+    text: "SYNCHRONOUS"
+    bg_hex: "#FEF3C7"
+    text_hex: "#B45309"
+    border_hex: "#FDE68A"
+    font_pt: 7.0
+
+flows:
+  - id: "flow_user_to_exe"
+    source: "node_user"
+    target: "node_exe"
+    points:
+      - [1.92, 2.635]
+      - [3.50, 2.635]
+    label: "Trigger"
+    label_at: [2.71, 2.40]
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1D4ED8"
+
+  - id: "flow_exe_to_safe"
+    source: "node_exe"
+    target: "group_safe_checker"
+    points:
+      - [4.75, 2.635]
+      - [5.45, 2.635]
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+
+  - id: "flow_send_api"
+    source: "node_step_send_api"
+    target: "node_model_serving"
+    points:
+      - [7.82, 4.07]
+      - [8.45, 4.07]
+      - [8.45, 2.85]
+      - [9.40, 2.85]
+    label: "1. API Request"
+    label_at: [8.65, 2.60]
+    font_pt: 7.5
+    stroke_hex: "#0284C7"
+    stroke_width: 2.5
+    label_bg_hex: "#F0F9FF"
+    label_text_hex: "#0369A1"
+
+  - id: "flow_model_to_task"
+    source: "node_model_serving"
+    target: "node_task"
+    points:
+      - [10.85, 2.85]
+      - [11.20, 2.85]
+    stroke_hex: "#0284C7"
+    stroke_width: 2.5
+
+  - id: "flow_model_to_receive"
+    source: "node_model_serving"
+    target: "node_step_receive"
+    points:
+      - [9.40, 3.35]
+      - [8.85, 3.35]
+      - [8.85, 4.89]
+      - [7.82, 4.89]
+    label: "3. Return Status"
+    label_at: [8.65, 5.12]
+    font_pt: 7.5
+    stroke_hex: "#D97706"
+    stroke_width: 2.5
+    label_bg_hex: "#FFFBEB"
+    label_text_hex: "#B45309"

@@ -4,6 +4,75 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-10-16] - Milestone 36: Bidirectional PPTX Decompiler & YAML Reconciliation Engine (Topic 11)
+
+**Timestamp:** `2026-10-16T01:36:00+07:00`
+
+### Summary
+Delivered the **Bidirectional PPTX Decompiler & YAML Reconciliation Engine** (Topic 11) across Diagram Engine V2 (`src/ppt_engine/diagram_v2/`). Stamped deterministic OpenXML shape names (`<p:cNvPr name="..." id="..."/>`) in `pptx_compiler.py` across header stripes (`header:stripe:red`, `header:stripe:blue`), action title text frames (`header:title`), boundary containers (`container:{id}`), boundary labels (`container:{id}:label`), tag badges (`container:{id}:tag_badge`), entity nodes (`node:{id}`), node icons (`node:{id}:icon`), node text frames (`node:{id}:text`), standalone badges (`badge:{id}`), bullet lists (`bullet_list:{id}`), and connector flows (`flow:{id}`, `flow:{id}:label`). Engineered the lossless `PPTXDiagramDecompiler` and `DiagramReconciler` in `src/ppt_engine/diagram_v2/reconciler.py` to recursively inspect slide shapes, extract live text, detect deleted entity nodes, cascade pruning to orphan connector flows, and update mutated text fields. Integrated soft line break (`\x0b` / `<a:br/>`) and Windows line-ending normalization (`_clean_text`) to eliminate false mutation drift. Built the unified `bench diagram v2 reconcile` CLI command in `src/cli/diagram_v2.py` supporting auto-resolution of sibling files, `--dry-run` inspection, `--no-recompile`, and automatic 4-way deliverable re-compilation (`.drawio`, `.svg`, `.png`, `.pptx`). Verified full roundtrip bidirectional synchronization, pruning cascade, and 100% clean parity across `enterprise-bench` and `BSIM_Migration`. Authored canonical specification in `docs/specs/pptx_decompiler_and_yaml_reconciliation_engine.md`.
+
+### Milestones Delivered
+- **Deterministic OpenXML Shape Stamping (`pptx_compiler.py`):**
+  - Stamped 100% of shapes generated in PPTX compiler with deterministic colon-delimited taxonomies (`header:title`, `container:{id}`, `node:{id}`, `node:{id}:icon`, `node:{id}:text`, `badge:{id}`, `bullet_list:{id}`, `flow:{id}`, `flow:{id}:label`).
+  - Added `shape_name` parameter forwarding to `_add_icon()` for vector/PNG pictures and emoji text frames.
+  - Verified 55/55 shapes cleanly tagged in `cdsw_expanded.pptx`.
+- **Lossless Slide Decompiler & AST Reconciler (`reconciler.py`):**
+  - Implemented `PPTXDiagramDecompiler` with recursive group shape flattening and deterministic prefix validation.
+  - Implemented `DiagramReconciler` comparing slide shape presence and text frames against YAML AST.
+  - Automatically prunes deleted nodes from YAML `nodes` array and cascades pruning to all connected flows.
+  - Prunes deleted connector line shapes and removed flow label pills.
+  - Extracts text updates across header titles/subtitles, node kickers/titles/subtitles, container labels, tag badges, and standalone status pills.
+  - Formatted YAML AST serialization via `IndentedYamlDumper` with clean 2-space block indents and flow-style coordinate primitives (`[x, y]`).
+- **Unified Workbench CLI Command (`bench diagram v2 reconcile`):**
+  - Registered `bench diagram v2 reconcile` in `src/cli/diagram_v2.py`.
+  - Supports passing `.yaml` or `.pptx` directly with automatic sibling file resolution.
+  - Features rich tabular diff visualizer displaying element category, ID, action (`PRUNED` vs `MUTATED`), property, old value, and new reconciled value.
+  - Supports `--dry-run`, `--no-recompile`, `--slide`, and custom format targeting (`-f all`).
+  - Automatically triggers 4-way re-compilation upon detecting diffs.
+- **Canonical Architecture Specification & Reference Handover:**
+  - Published [`docs/specs/pptx_decompiler_and_yaml_reconciliation_engine.md`](specs/pptx_decompiler_and_yaml_reconciliation_engine.md) and updated `docs/CLI.md` and `docs/INDEX.md`.
+  - **Reference Handover:** [`docs/handovers/2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md`](handovers/2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md)
+
+---
+
+## [2026-10-15] - Milestone 35: Visual & Vector System Refinement, OpenXML Drop Shadow Purge, and Headless Draw.io Stencil Extraction
+
+**Timestamp:** `2026-10-15T23:40:48+07:00`
+
+### Summary
+Delivered visual design refinements, permanent OpenXML drop shadow sanitization, headless Draw.io vector stencil extraction, and Diagram Engine V2 spatial auditor calibration across `enterprise-bench`. Operationalized Topics 4 and 5 of the strategic sprint preparation ledger (`docs/brainstorming_sprint_prep.md`), enforcing sharp rectangle boundary swimlanes enclosing compact rounded-corner entity cards with strict single-label discipline (`CANDIDATE_CAPTION = None`) and standardized $12\text{--}16\text{ pt}$ padding margins. Engineered the universal OpenXML drop shadow sanitizer `strip_shape_shadows()` (`_flatten`) in `src/ppt_engine/theme_engine.py`, purging theme-level drop shadow inheritance (`<a:effectRef idx="0">` decoupling, `<a:outerShdw>` stripping, and explicit empty `<a:effectLst/>` injection) across `closing_deck.py`, `weekly_progress_deck.py`, `reference_slides.py`, `pptx_diagram_compiler.py`, and `diagram_v2/pptx_compiler.py`. Confirmed via live probe across 874 shapes that 821 inherited shadow defects were reduced to 0 (100% clean baseline). Implemented headless vector stencil extraction `export_drawio_stencil_to_svg()` in `src/ppt_engine/diagram_engine.py` using native Draw.io CLI (`drawio -x -f svg`) with 1-based page indexing and `--crop`, preserving 100% vector fidelity for Databricks, AWS Lambda, and Cloudera stencils. Rectified a false-positive `ARROW_SWALLOWED` collision defect in `src/ppt_engine/diagram_v2/auditor.py` by simulating compiler side-jog (+35px horizontal offset) on vertical connectors with `label_position="auto"`. Authored a 4-track verification harness in `scripts/` verifying all presentation and diagram pipelines without intermediate unit testing.
+
+### Milestones Delivered
+- **Icon + Title Encapsulation & Boundary Swimlanes:**
+  - Enforced sharp rectangle boundary swimlanes (`MSO_SHAPE.RECTANGLE` / `ContainerSpec.corner_radius = 0.0`) with subtle fill (`#F8FAFC`) and $1.5\text{--}2.0\text{ pt}$ border strokes.
+  - Encapsulated icon glyphs and node titles within compact rounded-corner container pills (`MSO_SHAPE.ROUNDED_RECTANGLE` / `NodeSpec.corner_radius = 8.0`).
+  - Enforced the `CANDIDATE_CAPTION` invariant: strictly 1 label per node with zero descriptive filler or extrapolated secondary subtitles.
+  - Standardized bounding margins ($12\text{--}16\text{ pt}$ container padding) and connector clearances ($\ge 8\text{ pt}$ clearance from text frames).
+  - Verified across declarative compiler (`output/presentations/encapsulation_v2_test.pptx`) and direct python-pptx authoring (`output/presentations/encapsulation_direct_test.pptx`).
+- **Headless Draw.io Stencil Extraction to Standalone Vector SVG:**
+  - Implemented `export_drawio_stencil_to_svg()` in `src/ppt_engine/diagram_engine.py` leveraging native Draw.io CLI (`drawio -x -f svg`).
+  - Corrected 1-based page indexing (`page_index` mapped to `-p`) and integrated `--crop` and `--transparent` parameters.
+  - Automatically resolves binary across standard macOS paths (`drawio`, `/opt/homebrew/bin/drawio`, `/Applications/draw.io.app/...`).
+  - Extracted and verified Databricks and AWS Lambda stencils into standalone W3C SVGs (`output/diagrams_extracted_svg/proposed_aws_lambda_stencil.svg` and `cdsw_legacy_batch_stencil.svg`) without headless GUI popups.
+- **Universal OpenXML Drop Shadow Sanitizer (`theme_engine.py`):**
+  - Engineered `strip_shape_shadows()` and canonical alias `_flatten` in `src/ppt_engine/theme_engine.py`.
+  - Sets `shape.shadow.inherit = False`.
+  - Traverses `<p:style>` to reset `<a:effectRef>` from theme default `idx="2"` to `idx="0"`.
+  - Strips all `<a:outerShdw>` elements from `<p:spPr>` and appends an explicit empty `<a:effectLst/>` tag.
+  - Integrated into `ClosingDeckBuilder`, `WeeklyProgressDeckBuilder`, `ReferenceDeckBuilder`, `pptx_diagram_compiler.py`, `diagram_v2/pptx_compiler.py`, and `consulting_archetypes.py`.
+  - Executed live probe across 874 shapes in `scripts/repro_track1_shadow_inheritance.py`: eradicated 821 inherited shadow defects down to 0 across BSIM, Closing, Weekly Progress, and Reference decks.
+  - Verified serialized XML on disk via `output/presentations/openxml_sanitizer_verification.pptx`.
+- **Diagram V2 Auditor Auto-Offset Calibration (`auditor.py`):**
+  - Calibrated `Tier1GeometricLinter.check_arrow_swallowing_and_crowding()` in `src/ppt_engine/diagram_v2/auditor.py`.
+  - Resolved false-positive `ARROW_SWALLOWED` collisions on vertical flows with `label_position="auto"` by resolving `pos` to `"side"` and simulating the compiler's $+35\text{px}$ side-jog offset.
+  - Verified via `scripts/repro_track4_auditor_swallowed_arrow.py`, reporting 0 false-positive issues.
+- **Multi-Track Verification Harness:**
+  - Authored standalone verification and reproduction scripts in `scripts/` (`repro_track1_shadow_inheritance.py`, `repro_track4_auditor_swallowed_arrow.py`, `verify_openxml_sanitizer.py`, `verify_encapsulation_pattern.py`, `verify_drawio_stencil_export.py`).
+  - Verified memory ASTs and reloaded on-disk XML packages while strictly upholding the ZERO INTERMEDIATE UNIT TESTING directive.
+- **Reference Handover:** [`docs/handovers/2026-10-15_visual_vector_refinement_and_openxml_purge.md`](handovers/2026-10-15_visual_vector_refinement_and_openxml_purge.md)
+
+---
+
 ## [2026-10-14] - Milestone 34: Tier 1 Geometric Collision Linting & Tier 2 Adversarial Visual QA Verification in Diagram Engine V2
 
 ### Summary
@@ -277,7 +346,7 @@ Executed a comprehensive 5-phase review and enhancement sprint across Sprints 17
   - Enhanced [`src/core/change_request.py`](../src/core/change_request.py) with dynamic client routing via `EngagementContext` to `output/NGL_Snowflake_Analytics/change_requests/CR_07/`.
   - Implemented `_substitute_docx` and `_substitute_xlsx` for recursive post-generation document and workbook sanitization across paragraphs, table cells, and worksheets.
   - Verified zero legacy logos in `Change_Request_Form_CR_07.docx` and master template `4.4_Change_Request_Form_Template.docx`.
-- Reference Handover: [`docs/handovers/2026-09-21_sprints_17_27_completion_briefing.md`](handovers/2026-09-21_sprints_17_27_completion_briefing.md)
+- Reference Handover: [`docs/handovers/handover_archive/2026-09-21_sprints_17_27_completion_briefing.md`](handovers/handover_archive/2026-09-21_sprints_17_27_completion_briefing.md)
 
 ---
 
@@ -317,7 +386,7 @@ Delivered the end-to-end automated generation, dynamic spreadsheet synchronizati
   - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):**
     - Generated modernized presentation [`output/presentations/5.1_Project_Closing_Deck_Modernized.pptx`](../output/presentations/5.1_Project_Closing_Deck_Modernized.pptx) (9 slides, 3.2 MB).
     - Rendered 9 high-resolution PNG slide preview images in [`output/presentations/previews/closing/`](../output/presentations/previews/closing/) (`slide_01.png` through `slide_09.png`).
-  - Reference Handover: [`docs/handovers/2026-09-21_project_closing_deck_modernization.md`](handovers/2026-09-21_project_closing_deck_modernization.md)
+  - Reference Handover: [`docs/handovers/handover_archive/2026-09-21_project_closing_deck_modernization.md`](handovers/handover_archive/2026-09-21_project_closing_deck_modernization.md)
 
 ---
 
@@ -348,7 +417,7 @@ Delivered the end-to-end automated generation, dynamic milestone scaling, and co
     - Generated chart-embedded presentation [`output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx`](../output/presentations/4.2_Weekly_Progress_Report_Deck_Modernized_Chart.pptx) (11 slides, 3.3 MB).
     - Generated high-DPI S-Curve line chart [`output/presentations/charts/s_curve_weekly.png`](../output/presentations/charts/s_curve_weekly.png).
     - Rendered 22 slide preview images in [`output/presentations/previews/weekly/`](../output/presentations/previews/weekly/) and [`output/presentations/previews/weekly_chart/`](../output/presentations/previews/weekly_chart/).
-  - Reference Handover: [`docs/handovers/2026-09-20_weekly_progress_report_deck_modernization.md`](handovers/2026-09-20_weekly_progress_report_deck_modernization.md)
+  - Reference Handover: [`docs/handovers/handover_archive/2026-09-20_weekly_progress_report_deck_modernization.md`](handovers/handover_archive/2026-09-20_weekly_progress_report_deck_modernization.md)
 
 ---
 
@@ -377,7 +446,7 @@ Delivered the end-to-end automated generation and consulting modernization of th
   - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):**
     - Generated modernized 25-slide presentation [`output/presentations/3.4_Sosialisasi_UAT_Briefing_Modernized.pptx`](../output/presentations/3.4_Sosialisasi_UAT_Briefing_Modernized.pptx).
     - Rendered 25 high-resolution slide preview images in [`output/presentations/previews/uat/`](../output/presentations/previews/uat/) (`slide_01.png` through `slide_25.png`).
-  - Reference Handover: [`docs/handovers/2026-09-20_uat_briefing_presentation_modernization.md`](handovers/2026-09-20_uat_briefing_presentation_modernization.md)
+  - Reference Handover: [`docs/handovers/handover_archive/2026-09-20_uat_briefing_presentation_modernization.md`](handovers/handover_archive/2026-09-20_uat_briefing_presentation_modernization.md)
 
 ---
 
@@ -405,7 +474,7 @@ Delivered the end-to-end automated generation and consulting modernization of th
   - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):**
     - Generated modernized presentation [`output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx`](../output/presentations/1.1_Project_Kick-off_Material_Modernized.pptx) (3.17 MB, 19 slides).
     - Rendered 19 high-fidelity PNG slide preview images in [`output/presentations/previews/kickoff/`](../output/presentations/previews/kickoff/) (`slide_01.png` through `slide_19.png`).
-  - Reference Handover: [`docs/handovers/2026-09-19_project_kickoff_presentation_modernization.md`](handovers/2026-09-19_project_kickoff_presentation_modernization.md)
+  - Reference Handover: [`docs/handovers/handover_archive/2026-09-19_project_kickoff_presentation_modernization.md`](handovers/handover_archive/2026-09-19_project_kickoff_presentation_modernization.md)
 
 ---
 
@@ -425,7 +494,7 @@ Delivered the end-to-end automated generation and consulting modernization of th
   - **Master Declarative Deck Configuration ([`presets/deck_configs/presales_pitch_deck.yaml`](../presets/deck_configs/presales_pitch_deck.yaml)):** Authored a 900-line declarative specification mapping all 36 slides across Phase 1 (Company Profile, Portfolio & Core Snowflake) and Phase 2 (Challenges, Target Architecture, Scope & Governance) with complete headlines, subtitles, trackers, metrics, and parameters.
   - **Unified CLI Expansion ([`src/cli.py`](../src/cli.py)):** Enhanced `bench ppt build-deck` with `--config`, `--slides`, `--theme`, and `--context` options, routing `presales_pitch_deck` configurations directly through `PitchDeckBuilder`.
   - **Verification Artifacts ([`output/presentations/`](../output/presentations/)):** Generated full 36-slide deck [`output/presentations/Modernize_Data_Platform_Pitch_Deck_Modernized.pptx`](../output/presentations/Modernize_Data_Platform_Pitch_Deck_Modernized.pptx) (4.8 MB), 18-slide slice [`output/presentations/presales_pitch_deck_phase1.pptx`](../output/presentations/presales_pitch_deck_phase1.pptx) (3.6 MB), and 36 headless slide preview images in [`output/presentations/previews/`](../output/presentations/previews/).
-  - Reference Handover: [`docs/handovers/2026-09-19_presales_pitch_deck_modernization.md`](handovers/2026-09-19_presales_pitch_deck_modernization.md)
+  - Reference Handover: [`docs/handovers/handover_archive/2026-09-19_presales_pitch_deck_modernization.md`](handovers/handover_archive/2026-09-19_presales_pitch_deck_modernization.md)
 
 ---
 
@@ -441,7 +510,7 @@ Delivered cross-cutting visual harmonization across presentation archetypes, dia
   - **Diagram Engine Semantic Roles & Base64 Data URIs ([`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py)):** Implemented `apply_node_icons` to bind semantic palette roles to card strokes and icon tints. Added native base64 data URI `<image xlink:href="..."/>` rendering, fixed semicolon splitting in `mxgraph_to_ast` via `__B64SEP__`, and normalized thin outline strokes to $\ge 1.75\text{px}$.
   - **DirectWrite Typography Calibration ([`src/ppt_engine/slide_exporter.py`](../src/ppt_engine/slide_exporter.py)):** Calibrated font metric kerning with a `0.915` width factor, reduced line height multiplier to $1.18\times$, and adjusted paragraph spacing to $2.0\text{pt}$, completely eliminating artificial line wraps and vertical text bloat in Pillow preview images.
   - **Unified CLI Extensions ([`src/cli.py`](../src/cli.py)):** Enabled direct `.yaml` specification support in `bench diagram export` and `bench diagram export-all`, and introduced `bench ppt export-preview` for rapid presentation inspection.
-  - Reference Handover: [`docs/handovers/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md`](handovers/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md)
+  - Reference Handover: [`docs/handovers/handover_archive/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md`](handovers/handover_archive/2026-09-19_visual_harmonization_and_directwrite_preview_parity.md)
 
 ---
 
@@ -469,7 +538,7 @@ Delivered a 4-sprint batch execution hardening engine security and performance, 
   - **Delivery Gantt Timeline Archetype ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):** Implemented `build_timeline_gantt_slide` featuring calendar column axis (Weeks 1–12), workstream streams, duration bars, milestone diamonds, and a vertical "Current SPRINT" marker.
   - **Harvey Balls Feature Scorecard Archetype ([`src/ppt_engine/consulting_archetypes.py`](../src/ppt_engine/consulting_archetypes.py)):** Implemented `build_feature_matrix_slide` supporting Harvey Balls glyphs (`● ◐ ○`) and target platform highlighting.
   - **Deck Builder Integration:** Added `add_timeline_gantt_slide` and `add_feature_matrix_slide` to `ConsultingDeckBuilder` and `ReferenceDeckBuilder`.
-  - Reference Handover: [`docs/handovers/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md`](handovers/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md)
+  - Reference Handover: [`docs/handovers/handover_archive/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md`](handovers/handover_archive/2026-09-19_sprints_17_20_platform_hardening_cr_cli_diagram_and_archetypes.md)
 
 ---
 
@@ -485,7 +554,7 @@ Delivered the Enterprise Localization and Bilingual Subsystem (`en` / `id`), ena
   - **Presentation Engine Localization ([`src/ppt_engine/reference_slides.py`](../src/ppt_engine/reference_slides.py)):** Parameterized metadata labels across cover slides (`build_cover_slide`, `build_hero_cover_slide`) and wired `locale` through reference slide builders and `ReferenceDeckBuilder`.
   - **Unified CLI Extension ([`src/cli.py`](../src/cli.py)):** Added `bench locale list`, `bench locale get`, and `bench locale translate` commands, plus `--locale / -l` override to `bench ppt build-deck`.
   - **Paired Reference Master Decks:** Built `output/presentations/Enterprise_Reference_Master_Deck_EN.pptx` and `output/presentations/Enterprise_Reference_Master_Deck_ID.pptx` from declarative YAML configurations.
-  - Handover & Spec: [`docs/specs/localization_and_bilingual_subsystem.md`](specs/localization_and_bilingual_subsystem.md) and [`docs/handovers/2026-09-18_localization_and_bilingual_subsystems.md`](handovers/2026-09-18_localization_and_bilingual_subsystems.md).
+  - Handover & Spec: [`docs/specs/localization_and_bilingual_subsystem.md`](specs/localization_and_bilingual_subsystem.md) and [`docs/handovers/handover_archive/2026-09-18_localization_and_bilingual_subsystems.md`](handovers/handover_archive/2026-09-18_localization_and_bilingual_subsystems.md).
 
 ---
 
@@ -520,7 +589,7 @@ Delivered high-fidelity consulting slide geometry refactoring with DirectWrite-m
   - Linter Calibration ([`src/docx_engine/document_linter.py`](../src/docx_engine/document_linter.py)): Monospace `Consolas` callouts containing dbt Jinja macros (`{{ ref(...) }}`) recognized as literal code examples rather than unrendered template errors. Compiled TSD and SIT/UAT specs passing QA with 0 errors.
   - Multi-Page Draw.io Engine ([`src/ppt_engine/diagram_engine.py`](../src/ppt_engine/diagram_engine.py)): Added `export_all_pages()` and `build_from_config()` to `DrawIOProject`. Added CLI commands `bench diagram export-all` and `bench diagram build-project`.
   - Declarative Diagram Specification ([`presets/diagrams/fsd_architecture.yaml`](../presets/diagrams/fsd_architecture.yaml)): Authored 17 reporting dataflows and entity models with vector tech logos (`snowflake`, `dbt`, `kafka`, `amazons3`, `vault`, `aws`, `pos_store`, `audit_log`, `soc2_badge`), compiled into 17-tab `.drawio` and exported to high-DPI PNGs.
-- Reference Handover: [`docs/handovers/2026-09-16_universal_deliverable_recreation.md`](handovers/2026-09-16_universal_deliverable_recreation.md)
+- Reference Handover: [`docs/handovers/handover_archive/2026-09-16_universal_deliverable_recreation.md`](handovers/handover_archive/2026-09-16_universal_deliverable_recreation.md)
 
 ---
 
@@ -549,7 +618,7 @@ Fixed PowerPoint slide overflow defects where unconstrained aspect-ratio scaling
   - Unified header text frame with exact `space_before` offsets (zero coordinate collision).
   - OpenXML DrawingML 45% dark scrim overlay (`#0B132B` via `<a:alpha val="45000"/>`).
   - Single-pass painter's algorithm respecting natural shape z-ordering in [`src/ppt_engine/slide_exporter.py`](../src/ppt_engine/slide_exporter.py).
-- Reference Handover: [`docs/handovers/2026-09-15_presentation_modernization.md`](handovers/2026-09-15_presentation_modernization.md)
+- Reference Handover: [`docs/handovers/handover_archive/2026-09-15_presentation_modernization.md`](handovers/handover_archive/2026-09-15_presentation_modernization.md)
 
 ---
 
@@ -579,4 +648,4 @@ Consolidated the presentation engine from `PPTMaking` into `enterprise-bench`, c
   - Engineered zero-corruption comment, highlight, tracked revision, and author profile purging for `.docx`.
   - Integrated into `src/core/sanitizer.py` and exposed via `uv run bench doc purge`.
   - Authored comprehensive architectural runbook: [`docs/specs/openxml_purging_and_cleansing.md`](specs/openxml_purging_and_cleansing.md).
-- Reference Handover: [`docs/handovers/2026-09-11_cli_skills_refactoring.md`](handovers/2026-09-11_cli_skills_refactoring.md)
+- Reference Handover: [`docs/handovers/handover_archive/2026-09-11_cli_skills_refactoring.md`](handovers/handover_archive/2026-09-11_cli_skills_refactoring.md)
