@@ -4,6 +4,36 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-10-16] - Milestone 37: Typed Semantic Clearance Matrix, Virtual Text Bounding Boxes, and Container Label Hitbox Insets
+
+**Timestamp:** `2026-10-16T01:46:19+07:00`
+
+### Summary
+Delivered the **Typed Semantic Clearance Matrix, Virtual Text Bounding Boxes, and Container Label Hitbox Insets** (Milestone 37 / Tier 25) across Diagram Engine V2 (`src/ppt_engine/diagram_v2/`). Resolved false-negative collision audits where declared YAML card heights failed to account for multi-line titles, subtitles, bullets, and kickers by engineering `_estimate_node_content_height(n, card_w)` in `src/ppt_engine/diagram_v2/auditor.py`. The auditor dynamically expands `node_boxes[n.id]` to `effective_h = max(declared_box.h, estimated_content_h)`, allowing downstream spatial collision checks (`NODE_COLLISION`, `CONTAINER_OVERFLOW`) to catch rendered text overflows before PowerPoint compilation. Established the **Typed Semantic Clearance Matrix** in `auditor.py`: enforcing a strict sibling clearance halo ($\ge 14\text{pt}$ / $18\text{px}$ horizontal and vertical separation) flagging physical overlaps as `NODE_COLLISION` (CRITICAL) and tight gutters as `INSUFFICIENT_NODE_GUTTER` (WARNING); child-parent container containment verifying child cards and nested containers fit strictly within parent inner content boxes (outer container bounds minus $36\text{px}$ header zone and $12\text{px}$ padding), flagging physical hull protrusions as `CONTAINER_OVERFLOW` (CRITICAL) and margin encroachment as `CONTAINER_PADDING_VIOLATION` (WARNING); and comprehensive badge occlusion checks across nested containers, foreign containers, child nodes, and standalone status pills (`CONTAINER_BADGE_OCCLUSION`, `BADGE_COLLISION`, `BADGE_NODE_COLLISION`). Rectified full-width transparent container label textboxes in `src/ppt_engine/diagram_v2/pptx_compiler.py` by dynamically clamping textbox width to calculated text extent (`estimated_text_w = max(1.2, min(label_w, len(c.label) * 0.11 + 0.35))`), collapsing hitboxes from $4.40''$ down to $1.67''$ and eliminating invisible hit-test click and render occlusion over child cards. Extended Pydantic models in `src/ppt_engine/diagram_v2/models.py` with `parent_id` and `container_id` on `ContainerSpec`, plus `bullets` and `align` on `NodeSpec`. Published contractor onboarding and layout guide in `docs/handovers/CONTRACTOR_INSTRUCTIONS.md`.
+
+### Milestones Delivered
+- **Virtual Text Bounding Box Estimation (`auditor.py`):**
+  - Implemented `_estimate_node_content_height(n, card_w)` evaluating typography metrics (font sizes, character pitch, wrapped line counts across hard/soft line breaks, bullet margins, kickers, stacked/side icon layouts, and inner padding).
+  - Dynamically expanded `self.node_boxes[n.id]` with `effective_h = max(declared_box.h, estimated_content_h)` while preserving `self.declared_node_boxes[n.id]`.
+  - Catches text overflow before rendering and automatically activates downstream geometric checks (`NODE_COLLISION`, `CONTAINER_OVERFLOW`).
+- **Typed Semantic Clearance Matrix (`auditor.py`):**
+  - *Sibling $\leftrightarrow$ Sibling:* Enforces $\ge 14\text{pt}$ ($18\text{px}$) clearance halo; flags physical overlap as `NODE_COLLISION` (CRITICAL) and gutters $< 18\text{px}$ as `INSUFFICIENT_NODE_GUTTER` (WARNING).
+  - *Child $\leftrightarrow$ Parent:* Enforces containment within parent inner content box (container bounds minus $36\text{px}$ header zone and $12\text{px}$ padding); flags protrusion as `CONTAINER_OVERFLOW` (CRITICAL) and margin intrusion as `CONTAINER_PADDING_VIOLATION` (WARNING); supports explicit `container_id` or spatial containment.
+  - *Nested Containers:* Validates child containers against parent containers via `parent_id`, `container_id`, or spatial enclosure.
+  - *Badge Occlusion & Collisions:* Audits standalone status pills against nodes (`BADGE_NODE_COLLISION`) and peer badges (`BADGE_COLLISION`); audits container tag badges against nested containers, child nodes, and badges (`CONTAINER_BADGE_OCCLUSION`).
+  - *Boundary Intersections:* Audits container perimeter crossings for uncontained elements (`BOUNDARY_INTERSECTION`).
+- **Container Label Hitbox Clamping (`pptx_compiler.py`):**
+  - Clamped transparent container header label textboxes to calculated text width (`estimated_text_w = max(1.2, min(label_w, len(c.label) * 0.11 + 0.35))`).
+  - Reduced hitbox span from $4.40''$ to $1.67''$, eliminating invisible mouse-click interception and rendering artifacts over top child cards.
+- **Pydantic Model Schema Expansion (`models.py`):**
+  - Added `parent_id: Optional[str] = None` and `container_id: Optional[str] = None` to `ContainerSpec` for hierarchical container trees.
+  - Added `bullets: Optional[List[str]] = None` and `align: Literal["center", "left", "right"] = "center"` to `NodeSpec`.
+- **Contractor Layout & Onboarding Guide:**
+  - Published [`docs/handovers/CONTRACTOR_INSTRUCTIONS.md`](handovers/CONTRACTOR_INSTRUCTIONS.md) outlining engine collision upgrades, 3-step audit workflow, and geometric spacing floors.
+  - **Reference Handover:** [`docs/handovers/2026-10-16_typed_clearance_matrix_and_virtual_text_estimation.md`](handovers/2026-10-16_typed_clearance_matrix_and_virtual_text_estimation.md)
+
+---
+
 ## [2026-10-16] - Milestone 36: Bidirectional PPTX Decompiler & YAML Reconciliation Engine (Topic 11)
 
 **Timestamp:** `2026-10-16T01:36:00+07:00`
@@ -314,7 +344,7 @@ Executed an end-of-sprint feedback and quality enhancement cycle across Mileston
   - Removed redundant subtitles across Slide 06 pillar cards and Slide 08 deliverable cards in [`src/ppt_engine/closing_deck.py`](../src/ppt_engine/closing_deck.py) and [`presets/deck_configs/closing_deck.yaml`](../presets/deck_configs/closing_deck.yaml).
   - Streamlined verbose KPI badges on Slide 6 to prevent text frame overflow and adhere to clean consulting design principles.
   - Added safe exception handling for footer page numbering in `update_pagination()`.
-- Reference Handover: [`docs/handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md`](handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md)
+- Reference Handover: [`docs/handovers/handover_archive/2026-09-23_feedback_and_quality_enhancement_sprint.md`](handovers/handover_archive/2026-09-23_feedback_and_quality_enhancement_sprint.md)
 
 ---
 

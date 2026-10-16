@@ -14,8 +14,8 @@ docs/
 ├── handovers/             # Historical sprint and session handover briefings (Latest 10 active)
 │   ├── handover_archive/  # Completed briefings rotated out to preserve 10-handover limit
 │   │   ├── README.md      # Archive catalog with completion timestamps
-│   │   └── ...            # 15 archived briefings
-│   ├── 2026-09-23_feedback_and_quality_enhancement_sprint.md
+│   │   └── ...            # 16 archived briefings
+│   ├── CONTRACTOR_INSTRUCTIONS.md
 │   ├── 2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md
 │   ├── 2026-10-13_diagram_pipeline_and_asset_integration.md
 │   ├── 2026-10-14_visual_qa_and_drawingml_collision_remediation.md
@@ -24,7 +24,8 @@ docs/
 │   ├── 2026-10-14_interwoven_migration_topology_and_whitelisting.md
 │   ├── 2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md
 │   ├── 2026-10-15_visual_vector_refinement_and_openxml_purge.md
-│   └── 2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md
+│   ├── 2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md
+│   └── 2026-10-16_typed_clearance_matrix_and_virtual_text_estimation.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
 │   ├── adaptive_complexity_gears_and_enterprise_density.md
@@ -102,7 +103,6 @@ docs/
 * [**`template_variable_and_slug_consolidation.md`**](backlog/template_variable_and_slug_consolidation.md): Unified slug catalog and pre-commit PII audit specifications.
 
 ### 3. Active Session Handovers (`docs/handovers/` — Latest 10)
-* [**`2026-09-23_feedback_and_quality_enhancement_sprint.md`**](handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): Milestone 27 / Sprints 17–27 Feedback & Quality Enhancement Sprint closeout (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML image aspect ratio QA engine & CLI, Slide 7 maintenance workflow architecture & OpenXML connectors, DrawingML bullet schema compliance, and Slide 6 KPI overflow fix).
 * [**`2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`**](handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md): Milestone 28 closeout (Comprehensive system anti-pattern compliance, deep universal PII / real names purge, Cover Slide footer and striped container sharp rectangle validation in `SlideValidator`, 40-48px icon sizing and upward edge bypass routing in `DiagramEngine`, and automated OpenXML element purging in `TemplateStamper`).
 * [**`2026-10-13_diagram_pipeline_and_asset_integration.md`**](handovers/2026-10-13_diagram_pipeline_and_asset_integration.md): Milestone 29 closeout (Diagram pipeline and asset integration Phases 1–4, deterministic asset harvester and resolver CLI, Databricks/Cloudera/AWS stencils, hybrid editable `.drawio.svg` parity, and native PowerPoint DrawingML shape compiler).
 * [**`2026-10-14_visual_qa_and_drawingml_collision_remediation.md`**](handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md): Milestone 30 closeout (Automated PowerPoint visual inspection & spatial collision linter `PPTVisualLinter`, live macOS PowerPoint window capture `PowerPointScreenCaptureEngine`, forward connector arrowhead fixes, card text overflow bounds, cylinder text clearance, and `bench ppt visual-qa` CLI).
@@ -112,6 +112,7 @@ docs/
 * [**`2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md`**](handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md): Milestone 34 closeout (Diagram Engine V2 Tier 1 geometric collision linter `Tier1GeometricLinter` with 11 spatial checks, Tier 2 adversarial visual QA verifier `Tier2VisualVerifier`, perceptual computer vision heuristics, 7-dimension weighted scorecard, `bench diagram v2 audit/visual-qa` CLI, and 100.0/100 reference manifest).
 * [**`2026-10-15_visual_vector_refinement_and_openxml_purge.md`**](handovers/2026-10-15_visual_vector_refinement_and_openxml_purge.md): Milestone 35 closeout (Visual & vector system refinement, sharp container swimlanes enclosing rounded icon+title cards, universal OpenXML drop shadow sanitizer `strip_shape_shadows()` reducing 821 defects across 874 shapes to 0, headless Draw.io vector stencil extraction CLI `export_drawio_stencil_to_svg()`, and Diagram Engine V2 spatial auditor vertical auto-offset calibration).
 * [**`2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md`**](handovers/2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md): Milestone 36 closeout (Bidirectional PPTX decompiler & YAML reconciliation engine, deterministic OpenXML shape naming taxonomy, lossless slide decompiler `PPTXDiagramDecompiler`, AST diffing & pruning cascade `DiagramReconciler`, soft-break normalization, and `bench diagram v2 reconcile` CLI with automatic 4-way re-compilation).
+* [**`2026-10-16_typed_clearance_matrix_and_virtual_text_estimation.md`**](handovers/2026-10-16_typed_clearance_matrix_and_virtual_text_estimation.md): Milestone 37 closeout (Typed Semantic Clearance Matrix in `auditor.py`, virtual text bounding box height estimation catching text overflow before compilation, container boundary label textbox hitbox clamping from 4.40in to 1.67in, `ContainerSpec`/`NodeSpec` schema additions, and contractor layout instructions in `CONTRACTOR_INSTRUCTIONS.md`).
 
 ### 4. Archived Session Handovers (`docs/handovers/handover_archive/`)
 * [**`handover_archive/README.md`**](handovers/handover_archive/README.md): Master Handover Archive Catalog with completion timestamps and retention audit.
@@ -130,6 +131,8 @@ docs/
 * [**`2026-09-21_project_closing_deck_modernization.md`**](handovers/handover_archive/2026-09-21_project_closing_deck_modernization.md): Milestone 27 closeout (Automated 9-slide project closing & maintenance transition deck modernization, forensic template & checklist audit, ClosingDeckBuilder, dynamic spreadsheet ingestion, and preview verification).
 * [**`2026-09-21_sprints_17_27_completion_briefing.md`**](handovers/handover_archive/2026-09-21_sprints_17_27_completion_briefing.md): Sprints 17–27 closeout (Universal NGL slug & PII normalization, Closing Deck visual enrichment, Kick-off fixes, and automated Change Request suite).
 * [**`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`**](handovers/handover_archive/2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md): Sprints 17–27 staged review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap.
+* [**`2026-09-23_feedback_and_quality_enhancement_sprint.md`**](handovers/handover_archive/2026-09-23_feedback_and_quality_enhancement_sprint.md): Milestone 27 / Sprints 17–27 Feedback & Quality Enhancement Sprint closeout (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML image aspect ratio QA engine & CLI, Slide 7 maintenance workflow architecture & OpenXML connectors, DrawingML bullet schema compliance, and Slide 6 KPI overflow fix).
+
 
 
 

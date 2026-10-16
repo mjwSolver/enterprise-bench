@@ -24,6 +24,8 @@
 | **2026-09-21** | Milestone 27 | [`2026-09-21_project_closing_deck_modernization.md`](2026-09-21_project_closing_deck_modernization.md) | Automated 9-slide project closing & maintenance transition deck modernization (`5.1_Project_Closing_Deck_Template.pptx`). |
 | **2026-09-21** | Sprints 17–27 Closeout | [`2026-09-21_sprints_17_27_completion_briefing.md`](2026-09-21_sprints_17_27_completion_briefing.md) | Universal NGL slug & PII normalization, Closing Deck visual enrichment, Kick-off fixes, and automated Change Request suite. |
 | **2026-09-21** | Sprints 17–27 Roadmap | [`2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md`](2026-09-21_sprints_17_27_review_and_enhancement_roadmap.md) | Sprints 17–27 staged review briefing, feedback ledger, architectural evaluation, and 5-phase enhancement roadmap. |
+| **2026-09-23** | Feedback Sprint | [`2026-09-23_feedback_and_quality_enhancement_sprint.md`](2026-09-23_feedback_and_quality_enhancement_sprint.md) | Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML aspect ratio QA engine & CLI, Slide 7 maintenance workflow, DrawingML bullet compliance. |
+
 
 ---
 

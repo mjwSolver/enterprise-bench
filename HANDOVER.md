@@ -2,7 +2,7 @@
 
 > **Repository:** `enterprise-bench` | **Branch:** `main`  
 > **Mission:** Universal multi-engine enterprise automation workbench (DOCX, PPTX, XLSX, Draw.io).  
-> **Architecture Ledger:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | **Index:** [`docs/INDEX.md`](docs/INDEX.md)  
+> **Architecture Ledger:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | **Index:** [`docs/INDEX.md`](docs/INDEX.md) | **Feature Backlog:** [`FEATURE_BACKLOG.md`](FEATURE_BACKLOG.md)  
 > **Operating Guardrails:** [`AGENTS.md`](AGENTS.md) (Strict ZERO INTERMEDIATE UNIT TESTING).  
 > **Retention Rule:** Retain strictly the **latest 10 active / legacy handovers** at all times ($\le 80$ lines). When a new active handover is written, the oldest legacy handover must be rotated into [`docs/handovers/handover_archive/`](docs/handovers/handover_archive/README.md) with its completion timestamp.
 
@@ -13,7 +13,7 @@
 Progress: `[██████████] 100%` (Master Deliverables, Diagram Pipeline, Visual QA, Declarative Engine V2 & Vector Refinement Complete)
 - **Engine / Agent Status:** `Agent Reviewed & Validated (Static QA Passed)`
 - **User Review Status:** `PENDING USER DESKTOP REVIEW / Awaiting User Verification`
-- **Deliverables Awaiting User QA:** `encapsulation_v2_test.pptx`, `openxml_sanitizer_verification.pptx`, `proposed_aws_lambda_stencil.svg`, `interwoven_migration.png` / `.drawio` / `.pptx`, `whitelist_system_interwoven_migration.png`, `open_interwoven_in_browser.html`, `architecture_evolution_cdsw_to_lambda.pptx` (Slides 1–3), and `bench diagram v2 audit/visual-qa` gates.
+- **Deliverables Awaiting User QA:** `encapsulation_v2_test.pptx`, `openxml_sanitizer_verification.pptx`, `proposed_aws_lambda_stencil.svg`, `interwoven_migration.png` / `.drawio` / `.pptx`, `whitelist_system_interwoven_migration.png`, `open_interwoven_in_browser.html`, `architecture_evolution_cdsw_to_lambda.pptx` (Slides 1–7), and `bench diagram v2 audit/visual-qa` gates.
 
 - **Tiers 1–6 (Core Subsystems & Foundations):** Legal DOCX stamping, Markdown spec compiler (`src/docx_engine/`), Snowflake sizing & S-curve models (`src/xlsx_engine/`), consulting deck engines (`src/ppt_engine/`), Draw.io multi-page pipelines (`bench diagram`), and bilingual EN/ID engines (`src/core/locale_engine.py`).
 - **Tiers 7–16 (Modernized Presentation Suite & PII Purge — Milestones 18–28):** 36-slide pitch, 19-slide kick-off, 25-slide UAT, 11-slide weekly progress, 9-slide closing deck, Dewi Lestari persona, synthetic Gantt, OpenXML aspect ratio QA engine (`bench doc check/fix-aspect`), Cover Slide footer & sharp container validation, 40-48px icon floor, and automated OpenXML element purging.
@@ -29,6 +29,7 @@ Progress: `[██████████] 100%` (Master Deliverables, Diagram 
 
 ## 2. Key Architecture Pointers (`docs/specs/`)
 
+- [**PPTX File Watcher & Geometric Sync**](docs/specs/pptx_file_watcher_and_geometric_reconciliation.md): Real-time background file watching, debounce window, lock file filtering & reverse geometric sync.
 - [**PPTX Decompiler & YAML Reconciliation**](docs/specs/pptx_decompiler_and_yaml_reconciliation_engine.md): Topic 11 bidirectional AST diffing, shape taxonomies & 4-way regeneration.
 - [**Adaptive Documentation Scout**](docs/specs/adaptive_documentation_scout_protocol.md): Subagent protocol, dynamic topology scouting & 5-stage closeout gate.
 - [**Adaptive Complexity Gears**](docs/specs/adaptive_complexity_gears_and_enterprise_density.md): 3-gear density standard (Exec 4-5/10, Pre-KOM 6.5-7.5/10, Workstream 8.5-9.5/10).
@@ -41,6 +42,7 @@ Progress: `[██████████] 100%` (Master Deliverables, Diagram 
 
 ## 3. Transition Briefings Archive (`docs/handovers/`)
 
+- [`2026-10-16_typed_clearance_matrix_and_virtual_text_estimation.md`](docs/handovers/2026-10-16_typed_clearance_matrix_and_virtual_text_estimation.md): **Milestone 37** (Typed Semantic Clearance Matrix in auditor, virtual text bounding box height estimation catching text overflow before compilation, container boundary label textbox hitbox clamping from 4.40in to 1.67in, ContainerSpec/NodeSpec schema additions, and contractor layout instructions).
 - [`2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md`](docs/handovers/2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md): **Milestone 36** (Bidirectional PPTX decompiler & YAML reconciliation engine, deterministic OpenXML shape naming taxonomy, lossless slide decompiler, AST diffing & pruning cascade, and `bench diagram v2 reconcile` CLI).
 - [`2026-10-15_visual_vector_refinement_and_openxml_purge.md`](docs/handovers/2026-10-15_visual_vector_refinement_and_openxml_purge.md): **Milestone 35** (Visual & vector system refinement, sharp container swimlanes enclosing rounded icon+title cards, universal OpenXML drop shadow sanitizer `strip_shape_shadows()` reducing 821 defects across 874 shapes to 0, headless Draw.io vector stencil extraction CLI `export_drawio_stencil_to_svg()`, and Diagram Engine V2 spatial auditor vertical auto-offset calibration).
 - [`2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md`](docs/handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md): **Milestone 34** (Diagram Engine V2 Tier 1 geometric collision linter with 11 checks, Tier 2 adversarial visual QA subagent verifier, perceptual CV heuristics, 7-dimension scorecard, unified CLI `bench diagram v2 audit/visual-qa`, and 100.0/100 reference manifest).
@@ -50,13 +52,13 @@ Progress: `[██████████] 100%` (Master Deliverables, Diagram 
 - [`2026-10-14_visual_qa_and_drawingml_collision_remediation.md`](docs/handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md): **Milestone 30** (DrawingML spatial collision linter, macOS live window screen capture, forward arrowhead orientation, card text overflow fixes, cylinder text clearance, and `bench ppt visual-qa` CLI).
 - [`2026-10-13_diagram_pipeline_and_asset_integration.md`](docs/handovers/2026-10-13_diagram_pipeline_and_asset_integration.md): **Milestone 29** (Diagram pipeline and asset integration Phases 1–4, deterministic asset harvester and resolver CLI, Databricks/Cloudera/AWS stencils, hybrid editable `.drawio.svg` parity, and native PowerPoint DrawingML shape compiler).
 - [`2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`](docs/handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md): **Milestone 28** (Comprehensive system anti-pattern compliance, deep universal PII purge, Cover Slide footer & container validation, 40-48px icon floor, and automated OpenXML element purging).
-- [`2026-09-23_feedback_and_quality_enhancement_sprint.md`](docs/handovers/2026-09-23_feedback_and_quality_enhancement_sprint.md): **Feedback Sprint** (Personnel PII scrubbing to Dewi Lestari, synthetic Gantt generator, OpenXML aspect ratio QA engine & CLI, Slide 7 maintenance workflow, DrawingML bullet compliance).
-- *Historical handovers archived in [`docs/handovers/handover_archive/`](docs/handovers/handover_archive/README.md) (15 archived briefs).*
+- *Historical handovers archived in [`docs/handovers/handover_archive/`](docs/handovers/handover_archive/README.md) (16 archived briefs).*
 
 ---
 
 ## 4. Immediate Next Backlog (Fresh Chat)
 
-1. **User Desktop Verification & Feedback:** Conduct user desktop inspection on compiled PPTX slides and visual QA raster plates (`bench diagram v2 visual-qa ... --open`).
-2. **Consulting Deck Generator Integration:** Backport Diagram Engine V2 declarative compiler into consulting presentation builders (`src/ppt_engine/slide_builders.py`).
-3. **Multi-Track Enterprise Template Harvesting:** Expand declarative sample manifests to cover additional enterprise consulting topologies (medallion lakehouse, active-active failover).
+1. **PPTX File Watcher & Geometric Sync:** Implement background daemon (`bench diagram v2 watch`) per [`docs/specs/pptx_file_watcher_and_geometric_reconciliation.md`](docs/specs/pptx_file_watcher_and_geometric_reconciliation.md) and [`FEATURE_BACKLOG.md`](FEATURE_BACKLOG.md).
+2. **User Desktop Verification & Feedback:** Conduct user desktop inspection on compiled PPTX slides and visual QA raster plates (`bench diagram v2 visual-qa ... --open`).
+3. **Consulting Deck Generator Integration:** Backport Diagram Engine V2 declarative compiler into consulting presentation builders (`src/ppt_engine/slide_builders.py`).
+4. **Multi-Track Enterprise Template Harvesting:** Expand declarative sample manifests to cover additional enterprise consulting topologies (medallion lakehouse, active-active failover).
