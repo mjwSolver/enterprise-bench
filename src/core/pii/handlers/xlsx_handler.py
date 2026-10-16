@@ -115,13 +115,19 @@ class XlsxHandler(BaseFormatHandler):
         repl_count = 0
         details: List[str] = []
         sorted_replacements = sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True)
-        # Compile replacement rules into regex patterns (supports both regexes and literals)
+        # Compile replacement rules into regex patterns (supports both regexes and literals with word boundaries)
         compiled_rules: List[Tuple[re.Pattern, str]] = []
         for target, replacement in sorted_replacements:
-            try:
-                compiled_rules.append((re.compile(target, flags=re.IGNORECASE), replacement))
-            except re.error:
-                compiled_rules.append((re.compile(re.escape(target), flags=re.IGNORECASE), replacement))
+            if any(marker in target for marker in (r"\b", r"\d", r"\s", r"\w", "(?:", "(?i)", "(?P<")):
+                try:
+                    compiled_rules.append((re.compile(target, flags=re.IGNORECASE), replacement))
+                    continue
+                except re.error:
+                    pass
+            esc = re.escape(target)
+            prefix = r"(?<!\w)" if target and target[0].isalnum() else ""
+            suffix = r"(?!\w)" if target and target[-1].isalnum() else ""
+            compiled_rules.append((re.compile(f"{prefix}{esc}{suffix}", flags=re.IGNORECASE), replacement))
 
         for sheet in wb.worksheets:
             # Check sheet title

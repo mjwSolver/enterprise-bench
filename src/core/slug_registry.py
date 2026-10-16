@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 
@@ -63,6 +63,25 @@ DEFAULT_FORBIDDEN_PATTERNS: List[str] = [
     r"\bTTI\b",
     r"\bTTLC\b",
 ]
+
+_COMPILED_FORBIDDEN_PATTERNS: List[re.Pattern[str]] = [
+    re.compile(p, re.IGNORECASE) for p in DEFAULT_FORBIDDEN_PATTERNS
+]
+
+_LEGACY_ENTITY_PATTERNS: Dict[str, re.Pattern[str]] = {
+    "pt_tti": re.compile(r"\bPT\.?[\s\u00a0]+Toyota[\s\u00a0]+Ts?h?usho[\s\u00a0]+Indonesia\b", re.IGNORECASE),
+    "tti_full": re.compile(r"\bToyota[\s\u00a0]+Ts?h?usho[\s\u00a0]+Indonesia\b", re.IGNORECASE),
+    "toyota_tsusho": re.compile(r"\bToyota[\s\u00a0]+(Ts?h?usho|Susho)\b", re.IGNORECASE),
+    "toyota_short": re.compile(r"\b(Toyota|Tsusho|Tshuso)\b", re.IGNORECASE),
+    "ttlc": re.compile(r"(?<![A-Za-z0-9])TTLC(?![A-Za-z0-9])"),
+    "tti": re.compile(r"(?<![A-Za-z0-9])TTI(?![A-Za-z0-9])"),
+    "tti_domain": re.compile(r"@tti\.co\.id\b", re.IGNORECASE),
+    "fredric": re.compile(r"\bFredric[\s\u00a0]+Retanubun\b", re.IGNORECASE),
+    "tadahiko": re.compile(r"\bTadahiko[\s\u00a0]+Onaka\b", re.IGNORECASE),
+    "debby": re.compile(r"\bDebby[\s\u00a0]+Lutfi[\s\u00a0]+Adria?nto\b", re.IGNORECASE),
+    "agus": re.compile(r"\bAgus[\s\u00a0]+Pramono\b", re.IGNORECASE),
+    "arif": re.compile(r"\bArif[\s\u00a0]+Nanda[\s\u00a0]+Hermawan\b", re.IGNORECASE),
+}
 
 
 # ============================================================================
@@ -116,18 +135,18 @@ class EngagementContext(BaseModel):
             if slug in text:
                 text = text.replace(slug, str(val))
         # Universal normalization of legacy client entities, domains & known personnel
-        text = re.sub(r"\bPT\.?[\s\u00a0]+Toyota[\s\u00a0]+Ts?h?usho[\s\u00a0]+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bToyota[\s\u00a0]+Ts?h?usho[\s\u00a0]+Indonesia\b", self.client_company_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bToyota[\s\u00a0]+(Ts?h?usho|Susho)\b", self.client_company_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\b(Toyota|Tsusho|Tshuso)\b", self.client_short_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"(?<![A-Za-z0-9])TTLC(?![A-Za-z0-9])", self.client_short_name, text)
-        text = re.sub(r"(?<![A-Za-z0-9])TTI(?![A-Za-z0-9])", self.client_short_name, text)
-        text = re.sub(r"@tti\.co\.id\b", "@ngl.co.id", text, flags=re.IGNORECASE)
-        text = re.sub(r"\bFredric[\s\u00a0]+Retanubun\b", self.client_pm_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bTadahiko[\s\u00a0]+Onaka\b", self.client_sponsor_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bDebby[\s\u00a0]+Lutfi[\s\u00a0]+Adria?nto\b", self.client_bpo_lead, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bAgus[\s\u00a0]+Pramono\b", self.vendor_pm_name, text, flags=re.IGNORECASE)
-        text = re.sub(r"\bArif[\s\u00a0]+Nanda[\s\u00a0]+Hermawan\b", self.client_sponsor_name, text, flags=re.IGNORECASE)
+        text = _LEGACY_ENTITY_PATTERNS["pt_tti"].sub(self.client_company_name, text)
+        text = _LEGACY_ENTITY_PATTERNS["tti_full"].sub(self.client_company_name, text)
+        text = _LEGACY_ENTITY_PATTERNS["toyota_tsusho"].sub(self.client_company_name, text)
+        text = _LEGACY_ENTITY_PATTERNS["toyota_short"].sub(self.client_short_name, text)
+        text = _LEGACY_ENTITY_PATTERNS["ttlc"].sub(self.client_short_name, text)
+        text = _LEGACY_ENTITY_PATTERNS["tti"].sub(self.client_short_name, text)
+        text = _LEGACY_ENTITY_PATTERNS["tti_domain"].sub(f"@{self.client_short_name.lower()}.co.id", text)
+        text = _LEGACY_ENTITY_PATTERNS["fredric"].sub(self.client_pm_name, text)
+        text = _LEGACY_ENTITY_PATTERNS["tadahiko"].sub(self.client_sponsor_name, text)
+        text = _LEGACY_ENTITY_PATTERNS["debby"].sub(self.client_bpo_lead, text)
+        text = _LEGACY_ENTITY_PATTERNS["agus"].sub(self.client_bpo_lead, text)
+        text = _LEGACY_ENTITY_PATTERNS["arif"].sub(self.client_sponsor_name, text)
         return text
 
     def to_slug_replacement_dict(self) -> Dict[str, str]:
@@ -166,7 +185,11 @@ def audit_pii_in_file(
     forbidden_patterns: Optional[List[str]] = None,
 ) -> List[PIIFinding]:
     """Scan a document (.docx, .xlsx, .pptx, or text) for forbidden legacy entities."""
-    patterns = [re.compile(p, re.IGNORECASE) for p in (forbidden_patterns or DEFAULT_FORBIDDEN_PATTERNS)]
+    patterns = (
+        [re.compile(p, re.IGNORECASE) for p in forbidden_patterns]
+        if forbidden_patterns is not None
+        else _COMPILED_FORBIDDEN_PATTERNS
+    )
     findings: List[PIIFinding] = []
 
     ext = file_path.suffix.lower()
@@ -201,6 +224,36 @@ def audit_pii_in_file(
                                         location=f"Table {t_idx + 1} R{r_idx + 1}C{c_idx + 1}",
                                     )
                                 )
+            for s_idx, section in enumerate(doc.sections, start=1):
+                for hf_name, hf in (("Header", section.header), ("Footer", section.footer)):
+                    if hf is None:
+                        continue
+                    for p_idx, p in enumerate(hf.paragraphs, start=1):
+                        for pat in patterns:
+                            m = pat.search(p.text)
+                            if m:
+                                findings.append(
+                                    PIIFinding(
+                                        file_path=file_path,
+                                        pattern=pat.pattern,
+                                        match_snippet=p.text[max(0, m.start() - 20):min(len(p.text), m.end() + 20)].strip(),
+                                        location=f"Section {s_idx} {hf_name} Paragraph {p_idx}",
+                                    )
+                                )
+                    for t_idx, table in enumerate(hf.tables, start=1):
+                        for r_idx, row in enumerate(table.rows, start=1):
+                            for c_idx, cell in enumerate(row.cells, start=1):
+                                for pat in patterns:
+                                    m = pat.search(cell.text)
+                                    if m:
+                                        findings.append(
+                                            PIIFinding(
+                                                file_path=file_path,
+                                                pattern=pat.pattern,
+                                                match_snippet=cell.text[max(0, m.start() - 20):min(len(cell.text), m.end() + 20)].strip(),
+                                                location=f"Section {s_idx} {hf_name} Table {t_idx} R{r_idx}C{c_idx}",
+                                            )
+                                        )
         except Exception:
             pass
 
@@ -208,45 +261,86 @@ def audit_pii_in_file(
         from pptx import Presentation
         try:
             prs = Presentation(str(file_path))
-            for s_idx, slide in enumerate(prs.slides, start=1):
-                for sh in slide.shapes:
-                    if sh.has_text_frame:
-                        for p in sh.text_frame.paragraphs:
+
+            def _scan_ppt_shape(sh: Any, s_idx: int) -> None:
+                if sh.has_text_frame:
+                    for p in sh.text_frame.paragraphs:
+                        for pat in patterns:
+                            m = pat.search(p.text)
+                            if m:
+                                findings.append(
+                                    PIIFinding(
+                                        file_path=file_path,
+                                        pattern=pat.pattern,
+                                        match_snippet=p.text[max(0, m.start() - 20):min(len(p.text), m.end() + 20)].strip(),
+                                        location=f"Slide {s_idx} Shape '{sh.name}'",
+                                    )
+                                )
+                if sh.has_table:
+                    for r_idx, row in enumerate(sh.table.rows, start=1):
+                        for c_idx, cell in enumerate(row.cells, start=1):
                             for pat in patterns:
-                                m = pat.search(p.text)
+                                m = pat.search(cell.text)
                                 if m:
                                     findings.append(
                                         PIIFinding(
                                             file_path=file_path,
                                             pattern=pat.pattern,
-                                            match_snippet=p.text[max(0, m.start() - 20):min(len(p.text), m.end() + 20)].strip(),
-                                            location=f"Slide {s_idx} Shape '{sh.name}'",
+                                            match_snippet=cell.text[max(0, m.start() - 20):min(len(cell.text), m.end() + 20)].strip(),
+                                            location=f"Slide {s_idx} Table '{sh.name}' R{r_idx}C{c_idx}",
                                         )
                                     )
+                if hasattr(sh, "shapes"):
+                    for sub_sh in sh.shapes:
+                        _scan_ppt_shape(sub_sh, s_idx)
+
+            for s_idx, slide in enumerate(prs.slides, start=1):
+                for sh in slide.shapes:
+                    _scan_ppt_shape(sh, s_idx)
         except Exception:
             pass
 
     elif ext == ".xlsx":
         import openpyxl
         try:
-            wb = openpyxl.load_workbook(str(file_path), data_only=True)
-            for sheetname in wb.sheetnames:
-                ws = wb[sheetname]
-                for r_idx, row in enumerate(ws.iter_rows(values_only=True), start=1):
-                    for c_idx, val in enumerate(row, start=1):
-                        if isinstance(val, str):
-                            for pat in patterns:
-                                m = pat.search(val)
-                                if m:
-                                    findings.append(
-                                        PIIFinding(
-                                            file_path=file_path,
-                                            pattern=pat.pattern,
-                                            match_snippet=val[max(0, m.start() - 20):min(len(val), m.end() + 20)].strip(),
-                                            location=f"Sheet '{sheetname}' R{r_idx}C{c_idx}",
+            wb = openpyxl.load_workbook(str(file_path), data_only=True, read_only=True)
+            try:
+                for sheetname in wb.sheetnames:
+                    ws = wb[sheetname]
+                    for r_idx, row in enumerate(ws.iter_rows(values_only=True), start=1):
+                        for c_idx, val in enumerate(row, start=1):
+                            if isinstance(val, str):
+                                for pat in patterns:
+                                    m = pat.search(val)
+                                    if m:
+                                        findings.append(
+                                            PIIFinding(
+                                                file_path=file_path,
+                                                pattern=pat.pattern,
+                                                match_snippet=val[max(0, m.start() - 20):min(len(val), m.end() + 20)].strip(),
+                                                location=f"Sheet '{sheetname}' R{r_idx}C{c_idx}",
+                                            )
                                         )
-                                    )
-            wb.close()
+            finally:
+                wb.close()
+        except Exception:
+            pass
+
+    else:
+        try:
+            lines = file_path.read_text(encoding="utf-8", errors="replace").splitlines()
+            for line_idx, line in enumerate(lines, start=1):
+                for pat in patterns:
+                    m = pat.search(line)
+                    if m:
+                        findings.append(
+                            PIIFinding(
+                                file_path=file_path,
+                                pattern=pat.pattern,
+                                match_snippet=line[max(0, m.start() - 20):min(len(line), m.end() + 20)].strip(),
+                                location=f"Line {line_idx}",
+                            )
+                        )
         except Exception:
             pass
 
@@ -310,49 +404,47 @@ def substitute_slugs_in_presentation(
 
     total_subs = 0
 
+    def _substitute_paragraph(paragraph: Any) -> int:
+        subs = 0
+        for slug, val in rep.items():
+            if slug in paragraph.text:
+                found_in_runs = False
+                for run in paragraph.runs:
+                    if slug in run.text:
+                        run.text = run.text.replace(slug, str(val))
+                        subs += 1
+                        found_in_runs = True
+                if not found_in_runs and slug in paragraph.text:
+                    paragraph.text = paragraph.text.replace(slug, str(val))
+                    subs += 1
+        if context:
+            target = context.substitute(paragraph.text)
+            if paragraph.text != target:
+                run_subs = 0
+                for run in paragraph.runs:
+                    if run.text:
+                        norm_r = context.substitute(run.text)
+                        if norm_r != run.text:
+                            run.text = norm_r
+                            run_subs += 1
+                if paragraph.text != target or paragraph.text != context.substitute(paragraph.text):
+                    paragraph.text = target
+                    subs += 1
+                else:
+                    subs += run_subs
+        return subs
+
     def _process_shape(shape: Any) -> int:
         subs = 0
         if shape.has_text_frame:
             for paragraph in shape.text_frame.paragraphs:
-                for slug, val in rep.items():
-                    if slug in paragraph.text:
-                        found_in_runs = False
-                        for run in paragraph.runs:
-                            if slug in run.text:
-                                run.text = run.text.replace(slug, str(val))
-                                subs += 1
-                                found_in_runs = True
-                        if not found_in_runs and slug in paragraph.text:
-                            paragraph.text = paragraph.text.replace(slug, str(val))
-                            subs += 1
-                if context:
-                    orig = paragraph.text
-                    normalized = context.substitute(orig)
-                    if orig != normalized:
-                        paragraph.text = normalized
-                        subs += 1
+                subs += _substitute_paragraph(paragraph)
 
         if shape.has_table:
             for row in shape.table.rows:
                 for cell in row.cells:
                     for paragraph in cell.text_frame.paragraphs:
-                        for slug, val in rep.items():
-                            if slug in paragraph.text:
-                                found_in_runs = False
-                                for run in paragraph.runs:
-                                    if slug in run.text:
-                                        run.text = run.text.replace(slug, str(val))
-                                        subs += 1
-                                        found_in_runs = True
-                                if not found_in_runs and slug in paragraph.text:
-                                    paragraph.text = paragraph.text.replace(slug, str(val))
-                                    subs += 1
-                        if context:
-                            orig = paragraph.text
-                            normalized = context.substitute(orig)
-                            if orig != normalized:
-                                paragraph.text = normalized
-                                subs += 1
+                        subs += _substitute_paragraph(paragraph)
 
         if hasattr(shape, "shapes"):
             for sub_shape in shape.shapes:
@@ -383,69 +475,57 @@ def substitute_slugs_in_document(
 
     total_subs = 0
 
-    # Body paragraphs
-    for p in doc.paragraphs:
+    def _substitute_paragraph(p: Any) -> int:
+        subs = 0
         for slug, val in rep.items():
             if slug in p.text:
                 for r in p.runs:
                     if slug in r.text:
                         r.text = r.text.replace(slug, str(val))
-                        total_subs += 1
+                        subs += 1
                 if slug in p.text:
                     p.text = p.text.replace(slug, str(val))
-                    total_subs += 1
+                    subs += 1
         if context:
-            orig = p.text
-            normalized = context.substitute(orig)
-            if orig != normalized:
-                p.text = normalized
-                total_subs += 1
+            target = context.substitute(p.text)
+            if p.text != target:
+                run_subs = 0
+                for r in p.runs:
+                    if r.text:
+                        norm_r = context.substitute(r.text)
+                        if norm_r != r.text:
+                            r.text = norm_r
+                            run_subs += 1
+                if p.text != target or p.text != context.substitute(p.text):
+                    p.text = target
+                    subs += 1
+                else:
+                    subs += run_subs
+        return subs
+
+    # Body paragraphs
+    for p in doc.paragraphs:
+        total_subs += _substitute_paragraph(p)
 
     # Tables
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
                 for p in cell.paragraphs:
-                    for slug, val in rep.items():
-                        if slug in p.text:
-                            for r in p.runs:
-                                if slug in r.text:
-                                    r.text = r.text.replace(slug, str(val))
-                                    total_subs += 1
-                            if slug in p.text:
-                                p.text = p.text.replace(slug, str(val))
-                                total_subs += 1
-                    if context:
-                        orig = p.text
-                        normalized = context.substitute(orig)
-                        if orig != normalized:
-                            p.text = normalized
-                            total_subs += 1
+                    total_subs += _substitute_paragraph(p)
 
     # Headers & Footers
     for section in doc.sections:
-        for p in section.header.paragraphs:
-            for slug, val in rep.items():
-                if slug in p.text:
-                    p.text = p.text.replace(slug, str(val))
-                    total_subs += 1
-            if context:
-                orig = p.text
-                normalized = context.substitute(orig)
-                if orig != normalized:
-                    p.text = normalized
-                    total_subs += 1
-        for p in section.footer.paragraphs:
-            for slug, val in rep.items():
-                if slug in p.text:
-                    p.text = p.text.replace(slug, str(val))
-                    total_subs += 1
-            if context:
-                orig = p.text
-                normalized = context.substitute(orig)
-                if orig != normalized:
-                    p.text = normalized
-                    total_subs += 1
+        for hf in (section.header, section.footer):
+            if hf is None:
+                continue
+            for p in hf.paragraphs:
+                total_subs += _substitute_paragraph(p)
+            for table in hf.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for p in cell.paragraphs:
+                            total_subs += _substitute_paragraph(p)
 
     return total_subs
 

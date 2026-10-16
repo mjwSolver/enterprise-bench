@@ -44,6 +44,12 @@ def load_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any], Diagra
     if isinstance(spec_path_or_dict, dict):
         return DiagramSpec.model_validate(spec_path_or_dict)
 
+    if isinstance(spec_path_or_dict, str) and spec_path_or_dict.lstrip().startswith("{"):
+        data = yaml.safe_load(spec_path_or_dict)
+        if not isinstance(data, dict):
+            raise ValueError("Invalid inline diagram specification format: expected top-level mapping.")
+        return DiagramSpec.model_validate(data)
+
     path = Path(spec_path_or_dict)
     if not path.exists():
         raise FileNotFoundError(f"Diagram specification file not found: {path}")
@@ -56,7 +62,9 @@ def load_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any], Diagra
     return DiagramSpec.model_validate(data)
 
 
-def validate_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any]]) -> Tuple[bool, List[str], Optional[DiagramSpec]]:
+def validate_diagram_spec(
+    spec_path_or_dict: Union[str, Path, Dict[str, Any], DiagramSpec],
+) -> Tuple[bool, List[str], Optional[DiagramSpec]]:
     """
     Validates a declarative diagram specification and verifies all node and container references.
     Returns (is_valid, list_of_diagnostics, validated_spec).
@@ -74,17 +82,26 @@ def validate_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any]]) -
 
     # Verify duplicate node IDs
     if len(node_ids) < len(spec.nodes):
-        seen = set()
+        seen: set[str] = set()
         for n in spec.nodes:
             if n.id in seen:
                 issues.append(f"Duplicate node ID detected: '{n.id}'")
             seen.add(n.id)
 
+    # Verify duplicate container IDs
+    if len(container_ids) < len(spec.containers):
+        seen_c: set[str] = set()
+        for c in spec.containers:
+            if c.id in seen_c:
+                issues.append(f"Duplicate container ID detected: '{c.id}'")
+            seen_c.add(c.id)
+
     # Verify flow references
+    valid_endpoints = node_ids | container_ids
     for f in spec.flows:
-        if f.source and f.source not in node_ids and f.source not in container_ids:
+        if f.source and f.source not in valid_endpoints:
             issues.append(f"Flow source '{f.source}' not found in registered nodes or containers.")
-        if f.target and f.target not in node_ids and f.target not in container_ids:
+        if f.target and f.target not in valid_endpoints:
             issues.append(f"Flow target '{f.target}' not found in registered nodes or containers.")
 
     # Verify container parents
@@ -92,18 +109,30 @@ def validate_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any]]) -
         if n.container_id and n.container_id not in container_ids:
             issues.append(f"Node '{n.id}' references non-existent container '{n.container_id}'.")
 
-    # Verify icon resolution
+    # Verify icon resolution (with per-icon caching and hoisted import)
+    icon_registry_cls = None
+    icon_resolution_cache: Dict[str, bool] = {}
     for n in spec.nodes:
         if n.icon:
-            p = Path(n.icon)
-            if not p.exists():
-                try:
-                    from src.ppt_engine.library_importer import IconRegistry
-                    resolved = IconRegistry.resolve_icon(n.icon)
-                    if not resolved or not resolved.exists():
-                        issues.append(f"Node '{n.id}' icon '{n.icon}' could not be resolved in registry or disk.")
-                except Exception:
-                    issues.append(f"Node '{n.id}' icon '{n.icon}' could not be resolved.")
+            if n.icon not in icon_resolution_cache:
+                p = Path(n.icon)
+                if p.exists():
+                    icon_resolution_cache[n.icon] = True
+                else:
+                    try:
+                        if icon_registry_cls is None:
+                            from src.ppt_engine.library_importer import IconRegistry
+                            icon_registry_cls = IconRegistry
+                        resolved = icon_registry_cls.resolve_icon(n.icon)
+                        icon_resolution_cache[n.icon] = bool(resolved and resolved.exists())
+                    except Exception:
+                        icon_resolution_cache[n.icon] = None  # type: ignore[assignment]
+
+            status = icon_resolution_cache[n.icon]
+            if status is False:
+                issues.append(f"Node '{n.id}' icon '{n.icon}' could not be resolved in registry or disk.")
+            elif status is None:
+                issues.append(f"Node '{n.id}' icon '{n.icon}' could not be resolved.")
 
     # Run DiagramAuditor for spatial collision, occlusion, and arrow crowding checks
     try:
@@ -116,7 +145,11 @@ def validate_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any]]) -
         issues.append(f"Auditor execution failure: {ex}")
 
     has_critical = any(
-        iss.startswith("[CRITICAL]") or "Duplicate node ID" in iss or "not found" in iss or "non-existent" in iss
+        iss.startswith("[CRITICAL]")
+        or "Duplicate node ID" in iss
+        or "Duplicate container ID" in iss
+        or "not found" in iss
+        or "non-existent" in iss
         for iss in issues
     )
     is_valid = not has_critical
@@ -124,7 +157,7 @@ def validate_diagram_spec(spec_path_or_dict: Union[str, Path, Dict[str, Any]]) -
 
 
 def compile_diagram(
-    spec_path_or_dict: Union[str, Path, Dict[str, Any]],
+    spec_path_or_dict: Union[str, Path, Dict[str, Any], DiagramSpec],
     output_dir_or_file: Optional[Union[str, Path]] = None,
     formats: Sequence[str] = ("all",),
     open_deck: bool = False,
@@ -147,9 +180,10 @@ def compile_diagram(
     except Exception as ex:
         logger.debug("Auditor exception during compile: %s", ex)
 
-    # Normalize formats
+    # Normalize formats (guard against single string passed instead of sequence)
+    raw_formats: Sequence[str] = (formats,) if isinstance(formats, str) else formats
     target_formats = set()
-    for fmt in formats:
+    for fmt in raw_formats:
         f_lower = fmt.lower().strip()
         if f_lower == "all":
             target_formats.update({"drawio", "svg", "png", "pptx"})
@@ -160,7 +194,7 @@ def compile_diagram(
     slug = spec.id or "diagram"
     if output_dir_or_file:
         out_target = Path(output_dir_or_file)
-        if out_target.suffix in (".drawio", ".svg", ".pptx", ".png"):
+        if out_target.suffix.lower() in (".drawio", ".svg", ".pptx", ".png"):
             base_dir = out_target.parent
             base_stem = out_target.stem
         else:
@@ -195,17 +229,20 @@ def compile_diagram(
     if "png" in target_formats:
         png_path = base_dir / f"{base_stem}.png"
         if compiled_svg:
-            # Save SVG temporarily if not yet written
-            svg_for_png = res.svg_path or (base_dir / f"{base_stem}.svg")
-            if not svg_for_png.exists():
-                svg_for_png.write_text(compiled_svg, encoding="utf-8")
-            png_bytes = _svg_to_png_bytes(svg_for_png)
-            if png_bytes:
-                png_path.write_bytes(png_bytes)
-                res.png_path = png_path
-            # Cleanup temp svg if svg was not in requested formats
-            if "svg" not in target_formats and svg_for_png.exists() and svg_for_png != res.svg_path:
-                svg_for_png.unlink(missing_ok=True)
+            temp_svg_path: Optional[Path] = None
+            svg_for_png = res.svg_path
+            try:
+                if svg_for_png is None:
+                    temp_svg_path = base_dir / f".tmp_{base_stem}.svg"
+                    temp_svg_path.write_text(compiled_svg, encoding="utf-8")
+                    svg_for_png = temp_svg_path
+                png_bytes = _svg_to_png_bytes(svg_for_png)
+                if png_bytes:
+                    png_path.write_bytes(png_bytes)
+                    res.png_path = png_path
+            finally:
+                if temp_svg_path is not None and temp_svg_path.exists():
+                    temp_svg_path.unlink(missing_ok=True)
 
     # 4. Compile Native PowerPoint Slide
     if "pptx" in target_formats:
@@ -216,7 +253,10 @@ def compile_diagram(
 
         if open_deck:
             import subprocess
-            subprocess.run(["open", "-a", "Microsoft PowerPoint", str(pptx_path)])
+            try:
+                subprocess.run(["open", "-a", "Microsoft PowerPoint", str(pptx_path)], check=False)
+            except OSError as ex:
+                logger.warning("Failed to open PowerPoint deck %s: %s", pptx_path, ex)
 
     # 5. Tier 2 Adversarial Visual QA Verification (if requested)
     if run_visual_qa:

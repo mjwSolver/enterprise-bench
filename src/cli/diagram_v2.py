@@ -8,7 +8,6 @@ Tier 2 adversarial visual QA.
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 from typing import Optional
 
@@ -113,17 +112,91 @@ def sample_diagram_v2_cli(
 
 @diagram_v2_app.command("audit")
 def audit_diagram_v2_cli(
-    spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification"),
+    spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification or directory of specs"),
     strict: bool = typer.Option(False, "--strict", help="Exit with code 1 if any critical issues or warnings are found"),
 ) -> None:
-    """Run Tier 1 geometric collision and clearance linting on a declarative diagram specification."""
+    """Run Tier 1 geometric collision and clearance linting on a declarative diagram specification or multi-slide directory."""
     from src.ppt_engine.diagram_v2 import load_diagram_spec, Tier1GeometricLinter
+    from src.ppt_engine.diagram_v2.stray_consolidator import validate_bundle_headers
 
     spec_p = Path(spec)
     if not spec_p.exists():
-        rprint(f"[red]Error:[/red] Diagram specification file not found: {spec}")
+        rprint(f"[red]Error:[/red] Diagram specification file or directory not found: {spec}")
         raise typer.Exit(code=1)
 
+    if spec_p.is_dir():
+        yaml_files = sorted([
+            p for p in spec_p.glob("*.yaml")
+            if p.is_file() and not p.name.startswith(".")
+        ])
+        if not yaml_files:
+            yaml_files = sorted([
+                p for p in spec_p.glob("*.yml")
+                if p.is_file() and not p.name.startswith(".")
+            ])
+
+        if not yaml_files:
+            rprint(f"[red]Error:[/red] No YAML diagram specifications found in directory: {spec_p}")
+            raise typer.Exit(code=1)
+
+        rprint(f"[cyan]ℹ Running Tier 1 Geometric Audit & Bundle Header Linter on directory:[/cyan] [bold]{spec_p}[/bold] ({len(yaml_files)} specs)")
+
+        all_issues: List[Tuple[str, Any]] = []
+        loaded_specs = []
+
+        for yf in yaml_files:
+            try:
+                ds = load_diagram_spec(yf)
+                loaded_specs.append(ds)
+                linter = Tier1GeometricLinter(ds)
+                for iss in linter.lint():
+                    all_issues.append((yf.name, iss))
+            except Exception as e:
+                rprint(f"[yellow]⚠ Failed to load specification '{yf.name}':[/yellow] {e}")
+
+        # Run multi-slide bundle header verification across all loaded specs
+        bundle_issues = validate_bundle_headers(loaded_specs)
+        for b_iss in bundle_issues:
+            all_issues.append(("bundle", b_iss))
+
+        if not all_issues:
+            rprint(f"[green]✓ Tier 1 Geometric Audit Passed:[/green] Zero collisions, occlusions, or clearance violations across all {len(loaded_specs)} specifications in [bold]{spec_p.name}[/bold].")
+            return
+
+        table = Table(title=f"Tier 1 Geometric Collision & Bundle Audit: {spec_p.name} ({len(loaded_specs)} specs)")
+        table.add_column("Spec / File", style="dim cyan", width=24)
+        table.add_column("Severity", style="bold", width=12)
+        table.add_column("Category", style="cyan", width=28)
+        table.add_column("Element ID", style="magenta", width=22)
+        table.add_column("Description", style="white")
+        table.add_column("Suggested Fix", style="dim green")
+
+        critical_count = 0
+        warning_count = 0
+
+        for source_name, iss in all_issues:
+            if iss.severity == "CRITICAL":
+                sev_styled = "[red]CRITICAL[/red]"
+                critical_count += 1
+            elif iss.severity == "WARNING":
+                sev_styled = "[yellow]WARNING[/yellow]"
+                warning_count += 1
+            else:
+                sev_styled = "[cyan]INFO[/cyan]"
+
+            table.add_row(source_name, sev_styled, iss.category, iss.element_id, iss.description, iss.suggested_fix)
+
+        console.print(table)
+        rprint(f"\n[bold]Audit Summary:[/bold] {critical_count} critical issue(s), {warning_count} warning(s) across {len(loaded_specs)} specifications")
+
+        if critical_count > 0 or (strict and warning_count > 0):
+            rprint("[red]✗ Tier 1 geometric audit failed.[/red]")
+            raise typer.Exit(code=1)
+        else:
+            rprint("[yellow]⚠ Tier 1 geometric audit passed with warnings.[/yellow]")
+        return
+
+    # Single-file audit
     try:
         diagram_spec = load_diagram_spec(spec_p)
     except Exception as e:
@@ -193,29 +266,49 @@ def visual_qa_diagram_v2_cli(
         raise typer.Exit(code=1)
 
     tier_mode = tier.lower().strip()
-    out_dir = Path(output) if output else Path("TEMP/visual_qa") / diagram_spec.id
+    if tier_mode not in {"1", "2", "both"}:
+        rprint(f"[red]Error:[/red] Invalid --tier '{tier}'. Allowed values: '1', '2', 'both'.")
+        raise typer.Exit(code=1)
+
+    safe_id = Path(str(diagram_spec.id)).name or "diagram"
+    out_dir = Path(output) if output else Path("TEMP/visual_qa") / safe_id
 
     if tier_mode == "1":
         linter = Tier1GeometricLinter(diagram_spec)
         issues = linter.lint()
+        if not issues:
+            rprint(f"[green]✓ Tier 1 Geometric Audit Passed:[/green] Zero collisions, occlusions, or clearance violations in [bold]{diagram_spec.name}[/bold].")
+            return
         table = Table(title=f"Tier 1 Geometric Collision Audit: {diagram_spec.name}")
         table.add_column("Severity", style="bold", width=12)
         table.add_column("Category", style="cyan", width=28)
         table.add_column("Element ID", style="magenta", width=22)
         table.add_column("Description", style="white")
         table.add_column("Suggested Fix", style="dim green")
+        crit = 0
+        warn = 0
         for iss in issues:
-            sev_styled = "[red]CRITICAL[/red]" if iss.severity == "CRITICAL" else "[yellow]WARNING[/yellow]"
+            if iss.severity == "CRITICAL":
+                sev_styled = "[red]CRITICAL[/red]"
+                crit += 1
+            elif iss.severity == "WARNING":
+                sev_styled = "[yellow]WARNING[/yellow]"
+                warn += 1
+            else:
+                sev_styled = "[cyan]INFO[/cyan]"
             table.add_row(sev_styled, iss.category, iss.element_id, iss.description, iss.suggested_fix)
         console.print(table)
-        crit = sum(1 for i in issues if i.severity == "CRITICAL")
-        if crit > 0 or (strict and len(issues) > 0):
+        if crit > 0 or (strict and warn > 0):
             raise typer.Exit(code=1)
         return
 
     rprint(f"[cyan]ℹ Running Tier 1 & Tier 2 Adversarial Visual QA Verification on:[/cyan] [bold]{diagram_spec.name}[/bold]")
-    verifier = Tier2VisualVerifier(diagram_spec)
-    result = verifier.verify(output_dir=out_dir)
+    try:
+        verifier = Tier2VisualVerifier(diagram_spec)
+        result = verifier.verify(output_dir=out_dir)
+    except Exception as e:
+        rprint(f"[red]Error running Visual QA verification:[/red] {e}")
+        raise typer.Exit(code=1)
 
     verdict_colors = {
         "VERIFIED_PASS": "green",
@@ -277,11 +370,14 @@ def reconcile_diagram_v2_cli(
     dry_run: bool = typer.Option(False, "--dry-run", help="Report detected differences without modifying YAML or recompiling"),
     no_recompile: bool = typer.Option(False, "--no-recompile", help="Update YAML AST but skip triggering 4-way re-compilation"),
     format: str = typer.Option("all", "--format", "-f", help="Target formats when re-compiling: 'all', 'drawio', 'svg', 'png', 'pptx'"),
+    snap: float = typer.Option(0.05, "--snap", help="Geometric grid snap increment in inches (default: 0.05\")"),
+    threshold: float = typer.Option(0.02, "--threshold", help="Minimum shift delta in inches to trigger reconciliation (default: 0.02\")"),
+    skip_pptx: bool = typer.Option(False, "--skip-pptx", help="Skip PPTX re-compilation to prevent cyclic write triggers"),
 ) -> None:
     """
     Reconcile PowerPoint DrawingML slide mutations against declarative YAML AST (Topic 11).
     Diffs live shapes against specification, pruning deleted nodes and orphan flows,
-    updating mutated text, and triggering automatic 4-way re-compilation.
+    updating mutated text, snapping altered coordinates to grid, and triggering automatic re-compilation.
     """
     from src.ppt_engine.diagram_v2 import reconcile_diagram
 
@@ -314,6 +410,13 @@ def reconcile_diagram_v2_cli(
         if pptx:
             pptx_p = Path(pptx)
 
+    if not spec_p.exists():
+        rprint(f"[red]Error:[/red] Diagram specification file not found: {spec_p}")
+        raise typer.Exit(code=1)
+    if pptx_p and not pptx_p.exists():
+        rprint(f"[red]Error:[/red] PowerPoint presentation file not found: {pptx_p}")
+        raise typer.Exit(code=1)
+
     rprint(f"[cyan]ℹ Running Bidirectional PowerPoint Decompiler & YAML Reconciliation Engine:[/cyan]")
     rprint(f"  • YAML Spec:  [bold]{spec_p}[/bold]")
     if pptx_p:
@@ -329,6 +432,9 @@ def reconcile_diagram_v2_cli(
             dry_run=dry_run,
             no_recompile=no_recompile,
             formats=formats_list,
+            skip_pptx=skip_pptx,
+            snap_grid=snap,
+            snap_threshold=threshold,
         )
     except Exception as e:
         rprint(f"[red]Reconciliation failed:[/red] {e}")
@@ -338,7 +444,9 @@ def reconcile_diagram_v2_cli(
         rprint(f"\n[green]✓ Clean Parity:[/green] PowerPoint slide and YAML specification are [bold]100% in sync[/bold]. Zero mutations or prunings detected.")
         return
 
-    table = Table(title=f"Topic 11 Reconciliation Diff: {res.spec_path.name} ⟷ {res.pptx_path.name}")
+    pptx_name = res.pptx_path.name if res.pptx_path else "N/A"
+    spec_name = res.spec_path.name if res.spec_path else spec_p.name
+    table = Table(title=f"Topic 11 Reconciliation Diff: {spec_name} ⟷ {pptx_name}")
     table.add_column("Category", style="cyan", width=14)
     table.add_column("Element ID", style="magenta", width=24)
     table.add_column("Action", style="bold", width=12)
@@ -347,17 +455,33 @@ def reconcile_diagram_v2_cli(
     table.add_column("Reconciled Value (PPTX)", style="bold green")
 
     for c in res.changes:
+        old_val_str = "[dim]None[/dim]" if c.old_value is None else str(c.old_value)
+        new_val_str = "[dim]None[/dim]" if c.new_value is None else str(c.new_value)
+        cat = c.element_type.title() if c.element_type else "Element"
         if c.change_type.startswith("pruned_"):
             action_styled = "[red]PRUNED[/red]"
-            cat = c.element_type.title()
-            table.add_row(cat, c.element_id, action_styled, "existence", str(c.old_value or ""), "[dim]REMOVED[/dim]")
+            table.add_row(cat, c.element_id, action_styled, "existence", "" if c.old_value is None else str(c.old_value), "[dim]REMOVED[/dim]")
         elif c.change_type == "mutated_text":
             action_styled = "[green]MUTATED[/green]"
-            cat = c.element_type.title()
-            table.add_row(cat, c.element_id, action_styled, c.field_name or "text", str(c.old_value or "[dim]None[/dim]"), str(c.new_value or "[dim]None[/dim]"))
+            table.add_row(cat, c.element_id, action_styled, c.field_name or "text", old_val_str, new_val_str)
+        elif c.change_type == "mutated_geometry":
+            action_styled = "[cyan]GEOMETRY[/cyan]"
+            table.add_row(cat, c.element_id, action_styled, c.field_name or "geometry", old_val_str, new_val_str)
+        else:
+            action_styled = f"[yellow]{c.change_type.upper()}[/yellow]"
+            table.add_row(cat, c.element_id, action_styled, c.field_name or "property", old_val_str, new_val_str)
 
     console.print(table)
-    rprint(f"\n[bold]Reconciliation Summary:[/bold] {len(res.pruned_nodes)} node(s) pruned, {len(res.pruned_flows)} flow(s) pruned, {len(res.mutated_texts)} text field(s) updated.")
+    summary_parts = []
+    if res.pruned_nodes:
+        summary_parts.append(f"{len(res.pruned_nodes)} node(s) pruned")
+    if res.pruned_flows:
+        summary_parts.append(f"{len(res.pruned_flows)} flow(s) pruned")
+    if res.mutated_texts:
+        summary_parts.append(f"{len(res.mutated_texts)} text field(s) updated")
+    if res.mutated_geometries:
+        summary_parts.append(f"{len(res.mutated_geometries)} coordinate(s) snapped")
+    rprint(f"\n[bold]Reconciliation Summary:[/bold] {', '.join(summary_parts) if summary_parts else 'Zero changes'}.")
 
     if dry_run:
         rprint("[yellow]⚠ Dry-run complete. Specification and deliverables were not modified.[/yellow]")
@@ -373,3 +497,186 @@ def reconcile_diagram_v2_cli(
                 rprint(f"  • High-DPI PNG: [bold]{res.recompile_result.png_path}[/bold]")
             if res.recompile_result.pptx_path:
                 rprint(f"  • Native PPTX:  [bold]{res.recompile_result.pptx_path}[/bold]")
+
+
+@diagram_v2_app.command("watch")
+def watch_diagram_v2_cli(
+    spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification"),
+    pptx: Optional[str] = typer.Option(None, "--pptx", "-p", help="Path to PowerPoint presentation (.pptx) to monitor (auto-located if omitted)"),
+    slide_index: int = typer.Option(1, "--slide", "-s", help="Slide index (1-based) to inspect in presentation"),
+    debounce: float = typer.Option(0.5, "--debounce", "-d", help="Debounce silence window in seconds (default: 0.5s)"),
+    snap: float = typer.Option(0.05, "--snap", help="Geometric grid snap increment in inches (default: 0.05\")"),
+    threshold: float = typer.Option(0.02, "--threshold", help="Minimum shift delta in inches to trigger reconciliation (default: 0.02\")"),
+    skip_pptx: bool = typer.Option(True, "--skip-pptx/--no-skip-pptx", help="Skip PPTX compilation to prevent cyclic write loops (default: True)"),
+    format: str = typer.Option("drawio,svg,png", "--format", "-f", help="Companion formats to regenerate upon PowerPoint save"),
+) -> None:
+    """
+    Autonomous PPTX File Watcher & Reverse Geometric Synchronization Daemon.
+    Monitors presentation saves (Cmd+S), debounces atomic writes (500ms), reconciles
+    shape coordinates and text into YAML AST, snaps to 0.05" grid, and regenerates
+    companion artifacts headlessly without cyclic write loops.
+    """
+    from src.ppt_engine.diagram_v2.watcher import PPTXWatcher
+
+    spec_p = Path(spec)
+    if not spec_p.exists():
+        rprint(f"[red]Error:[/red] Diagram specification file not found: {spec}")
+        raise typer.Exit(code=1)
+
+    formats_list = [f.strip() for f in format.split(",") if f.strip()]
+
+    def on_change(p_path: Path) -> None:
+        rprint(f"\n[cyan]⚡ Save event detected on:[/cyan] [bold]{p_path.name}[/bold] — debouncing {debounce:.1f}s...")
+
+    def on_reconciled(res: Any) -> None:
+        if not res.has_changes:
+            rprint(f"[dim]✓ PPTX verified in sync with {spec_p.name} (zero mutations).[/dim]")
+            return
+
+        table = Table(title=f"Autonomous Synchronization: {res.spec_path.name} ⟷ {res.pptx_path.name}")
+        table.add_column("Category", style="cyan", width=14)
+        table.add_column("Element ID", style="magenta", width=24)
+        table.add_column("Action", style="bold", width=12)
+        table.add_column("Property", style="dim white", width=14)
+        table.add_column("Previous Value (YAML)", style="white")
+        table.add_column("Reconciled Value (PPTX)", style="bold green")
+
+        for c in res.changes:
+            old_val_str = "[dim]None[/dim]" if c.old_value is None else str(c.old_value)
+            new_val_str = "[dim]None[/dim]" if c.new_value is None else str(c.new_value)
+            cat = c.element_type.title() if c.element_type else "Element"
+            if c.change_type.startswith("pruned_"):
+                action_styled = "[red]PRUNED[/red]"
+                table.add_row(cat, c.element_id, action_styled, "existence", "" if c.old_value is None else str(c.old_value), "[dim]REMOVED[/dim]")
+            elif c.change_type == "mutated_text":
+                action_styled = "[green]MUTATED[/green]"
+                table.add_row(cat, c.element_id, action_styled, c.field_name or "text", old_val_str, new_val_str)
+            elif c.change_type == "mutated_geometry":
+                action_styled = "[cyan]GEOMETRY[/cyan]"
+                table.add_row(cat, c.element_id, action_styled, c.field_name or "geometry", old_val_str, new_val_str)
+            else:
+                action_styled = f"[yellow]{c.change_type.upper()}[/yellow]"
+                table.add_row(cat, c.element_id, action_styled, c.field_name or "property", old_val_str, new_val_str)
+
+        console.print(table)
+        summary_parts = []
+        if res.pruned_nodes:
+            summary_parts.append(f"{len(res.pruned_nodes)} node(s) pruned")
+        if res.pruned_flows:
+            summary_parts.append(f"{len(res.pruned_flows)} flow(s) pruned")
+        if res.mutated_texts:
+            summary_parts.append(f"{len(res.mutated_texts)} text field(s) updated")
+        if res.mutated_geometries:
+            summary_parts.append(f"{len(res.mutated_geometries)} coordinate(s) snapped")
+        rprint(f"[bold]Reconciliation Summary:[/bold] {', '.join(summary_parts)}.")
+        rprint(f"[green]✓ Successfully synchronized YAML AST:[/green] [bold]{res.spec_path}[/bold]")
+        if res.recompiled and res.recompile_result:
+            rprint(f"[cyan]ℹ Companion re-compilation completed:[/cyan]")
+            if res.recompile_result.drawio_path:
+                rprint(f"  • Draw.io XML:  [bold]{res.recompile_result.drawio_path}[/bold]")
+            if res.recompile_result.svg_path:
+                rprint(f"  • Vector SVG:   [bold]{res.recompile_result.svg_path}[/bold]")
+            if res.recompile_result.png_path:
+                rprint(f"  • High-DPI PNG: [bold]{res.recompile_result.png_path}[/bold]")
+
+    try:
+        watcher = PPTXWatcher(
+            spec_path=spec_p,
+            pptx_path=pptx,
+            slide_index=slide_index,
+            debounce_seconds=debounce,
+            snap_grid=snap,
+            snap_threshold=threshold,
+            skip_pptx=skip_pptx,
+            formats=formats_list,
+            on_reconciled=on_reconciled,
+            on_change_detected=on_change,
+        )
+    except Exception as e:
+        rprint(f"[red]Error initializing PPTX watcher:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    rprint(f"[cyan]🚀 Starting Diagram Engine V2 Autonomous File Watcher Daemon[/cyan]")
+    rprint(f"  • YAML Spec:     [bold]{watcher.spec_path}[/bold]")
+    rprint(f"  • Monitoring:    [bold]{watcher.pptx_path}[/bold] (Slide {slide_index})")
+    rprint(f"  • Debounce:      [bold]{debounce:.2f}s[/bold] | Snap Grid: [bold]{snap:.2f}\"[/bold] (threshold: {threshold:.2f}\")")
+    rprint(f"  • Cyclic Guard:  [bold]{'--skip-pptx ACTIVE' if skip_pptx else 'OFF'}[/bold]")
+    rprint(f"  • Companion:     [bold]{', '.join(formats_list)}[/bold]")
+    rprint(f"[dim]Waiting for Microsoft PowerPoint save events (Cmd+S)... Press Ctrl+C to stop.[/dim]\n")
+
+    try:
+        watcher.watch()
+    except KeyboardInterrupt:
+        watcher.stop()
+        rprint(f"\n[yellow]Watcher stopped by user. Clean shutdown complete.[/yellow]")
+
+
+@diagram_v2_app.command("consolidate")
+def diagram_v2_consolidate(
+    workspace: str = typer.Option(".", "--workspace", "-w", help="Workspace root directory to scan for stray visualizations."),
+    no_rename: bool = typer.Option(False, "--no-rename", help="Skip renaming files with LATEST_ / OUTDATED_ prefixes."),
+    no_archive: bool = typer.Option(False, "--no-archive", help="Keep standalone 1-slide PPTX files in place instead of moving to .archive/strays/."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview theme clustering, LATEST/OUTDATED lineage, and merges without modifying disk."),
+) -> None:
+    """
+    Model 2.1 Stray Visualization Harvester & Theme Consolidator.
+    Auto-clusters stray visualizations by theme, prefixes files with LATEST_ / OUTDATED_,
+    merges slides into 1 PPTX per domain theme, archives standalone PPTXs, and writes STRAY_BACKLOG.md.
+    """
+    from src.ppt_engine.diagram_v2 import consolidate_stray_visualizations
+
+    ws_path = Path(workspace).resolve()
+    if not ws_path.exists():
+        rprint(f"[red]Error:[/red] Workspace path not found: {workspace}")
+        raise typer.Exit(code=1)
+
+    rprint(f"[cyan]ℹ Running Model 2.1 Stray Visualization Harvester & Consolidator:[/cyan] [bold]{ws_path}[/bold]")
+    try:
+        report = consolidate_stray_visualizations(
+            workspace=ws_path,
+            rename_files=not no_rename,
+            archive_pptx=not no_archive,
+            dry_run=dry_run,
+        )
+    except Exception as e:
+        rprint(f"[red]Error consolidating stray visualizations:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    if not report.clusters:
+        rprint("[yellow]No stray visualizations discovered in workspace.[/yellow]")
+        return
+
+    table = Table(title="Model 2.1 Domain Theme Clusters & Evolutionary Lineage")
+    table.add_column("Domain Theme", style="bold cyan", width=22)
+    table.add_column("Lifecycle Status", style="bold", width=14)
+    table.add_column("Visualization Stem", style="white", width=32)
+    table.add_column("Variant / Scope", style="magenta", width=22)
+    table.add_column("Target Theme Bundle", style="green")
+
+    for cluster in report.clusters:
+        bundle_rel = (
+            cluster.bundle_pptx_path.relative_to(ws_path)
+            if cluster.bundle_pptx_path and cluster.bundle_pptx_path.is_relative_to(ws_path)
+            else cluster.bundle_pptx_path
+        )
+        for idx, pod in enumerate(cluster.pods):
+            status_badge = "[bold green]LATEST[/bold green]" if pod.status == "LATEST" else "[yellow]OUTDATED[/yellow]"
+            table.add_row(
+                cluster.theme_slug if idx == 0 else "",
+                status_badge,
+                pod.base_stem,
+                pod.variant_kind,
+                f"{bundle_rel} (Slide {idx + 1})",
+            )
+
+    console.print(table)
+    rprint(
+        f"\n[bold]Summary:[/bold] {len(report.clusters)} theme bundle(s), "
+        f"{len(report.renamed_files)} file(s) prefixed with LATEST_/OUTDATED_, "
+        f"{len(report.archived_pptx_files)} standalone PPTX(s) archived to .archive/strays/."
+    )
+    if report.backlog_path:
+        rprint(f"  • Triage Backlog: [bold]{report.backlog_path}[/bold]")
+    if dry_run:
+        rprint("[yellow]⚠ Dry-run complete. No files were renamed, merged, or archived.[/yellow]")
+

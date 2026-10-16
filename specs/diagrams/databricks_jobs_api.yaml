@@ -1,0 +1,233 @@
+id: "databricks_jobs_api"
+name: "Databricks Jobs API Architecture"
+theme: "metrodata"
+
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: "in"
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+
+header:
+  show: true
+  action_title: "Proposed: Databricks Jobs API"
+  subtitle: "Decoupled REST Orchestration & Managed Lakehouse Compute Execution Dataflow"
+  y: 0.28
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+
+containers:
+  - id: "group_clients"
+    label: "CLIENT APPLICATIONS"
+    x: 0.52
+    y: 1.35
+    w: 2.92
+    h: 4.40
+    border_hex: "#94A3B8"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 1.5
+    dashed: true
+    align: "center"
+    vertical_align: "bottom"
+
+  - id: "group_databricks"
+    label: "DATABRICKS"
+    x: 6.67
+    y: 1.35
+    w: 6.20
+    h: 4.40
+    border_hex: "#EA580C"
+    fill_hex: "#FFFBF8"
+    fill_opacity: 0.5
+    stroke_width: 1.5
+    dashed: true
+    align: "left"
+    vertical_align: "bottom"
+
+nodes:
+  - id: "node_app1"
+    container_id: "group_clients"
+    title: "App 1"
+    shape: "rounded_rect"
+    x: 0.83
+    y: 1.56
+    w: 2.29
+    h: 1.51
+    border_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    icon_name: "monitor"
+    icon_scale: 0.35
+    title_pt: 12.0
+    text_color: "#1E3A8A"
+
+  - id: "node_app2"
+    container_id: "group_clients"
+    title: "App 2"
+    shape: "rounded_rect"
+    x: 0.70
+    y: 3.38
+    w: 1.15
+    h: 1.72
+    border_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    icon_name: "monitor"
+    icon_scale: 0.35
+    title_pt: 12.0
+    text_color: "#1E3A8A"
+
+  - id: "node_app3"
+    container_id: "group_clients"
+    title: "App 3"
+    shape: "rounded_rect"
+    x: 2.05
+    y: 3.38
+    w: 1.15
+    h: 1.72
+    border_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    icon_name: "monitor"
+    icon_scale: 0.35
+    title_pt: 12.0
+    text_color: "#1E3A8A"
+
+  - id: "node_dbx_api"
+    title: "DBx Jobs API"
+    tag_badge: "DATABRICKS API 2.1"
+    shape: "rounded_rect"
+    x: 3.91
+    y: 2.34
+    w: 2.08
+    h: 1.98
+    border_hex: "#EA580C"
+    fill_hex: "#FFFFFF"
+    icon_name: "rest_api"
+    icon_scale: 0.35
+    title_pt: 12.0
+    text_color: "#7C2D12"
+
+  - id: "node_cluster"
+    container_id: "group_databricks"
+    title: "Cluster"
+    tag_badge: "COMPUTE ENGINE"
+    shape: "rounded_rect"
+    x: 7.08
+    y: 2.45
+    w: 2.29
+    h: 1.88
+    border_hex: "#EA580C"
+    fill_hex: "#FFFFFF"
+    icon_name: "databricks"
+    icon_scale: 0.35
+    title_pt: 12.0
+    text_color: "#7C2D12"
+
+  - id: "node_code"
+    container_id: "group_databricks"
+    title: "Code"
+    tag_badge: "TASK ARTIFACT"
+    subtitle: "Notebook, Python, Wheel Dependencies"
+    shape: "rounded_rect"
+    x: 10.05
+    y: 1.61
+    w: 2.50
+    h: 1.35
+    border_hex: "#10B981"
+    fill_hex: "#FFFFFF"
+    icon_name: "code"
+    icon_scale: 0.30
+    title_pt: 12.0
+    text_color: "#065F46"
+
+  - id: "node_database"
+    container_id: "group_databricks"
+    title: "Database"
+    tag_badge: "UNITY CATALOG"
+    subtitle: "Unity Catalog"
+    shape: "cylinder"
+    x: 10.35
+    y: 3.49
+    w: 1.85
+    h: 1.77
+    border_hex: "#0284C7"
+    fill_hex: "#FFFFFF"
+    icon_name: "database"
+    icon_scale: 0.30
+    title_pt: 12.0
+    text_color: "#075985"
+
+connectors:
+  - id: "c1"
+    from_node: "node_app1"
+    to_node: "node_dbx_api"
+    from_port: "right"
+    to_port: "left"
+    label: "run-now"
+    color_hex: "#2563EB"
+    line_width: 2.2
+    arrow_style: "triangle"
+
+  - id: "c2"
+    from_node: "node_dbx_api"
+    to_node: "node_app1"
+    from_port: "left"
+    to_port: "right"
+    label: "returns"
+    color_hex: "#2563EB"
+    line_width: 2.2
+    arrow_style: "triangle"
+
+  - id: "c3"
+    from_node: "node_dbx_api"
+    to_node: "node_cluster"
+    from_port: "right"
+    to_port: "left"
+    label: "POST /run-now"
+    color_hex: "#EA580C"
+    line_width: 2.2
+    arrow_style: "triangle"
+
+  - id: "c4"
+    from_node: "node_cluster"
+    to_node: "node_dbx_api"
+    from_port: "left"
+    to_port: "right"
+    label: "Execution Done"
+    color_hex: "#EA580C"
+    line_width: 2.0
+    dashed: true
+    arrow_style: "triangle"
+
+  - id: "c5"
+    from_node: "node_code"
+    to_node: "node_cluster"
+    from_port: "left"
+    to_port: "right"
+    label: "Run Here"
+    color_hex: "#10B981"
+    line_width: 2.2
+    arrow_style: "triangle"
+
+  - id: "c6"
+    from_node: "node_cluster"
+    to_node: "node_database"
+    from_port: "right"
+    to_port: "left"
+    label: "checks"
+    color_hex: "#0284C7"
+    line_width: 2.2
+    arrow_style: "triangle"
+
+  - id: "c7"
+    from_node: "node_database"
+    to_node: "node_cluster"
+    from_port: "left"
+    to_port: "right"
+    label: "Record Result"
+    color_hex: "#0284C7"
+    line_width: 2.0
+    dashed: true
+    arrow_style: "triangle"

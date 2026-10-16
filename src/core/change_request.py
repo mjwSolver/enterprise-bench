@@ -7,45 +7,39 @@ registration for enterprise Change Requests (CRs).
 
 from __future__ import annotations
 
-import os
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 import docx
 import openpyxl
 from pydantic import BaseModel, Field
 
-from src.core.config import CLEAN_DIR, validate_clean_path
-from src.core.slug_registry import EngagementContext, DEFAULT_CLIENT_SHORT_NAME
+from src.core.slug_registry import (
+    DEFAULT_CLIENT_SHORT_NAME,
+    EngagementContext,
+    substitute_slugs_in_document,
+    substitute_slugs_in_workbook,
+)
 from src.core.workspace import WorkspaceRouter
 
 
 def _substitute_docx(doc: Any, context: EngagementContext) -> None:
-    """Substitutes legacy slugs and placeholders across paragraphs and table cells."""
-    for p in doc.paragraphs:
-        if p.text:
-            new_text = context.substitute(p.text)
-            if new_text != p.text:
-                p.text = new_text
-    for t in doc.tables:
-        for row in t.rows:
-            for cell in row.cells:
-                for p in cell.paragraphs:
-                    if p.text:
-                        new_text = context.substitute(p.text)
-                        if new_text != p.text:
-                            p.text = new_text
+    """Substitutes legacy slugs and placeholders across paragraphs, tables, headers, and footers."""
+    substitute_slugs_in_document(doc, context)
 
 
 def _substitute_xlsx(wb: Any, context: EngagementContext) -> None:
     """Substitutes legacy slugs across all sheets and cells in an openpyxl workbook."""
-    for sheet in wb.worksheets:
-        for row in sheet.iter_rows():
-            for cell in row:
-                if isinstance(cell.value, str):
-                    new_val = context.substitute(cell.value)
-                    if new_val != cell.value:
-                        cell.value = new_val
+    substitute_slugs_in_workbook(wb, context)
+
+
+def _set_cell_text(table: Any, row_idx: int, col_idx: int, text: str) -> None:
+    """Safely set text on a table cell if row and column indices are within bounds."""
+    if 0 <= row_idx < len(table.rows):
+        row = table.rows[row_idx]
+        if 0 <= col_idx < len(row.cells):
+            row.cells[col_idx].text = text
 
 
 class CRSubmission(BaseModel):
@@ -106,19 +100,21 @@ class ChangeRequestProcessor:
         if not ledger_path or not ledger_path.exists():
             return "7"
 
-        wb = openpyxl.load_workbook(str(ledger_path), data_only=True)
-        ws = wb["Change Log"] if "Change Log" in wb.sheetnames else wb.active
-        max_id = 0
-        for row in list(ws.iter_rows(values_only=True))[2:]:
-            first_cell = row[0]
-            if first_cell is not None:
-                try:
-                    val = int(str(first_cell).strip().replace("CR-", "").replace("CR", ""))
-                    if val > max_id:
-                        max_id = val
-                except ValueError:
-                    pass
-        wb.close()
+        wb = openpyxl.load_workbook(str(ledger_path), data_only=True, read_only=True)
+        try:
+            ws = wb["Change Log"] if "Change Log" in wb.sheetnames else wb.active
+            max_id = 0
+            for row in ws.iter_rows(min_row=3, max_col=1, values_only=True):
+                first_cell = row[0] if row else None
+                if first_cell is not None:
+                    try:
+                        val = int(str(first_cell).strip().replace("CR-", "").replace("CR", ""))
+                        if val > max_id:
+                            max_id = val
+                    except ValueError:
+                        pass
+        finally:
+            wb.close()
         return str(max_id + 1 if max_id > 0 else 7)
 
     def file_change_request(
@@ -133,7 +129,8 @@ class ChangeRequestProcessor:
         3. Generates CR_Scoping_and_Mandays.xlsx
         4. Prepares draft BAST_Change_Request.docx
         """
-        cr_id = submission.cr_id or self._get_next_cr_id()
+        raw_id = (submission.cr_id or self._get_next_cr_id()).strip()
+        cr_id = re.sub(r"^CR[-_\s]*", "", raw_id, flags=re.IGNORECASE) or raw_id
         if output_dir:
             out_p = Path(output_dir)
         else:
@@ -153,38 +150,38 @@ class ChangeRequestProcessor:
         # Table 0: Metadata
         if len(doc.tables) > 0:
             t0 = doc.tables[0]
-            t0.rows[0].cells[2].text = cr_id
-            t0.rows[1].cells[2].text = submission.submission_date
-            t0.rows[2].cells[2].text = submission.requester
-            t0.rows[3].cells[2].text = submission.department
+            _set_cell_text(t0, 0, 2, cr_id)
+            _set_cell_text(t0, 1, 2, submission.submission_date)
+            _set_cell_text(t0, 2, 2, submission.requester)
+            _set_cell_text(t0, 3, 2, submission.department)
 
         # Table 1: Change Details
         if len(doc.tables) > 1:
             t1 = doc.tables[1]
-            t1.rows[0].cells[2].text = submission.title
-            t1.rows[1].cells[2].text = submission.category
-            t1.rows[2].cells[2].text = submission.priority
-            t1.rows[3].cells[2].text = submission.description
-            t1.rows[4].cells[2].text = submission.reason
+            _set_cell_text(t1, 0, 2, submission.title)
+            _set_cell_text(t1, 1, 2, submission.category)
+            _set_cell_text(t1, 2, 2, submission.priority)
+            _set_cell_text(t1, 3, 2, submission.description)
+            _set_cell_text(t1, 4, 2, submission.reason)
 
         # Table 2: Impact Analysis
         if len(doc.tables) > 2:
             t2 = doc.tables[2]
-            t2.rows[0].cells[2].text = submission.scope_impact
-            t2.rows[1].cells[2].text = f"Estimasi waktu pelaksanaan: {submission.schedule_days} hari + {submission.buffer_days} hari buffer."
-            t2.rows[2].cells[2].text = submission.cost_estimate
-            t2.rows[3].cells[2].text = f"Total estimasi kebutuhan sumber daya: {total_mandays} mandays."
-            t2.rows[4].cells[2].text = submission.risk_impact
-            t2.rows[5].cells[2].text = submission.quality_impact
+            _set_cell_text(t2, 0, 2, submission.scope_impact)
+            _set_cell_text(t2, 1, 2, f"Estimasi waktu pelaksanaan: {submission.schedule_days} hari + {submission.buffer_days} hari buffer.")
+            _set_cell_text(t2, 2, 2, submission.cost_estimate)
+            _set_cell_text(t2, 3, 2, f"Total estimasi kebutuhan sumber daya: {total_mandays} mandays.")
+            _set_cell_text(t2, 4, 2, submission.risk_impact)
+            _set_cell_text(t2, 5, 2, submission.quality_impact)
 
         # Table 3: Effort Breakdown
         if len(doc.tables) > 3:
             t3 = doc.tables[3]
-            t3.rows[0].cells[2].text = f"{submission.mandays_breakdown.get('analysis_pm', 0)} mandays"
-            t3.rows[1].cells[2].text = f"{submission.mandays_breakdown.get('development', 0)} mandays"
-            t3.rows[2].cells[2].text = f"{submission.mandays_breakdown.get('testing', 0)} mandays"
-            t3.rows[3].cells[2].text = f"{submission.mandays_breakdown.get('deployment', 0)} mandays"
-            t3.rows[4].cells[2].text = f"{total_mandays} mandays"
+            _set_cell_text(t3, 0, 2, f"{submission.mandays_breakdown.get('analysis_pm', 0)} mandays")
+            _set_cell_text(t3, 1, 2, f"{submission.mandays_breakdown.get('development', 0)} mandays")
+            _set_cell_text(t3, 2, 2, f"{submission.mandays_breakdown.get('testing', 0)} mandays")
+            _set_cell_text(t3, 3, 2, f"{submission.mandays_breakdown.get('deployment', 0)} mandays")
+            _set_cell_text(t3, 4, 2, f"{total_mandays} mandays")
 
         doc_out_path = out_p / f"Change_Request_Form_CR_{cr_id.zfill(2)}.docx"
         _substitute_docx(doc, self.context)
@@ -201,55 +198,63 @@ class ChangeRequestProcessor:
 
         if ledger_template and ledger_template.exists():
             wb = openpyxl.load_workbook(str(ledger_template))
-            ws = wb["Change Log"] if "Change Log" in wb.sheetnames else wb.active
-            new_row = [
-                int(cr_id) if cr_id.isdigit() else cr_id,
-                datetime.now().strftime("%Y-%m-%d"),
-                submission.title,
-                submission.description[:250] + ("..." if len(submission.description) > 250 else ""),
-                submission.category,
-                "Business Request",
-                submission.requester,
-                submission.reason,
-                submission.scope_impact[:120],
-                f"{submission.schedule_days} hari",
-                submission.cost_estimate,
-                f"{total_mandays} mandays",
-                "Impact Analysis Completed",
-                "Under Review",
-            ]
-            ws.append(new_row)
-            _substitute_xlsx(wb, self.context)
-            wb.save(str(ledger_out_path))
-            wb.close()
-            ledger_updated = True
+            try:
+                ws = wb["Change Log"] if "Change Log" in wb.sheetnames else wb.active
+                new_row = [
+                    int(cr_id) if cr_id.isdigit() else cr_id,
+                    datetime.now().strftime("%Y-%m-%d"),
+                    submission.title,
+                    submission.description[:250] + ("..." if len(submission.description) > 250 else ""),
+                    submission.category,
+                    "Business Request",
+                    submission.requester,
+                    submission.reason,
+                    submission.scope_impact[:120],
+                    f"{submission.schedule_days} hari",
+                    submission.cost_estimate,
+                    f"{total_mandays} mandays",
+                    "Impact Analysis Completed",
+                    "Under Review",
+                ]
+                ws.append(new_row)
+                _substitute_xlsx(wb, self.context)
+                wb.save(str(ledger_out_path))
+                ledger_updated = True
+            finally:
+                wb.close()
 
         # 3. Generate CR_Scoping_and_Mandays.xlsx
         scoping_template = self.project.resolve_clean_file("CR_Scoping_and_Mandays_Template.xlsx")
         scoping_out_path = out_p / f"CR_Scoping_and_Mandays_CR_{cr_id.zfill(2)}.xlsx"
+        scoping_created = False
         if scoping_template and scoping_template.exists():
             wb_sc = openpyxl.load_workbook(str(scoping_template))
-            ws_gen = wb_sc["General"] if "General" in wb_sc.sheetnames else wb_sc.active
-            ws_gen.cell(row=1, column=2, value=f"CR-{cr_id}: {submission.title}")
-            ws_gen.cell(row=2, column=2, value=f"Total Mandays: {total_mandays}")
-            ws_gen.cell(row=3, column=2, value=submission.description[:150])
+            try:
+                ws_gen = wb_sc["General"] if "General" in wb_sc.sheetnames else wb_sc.active
+                ws_gen.cell(row=1, column=2, value=f"CR-{cr_id}: {submission.title}")
+                ws_gen.cell(row=2, column=2, value=f"Total Mandays: {total_mandays}")
+                ws_gen.cell(row=3, column=2, value=submission.description[:150])
 
-            # Create specific detail sheet for this CR
-            ws_cr = wb_sc.create_sheet(title=f"CR{cr_id} Breakdown")
-            ws_cr.append(["Activity / Workstream", "Role / Team", "Estimated Mandays"])
-            ws_cr.append(["Analysis, Design & Governance", "Project Manager / BA", submission.mandays_breakdown.get("analysis_pm", 0)])
-            ws_cr.append(["Snowflake Engineering & UI Dev", "Data & Streamlit Devs", submission.mandays_breakdown.get("development", 0)])
-            ws_cr.append(["Integration & Regression Testing", "QA Engineer", submission.mandays_breakdown.get("testing", 0)])
-            ws_cr.append(["Deployment & Operational Handover", "DevOps Engineer", submission.mandays_breakdown.get("deployment", 0)])
-            ws_cr.append(["Total Committed Effort", "All Teams", total_mandays])
+                # Create specific detail sheet for this CR
+                sheet_title = re.sub(r'[:\\/?*\[\]]', '_', f"CR{cr_id} Breakdown")[:31]
+                ws_cr = wb_sc.create_sheet(title=sheet_title)
+                ws_cr.append(["Activity / Workstream", "Role / Team", "Estimated Mandays"])
+                ws_cr.append(["Analysis, Design & Governance", "Project Manager / BA", submission.mandays_breakdown.get("analysis_pm", 0)])
+                ws_cr.append(["Snowflake Engineering & UI Dev", "Data & Streamlit Devs", submission.mandays_breakdown.get("development", 0)])
+                ws_cr.append(["Integration & Regression Testing", "QA Engineer", submission.mandays_breakdown.get("testing", 0)])
+                ws_cr.append(["Deployment & Operational Handover", "DevOps Engineer", submission.mandays_breakdown.get("deployment", 0)])
+                ws_cr.append(["Total Committed Effort", "All Teams", total_mandays])
 
-            _substitute_xlsx(wb_sc, self.context)
-            wb_sc.save(str(scoping_out_path))
-            wb_sc.close()
+                _substitute_xlsx(wb_sc, self.context)
+                wb_sc.save(str(scoping_out_path))
+                scoping_created = True
+            finally:
+                wb_sc.close()
 
         # 4. Generate draft BAST_Change_Request.docx
         bast_template = self.project.resolve_clean_file("BAST_Change_Request_Template.docx")
         bast_out_path = out_p / f"BAST_Change_Request_Draft_CR_{cr_id.zfill(2)}.docx"
+        bast_created = False
         if bast_template and bast_template.exists():
             doc_bast = docx.Document(str(bast_template))
             # Insert CR title in paragraph 2
@@ -258,13 +263,14 @@ class ChangeRequestProcessor:
                 p.text = f"Pekerjaan : Jasa Implementasi Snowflake - Change Request #{cr_id} ({submission.title})"
             _substitute_docx(doc_bast, self.context)
             doc_bast.save(str(bast_out_path))
+            bast_created = True
 
         summary = (
             f"Successfully filed Change Request #{cr_id}: '{submission.title}'\n"
             f"- Form: {doc_out_path}\n"
-            f"- Ledger: {ledger_out_path}\n"
-            f"- Scoping: {scoping_out_path}\n"
-            f"- BAST Draft: {bast_out_path}\n"
+            f"- Ledger: {ledger_out_path if ledger_updated else 'N/A'}\n"
+            f"- Scoping: {scoping_out_path if scoping_created else 'N/A'}\n"
+            f"- BAST Draft: {bast_out_path if bast_created else 'N/A'}\n"
             f"- Total Effort: {total_mandays} mandays across {submission.schedule_days} calendar days."
         )
 
@@ -273,8 +279,8 @@ class ChangeRequestProcessor:
             project_id=self.project_id,
             cr_form_path=str(doc_out_path),
             ledger_updated=ledger_updated,
-            mandays_sheet_path=str(scoping_out_path),
-            bast_draft_path=str(bast_out_path),
+            mandays_sheet_path=str(scoping_out_path) if scoping_created else None,
+            bast_draft_path=str(bast_out_path) if bast_created else None,
             total_mandays=total_mandays,
             summary=summary,
         )

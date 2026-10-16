@@ -17,10 +17,12 @@ from typing import Dict, List, Optional, Set, Tuple
 from src.ppt_engine.diagram_v2.models import (
     DiagramSpec,
     ContainerSpec,
+    DeckHeaderContract,
     NodeSpec,
     FlowSpec,
     BadgeSpec,
     BulletListSpec,
+    resolve_node_fonts,
 )
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
 
@@ -38,10 +40,14 @@ class SVGCompiler:
         self._used_colors: Set[str] = set()
         self._icon_cache: Dict[str, str] = {}
         self._node_boxes: Dict[str, Box] = {}
+        self._container_boxes: Dict[str, Box] = {}
 
-    def _clean_color_id(self, hex_color: str) -> str:
+    def _clean_color_id(self, hex_color: Optional[str]) -> str:
         """Converts a hex color code to a safe XML identifier (e.g. '#2563EB' -> '2563eb')."""
-        return hex_color.lstrip("#").lower()
+        if not hex_color:
+            return "000000"
+        cleaned = re.sub(r"[^a-zA-Z0-9]", "", str(hex_color)).lower()
+        return cleaned or "000000"
 
     def _resolve_icon_data_uri(self, icon_ref: Optional[str]) -> str:
         """Resolves an icon identifier or path to an embedded Base64 data URI."""
@@ -148,7 +154,7 @@ class SVGCompiler:
             lines.append(f'  <rect width="{cw}" height="{ch}" fill="#F8FAFC" opacity="0.45"/>')
             lines.append(f'  <!-- Subtle Blueprint Grid Pattern -->')
             lines.append(f'  <g stroke="{self.spec.canvas.grid_color}" stroke-width="0.75" opacity="{self.spec.canvas.grid_opacity}">')
-            sp = int(self.spec.canvas.grid_spacing)
+            sp = max(10, int(self.spec.canvas.grid_spacing or 45))
             # Horizontal lines
             h_lines = " ".join([f"M 0 {y} L {cw} {y}" for y in range(sp, ch, sp)])
             lines.append(f'    <path d="{h_lines}" />')
@@ -160,29 +166,38 @@ class SVGCompiler:
 
     def _render_header(self) -> str:
         h = self.spec.header
-        hx = h.x if h.x is not None else (0.60 if self.spec.canvas.unit == "in" else 50.0)
-        hy = h.y if h.y is not None else (0.40 if self.spec.canvas.unit == "in" else 32.0)
+        canvas_unit = (self.spec.canvas.unit or "in").lower().strip()
+        default_x = DeckHeaderContract.STRIPES_LEFT_IN if canvas_unit == "in" else 57.6
+        default_y = DeckHeaderContract.STRIPES_TOP_IN if canvas_unit == "in" else 26.88
+        hx = h.x if h.x is not None else default_x
+        hy = h.y if h.y is not None else default_y
         box = self.norm.to_pixels(hx, hy, 1.0, 1.0)
+
+        stripe_h = 52.8
+        stripe_red_w = 4.32
+        stripe_gap = 1.92
+        stripe_blue_w = 8.64
 
         lines: List[str] = [
             '  <!-- ================= HEADER SECTION ================= -->',
         ]
         if h.brand_stripes:
             lines.append(f'  <!-- Brand Stripes (1 Red : 2 Blue Ratio) -->')
-            lines.append(f'  <rect x="{box.x:.1f}" y="{box.y:.1f}" width="4.5" height="32" fill="{h.red_hex}" rx="1"/>')
-            lines.append(f'  <rect x="{box.x + 6.0:.1f}" y="{box.y:.1f}" width="9" height="32" fill="{h.blue_hex}" rx="1"/>')
-            tx = box.x + 26.0
+            lines.append(f'  <rect x="{box.x:.1f}" y="{box.y:.1f}" width="{stripe_red_w:.1f}" height="{stripe_h:.1f}" fill="{h.red_hex}" rx="1"/>')
+            lines.append(f'  <rect x="{box.x + stripe_red_w + stripe_gap:.1f}" y="{box.y:.1f}" width="{stripe_blue_w:.1f}" height="{stripe_h:.1f}" fill="{h.blue_hex}" rx="1"/>')
+            tx = box.x + 24.0
         else:
             tx = box.x
 
         lines.extend([
-            f'  <text x="{tx:.1f}" y="{box.y + 15.0:.1f}" font-family="-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif" font-size="22" font-weight="800" fill="#0F172A">{html.escape(h.action_title)}</text>',
-            f'  <text x="{tx:.1f}" y="{box.y + 33.0:.1f}" font-family="-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="500" fill="#64748B">{html.escape(h.subtitle)}</text>',
+            f'  <text x="{tx:.1f}" y="{box.y + 20.0:.1f}" font-family="-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif" font-size="22" font-weight="800" fill="#0F172A">{html.escape(h.action_title)}</text>',
+            f'  <text x="{tx:.1f}" y="{box.y + 40.0:.1f}" font-family="-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="500" fill="#64748B">{html.escape(h.subtitle)}</text>',
         ])
         return "\n".join(lines)
 
     def _render_container(self, c: ContainerSpec) -> str:
         box = self.norm.to_pixels(c.x, c.y, c.w, c.h)
+        self._container_boxes[c.id] = box
         dash_attr = f' stroke-dasharray="{c.dash_pattern.replace(" ", ",")}"' if c.dashed else ''
 
         lines: List[str] = [
@@ -191,24 +206,27 @@ class SVGCompiler:
             f'    <rect x="{box.x:.1f}" y="{box.y:.1f}" width="{box.w:.1f}" height="{box.h:.1f}" rx="{c.corner_radius:.1f}" fill="{c.fill_hex}" fill-opacity="{c.fill_opacity}" stroke="{c.border_hex}" stroke-width="{c.stroke_width}"{dash_attr}/>',
         ]
 
+        valign = c.resolved_vertical_align()
+        align = c.resolved_align()
+
         # Container Label
-        anchor = "middle" if c.align == "center" else ("start" if c.align == "left" else "end")
-        lx = box.cx if c.align == "center" else (box.x + 20.0 if c.align == "left" else box.x2 - 20.0)
-        ly = box.y + 24.0 if c.vertical_align == "top" else box.y2 - 16.0
+        anchor = "middle" if align == "center" else ("start" if align == "left" else "end")
+        lx = box.cx if align == "center" else (box.x + 20.0 if align == "left" else box.x2 - 20.0)
+        ly = box.y + 24.0 if valign == "top" else box.y2 - 16.0
         lines.append(
-            f'    <text x="{lx:.1f}" y="{ly:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{c.font_size:.1f}" font-weight="700" fill="{c.font_color}" text-anchor="{anchor}" letter-spacing="0.5">{html.escape(c.label).upper()}</text>'
+            f'    <text x="{lx:.1f}" y="{ly:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{c.font_size:.1f}" font-weight="700" fill="{c.font_color}" text-anchor="{anchor}" letter-spacing="0.5">{html.escape(c.label.upper())}</text>'
         )
 
-        # Optional Top-Right Tag Badge (e.g. AWS CLOUD)
+        # Optional Top-Right Tag Badge (e.g. AWS CLOUD) - decoupled at box.y + 12.0
         if c.tag_badge:
             bw = max(98.0, len(c.tag_badge) * 8.5 + 24.0)
             bh = 24.0
             bx = box.x2 - bw - 15.0
-            by = box.y + 12.0 if c.vertical_align == "top" else box.y2 - bh - 12.0
+            by = box.y + 12.0
             lines.extend([
                 f'    <g transform="translate({bx:.1f}, {by:.1f})">',
                 f'      <rect width="{bw:.1f}" height="{bh:.1f}" rx="5" fill="{c.tag_bg_hex}" stroke="{c.border_hex}" stroke-width="1"/>',
-                f'      <text x="{bw/2.0:.1f}" y="16" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="800" fill="{c.tag_text_hex}" text-anchor="middle" letter-spacing="0.5">{html.escape(c.tag_badge).upper()}</text>',
+                f'      <text x="{bw/2.0:.1f}" y="16" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="800" fill="{c.tag_text_hex}" text-anchor="middle" letter-spacing="0.5">{html.escape(c.tag_badge.upper())}</text>',
                 '    </g>',
             ])
 
@@ -243,9 +261,18 @@ class SVGCompiler:
                 tx = box.cx
                 anchor = "middle"
 
-            lines.append(f'    <text x="{tx:.1f}" y="{body_cy - 2.0:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="800" fill="{n.title_color}" text-anchor="{anchor}">{html.escape(n.title)}</text>')
-            if n.subtitle:
-                lines.append(f'    <text x="{tx:.1f}" y="{body_cy + 14.0:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="{n.subtitle_color}" text-anchor="{anchor}">{html.escape(n.subtitle)}</text>')
+            w_in = box.w / 90.0
+            h_in = box.h / 90.0
+            cyl_title_pt, cyl_font_size, cyl_sp = resolve_node_fonts(n, w_in, h_in)
+            lines.append(f'    <text x="{tx:.1f}" y="{body_cy - 2.0:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{cyl_title_pt:.1f}" font-weight="800" fill="{n.title_color}" text-anchor="{anchor}">{html.escape(n.title)}</text>')
+            cyl_raw_bullets = [str(b).strip() for b in (getattr(n, "bullets", None) or []) if str(b).strip()]
+            cyl_subs = ([s.strip() for s in n.subtitle.split("\n") if s.strip()] if n.subtitle else []) + cyl_raw_bullets
+            if cyl_subs:
+                cyl_y = body_cy + 13.0
+                for csl in cyl_subs:
+                    csl_text = csl if (csl.startswith("•") or not cyl_raw_bullets) else f"• {csl}"
+                    lines.append(f'    <text x="{tx:.1f}" y="{cyl_y:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{cyl_font_size:.1f}" font-weight="600" fill="{n.subtitle_color}" text-anchor="{anchor}">{html.escape(csl_text)}</text>')
+                    cyl_y += (cyl_font_size * 1.30)
             lines.append('  </g>')
             return "\n".join(lines)
 
@@ -262,13 +289,16 @@ class SVGCompiler:
         has_kicker = bool(n.kicker)
         has_svg_icon = bool(icon_data_uri)
         has_emoji = bool(n.icon_emoji) and not has_svg_icon
-        t_pt = n.title_pt or 15.0
-        sub_lines = n.subtitle.split("\n") if n.subtitle else []
+        w_in = box.w / 90.0
+        h_in = box.h / 90.0
+        t_pt, resolved_sub_pt, sp_pt = resolve_node_fonts(n, w_in, h_in)
+        raw_bullets = [str(b).strip() for b in (getattr(n, "bullets", None) or []) if str(b).strip()]
+        sub_lines = ([s for s in n.subtitle.split("\n") if s.strip()] if n.subtitle else []) + raw_bullets
 
         kicker_h = 24.0 if has_kicker else 0.0
         icon_h = 40.0 if has_svg_icon else (34.0 if has_emoji else 0.0)
         title_h = t_pt + 4.0
-        sub_h = len(sub_lines) * 14.0 if sub_lines else 0.0
+        sub_h = len(sub_lines) * (resolved_sub_pt * 1.20 + sp_pt * 90.0 / 72.0) if sub_lines else 0.0
         total_content_h = kicker_h + icon_h + title_h + sub_h
 
         # Vertical alignment
@@ -307,18 +337,13 @@ class SVGCompiler:
         cur_y += title_h
 
         # Subtitle
-        max_sub_len = max((len(sl.strip()) for sl in sub_lines), default=0)
-        sub_font_size = 10.5
-        if max_sub_len > 0:
-            usable_w = box.w - 24.0
-            if max_sub_len * 6.2 > usable_w:
-                sub_font_size = max(8.0, min(10.5, usable_w / (max_sub_len * 0.60)))
-
+        sub_font_size = resolved_sub_pt
         for sl in sub_lines:
-            cur_y += max(12.0, sub_font_size * 1.35)
-            sub_align = "start" if (sl.strip().startswith("•") or getattr(n, "align", "center") == "left") else "middle"
+            cur_y += max(12.0, sub_font_size * 1.20 + sp_pt * 90.0 / 72.0)
+            sl_text = sl if (sl.strip().startswith("•") or not getattr(n, "bullets", None)) else f"• {sl}"
+            sub_align = "start" if (sl_text.strip().startswith("•") or getattr(n, "align", "center") == "left") else "middle"
             sub_x = (box.x + 12.0) if sub_align == "start" else box.cx
-            lines.append(f'    <text x="{sub_x:.1f}" y="{cur_y:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{sub_font_size:.1f}" font-weight="600" fill="{n.subtitle_color}" text-anchor="{sub_align}">{html.escape(sl)}</text>')
+            lines.append(f'    <text x="{sub_x:.1f}" y="{cur_y:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{sub_font_size:.1f}" font-weight="600" fill="{n.subtitle_color}" text-anchor="{sub_align}">{html.escape(sl_text)}</text>')
 
         lines.append('  </g>')
         return "\n".join(lines)
@@ -350,12 +375,19 @@ class SVGCompiler:
 
     def _render_flow(self, f: FlowSpec) -> str:
         pts: List[Point] = []
+        all_boxes = {**self._container_boxes, **self._node_boxes}
         if f.points:
-            pts = [self.norm.point_to_pixels(p) for p in f.points]
-        elif f.source and f.target and f.source in self._node_boxes and f.target in self._node_boxes:
-            src_box = self._node_boxes[f.source]
-            tgt_box = self._node_boxes[f.target]
-            pts = GeometryNormalizer.compute_auto_route(src_box, tgt_box, curve=f.curve)
+            pts = [self.norm.point_to_pixels(p) for p in f.points if len(p) >= 2]
+        elif f.source and f.target and f.source in all_boxes and f.target in all_boxes:
+            src_box = all_boxes[f.source]
+            tgt_box = all_boxes[f.target]
+            pts = GeometryNormalizer.compute_auto_route(
+                src_box,
+                tgt_box,
+                curve=f.curve,
+                src_port=f.source_port,
+                tgt_port=f.target_port,
+            )
 
         if len(pts) < 2:
             return ""
@@ -427,7 +459,7 @@ class SVGCompiler:
             lines.extend([
                 f'  <g filter="url(#card-shadow)">',
                 f'    <rect x="{lx - lw/2.0:.1f}" y="{ly - lh/2.0:.1f}" width="{lw:.1f}" height="{lh:.1f}" rx="4" fill="{f.label_bg_hex}" stroke="{border}" stroke-width="1"/>',
-                f'    <text x="{lx:.1f}" y="{ly + 4.0:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{f.font_pt:.1f}" font-weight="700" fill="{f.label_text_hex}" text-anchor="middle">{html.escape(f.label)}</text>',
+                f'    <text x="{lx:.1f}" y="{ly + 4.0:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{font_pt:.1f}" font-weight="700" fill="{f.label_text_hex}" text-anchor="middle">{html.escape(f.label)}</text>',
                 '  </g>',
             ])
 

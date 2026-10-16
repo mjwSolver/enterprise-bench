@@ -109,7 +109,7 @@ def add_slide_header(
     p_tr.font.color.rgb = tracker_rgb
 
     # 2. Action Headline & Context Subtitle (Unified Text Frame for Consistent Spacing)
-    tb_header = slide.shapes.add_textbox(Inches(0.8), Inches(0.66), Inches(11.733), Inches(0.95))
+    tb_header = slide.shapes.add_textbox(Inches(0.8), Inches(0.66), Inches(11.733), Inches(0.65))
     tf_h = tb_header.text_frame
     tf_h.word_wrap = True
     tf_h.margin_left = tf_h.margin_right = tf_h.margin_top = tf_h.margin_bottom = 0
@@ -939,12 +939,19 @@ class ScorecardMetric:
 @dataclass
 class ScorecardQuadrantData:
     """Definition for one quadrant in the 4-Quadrant Balanced Scorecard."""
-    quadrant_title: str         # e.g. "1. FINANCIAL & COMMERCIAL"
-    tagline: str                # e.g. "TCO Reduction & Capital Optimization"
-    metrics: List[ScorecardMetric]
+    quadrant_title: str = ""         # e.g. "1. FINANCIAL & COMMERCIAL"
+    tagline: str = ""                # e.g. "TCO Reduction & Capital Optimization"
+    metrics: List[ScorecardMetric] = field(default_factory=list)
     accent_key: str = "accent"
     icon: Optional[str] = None  # Semantic icon identifier (e.g. "dollar-sign", "users", "zap", "shield-check")
     icon_path: Optional[Union[str, Path]] = None
+    title: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.title and not self.quadrant_title:
+            self.quadrant_title = self.title
+        elif not self.title and self.quadrant_title:
+            self.title = self.quadrant_title
 
 # Backwards-compatibility alias
 QuadrantData = ScorecardQuadrantData
@@ -6857,6 +6864,12 @@ class ConsultingDeckBuilder:
         if engagement_context is not None:
             from src.core.slug_registry import substitute_slugs_in_presentation
             substitute_slugs_in_presentation(self.prs, engagement_context)
+
+        # Enforce flat vector aesthetic by stripping OpenXML drop shadows across all slide shapes
+        for slide in self.prs.slides:
+            for sh in slide.shapes:
+                strip_shape_shadows(sh)
+
         p = Path(output_path)
         p.parent.mkdir(parents=True, exist_ok=True)
         self.prs.save(str(p))

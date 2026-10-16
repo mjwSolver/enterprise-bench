@@ -12,11 +12,12 @@ import hashlib
 import logging
 import mimetypes
 import uuid
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Union
 
-from src.core.delivery.exceptions import PreflightGateError
+from src.core.delivery.exceptions import DeliveryError, PreflightGateError
 from src.core.delivery.locks import LockManager
 from src.core.delivery.models import (
     DeliveryManifest,
@@ -30,12 +31,14 @@ logger = logging.getLogger(__name__)
 
 
 def _compute_sha256(file_path: Path) -> str:
-    """Calculates SHA-256 hash of a file in 64KB streaming chunks."""
-    hasher = hashlib.sha256()
+    """Calculates SHA-256 hash of a file using optimized streaming chunks (or C-level file_digest)."""
     with open(file_path, "rb") as f:
-        while chunk := f.read(65536):
+        if hasattr(hashlib, "file_digest"):
+            return hashlib.file_digest(f, "sha256").hexdigest()
+        hasher = hashlib.sha256()
+        while chunk := f.read(131072):  # 128 KB streaming chunks
             hasher.update(chunk)
-    return hasher.hexdigest()
+        return hasher.hexdigest()
 
 
 class StagingPipeline:
@@ -55,6 +58,7 @@ class StagingPipeline:
         self,
         directory: Union[str, Path],
         fail_on_locks: bool = True,
+        fail_on_draft: bool = False,
     ) -> PreflightReport:
         """
         Executes stage-gate preflight checks against all deliverables in a directory.
@@ -63,7 +67,7 @@ class StagingPipeline:
           1. Directory Accessibility & Existence
           2. Inventory Presence (checks for deliverable files)
           3. Lock Concurrency Audit (blocks if unreleased locks exist and fail_on_locks=True)
-          4. Zero-Byte Corruption Guard (flags empty truncated files)
+          4. Zero-Byte & Archive Corruption Guard (flags empty and structurally damaged files)
           5. Presentation Overlay Inspection (audits status badges on PPTX files)
           
         Args:
@@ -104,11 +108,11 @@ class StagingPipeline:
         # Inventory candidate deliverable files
         all_files = [
             f for f in dir_path.rglob("*")
-            if f.is_file() and not f.name.startswith(".")
+            if f.is_file() and not f.name.startswith(".") and not f.name.startswith("~$")
         ]
         deliverable_files = [
             f for f in all_files
-            if not f.name.endswith(".lock") and "_LOCKED_" not in f.stem
+            if not f.name.endswith(".lock") and "_LOCKED_" not in f.stem and f.name != "delivery_manifest.json"
         ]
 
         # Gate 2: Deliverable Inventory
@@ -161,17 +165,32 @@ class StagingPipeline:
                 )
             )
 
-        # Gate 4: Zero-Byte Corruption Guard
+        # Gate 4: Zero-Byte & Archive Integrity Corruption Guard
         zero_byte_files = [f for f in deliverable_files if f.stat().st_size == 0]
-        if zero_byte_files:
-            corrupt_names = [f.name for f in zero_byte_files]
-            msg = f"Found {len(zero_byte_files)} empty (0-byte) file(s): {', '.join(corrupt_names)}"
+        corrupted_archives: List[str] = []
+
+        for f in deliverable_files:
+            if f.suffix.lower() in (".pptx", ".docx", ".xlsx", ".zip") and f.stat().st_size > 0:
+                if not zipfile.is_zipfile(f):
+                    corrupted_archives.append(f"{f.name} (invalid zip structure)")
+                else:
+                    try:
+                        with zipfile.ZipFile(f, "r") as zf:
+                            bad_member = zf.testzip()
+                            if bad_member is not None:
+                                corrupted_archives.append(f"{f.name} (corrupt member: {bad_member})")
+                    except Exception as zerr:
+                        corrupted_archives.append(f"{f.name} ({zerr})")
+
+        all_corrupted = [f.name for f in zero_byte_files] + corrupted_archives
+        if all_corrupted:
+            msg = f"Found {len(all_corrupted)} corrupt or empty file(s): {', '.join(all_corrupted)}"
             gates.append(
                 PreflightGateResult(
                     gate_name="ZERO_BYTE_CORRUPTION_GUARD",
                     passed=False,
                     message=msg,
-                    details={"corrupt_files": corrupt_names},
+                    details={"corrupt_files": all_corrupted},
                 )
             )
             errors.append(msg)
@@ -180,29 +199,43 @@ class StagingPipeline:
                 PreflightGateResult(
                     gate_name="ZERO_BYTE_CORRUPTION_GUARD",
                     passed=True,
-                    message="All candidate deliverables have non-zero file sizes.",
+                    message="All candidate deliverables have non-zero file sizes and valid archive structures.",
                 )
             )
 
         # Gate 5: Presentation Overlay Inspection
         pptx_files = [f for f in deliverable_files if f.suffix.lower() == ".pptx"]
         pptx_details = {}
+        overlay_errors: List[str] = []
+
         for pptx in pptx_files:
             try:
                 report = self.overlay_mgr.inspect(pptx)
                 status_str = report.status.value if report.status else "UNSTAMPED"
                 pptx_details[pptx.name] = status_str
                 if status_str == "DRAFT":
-                    warnings.append(f"Presentation '{pptx.name}' has DRAFT status overlay badge.")
+                    msg = f"Presentation '{pptx.name}' has DRAFT status overlay badge."
+                    warnings.append(msg)
+                    if fail_on_draft:
+                        overlay_errors.append(msg)
+                        errors.append(msg)
             except Exception as exc:
-                logger.warning("Could not audit overlay on '%s': %s", pptx.name, exc)
+                err_msg = f"Could not audit overlay on '{pptx.name}': {exc}"
+                logger.warning(err_msg)
                 pptx_details[pptx.name] = f"AUDIT_ERROR: {exc}"
+                overlay_errors.append(err_msg)
+                errors.append(err_msg)
 
+        overlay_passed = len(overlay_errors) == 0
         gates.append(
             PreflightGateResult(
                 gate_name="PRESENTATION_OVERLAY_INSPECTION",
-                passed=True,
-                message=f"Audited {len(pptx_files)} PowerPoint presentation(s).",
+                passed=overlay_passed,
+                message=(
+                    f"Audited {len(pptx_files)} PowerPoint presentation(s)."
+                    if overlay_passed
+                    else f"Presentation overlay audit failed on {len(overlay_errors)} deliverable(s)."
+                ),
                 details=pptx_details,
             )
         )
@@ -248,8 +281,10 @@ class StagingPipeline:
             f for f in dir_path.rglob("*")
             if f.is_file()
             and not f.name.startswith(".")
+            and not f.name.startswith("~$")
             and not f.name.endswith(".lock")
             and "_LOCKED_" not in f.stem
+            and f.name != "delivery_manifest.json"
         ]
         deliverable_files.sort(key=lambda p: str(p.relative_to(dir_path)))
 
@@ -258,11 +293,15 @@ class StagingPipeline:
 
         for file_path in deliverable_files:
             rel_path = file_path.relative_to(dir_path).as_posix()
-            target_drive_path = f"{clean_drive_root}/{rel_path}"
-            stat = file_path.stat()
-            size_bytes = stat.st_size
-            sha256 = _compute_sha256(file_path)
-            mtime = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
+            target_drive_path = f"{clean_drive_root}/{rel_path}" if clean_drive_root else rel_path
+            try:
+                stat = file_path.stat()
+                size_bytes = stat.st_size
+                sha256 = _compute_sha256(file_path)
+                mtime = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
+            except OSError as exc:
+                raise DeliveryError(f"Failed accessing deliverable '{file_path.name}': {exc}") from exc
+
             mime_type = mimetypes.guess_type(file_path.name)[0] or "application/octet-stream"
 
             overlay_status = None
@@ -307,7 +346,14 @@ class StagingPipeline:
         if output_manifest_path:
             out_p = Path(output_manifest_path).resolve()
             out_p.parent.mkdir(parents=True, exist_ok=True)
-            out_p.write_text(manifest.model_dump_json(indent=2), encoding="utf-8")
-            logger.info("Serialized delivery manifest '%s' to '%s'", delivery_id, out_p)
+            tmp_p = out_p.with_name(f".{out_p.name}.tmp_{uuid.uuid4().hex[:8]}")
+            try:
+                tmp_p.write_text(manifest.model_dump_json(indent=2), encoding="utf-8")
+                tmp_p.replace(out_p)
+                logger.info("Serialized delivery manifest '%s' to '%s'", delivery_id, out_p)
+            except Exception:
+                if tmp_p.exists():
+                    tmp_p.unlink(missing_ok=True)
+                raise
 
         return manifest

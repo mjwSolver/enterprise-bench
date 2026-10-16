@@ -51,9 +51,12 @@ from src.ppt_engine.consulting_archetypes import (
     build_cover_slide,
     create_presentation,
 )
-from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb
+from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, strip_shape_shadows
 
 logger = logging.getLogger(__name__)
+
+# Precompiled regex for footer slide pagination ("02 / 09")
+PAGE_REGEX = re.compile(r"^\d{2}\s*/\s*\d{2}$")
 
 
 def _add_status_pill(
@@ -95,6 +98,16 @@ def _add_status_pill(
     pill.fill.solid()
     pill.fill.fore_color.rgb = theme.get_rgb(bg_key)
     pill.line.fill.background()
+
+    # Dynamic font scaling to guarantee text never overflows pill boundaries
+    clean_status = (status or "").strip()
+    status_len = len(clean_status)
+    if width:
+        w_in = width.inches if hasattr(width, "inches") else float(width) / 914400.0
+        w_pt = w_in * 72.0
+        est_txt_w = status_len * (font_size_pt * 0.62)
+        if est_txt_w > (w_pt - 4):
+            font_size_pt = max(6.5, font_size_pt * ((w_pt - 4) / max(1.0, est_txt_w)))
 
     tf = pill.text_frame
     tf.word_wrap = False

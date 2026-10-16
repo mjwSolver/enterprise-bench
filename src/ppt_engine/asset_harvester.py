@@ -11,6 +11,7 @@ Provides tools to:
 from __future__ import annotations
 
 import base64
+import html
 import json
 import logging
 import re
@@ -32,6 +33,60 @@ _LOGOS_DIR = _ASSETS_DIR / "logos"
 _ICONS_DIR = _ASSETS_DIR / "icons"
 _VENDOR_PACKS_DIR = _REPO_ROOT / "vendor_packs"
 _MANIFEST_FILE = _ICONS_DIR / "manifest.json"
+
+
+def _safe_rel_path(path: Path) -> str:
+    """Resolve path relative to _REPO_ROOT, falling back to path.as_posix() on ValueError."""
+    try:
+        return path.resolve().relative_to(_REPO_ROOT).as_posix()
+    except ValueError:
+        try:
+            return path.relative_to(_REPO_ROOT).as_posix()
+        except ValueError:
+            return path.as_posix()
+
+
+def _upsert_icon_in_memory(
+    manifest: Dict[str, Any],
+    icon_id: str,
+    title: str,
+    pack: str,
+    rel_file_path: str,
+    fmt: str = "svg",
+    category: str = "general",
+    icon_index: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> None:
+    """Insert or update an icon entry in an in-memory manifest dictionary with O(1) lookup."""
+    if not any(p.get("id") == pack for p in manifest.get("packs", [])):
+        manifest.setdefault("packs", []).append({
+            "id": pack,
+            "name": pack.replace("_", " ").title(),
+            "vendor": pack.capitalize(),
+        })
+
+    entry_data = {
+        "id": icon_id,
+        "title": title,
+        "pack": pack,
+        "file": rel_file_path,
+        "format": fmt,
+        "category": category,
+    }
+
+    icons_list = manifest.setdefault("icons", [])
+    existing = (
+        icon_index.get(icon_id)
+        if icon_index is not None
+        else next((it for it in icons_list if it.get("id") == icon_id), None)
+    )
+    if existing is not None:
+        existing.update(entry_data)
+        if icon_index is not None:
+            icon_index[icon_id] = existing
+    else:
+        icons_list.append(entry_data)
+        if icon_index is not None:
+            icon_index[icon_id] = entry_data
 
 
 @dataclass
@@ -81,11 +136,22 @@ class AssetHarvester:
         """Ensures standard XML namespace and clean viewBox attributes for standalone SVG."""
         content = raw_svg.strip()
         if 'xmlns="http://www.w3.org/2000/svg"' not in content:
-            content = re.sub(r"<svg(\s+)", r'<svg xmlns="http://www.w3.org/2000/svg"\1', content, count=1)
+            content = re.sub(
+                r"<svg(?=\s|>)",
+                '<svg xmlns="http://www.w3.org/2000/svg"',
+                content,
+                count=1,
+            )
 
         # Inject title tag if missing and title provided
         if title and "<title>" not in content:
-            content = re.sub(r"(<svg[^>]*>)", rf"\1\n  <title>{title}</title>", content, count=1)
+            safe_title = html.escape(title, quote=False)
+            content = re.sub(
+                r"(<svg\b[^>]*(?<!/)>)",
+                lambda m: f"{m.group(1)}\n  <title>{safe_title}</title>",
+                content,
+                count=1,
+            )
 
         return content
 
@@ -106,6 +172,8 @@ class AssetHarvester:
         _VENDOR_PACKS_DIR.mkdir(parents=True, exist_ok=True)
 
         from src.ppt_engine.library_importer import IconRegistry
+        if not hasattr(IconRegistry, "upsert_icon_in_memory"):
+            setattr(IconRegistry, "upsert_icon_in_memory", staticmethod(_upsert_icon_in_memory))
 
         # 1. Fetch Databricks catalog descriptor
         catalog_cache = _VENDOR_PACKS_DIR / "databricks_catalog.json"
@@ -154,27 +222,30 @@ class AssetHarvester:
 
             file_stem = slug.replace("-", "_")
             out_path = target_dir / f"{file_stem}.svg"
+            clean_svg: Optional[str] = None
 
             if not out_path.exists() or force:
                 try:
                     req = urllib.request.Request(svg_url, headers={"User-Agent": "Mozilla/5.0"})
                     with urllib.request.urlopen(req, timeout=5.0) as resp:
                         content = resp.read().decode("utf-8")
-                        norm = cls.normalize_svg_content(content, title=title)
-                        out_path.write_text(norm, encoding="utf-8")
+                        clean_svg = cls.normalize_svg_content(content, title=title)
+                        out_path.write_text(clean_svg, encoding="utf-8")
                 except Exception as ex:
                     logger.debug("Failed to download %s: %s", slug, ex)
                     return slug, title, category, "", str(ex)
 
             # Also ensure hyphenated alias symlink or companion exists if needed
             hyphen_path = target_dir / f"{slug}.svg"
-            if not hyphen_path.exists() and out_path.exists():
+            if hyphen_path != out_path and (not hyphen_path.exists() or force) and out_path.exists():
                 try:
-                    hyphen_path.write_text(out_path.read_text(encoding="utf-8"), encoding="utf-8")
+                    if clean_svg is None:
+                        clean_svg = out_path.read_text(encoding="utf-8")
+                    hyphen_path.write_text(clean_svg, encoding="utf-8")
                 except Exception:
                     pass
 
-            return slug, title, category, out_path.relative_to(_REPO_ROOT).as_posix(), ""
+            return slug, title, category, _safe_rel_path(out_path), ""
 
         harvested = []
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -194,8 +265,11 @@ class AssetHarvester:
             except Exception:
                 pass
 
-        # 5. Register in manifest.json
+        # 5. Register in manifest.json (batched in memory with single save)
         manifest = IconRegistry.load_manifest()
+        icon_index: Dict[str, Dict[str, Any]] = {
+            it["id"]: it for it in manifest.get("icons", []) if isinstance(it, dict) and "id" in it
+        }
 
         # Ensure pack metadata is present
         if not any(p["id"] == "databricks" for p in manifest.get("packs", [])):
@@ -209,30 +283,18 @@ class AssetHarvester:
 
         # Register core databricks icon
         if core_logo_file.exists():
-            IconRegistry.register_icon(
-                icon_id="databricks",
-                title="Databricks",
-                pack="databricks",
-                rel_file_path=core_logo_file.relative_to(_REPO_ROOT).as_posix(),
-                fmt="svg",
-                category="platform",
-            )
-            IconRegistry.register_icon(
-                icon_id="databricks:databricks",
-                title="Databricks",
-                pack="databricks",
-                rel_file_path=core_logo_file.relative_to(_REPO_ROOT).as_posix(),
-                fmt="svg",
-                category="platform",
-            )
-            IconRegistry.register_icon(
-                icon_id="dbx",
-                title="Databricks",
-                pack="databricks",
-                rel_file_path=core_logo_file.relative_to(_REPO_ROOT).as_posix(),
-                fmt="svg",
-                category="platform",
-            )
+            core_rel = _safe_rel_path(core_logo_file)
+            for core_id in ("databricks", "databricks:databricks", "dbx"):
+                _upsert_icon_in_memory(
+                    manifest,
+                    icon_id=core_id,
+                    title="Databricks",
+                    pack="databricks",
+                    rel_file_path=core_rel,
+                    fmt="svg",
+                    category="platform",
+                    icon_index=icon_index,
+                )
 
         # Register all harvested products
         for h in harvested:
@@ -240,35 +302,43 @@ class AssetHarvester:
             rel_file = h["file"]
             icon_id = f"databricks:{slug_stem}"
 
-            IconRegistry.register_icon(
+            _upsert_icon_in_memory(
+                manifest,
                 icon_id=icon_id,
                 title=h["title"],
                 pack="databricks",
                 rel_file_path=rel_file,
                 fmt="svg",
                 category=h["category"],
+                icon_index=icon_index,
             )
 
             # Register hyphenated alias (e.g. databricks:unity-catalog)
             if slug_stem != h["slug"]:
-                IconRegistry.register_icon(
+                _upsert_icon_in_memory(
+                    manifest,
                     icon_id=f"databricks:{h['slug']}",
                     title=h["title"],
                     pack="databricks",
                     rel_file_path=rel_file,
                     fmt="svg",
                     category=h["category"],
+                    icon_index=icon_index,
                 )
 
             # Register short dbx alias (e.g. dbx:unity_catalog)
-            IconRegistry.register_icon(
+            _upsert_icon_in_memory(
+                manifest,
                 icon_id=f"dbx:{slug_stem}",
                 title=h["title"],
                 pack="databricks",
                 rel_file_path=rel_file,
                 fmt="svg",
                 category=h["category"],
+                icon_index=icon_index,
             )
+
+        IconRegistry.save_manifest(manifest)
 
         return {
             "pack": "databricks",
@@ -285,6 +355,8 @@ class AssetHarvester:
         ensuring authentic modern marks and updating manifest registration.
         """
         from src.ppt_engine.library_importer import IconRegistry
+        if not hasattr(IconRegistry, "upsert_icon_in_memory"):
+            setattr(IconRegistry, "upsert_icon_in_memory", staticmethod(_upsert_icon_in_memory))
 
         cloudera_dir = _LOGOS_DIR / "cloudera"
         cloudera_dir.mkdir(parents=True, exist_ok=True)
@@ -308,19 +380,35 @@ class AssetHarvester:
             ("cloudera:cloudera_manager", "Cloudera Manager", "cloudera_manager.svg", "management"),
         ]
 
+        manifest = IconRegistry.load_manifest()
+        icon_index: Dict[str, Dict[str, Any]] = {
+            it["id"]: it for it in manifest.get("icons", []) if isinstance(it, dict) and "id" in it
+        }
+
+        if not any(p["id"] == "cloudera" for p in manifest.get("packs", [])):
+            manifest.setdefault("packs", []).append({
+                "id": "cloudera",
+                "name": "Cloudera Data Platform (CDP)",
+                "vendor": "Cloudera",
+            })
+
         for icon_id, title, filename, cat in cloudera_entries:
             target_p = cloudera_dir / filename
             if target_p.exists():
-                rel_p = target_p.relative_to(_REPO_ROOT).as_posix()
-                IconRegistry.register_icon(
+                rel_p = _safe_rel_path(target_p)
+                _upsert_icon_in_memory(
+                    manifest,
                     icon_id=icon_id,
                     title=title,
                     pack="cloudera",
                     rel_file_path=rel_p,
                     fmt="svg",
                     category=cat,
+                    icon_index=icon_index,
                 )
                 registered.append({"id": icon_id, "title": title, "file": rel_p})
+
+        IconRegistry.save_manifest(manifest)
 
         return {
             "pack": "cloudera",
@@ -335,6 +423,8 @@ class AssetHarvester:
         registering them in manifest.json with official namespaces and aliases.
         """
         from src.ppt_engine.library_importer import IconRegistry
+        if not hasattr(IconRegistry, "upsert_icon_in_memory"):
+            setattr(IconRegistry, "upsert_icon_in_memory", staticmethod(_upsert_icon_in_memory))
 
         aws_dir = _LOGOS_DIR / "aws"
         aws_dir.mkdir(parents=True, exist_ok=True)
@@ -353,6 +443,10 @@ class AssetHarvester:
         ]
 
         manifest = IconRegistry.load_manifest()
+        icon_index: Dict[str, Dict[str, Any]] = {
+            it["id"]: it for it in manifest.get("icons", []) if isinstance(it, dict) and "id" in it
+        }
+
         if not any(p["id"] == "aws" for p in manifest.get("packs", [])):
             manifest.setdefault("packs", []).append({
                 "id": "aws",
@@ -364,16 +458,20 @@ class AssetHarvester:
 
         for icon_id, title, filename, cat, target_p in aws_entries:
             if target_p.exists():
-                rel_p = target_p.relative_to(_REPO_ROOT).as_posix()
-                IconRegistry.register_icon(
+                rel_p = _safe_rel_path(target_p)
+                _upsert_icon_in_memory(
+                    manifest,
                     icon_id=icon_id,
                     title=title,
                     pack="aws",
                     rel_file_path=rel_p,
                     fmt="svg",
                     category=cat,
+                    icon_index=icon_index,
                 )
                 registered.append({"id": icon_id, "title": title, "file": rel_p})
+
+        IconRegistry.save_manifest(manifest)
 
         return {
             "pack": "aws",
@@ -404,10 +502,7 @@ class AssetHarvester:
         p = Path(key)
         if p.exists() and p.is_file():
             abs_p = p.resolve()
-            try:
-                rel = abs_p.relative_to(_REPO_ROOT).as_posix()
-            except ValueError:
-                rel = str(abs_p)
+            rel = _safe_rel_path(abs_p)
             return ResolvedAsset(
                 id=key,
                 title=abs_p.stem.replace("_", " ").title(),
@@ -428,7 +523,7 @@ class AssetHarvester:
                 title=abs_p.stem.replace("_", " ").title(),
                 pack="repo",
                 format=abs_p.suffix.lower().lstrip("."),
-                file=abs_p.relative_to(_REPO_ROOT).as_posix(),
+                file=_safe_rel_path(abs_p),
                 absolute_path=abs_p,
                 weight="brand" if "logos" in str(abs_p) else "light",
                 size_bytes=abs_p.stat().st_size,
@@ -438,19 +533,24 @@ class AssetHarvester:
         from src.ppt_engine.library_importer import IconRegistry
         manifest = IconRegistry.load_manifest()
 
-        # 2. Alias normalizations
-        normalized_keys = [key, key.lower()]
-        if key.startswith("dbx:"):
-            normalized_keys.append(key.replace("dbx:", "databricks:"))
-        elif key == "dbx":
-            normalized_keys.append("databricks")
-        elif key.startswith("databricks:"):
-            normalized_keys.append(key.replace("databricks:", "dbx:"))
+        # 2. Alias normalizations (combine prefix swaps and separator swaps)
+        base_keys = {key, key.lower()}
+        for k in list(base_keys):
+            if k.startswith("dbx:"):
+                base_keys.add("databricks:" + k[4:])
+            elif k == "dbx":
+                base_keys.add("databricks")
+            elif k.startswith("databricks:"):
+                base_keys.add("dbx:" + k[11:])
+            elif k == "databricks":
+                base_keys.add("dbx")
 
-        if "-" in key:
-            normalized_keys.append(key.replace("-", "_"))
-        if "_" in key:
-            normalized_keys.append(key.replace("_", "-"))
+        normalized_keys = set(base_keys)
+        for k in base_keys:
+            if "-" in k:
+                normalized_keys.add(k.replace("-", "_"))
+            if "_" in k:
+                normalized_keys.add(k.replace("_", "-"))
 
         # 3. Check manifest entries
         for item in manifest.get("icons", []):
@@ -474,79 +574,79 @@ class AssetHarvester:
         # 4. Check assets/logos/ directly
         candidate_svg = _LOGOS_DIR / f"{key}.svg"
         if candidate_svg.exists():
+            abs_cand = candidate_svg.resolve()
             return ResolvedAsset(
                 id=key,
                 title=key.replace("_", " ").title(),
                 pack="logos",
                 format="svg",
-                file=candidate_svg.relative_to(_REPO_ROOT).as_posix(),
-                absolute_path=candidate_svg.resolve(),
+                file=_safe_rel_path(abs_cand),
+                absolute_path=abs_cand,
                 weight="brand",
-                size_bytes=candidate_svg.stat().st_size,
+                size_bytes=abs_cand.stat().st_size,
                 exists=True,
             )
 
         # 5. Check pack slash/colon notation (e.g. databricks:unity_catalog, cloudera/cdsw)
         if ":" in key or "/" in key:
             norm_path = key.replace(":", "/")
-            cand = _LOGOS_DIR / f"{norm_path}.svg"
-            if cand.exists():
-                return ResolvedAsset(
-                    id=key,
-                    title=cand.stem.replace("_", " ").title(),
-                    pack=norm_path.split("/")[0],
-                    format="svg",
-                    file=cand.relative_to(_REPO_ROOT).as_posix(),
-                    absolute_path=cand.resolve(),
-                    weight="brand",
-                    size_bytes=cand.stat().st_size,
-                    exists=True,
-                )
+            if norm_path.startswith("dbx/"):
+                norm_paths = [norm_path, "databricks/" + norm_path[4:]]
+            else:
+                norm_paths = [norm_path]
 
-            # Try hyphen-underscore variations
-            cand_alt = _LOGOS_DIR / f"{norm_path.replace('-', '_')}.svg"
-            if cand_alt.exists():
-                return ResolvedAsset(
-                    id=key,
-                    title=cand_alt.stem.replace("_", " ").title(),
-                    pack=norm_path.split("/")[0],
-                    format="svg",
-                    file=cand_alt.relative_to(_REPO_ROOT).as_posix(),
-                    absolute_path=cand_alt.resolve(),
-                    weight="brand",
-                    size_bytes=cand_alt.stat().st_size,
-                    exists=True,
-                )
+            for np in norm_paths:
+                for cand_rel in dict.fromkeys((np, np.replace("-", "_"), np.replace("_", "-"))):
+                    cand = _LOGOS_DIR / f"{cand_rel}.svg"
+                    if cand.exists():
+                        abs_cand = cand.resolve()
+                        return ResolvedAsset(
+                            id=key,
+                            title=cand.stem.replace("_", " ").title(),
+                            pack=cand_rel.split("/")[0],
+                            format="svg",
+                            file=_safe_rel_path(abs_cand),
+                            absolute_path=abs_cand,
+                            weight="brand",
+                            size_bytes=abs_cand.stat().st_size,
+                            exists=True,
+                        )
 
-            # Check inside assets/icons/lucide
+            # Check inside assets/icons/lucide and assets/icons/feather
             slug = key.split(":")[-1].split("/")[-1]
-            cand_lucide = _ICONS_DIR / "lucide" / f"{slug}.svg"
-            if cand_lucide.exists():
-                return ResolvedAsset(
-                    id=key,
-                    title=slug.replace("_", " ").title(),
-                    pack="lucide",
-                    format="svg",
-                    file=cand_lucide.relative_to(_REPO_ROOT).as_posix(),
-                    absolute_path=cand_lucide.resolve(),
-                    weight="light",
-                    size_bytes=cand_lucide.stat().st_size,
-                    exists=True,
-                )
+            for icon_pack in ("lucide", "feather"):
+                for slug_cand in dict.fromkeys((slug, slug.replace("_", "-"), slug.replace("-", "_"))):
+                    cand_icon = _ICONS_DIR / icon_pack / f"{slug_cand}.svg"
+                    if cand_icon.exists():
+                        abs_cand = cand_icon.resolve()
+                        return ResolvedAsset(
+                            id=key,
+                            title=slug.replace("_", " ").replace("-", " ").title(),
+                            pack=icon_pack,
+                            format="svg",
+                            file=_safe_rel_path(abs_cand),
+                            absolute_path=abs_cand,
+                            weight="light",
+                            size_bytes=abs_cand.stat().st_size,
+                            exists=True,
+                        )
 
         # 6. Check Lucide / Feather
-        cand_lucide = _ICONS_DIR / "lucide" / f"{key}.svg"
-        if cand_lucide.exists():
-            return ResolvedAsset(
-                id=key,
-                title=key.replace("_", " ").title(),
-                pack="lucide",
-                format="svg",
-                file=cand_lucide.relative_to(_REPO_ROOT).as_posix(),
-                absolute_path=cand_lucide.resolve(),
-                weight="light",
-                size_bytes=cand_lucide.stat().st_size,
-                exists=True,
-            )
+        for icon_pack in ("lucide", "feather"):
+            for key_cand in dict.fromkeys((key, key.replace("_", "-"), key.replace("-", "_"))):
+                cand_icon = _ICONS_DIR / icon_pack / f"{key_cand}.svg"
+                if cand_icon.exists():
+                    abs_cand = cand_icon.resolve()
+                    return ResolvedAsset(
+                        id=key,
+                        title=key.replace("_", " ").replace("-", " ").title(),
+                        pack=icon_pack,
+                        format="svg",
+                        file=_safe_rel_path(abs_cand),
+                        absolute_path=abs_cand,
+                        weight="light",
+                        size_bytes=abs_cand.stat().st_size,
+                        exists=True,
+                    )
 
         return None

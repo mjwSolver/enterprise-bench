@@ -20,6 +20,7 @@ import json
 import logging
 import math
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -110,6 +111,18 @@ class PerceptualImageAnalyzer:
     """
 
     @staticmethod
+    def _is_ink_pixel(r: int, g: int, b: int, a: int) -> bool:
+        """Determines if an RGBA pixel represents printable or non-background ink."""
+        if a < 40:
+            return False
+        lum = (r + g + b) / 3.0
+        sat = max(r, g, b) - min(r, g, b)
+        # Exclude pure white background and faint background grid lines (#E2E8F0, lum>230, sat<18)
+        if lum > 228 and sat < 20:
+            return False
+        return lum < 215 or sat > 25
+
+    @staticmethod
     def analyze_raster_image(png_path: Path) -> Dict[str, Any]:
         """Performs localized perceptual heuristics on the generated diagram raster image."""
         if not png_path.exists():
@@ -119,22 +132,16 @@ class PerceptualImageAnalyzer:
             with Image.open(png_path) as img:
                 img_rgba = img.convert("RGBA")
                 w, h = img_rgba.size
-
-                def is_ink(r: int, g: int, b: int, a: int) -> bool:
-                    if a < 40:
-                        return False
-                    lum = (r + g + b) / 3.0
-                    sat = max(r, g, b) - min(r, g, b)
-                    # Exclude pure white background and faint background grid lines (#E2E8F0, lum>230, sat<18)
-                    if lum > 228 and sat < 20:
-                        return False
-                    return lum < 215 or sat > 25
+                is_ink = PerceptualImageAnalyzer._is_ink_pixel
 
                 # 1. Canvas Ceiling & Margin Ink Analysis
                 # Detect non-background content pixels in central/right ceiling band (x: 30%-95%, top 4.5%)
                 # Excluding legitimate top-left brand stripes & slide action title
                 ceiling_h = max(10, int(h * 0.045))
-                ceiling_crop = img_rgba.crop((int(w * 0.30), 0, int(w * 0.95), ceiling_h))
+                c_x1 = int(w * 0.30)
+                c_x2 = max(c_x1 + 1, int(w * 0.95))
+                c_y2 = max(1, min(h, ceiling_h))
+                ceiling_crop = img_rgba.crop((c_x1, 0, c_x2, c_y2))
                 ceiling_non_bg = sum(
                     1 for r, g, b, a in ceiling_crop.getdata()
                     if is_ink(r, g, b, a)
@@ -142,9 +149,9 @@ class PerceptualImageAnalyzer:
 
                 # Outer 1.5% perimeter margin check
                 margin_px = max(8, int(min(w, h) * 0.015))
-                left_crop = img_rgba.crop((0, 0, margin_px, h))
-                right_crop = img_rgba.crop((w - margin_px, 0, w, h))
-                bottom_crop = img_rgba.crop((0, h - margin_px, w, h))
+                left_crop = img_rgba.crop((0, 0, min(w, margin_px), h))
+                right_crop = img_rgba.crop((max(0, w - margin_px), 0, w, h))
+                bottom_crop = img_rgba.crop((0, max(0, h - margin_px), w, h))
 
                 edge_pixels = 0
                 for crop in (left_crop, right_crop, bottom_crop):
@@ -167,12 +174,14 @@ class PerceptualImageAnalyzer:
                             1 for pr, pg, pb, pa in cell_crop.getdata()
                             if is_ink(pr, pg, pb, pa)
                         )
-                        cell_density = (ink_count / (cell_w * cell_h)) * 100.0
+                        cell_area = cell_w * cell_h
+                        cell_density = (ink_count / cell_area) * 100.0 if cell_area > 0 else 0.0
                         cell_densities.append(round(cell_density, 2))
 
                 mean_density = sum(cell_densities) / len(cell_densities) if cell_densities else 1.0
                 max_density = max(cell_densities) if cell_densities else 0.0
-                density_variance = sum((d - mean_density) ** 2 for d in cell_densities) / len(cell_densities)
+                density_variance = sum((d - mean_density) ** 2 for d in cell_densities) / len(cell_densities) if cell_densities else 0.0
+                density_max_to_mean_ratio = round(max_density / mean_density, 2) if mean_density > 0.0 else 1.0
 
                 # 3. Diagnostic Palette Detection (Red, Amber, Blue, Green ink counts)
                 red_pixels = 0
@@ -180,10 +189,12 @@ class PerceptualImageAnalyzer:
                 blue_pixels = 0
                 green_pixels = 0
 
-                # Sample every 4th pixel for speed
+                # Sample every 4th pixel via fast nearest-neighbor downsampling
                 step = 4
-                pixels = list(img_rgba.getdata())[::step]
-                for pr, pg, pb, pa in pixels:
+                sampled_w = max(1, w // step)
+                sampled_h = max(1, h // step)
+                sampled_img = img_rgba.resize((sampled_w, sampled_h), resample=Image.Resampling.NEAREST)
+                for pr, pg, pb, pa in sampled_img.getdata():
                     if pa < 50:
                         continue
                     # Red range (#DC2626 / #E11D48)
@@ -199,19 +210,19 @@ class PerceptualImageAnalyzer:
                     elif pr < 50 and pg > 140 and pb < 100:
                         green_pixels += 1
 
-                total_sampled = len(pixels)
+                scale_factor = (w * h) / (sampled_w * sampled_h) if (sampled_w * sampled_h) > 0 else 1.0
                 return {
                     "image_dimensions": [w, h],
                     "ceiling_non_bg_pixels": ceiling_non_bg,
                     "perimeter_edge_pixels": edge_pixels,
                     "cell_densities_pct": cell_densities,
                     "density_variance": round(density_variance, 2),
-                    "density_max_to_mean_ratio": round(max_density / mean_density, 2) if mean_density > 0 else 1.0,
+                    "density_max_to_mean_ratio": density_max_to_mean_ratio,
                     "diagnostic_ink_counts": {
-                        "red": red_pixels * step,
-                        "amber": amber_pixels * step,
-                        "blue": blue_pixels * step,
-                        "green": green_pixels * step,
+                        "red": int(round(red_pixels * scale_factor)),
+                        "amber": int(round(amber_pixels * scale_factor)),
+                        "blue": int(round(blue_pixels * scale_factor)),
+                        "green": int(round(green_pixels * scale_factor)),
                     },
                 }
         except Exception as e:
@@ -369,44 +380,71 @@ Return your evaluation in the following strict JSON schema:
                 prescriptive_fix="Distribute entity cards across horizontal canvas or expand container widths.",
             ))
 
-        # 3. Translate Critical Tier 1 Issues into Adversarial Findings
+        # 3. Translate Tier 1 Issues into Adversarial Findings
         for issue in tier1_issues:
-            if issue.category == "ARROW_SWALLOWED":
+            cat = issue.category
+            sev = issue.severity
+            finding_sev: Literal["CRITICAL", "WARNING", "ADVISORY"] = (
+                "CRITICAL" if sev == "CRITICAL" else ("WARNING" if sev == "WARNING" else "ADVISORY")
+            )
+
+            if cat in ("ARROW_SWALLOWED", "ARROW_HEAD_COVERED", "FLOW_OBSTACLE_PENETRATION", "PARALLEL_FLOW_CLUSTERING"):
                 findings.append(VisualFinding(
                     dimension="ARROW_FLOW_INTEGRITY",
-                    severity="CRITICAL",
+                    severity=finding_sev,
                     element_or_region=issue.element_id,
                     flaw_description=issue.description,
                     prescriptive_fix=issue.suggested_fix,
                 ))
-            elif issue.category == "SHAPE_PROPORTION_OVERSIZED":
+            elif cat in ("SHAPE_PROPORTION_OVERSIZED",):
                 findings.append(VisualFinding(
                     dimension="COMPONENT_PROPORTIONS",
-                    severity="WARNING",
+                    severity=finding_sev,
                     element_or_region=issue.element_id,
                     flaw_description=issue.description,
                     prescriptive_fix=issue.suggested_fix,
                 ))
-            elif issue.category == "CONNECTOR_SPAN_INSUFFICIENT":
+            elif cat in (
+                "CONNECTOR_SPAN_INSUFFICIENT",
+                "NODE_COLLISION",
+                "BADGE_NODE_COLLISION",
+                "BADGE_COLLISION",
+                "FLOW_LABEL_NODE_COLLISION",
+                "CONTAINER_BADGE_OCCLUSION",
+                "CONTAINER_LABEL_OCCLUSION",
+                "CANVAS_HEADER_OCCLUSION",
+                "INSUFFICIENT_NODE_GUTTER",
+                "CONTAINER_OVERFLOW",
+                "CONTAINER_PADDING_VIOLATION",
+                "BOUNDARY_INTERSECTION",
+            ):
                 findings.append(VisualFinding(
                     dimension="GEOMETRIC_CLEARANCE",
-                    severity="CRITICAL" if issue.severity == "CRITICAL" else "WARNING",
+                    severity=finding_sev,
                     element_or_region=issue.element_id,
                     flaw_description=issue.description,
                     prescriptive_fix=issue.suggested_fix,
                 ))
-            elif issue.category == "CEILING_COLLISION":
+            elif cat in ("CEILING_COLLISION", "MARGIN_ENCROACHMENT", "HEADER_HEADROOM_INSUFFICIENT"):
                 findings.append(VisualFinding(
                     dimension="CEILING_GUTTER_SAFETY",
-                    severity="CRITICAL",
+                    severity=finding_sev,
                     element_or_region=issue.element_id,
                     flaw_description=issue.description,
                     prescriptive_fix=issue.suggested_fix,
                 ))
-            elif issue.category == "TEXT_OVERFLOW":
+            elif cat in ("TEXT_OVERFLOW", "TYPOGRAPHIC_SCALE_DRIFT", "UNDERFILLED_EXECUTION_CARD", "DECK_HEADER_DRIFT"):
                 findings.append(VisualFinding(
                     dimension="TYPOGRAPHY_LEGIBILITY",
-                    severity="CRITICAL",
+                    severity=finding_sev,
+                    element_or_region=issue.element_id,
+                    flaw_description=issue.description,
+                    prescriptive_fix=issue.suggested_fix,
+                ))
+            else:
+                findings.append(VisualFinding(
+                    dimension="GEOMETRIC_CLEARANCE",
+                    severity=finding_sev,
                     element_or_region=issue.element_id,
                     flaw_description=issue.description,
                     prescriptive_fix=issue.suggested_fix,
@@ -502,7 +540,8 @@ class Tier2VisualVerifier:
         Executes end-to-end Tier 1 and Tier 2 adversarial visual QA.
         Returns a complete VisualQAResult structure and persists diagnostics.
         """
-        out_p = Path(output_dir) if output_dir else Path("TEMP/visual_qa") / self.spec.id
+        safe_id = re.sub(r"[^\w\-.]", "_", self.spec.id)
+        out_p = Path(output_dir) if output_dir else Path("TEMP/visual_qa") / safe_id
         out_p.mkdir(parents=True, exist_ok=True)
 
         # 1. Tier 1 Geometric Collision Linting
@@ -534,12 +573,12 @@ class Tier2VisualVerifier:
                 tier1_issues=tier1_issues,
                 perceptual_metrics=perceptual_metrics,
             )
-            prompt_file = out_p / f"{self.spec.id}_adversarial_briefing.md"
+            prompt_file = out_p / f"{safe_id}_adversarial_briefing.md"
             prompt_file.write_text(briefing_text, encoding="utf-8")
             result.subagent_prompt_path = prompt_file
 
         # 6. Save JSON Diagnostic Ledger
-        report_file = out_p / f"{self.spec.id}_visual_qa_report.json"
+        report_file = out_p / f"{safe_id}_visual_qa_report.json"
         report_file.write_text(json.dumps(result.to_dict(), indent=2), encoding="utf-8")
 
         return result
@@ -548,16 +587,21 @@ class Tier2VisualVerifier:
         """Renders the DiagramSpec to high-DPI companion SVG, then compiles PNG via rsvg-convert."""
         try:
             from src.ppt_engine.diagram_v2.svg_compiler import SVGCompiler
+            safe_id = re.sub(r"[^\w\-.]", "_", self.spec.id)
             svg_comp = SVGCompiler(self.spec)
             svg_content = svg_comp.compile_svg()
 
-            svg_file = out_dir / f"{self.spec.id}.svg"
+            svg_file = out_dir / f"{safe_id}.svg"
             svg_file.write_text(svg_content, encoding="utf-8")
 
-            png_file = out_dir / f"{self.spec.id}.png"
-            rsvg_bin = shutil.which("rsvg-convert") or (
-                "/opt/homebrew/bin/rsvg-convert" if os.path.exists("/opt/homebrew/bin/rsvg-convert") else None
-            )
+            png_file = out_dir / f"{safe_id}.png"
+            rsvg_candidates = [
+                shutil.which("rsvg-convert"),
+                "/opt/homebrew/bin/rsvg-convert",
+                "/usr/local/bin/rsvg-convert",
+                "/usr/bin/rsvg-convert",
+            ]
+            rsvg_bin = next((c for c in rsvg_candidates if c and os.path.exists(c)), None)
 
             if rsvg_bin:
                 cmd = [rsvg_bin, "-z", "3", str(svg_file), "-o", str(png_file)]

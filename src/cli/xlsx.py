@@ -14,8 +14,6 @@ from typing import Optional
 import typer
 from rich import print as rprint
 
-from src.cli.utils import console
-
 xlsx_app = typer.Typer(
     name="xlsx",
     help="Spreadsheet & Calculator Engine",
@@ -32,14 +30,22 @@ def calculate_xlsx(
     """Inject calculations or data updates into an Excel spreadsheet template."""
     from src.xlsx_engine.calculator_stamper import calculate_spreadsheet
 
-    payload = {}
+    payload: dict = {}
     if data:
         data_path = Path(data)
         if not data_path.exists():
             rprint(f"[red]Error:[/red] Data file not found: {data}")
             raise typer.Exit(code=1)
-        with open(data_path, "r", encoding="utf-8") as f:
-            payload = json.load(f)
+        try:
+            with open(data_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+        except Exception as e:
+            rprint(f"[red]Error parsing JSON data file '{data}':[/red] {e}")
+            raise typer.Exit(code=1)
+        if not isinstance(loaded, dict):
+            rprint(f"[red]Error:[/red] Data payload in '{data}' must be a JSON object/dictionary.")
+            raise typer.Exit(code=1)
+        payload = loaded
 
     try:
         out_p = calculate_spreadsheet(template=template, data=payload, output_path=output)
@@ -65,14 +71,26 @@ def generate_scurve_cli(
     """Generate an S-curve cumulative progress curve and inject an openpyxl LineChart."""
     from src.xlsx_engine.s_curve_generator import SCurveGenerator
 
+    if weeks < 1:
+        rprint(f"[red]Error:[/red] Number of weeks (--weeks) must be >= 1, got {weeks}.")
+        raise typer.Exit(code=1)
+
     payload: dict = {}
     if data:
         data_path = Path(data)
         if not data_path.exists():
             rprint(f"[red]Error:[/red] Data file not found: {data}")
             raise typer.Exit(code=1)
-        with open(data_path, "r", encoding="utf-8") as f:
-            payload = json.load(f)
+        try:
+            with open(data_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+        except Exception as e:
+            rprint(f"[red]Error parsing JSON data file '{data}':[/red] {e}")
+            raise typer.Exit(code=1)
+        if not isinstance(loaded, dict):
+            rprint(f"[red]Error:[/red] Data payload in '{data}' must be a JSON object/dictionary.")
+            raise typer.Exit(code=1)
+        payload = loaded
 
     periods = payload.get("periods")
     planned_pct = payload.get("planned_pct")
@@ -83,13 +101,21 @@ def generate_scurve_cli(
     s_name = payload.get("sheet_name", sheet_name)
     c_title = payload.get("chart_title", title)
 
-    c_period_idx = None
-    if current_week is not None:
-        c_period_idx = current_week - 1
-    elif "current_week" in payload:
-        c_period_idx = int(payload["current_week"]) - 1
-    elif "current_period_idx" in payload:
-        c_period_idx = int(payload["current_period_idx"])
+    try:
+        c_period_idx = None
+        if current_week is not None:
+            c_period_idx = current_week - 1
+        elif payload.get("current_week") is not None:
+            c_period_idx = int(payload["current_week"]) - 1
+        elif payload.get("current_period_idx") is not None:
+            c_period_idx = int(payload["current_period_idx"])
+    except (ValueError, TypeError) as e:
+        rprint(f"[red]Error:[/red] Invalid current week or period index: {e}")
+        raise typer.Exit(code=1)
+
+    if c_period_idx is not None and c_period_idx < 0:
+        rprint(f"[red]Error:[/red] Current week must be >= 1 (or period index >= 0), got index {c_period_idx}.")
+        raise typer.Exit(code=1)
 
     lag_factor = payload.get("lag_factor", lag)
 
@@ -129,18 +155,22 @@ def append_risk_cli(
     """Safely append a risk entry into the project Risk Register spreadsheet."""
     from src.xlsx_engine.ledger_models import RiskEntry, append_risk_to_register
 
-    risk = RiskEntry(
-        title=title,
-        description=desc,
-        impact_statement=impact,
-        category=category,
-        owner=owner,
-        probability=prob,
-        impact_level=impact_level,
-        status=status,
-    )
-    out_p = append_risk_to_register(risk, output_path=output)
-    rprint(f"[green]✓ Risk entry appended successfully:[/green] [bold]{out_p}[/bold]")
+    try:
+        risk = RiskEntry(
+            title=title,
+            description=desc,
+            impact_statement=impact,
+            category=category,
+            owner=owner,
+            probability=prob,
+            impact_level=impact_level,
+            status=status,
+        )
+        out_p = append_risk_to_register(risk, output_path=output)
+        rprint(f"[green]✓ Risk entry appended successfully:[/green] [bold]{out_p}[/bold]")
+    except Exception as e:
+        rprint(f"[red]Error appending risk entry:[/red] {e}")
+        raise typer.Exit(code=1)
 
 
 @xlsx_app.command("append-issue")
@@ -158,18 +188,22 @@ def append_issue_cli(
     """Safely append an issue entry into the project Issue Log spreadsheet."""
     from src.xlsx_engine.ledger_models import IssueEntry, append_issue_to_log
 
-    issue = IssueEntry(
-        title=title,
-        description=desc,
-        category=category,
-        owner=owner,
-        reported_by=reported_by,
-        impacted_area=area,
-        severity=severity,
-        status=status,
-    )
-    out_p = append_issue_to_log(issue, output_path=output)
-    rprint(f"[green]✓ Issue entry appended successfully:[/green] [bold]{out_p}[/bold]")
+    try:
+        issue = IssueEntry(
+            title=title,
+            description=desc,
+            category=category,
+            owner=owner,
+            reported_by=reported_by,
+            impacted_area=area,
+            severity=severity,
+            status=status,
+        )
+        out_p = append_issue_to_log(issue, output_path=output)
+        rprint(f"[green]✓ Issue entry appended successfully:[/green] [bold]{out_p}[/bold]")
+    except Exception as e:
+        rprint(f"[red]Error appending issue entry:[/red] {e}")
+        raise typer.Exit(code=1)
 
 
 @xlsx_app.command("append-defect")
@@ -190,21 +224,25 @@ def append_defect_cli(
     """Safely append a defect row into the 3.6_Defect_List_Template.xlsx tracker."""
     from src.xlsx_engine.ledger_models import DefectEntry, append_defect_to_list
 
-    defect = DefectEntry(
-        summary=summary,
-        description=desc,
-        module=module,
-        activity=activity,
-        severity=severity,
-        priority=priority,
-        status=status,
-        pic=pic,
-        test_case=test_case,
-        expected_result=expected,
-        actual_result=actual,
-    )
-    out_p = append_defect_to_list(defect, output_path=output)
-    rprint(f"[green]✓ Defect entry appended successfully:[/green] [bold]{out_p}[/bold]")
+    try:
+        defect = DefectEntry(
+            summary=summary,
+            description=desc,
+            module=module,
+            activity=activity,
+            severity=severity,
+            priority=priority,
+            status=status,
+            pic=pic,
+            test_case=test_case,
+            expected_result=expected,
+            actual_result=actual,
+        )
+        out_p = append_defect_to_list(defect, output_path=output)
+        rprint(f"[green]✓ Defect entry appended successfully:[/green] [bold]{out_p}[/bold]")
+    except Exception as e:
+        rprint(f"[red]Error appending defect entry:[/red] {e}")
+        raise typer.Exit(code=1)
 
 
 @xlsx_app.command("append-stakeholder")
@@ -222,18 +260,22 @@ def append_stakeholder_cli(
     """Safely append a stakeholder entry into 1.3_Stakeholders_Register_Template.xlsx."""
     from src.xlsx_engine.ledger_models import StakeholderEntry, append_stakeholder_to_register
 
-    entry = StakeholderEntry(
-        name=name,
-        email=email,
-        company=company,
-        phone=phone,
-        department=department,
-        project_role=role,
-        is_active=active,
-        notes=notes or "",
-    )
-    out_p = append_stakeholder_to_register(entry, output_path=output)
-    rprint(f"[green]✓ Stakeholder appended successfully:[/green] [bold]{out_p}[/bold]")
+    try:
+        entry = StakeholderEntry(
+            name=name,
+            email=email,
+            company=company,
+            phone=phone,
+            department=department,
+            project_role=role,
+            is_active=active,
+            notes=notes or "",
+        )
+        out_p = append_stakeholder_to_register(entry, output_path=output)
+        rprint(f"[green]✓ Stakeholder appended successfully:[/green] [bold]{out_p}[/bold]")
+    except Exception as e:
+        rprint(f"[red]Error appending stakeholder entry:[/red] {e}")
+        raise typer.Exit(code=1)
 
 
 @xlsx_app.command("cloud-sizing")
@@ -250,23 +292,35 @@ def cloud_sizing_cli(
     import yaml
     from src.xlsx_engine.cloud_sizing import CloudSizingConfig, calculate_cloud_sizing
 
-    if config and Path(config).exists():
-        p = Path(config)
-        raw = p.read_text(encoding="utf-8")
-        data = yaml.safe_load(raw) if p.suffix.lower() in (".yaml", ".yml") else json.loads(raw)
-        cfg = CloudSizingConfig(**data)
-    else:
-        cfg = CloudSizingConfig(
-            client_name=client,
-            storage_tb=storage,
-            cortex_ai_annual_usd=cortex,
-            training_seats_usd=training,
-            exchange_rate_idr=fx,
-        )
+    try:
+        if config:
+            p = Path(config)
+            if not p.exists():
+                rprint(f"[red]Error:[/red] Config file not found: {config}")
+                raise typer.Exit(code=1)
+            raw = p.read_text(encoding="utf-8")
+            data = yaml.safe_load(raw) if p.suffix.lower() in (".yaml", ".yml") else json.loads(raw)
+            if not isinstance(data, dict):
+                rprint(f"[red]Error:[/red] Cloud sizing config in '{config}' must be a mapping/dictionary.")
+                raise typer.Exit(code=1)
+            cfg = CloudSizingConfig(**data)
+        else:
+            cfg = CloudSizingConfig(
+                client_name=client,
+                storage_tb=storage,
+                cortex_ai_annual_usd=cortex,
+                training_seats_usd=training,
+                exchange_rate_idr=fx,
+            )
 
-    res = calculate_cloud_sizing(cfg, output_path=output)
-    rprint(f"[cyan]{res.summary_table()}[/cyan]")
-    rprint(f"[green]✓ Cloud sizing stamped successfully:[/green] [bold]{res.output_path}[/bold]")
+        res = calculate_cloud_sizing(cfg, output_path=output)
+        rprint(f"[cyan]{res.summary_table()}[/cyan]")
+        rprint(f"[green]✓ Cloud sizing stamped successfully:[/green] [bold]{res.output_path}[/bold]")
+    except typer.Exit:
+        raise
+    except Exception as e:
+        rprint(f"[red]Error calculating cloud sizing:[/red] {e}")
+        raise typer.Exit(code=1)
 
 
 @xlsx_app.command("sync-s-curve")
@@ -278,9 +332,21 @@ def sync_s_curve_cli(
     """Extract daily progression from timeline workbook and inject executive S-curve line chart tab."""
     from src.xlsx_engine.timeline_aggregator import TimelineAggregator
 
-    agg = TimelineAggregator(timeline_path=timeline)
-    analysis = agg.extract_s_curve(chunk_days=chunk_days)
-    out_p = agg.synchronize_and_chart(output_path=output, chunk_days=chunk_days)
+    if chunk_days < 1:
+        rprint(f"[red]Error:[/red] --chunk-days must be >= 1, got {chunk_days}.")
+        raise typer.Exit(code=1)
+
+    if timeline and not Path(timeline).exists():
+        rprint(f"[red]Error:[/red] Timeline file not found: {timeline}")
+        raise typer.Exit(code=1)
+
+    try:
+        agg = TimelineAggregator(timeline_path=timeline)
+        analysis = agg.extract_s_curve(chunk_days=chunk_days)
+        out_p = agg.synchronize_and_chart(output_path=output, chunk_days=chunk_days)
+    except Exception as e:
+        rprint(f"[red]Error synchronizing timeline S-curve:[/red] {e}")
+        raise typer.Exit(code=1)
 
     rprint(f"[bold cyan]S-Curve Extracted from Timeline:[/bold cyan]")
     rprint(f"  • Current Period: [bold]{analysis.current_period}[/bold]")

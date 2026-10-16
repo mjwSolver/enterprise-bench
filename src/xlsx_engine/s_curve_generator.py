@@ -79,13 +79,16 @@ def calculate_sigmoid_curve(
 
     f(x) = (g(x) - g(0)) / (g(1) - g(0)), where g(x) = 1 / (1 + exp(-k * (x - x0)))
     """
-    if num_periods <= 1:
-        return [1.0] * num_periods
+    if num_periods <= 0:
+        return []
+    if num_periods == 1:
+        return [1.0]
 
     raw: List[float] = []
     for i in range(num_periods):
         x = i / (num_periods - 1)
-        val = 1.0 / (1.0 + math.exp(-k * (x - x0)))
+        exponent = max(-500.0, min(500.0, -k * (x - x0)))
+        val = 1.0 / (1.0 + math.exp(exponent))
         raw.append(val)
 
     g0, g1 = raw[0], raw[-1]
@@ -103,8 +106,10 @@ def calculate_polynomial_curve(
     - cubic smoothstep: 3*x^2 - 2*x^3
     - quintic smootherstep: 6*x^5 - 15*x^4 + 10*x^3
     """
-    if num_periods <= 1:
-        return [1.0] * num_periods
+    if num_periods <= 0:
+        return []
+    if num_periods == 1:
+        return [1.0]
 
     curve: List[float] = []
     for i in range(num_periods):
@@ -119,9 +124,46 @@ def calculate_polynomial_curve(
 
 def calculate_linear_curve(num_periods: int) -> List[float]:
     """Generate linear cumulative progress as a straight baseline."""
-    if num_periods <= 1:
-        return [1.0] * num_periods
+    if num_periods <= 0:
+        return []
+    if num_periods == 1:
+        return [1.0]
     return [round(i / (num_periods - 1), 4) for i in range(num_periods)]
+
+
+def _resolve_milestone_period(m: Dict[str, Any], periods: List[str]) -> Optional[str]:
+    """Resolve a milestone dictionary's target period label safely."""
+    if not periods:
+        return str(m["period"]) if m.get("period") else None
+
+    if m.get("period"):
+        return str(m["period"])
+
+    if "week" in m and m["week"] is not None:
+        raw_week = m["week"]
+        if isinstance(raw_week, str):
+            cleaned = raw_week.strip()
+            if cleaned in periods:
+                return cleaned
+            if cleaned.upper().startswith("W"):
+                cleaned = cleaned[1:].strip()
+            try:
+                w_idx = int(cleaned)
+            except ValueError:
+                return None
+        else:
+            try:
+                w_idx = int(raw_week)
+            except (ValueError, TypeError):
+                return None
+
+        # Support 1-based week integer or 0-based
+        if 1 <= w_idx <= len(periods):
+            return periods[w_idx - 1]
+        if 0 <= w_idx < len(periods):
+            return periods[w_idx]
+
+    return None
 
 
 # ============================================================================
@@ -150,7 +192,11 @@ class SCurveGenerator:
 
     HEALTH_COLORS = {
         "ON_TRACK": {"fill": "DCFCE7", "text": "166534"},       # Green
+        "ON TRACK": {"fill": "DCFCE7", "text": "166534"},       # Green (TimelineAggregator alias)
         "AT_RISK": {"fill": "FEF3C7", "text": "92400E"},        # Amber
+        "AT RISK": {"fill": "FEF3C7", "text": "92400E"},        # Amber (TimelineAggregator alias)
+        "DELAYED": {"fill": "FEE2E2", "text": "991B1B"},        # Red (TimelineAggregator alias)
+        "CRITICAL": {"fill": "FEE2E2", "text": "991B1B"},       # Red (TimelineAggregator alias)
         "CRITICAL_DELAY": {"fill": "FEE2E2", "text": "991B1B"}, # Red
         "COMPLETED": {"fill": "E0E7FF", "text": "3730A3"},      # Indigo
         "PLANNED": {"fill": "F1F5F9", "text": "475569"},        # Neutral Slate
@@ -165,14 +211,25 @@ class SCurveGenerator:
         self.template_ref = template
         self.template_path = self._resolve_template(template) if template else None
 
+    def _get_health_style(self, health: Optional[str]) -> Dict[str, str]:
+        """Resolve fill and text hex colors for a health status string."""
+        if not health:
+            return self.HEALTH_COLORS["PLANNED"]
+        key = health.strip().upper()
+        if key in self.HEALTH_COLORS:
+            return self.HEALTH_COLORS[key]
+        normalized = key.replace(" ", "_")
+        return self.HEALTH_COLORS.get(normalized, self.HEALTH_COLORS["PLANNED"])
+
     def _resolve_template(self, template: Union[str, Path]) -> Path:
         p = Path(template)
+        validate_clean_path(p)
         if p.exists():
             return validate_clean_path(p)
 
         found = get_template_path(str(template))
         if found and found.exists():
-            return found
+            return validate_clean_path(found)
 
         raise FileNotFoundError(
             f"Excel template '{template}' could not be resolved in clean_workspace/ or local paths."
@@ -199,12 +256,14 @@ class SCurveGenerator:
         If planned_pct is omitted, calculates cumulative curve using chosen distribution.
         If actual_pct is omitted and current_period_idx is set, simulates actual progress.
         """
-        # 1. Resolve period labels
+        # 1. Resolve period labels and synchronize num_periods
         if periods is None:
-            n = len(planned_pct) if planned_pct else num_periods
+            n = len(planned_pct) if planned_pct is not None else max(0, num_periods)
             periods = [f"W{i+1:02d}" for i in range(n)]
-        else:
-            num_periods = len(periods)
+        num_periods = len(periods)
+
+        if num_periods == 0:
+            return []
 
         # 2. Resolve planned cumulative curve
         if planned_pct is None:
@@ -225,7 +284,7 @@ class SCurveGenerator:
             actual_pct = []
             for i in range(num_periods):
                 if i <= current_period_idx:
-                    p = planned_pct[i]
+                    p = planned_pct[i] if i < len(planned_pct) else 1.0
                     # Apply lag factor (e.g. -0.05 for 5% behind)
                     act = round(max(0.0, min(1.0, p + lag_factor)), 4)
                     actual_pct.append(act)
@@ -240,15 +299,9 @@ class SCurveGenerator:
         if milestones:
             for m in milestones:
                 m_name = m.get("name", "Milestone")
-                if "period" in m:
-                    milestone_map[str(m["period"])] = m_name
-                elif "week" in m:
-                    w_idx = int(m["week"])
-                    # Support 1-based week integer or 0-based
-                    if 1 <= w_idx <= len(periods):
-                        milestone_map[periods[w_idx - 1]] = m_name
-                    elif 0 <= w_idx < len(periods):
-                        milestone_map[periods[w_idx]] = m_name
+                target_period = _resolve_milestone_period(m, periods)
+                if target_period:
+                    milestone_map[target_period] = m_name
 
         # 5. Build SCurvePoint list with variance & health evaluation
         points: List[SCurvePoint] = []
@@ -293,23 +346,33 @@ class SCurveGenerator:
         milestones: Optional[List[Dict[str, Any]]] = None,
     ) -> VarianceAnalysis:
         """Analyze schedule variance, SPI, and milestone health indicators."""
-        # Find latest period with actual recorded data
-        completed_points = [p for p in curve_data if p.actual_pct is not None]
+        latest_idx: Optional[int] = None
+        latest: Optional[SCurvePoint] = None
+        for idx in range(len(curve_data) - 1, -1, -1):
+            if curve_data[idx].actual_pct is not None:
+                latest_idx = idx
+                latest = curve_data[idx]
+                break
 
-        if not completed_points:
+        if latest is None or latest_idx is None:
             return VarianceAnalysis(
                 overall_health="PLANNED",
                 spi=1.0,
                 points=curve_data,
             )
 
-        latest = completed_points[-1]
-        latest_idx = curve_data.index(latest)
-
         planned_now = latest.planned_pct
-        actual_now = latest.actual_pct or 0.0
-        var_points = latest.variance or 0.0
-        var_pct = latest.variance_pct or 0.0
+        actual_now = latest.actual_pct if latest.actual_pct is not None else 0.0
+        var_points = (
+            latest.variance
+            if latest.variance is not None
+            else round(actual_now - planned_now, 4)
+        )
+        var_pct = (
+            latest.variance_pct
+            if latest.variance_pct is not None
+            else (round((var_points / planned_now) * 100, 2) if planned_now > 0 else 0.0)
+        )
 
         # Schedule Performance Index (SPI = EV / PV)
         spi = round(actual_now / planned_now, 3) if planned_now > 0 else 1.0
@@ -323,30 +386,29 @@ class SCurveGenerator:
             ]
 
         if milestones:
+            period_labels = [pt.period for pt in curve_data]
+            period_lookup: Dict[str, SCurvePoint] = {pt.period: pt for pt in curve_data}
             for m in milestones:
                 m_copy = dict(m)
-                p_label = str(m.get("period", ""))
-                if not p_label and "week" in m:
-                    w_idx = int(m["week"])
-                    if 1 <= w_idx <= len(curve_data):
-                        p_label = curve_data[w_idx - 1].period
-                    elif 0 <= w_idx < len(curve_data):
-                        p_label = curve_data[w_idx].period
+                p_label = _resolve_milestone_period(m, period_labels) or ""
+                if p_label and not m_copy.get("period"):
                     m_copy["period"] = p_label
 
-                # Find matching point
-                match = next((pt for pt in curve_data if pt.period == p_label), None)
-                if match:
+                match = period_lookup.get(p_label)
+                if match is not None:
                     if match.actual_pct is not None:
                         m_copy["actual_pct"] = match.actual_pct
-                        m_copy["variance"] = match.variance
+                        m_copy["variance"] = (
+                            match.variance
+                            if match.variance is not None
+                            else round(match.actual_pct - match.planned_pct, 4)
+                        )
                         m_copy["status"] = match.health
                     else:
                         m_copy["status"] = "PENDING"
                 else:
                     m_copy["status"] = "UNSCHEDULED"
                 ms_eval.append(m_copy)
-
 
         return VarianceAnalysis(
             current_period=latest.period,
@@ -373,42 +435,11 @@ class SCurveGenerator:
         chart_title: str = "Project Progress S-Curve (Planned vs Actual)",
         chart_anchor: str = "I6",
         include_kpis: bool = True,
+        analysis: Optional[VarianceAnalysis] = None,
     ) -> Path:
         """
         Render S-curve table, format KPI summary cards, and embed openpyxl LineChart.
         """
-        # 1. Load existing template or initialize new workbook
-        if self.template_path:
-            wb = openpyxl.load_workbook(str(self.template_path), data_only=False)
-            if sheet_name in wb.sheetnames:
-                ws = wb[sheet_name]
-            else:
-                ws = wb.create_sheet(title=sheet_name)
-        else:
-            wb = openpyxl.Workbook()
-            ws = wb.active
-            ws.title = sheet_name
-
-        analysis = self.analyze_variance(curve_data)
-
-        # 2. Render KPI Summary Header if requested
-        if include_kpis:
-            self._render_kpi_cards(ws, analysis)
-
-        # 3. Render S-Curve Data Table
-        start_row = 6 if include_kpis else 2
-        start_col = 2  # Column B
-        table_meta = self._render_table(ws, curve_data, start_row=start_row, start_col=start_col)
-
-        # 4. Construct and attach openpyxl LineChart
-        self._attach_line_chart(
-            ws=ws,
-            table_meta=table_meta,
-            chart_title=chart_title,
-            anchor=chart_anchor,
-        )
-
-        # 5. Save workbook
         if output_path is None:
             prefix = self.template_path.stem if self.template_path else "project"
             output_p = OUTPUT_DIR / f"scurve_{prefix}.xlsx"
@@ -416,18 +447,62 @@ class SCurveGenerator:
             output_p = Path(output_path)
 
         output_p.parent.mkdir(parents=True, exist_ok=True)
-        wb.save(str(output_p))
-        wb.close()
+
+        # 1. Load existing template or initialize new workbook
+        if self.template_path:
+            wb = openpyxl.load_workbook(str(self.template_path), data_only=False)
+        else:
+            wb = openpyxl.Workbook()
+
+        try:
+            if self.template_path:
+                if sheet_name in wb.sheetnames:
+                    ws = wb[sheet_name]
+                else:
+                    ws = wb.create_sheet(title=sheet_name)
+            else:
+                ws = wb.active
+                ws.title = sheet_name
+
+            resolved_analysis = analysis or self.analyze_variance(curve_data)
+
+            # 2. Render KPI Summary Header if requested
+            if include_kpis:
+                self._render_kpi_cards(ws, resolved_analysis)
+
+            # 3. Render S-Curve Data Table
+            start_row = 6 if include_kpis else 2
+            start_col = 2  # Column B
+            table_meta = self._render_table(ws, curve_data, start_row=start_row, start_col=start_col)
+
+            # 4. Construct and attach openpyxl LineChart
+            self._attach_line_chart(
+                ws=ws,
+                table_meta=table_meta,
+                chart_title=chart_title,
+                anchor=chart_anchor,
+            )
+
+            # 5. Save workbook
+            wb.save(str(output_p))
+        finally:
+            wb.close()
 
         return output_p
 
     def _render_kpi_cards(self, ws: openpyxl.worksheet.worksheet.Worksheet, analysis: VarianceAnalysis) -> None:
-        """Render 4 executive KPI summary cards above the data table."""
+        """Render 5 executive KPI summary cards above the data table."""
         # Clean gridlines visibility
-        ws.views.sheetView[0].showGridLines = True
+        if ws.views and ws.views.sheetView:
+            ws.views.sheetView[0].showGridLines = True
 
         thin_side = Side(border_style="thin", color=self.COLOR_BORDER)
         card_border = Border(top=thin_side, left=thin_side, right=thin_side, bottom=thin_side)
+        label_font = Font(name="Calibri", size=8, bold=True, color="64748B")
+        center_align = Alignment(horizontal="center", vertical="center")
+        default_fill = PatternFill(start_color=self.COLOR_CARD_BG, end_color=self.COLOR_CARD_BG, fill_type="solid")
+
+        health_style = self._get_health_style(analysis.overall_health)
 
         cards = [
             {
@@ -456,12 +531,18 @@ class SCurveGenerator:
             },
             {
                 "label": "MILESTONE HEALTH",
-                "val": analysis.overall_health.replace("_", " "),
+                "val": (analysis.overall_health or "PLANNED").replace("_", " "),
                 "cols": (10, 11),  # J to K
-                "color": self.HEALTH_COLORS.get(analysis.overall_health, {}).get("text", "0F172A"),
-                "fill": self.HEALTH_COLORS.get(analysis.overall_health, {}).get("fill", "F1F5F9"),
+                "color": health_style["text"],
+                "fill": health_style["fill"],
             },
         ]
+
+        # Safely unmerge any overlapping ranges in rows 2..3, cols 2..11 if re-stamping
+        existing_merges = list(ws.merged_cells.ranges)
+        for m_range in existing_merges:
+            if m_range.min_row <= 3 and m_range.max_row >= 2 and m_range.min_col <= 11 and m_range.max_col >= 2:
+                ws.unmerge_cells(str(m_range))
 
         for card in cards:
             c1, c2 = card["cols"]
@@ -469,15 +550,19 @@ class SCurveGenerator:
             ws.merge_cells(start_row=3, start_column=c1, end_row=3, end_column=c2)
 
             top_cell = ws.cell(row=2, column=c1, value=card["label"])
-            top_cell.font = Font(name="Calibri", size=8, bold=True, color="64748B")
-            top_cell.alignment = Alignment(horizontal="center", vertical="center")
+            top_cell.font = label_font
+            top_cell.alignment = center_align
 
             val_cell = ws.cell(row=3, column=c1, value=card["val"])
             val_cell.font = Font(name="Calibri", size=13, bold=True, color=card["color"])
-            val_cell.alignment = Alignment(horizontal="center", vertical="center")
+            val_cell.alignment = center_align
 
-            card_fill_hex = card.get("fill", self.COLOR_CARD_BG)
-            fill_obj = PatternFill(start_color=card_fill_hex, end_color=card_fill_hex, fill_type="solid")
+            card_fill_hex = card.get("fill")
+            fill_obj = (
+                PatternFill(start_color=card_fill_hex, end_color=card_fill_hex, fill_type="solid")
+                if card_fill_hex
+                else default_fill
+            )
 
             for r in range(2, 4):
                 for c in range(c1, c2 + 1):
@@ -508,12 +593,33 @@ class SCurveGenerator:
         thin_side = Side(border_style="thin", color=self.COLOR_BORDER)
         cell_border = Border(top=thin_side, left=thin_side, right=thin_side, bottom=thin_side)
 
+        # Pre-allocated cell fonts, alignments, and health styles to avoid per-row allocations
+        font_bold_10 = Font(name="Calibri", size=10, bold=True)
+        font_reg_10 = Font(name="Calibri", size=10, bold=False)
+        font_ms_italic = Font(name="Calibri", size=9, italic=True)
+        font_ms_reg = Font(name="Calibri", size=9, italic=False)
+
+        align_header = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        align_center = Alignment(horizontal="center", vertical="center")
+        align_right = Alignment(horizontal="right", vertical="center")
+        align_left = Alignment(horizontal="left", vertical="center")
+
+        health_style_cache: Dict[str, Tuple[Font, PatternFill]] = {}
+        for h_key, h_cfg in self.HEALTH_COLORS.items():
+            health_style_cache[h_key] = (
+                Font(name="Calibri", size=9, bold=True, color=h_cfg["text"]),
+                PatternFill(start_color=h_cfg["fill"], end_color=h_cfg["fill"], fill_type="solid"),
+            )
+
+        plan_col_let = get_column_letter(start_col + 1)
+        act_col_let = get_column_letter(start_col + 2)
+
         # 1. Write headers
         for col_idx, h_text in enumerate(headers, start=start_col):
             c = ws.cell(row=start_row, column=col_idx, value=h_text)
             c.font = header_font
             c.fill = header_fill
-            c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            c.alignment = align_header
             c.border = cell_border
 
         ws.row_dimensions[start_row].height = 26
@@ -525,53 +631,57 @@ class SCurveGenerator:
 
             # Period (Col B)
             c_per = ws.cell(row=curr_r, column=start_col, value=pt.period)
-            c_per.font = Font(name="Calibri", size=10, bold=True)
-            c_per.alignment = Alignment(horizontal="center", vertical="center")
+            c_per.font = font_bold_10
+            c_per.alignment = align_center
             c_per.border = cell_border
 
             # Planned Cum % (Col C)
             c_plan = ws.cell(row=curr_r, column=start_col + 1, value=pt.planned_pct)
-            c_plan.font = Font(name="Calibri", size=10)
+            c_plan.font = font_reg_10
             c_plan.number_format = "0.0%"
-            c_plan.alignment = Alignment(horizontal="right", vertical="center")
+            c_plan.alignment = align_right
             c_plan.border = cell_border
 
-            # Actual Cum % (Col D)
-            c_act = ws.cell(row=curr_r, column=start_col + 2, value=pt.actual_pct if pt.actual_pct is not None else "")
-            c_act.font = Font(name="Calibri", size=10, bold=True if pt.actual_pct is not None else False)
-            if pt.actual_pct is not None:
+            # Actual Cum % (Col D) — store None when absent so ISBLANK is TRUE and LineChart gaps cleanly
+            has_act = pt.actual_pct is not None
+            c_act = ws.cell(row=curr_r, column=start_col + 2, value=pt.actual_pct if has_act else None)
+            c_act.font = font_bold_10 if has_act else font_reg_10
+            if has_act:
                 c_act.number_format = "0.0%"
-            c_act.alignment = Alignment(horizontal="right", vertical="center")
+            c_act.alignment = align_right
             c_act.border = cell_border
 
-            # Schedule Variance (Col E) - formula `=IF(ISBLANK(D{row}),"",D{row}-C{row})`
-            var_formula = f'=IF(ISBLANK({get_column_letter(start_col + 2)}{curr_r}),"",{get_column_letter(start_col + 2)}{curr_r}-{get_column_letter(start_col + 1)}{curr_r})'
+            # Schedule Variance (Col E)
+            var_formula = f'=IF(OR(ISBLANK({act_col_let}{curr_r}),{act_col_let}{curr_r}=""),"",{act_col_let}{curr_r}-{plan_col_let}{curr_r})'
             c_var = ws.cell(row=curr_r, column=start_col + 3, value=var_formula)
-            c_var.font = Font(name="Calibri", size=10)
+            c_var.font = font_reg_10
             c_var.number_format = "+0.0%;-0.0%;0.0%"
-            c_var.alignment = Alignment(horizontal="right", vertical="center")
+            c_var.alignment = align_right
             c_var.border = cell_border
 
-            # Variance % (Col F) - formula `=IF(ISBLANK(D{row}),"",IF(C{row}>0,(D{row}-C{row})/C{row},0))`
-            vp_formula = f'=IF(ISBLANK({get_column_letter(start_col + 2)}{curr_r}),"",IF({get_column_letter(start_col + 1)}{curr_r}>0,({get_column_letter(start_col + 2)}{curr_r}-{get_column_letter(start_col + 1)}{curr_r})/{get_column_letter(start_col + 1)}{curr_r},0))'
+            # Variance % (Col F)
+            vp_formula = f'=IF(OR(ISBLANK({act_col_let}{curr_r}),{act_col_let}{curr_r}=""),"",IF({plan_col_let}{curr_r}>0,({act_col_let}{curr_r}-{plan_col_let}{curr_r})/{plan_col_let}{curr_r},0))'
             c_vp = ws.cell(row=curr_r, column=start_col + 4, value=vp_formula)
-            c_vp.font = Font(name="Calibri", size=10)
+            c_vp.font = font_reg_10
             c_vp.number_format = "+0.0%;-0.0%;0.0%"
-            c_vp.alignment = Alignment(horizontal="right", vertical="center")
+            c_vp.alignment = align_right
             c_vp.border = cell_border
 
             # Health Status (Col G)
-            c_health = ws.cell(row=curr_r, column=start_col + 5, value=pt.health.replace("_", " "))
-            h_cfg = self.HEALTH_COLORS.get(pt.health, self.HEALTH_COLORS["PLANNED"])
-            c_health.font = Font(name="Calibri", size=9, bold=True, color=h_cfg["text"])
-            c_health.fill = PatternFill(start_color=h_cfg["fill"], end_color=h_cfg["fill"], fill_type="solid")
-            c_health.alignment = Alignment(horizontal="center", vertical="center")
+            c_health = ws.cell(row=curr_r, column=start_col + 5, value=(pt.health or "PLANNED").replace("_", " "))
+            norm_h = (pt.health or "PLANNED").strip().upper()
+            if norm_h not in health_style_cache:
+                norm_h = norm_h.replace(" ", "_")
+            h_font, h_fill = health_style_cache.get(norm_h, health_style_cache["PLANNED"])
+            c_health.font = h_font
+            c_health.fill = h_fill
+            c_health.alignment = align_center
             c_health.border = cell_border
 
             # Milestone (Col H)
             c_ms = ws.cell(row=curr_r, column=start_col + 6, value=pt.milestone or "")
-            c_ms.font = Font(name="Calibri", size=9, italic=True if pt.milestone else False)
-            c_ms.alignment = Alignment(horizontal="left", vertical="center")
+            c_ms.font = font_ms_italic if pt.milestone else font_ms_reg
+            c_ms.alignment = align_left
             c_ms.border = cell_border
 
             curr_r += 1
@@ -629,41 +739,42 @@ class SCurveGenerator:
         end_row = table_meta["end_row"]
         start_col = table_meta["start_col"]
 
-        data_ref = Reference(
-            ws,
-            min_col=start_col + 1,
-            min_row=start_row,
-            max_col=start_col + 2,
-            max_row=end_row,
-        )
-        cats_ref = Reference(
-            ws,
-            min_col=start_col,
-            min_row=start_row + 1,
-            max_row=end_row,
-        )
+        if end_row >= start_row + 1:
+            data_ref = Reference(
+                ws,
+                min_col=start_col + 1,
+                min_row=start_row,
+                max_col=start_col + 2,
+                max_row=end_row,
+            )
+            cats_ref = Reference(
+                ws,
+                min_col=start_col,
+                min_row=start_row + 1,
+                max_row=end_row,
+            )
 
-        chart.add_data(data_ref, titles_from_data=True)
-        chart.set_categories(cats_ref)
+            chart.add_data(data_ref, titles_from_data=True)
+            chart.set_categories(cats_ref)
 
-        # Style Series 1: Planned Cumulative Progress
-        if len(chart.series) >= 1:
-            s_plan = chart.series[0]
-            s_plan.graphicalProperties.line.solidFill = self.COLOR_PRIMARY
-            s_plan.graphicalProperties.line.width = 25000  # ~2pt
-            s_plan.smooth = True
+            # Style Series 1: Planned Cumulative Progress
+            if len(chart.series) >= 1:
+                s_plan = chart.series[0]
+                s_plan.graphicalProperties.line.solidFill = self.COLOR_PRIMARY
+                s_plan.graphicalProperties.line.width = 25000  # ~2pt
+                s_plan.smooth = True
 
-        # Style Series 2: Actual Cumulative Progress
-        if len(chart.series) >= 2:
-            s_act = chart.series[1]
-            s_act.graphicalProperties.line.solidFill = self.COLOR_ACTUAL
-            s_act.graphicalProperties.line.width = 32000  # ~2.5pt
-            s_act.smooth = True
-            # Marker configuration
-            s_act.marker.symbol = "circle"
-            s_act.marker.size = 6
-            s_act.marker.graphicalProperties.solidFill = self.COLOR_ACTUAL
-            s_act.marker.graphicalProperties.line.solidFill = self.COLOR_ACTUAL
+            # Style Series 2: Actual Cumulative Progress
+            if len(chart.series) >= 2:
+                s_act = chart.series[1]
+                s_act.graphicalProperties.line.solidFill = self.COLOR_ACTUAL
+                s_act.graphicalProperties.line.width = 32000  # ~2.5pt
+                s_act.smooth = True
+                # Marker configuration
+                s_act.marker.symbol = "circle"
+                s_act.marker.size = 6
+                s_act.marker.graphicalProperties.solidFill = self.COLOR_ACTUAL
+                s_act.marker.graphicalProperties.line.solidFill = self.COLOR_ACTUAL
 
         ws.add_chart(chart, anchor)
         return chart

@@ -93,10 +93,7 @@ def prepare_icon_from_asset(rel_path: str, name: str) -> Path:
     subprocess.run(["/opt/homebrew/bin/rsvg-convert", "-z", "4", str(src_svg), "-o", str(png_file)], check=True)
     return png_file
 
-def build_native_deck(output_path: Path):
-    prs = Presentation()
-    prs.slide_width = Inches(13.333333)
-    prs.slide_height = Inches(7.5)
+def add_databricks_jobs_api_slide(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
 
     # 1. Canvas Background
@@ -529,8 +526,13 @@ def build_native_deck(output_path: Path):
     set_arrowhead(c7, "triangle", at_tail=True)
     strip_shadow(c7)
     add_flow_pill(898, 435, 84, 20, "#F0F9FF", "#BAE6FD", "Record Result", "#0369A1", font_size=8.0)
+    return slide
 
-    # Save Presentation
+def build_native_deck(output_path: Path):
+    prs = Presentation()
+    prs.slide_width = Inches(13.333333)
+    prs.slide_height = Inches(7.5)
+    add_databricks_jobs_api_slide(prs)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     prs.save(str(output_path))
     print(f"✓ Saved 100% Native, Fully Editable PowerPoint Deck to: {output_path}")

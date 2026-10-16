@@ -4,6 +4,124 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-10-17] - Milestone 40: Multi-Subsystem Defect Remediation & Coordinate Parity (Tier 28)
+
+**Timestamp:** `2026-10-17T00:25:00+07:00`
+
+### Summary
+Delivered the comprehensive **Multi-Subsystem Defect Remediation & Coordinate Parity** release (Milestone 40 / Tier 28) resolving 15 critical defect vectors across all four major subsystems (`src/docx_engine`, `src/ppt_engine`, `src/xlsx_engine`, `src/core/pii`, `src/core/delivery`, and Diagram Engine V2). Remediated ECMA-376 `<w:tcPr>` sequence ordering corruption, uncached timeline date progression inference under openpyxl `data_only=True`, Column H formula preservation, reconciler multi-line AST paragraph partitioning, DrawingML drop shadow stripping across consulting decks, Draw.io custom shape SVG stencils, literal entity PII masking with word boundary lookarounds, strict Gate 5 DRAFT overlay enforcement, and unified coordinate scaling to 90.0 DPI across all compilers and linters.
+
+### Milestones Delivered
+- **Presentation Engine & Diagram V2 Hardening (`src/ppt_engine/`):**
+  - *Draw.io Custom Shape Stencils (`library_importer.py`):* Returned converted SVG representation for custom shape stencils, preventing blank stencil exports.
+  - *Paragraph-Aware Reconciler AST Partitioning (`reconciler.py`):* Engineered multi-line title, subtitle, and bullet-aware paragraph partitioning during reverse reconciliation, eliminating AST truncation and duplicate bullet symbols.
+  - *Zero-Division Crash Guard (`models.py`, `auditor.py`):* Clamped computed text width to `text_w = max(0.10, ...)` eliminating zero-division exceptions on narrow cards.
+  - *Draw.io Auto-Routing & Font Parity (`drawio_compiler.py`):* Enabled auto-routing waypoints when `f.points` is empty, calibrated relative `label_at` offsets, and normalized float font sizes.
+  - *Full-Deck Shadow Stripping (`consulting_archetypes.py`):* Enforced automated OpenXML `<a:outerShdw>` stripping and `<a:effectRef idx="0">` across consulting decks in `ConsultingDeckBuilder.save()`, and reduced `tb_header` height to `0.65in` to prevent Gear 3 status strip collisions.
+  - *Snowflake Logo Vector Spec (`resource_manager.py`):* Aligned official Snowflake logo to native `.svg`.
+  - *Cross-Engine 90.0 DPI Unification:* Standardized canvas coordinate ratios to 90.0 DPI across PPTX, SVG, Draw.io compilers, and the Tier 1 geometric linter.
+- **Spreadsheet Subsystem Hardening (`src/xlsx_engine/`):**
+  - *Timeline Date Progression Inference (`timeline_aggregator.py`):* Inferred formula date progression when formulas are uncached under `data_only=True`, extracting all 25 schedule weeks cleanly.
+  - *Cloud Sizing Formula Preservation (`cloud_sizing.py`):* Preserved Column H `=F*12` annualized formula integrity and parameterized storage pricing in H19/D30 leaving the H18 header label intact.
+- **Document Subsystem Hardening (`src/docx_engine/`):**
+  - *Strict ECMA-376 Schema Ordering (`table_engine.py`, `spec_compiler.py`):* Enforced schema sequence ordering (`tcBorders` -> `shd` -> `tcMar`) in table cell properties via `insert_element_before()`, eliminating Word repair prompts.
+- **Privacy & Delivery Governance (`src/core/`):**
+  - *Literal Regex Boundary Masking (`pii/handlers/`):* Escaped entities with `re.escape()` and bound them with `(?<!\w)/(?!\w)` across DOCX, PPTX, and XLSX sanitizers.
+  - *Strict Gate 5 DRAFT Enforcement (`delivery/staging.py`, `cli/stage.py`):* Enforced strict DRAFT overlay rejection in Gate 5, excluding `delivery_manifest.json` and transient Office lock files (`~$*`) from candidate staging inventory.
+- **Verification Evidence:**
+  - Recompiled all 4 architecture diagrams (`cdsw_expanded.yaml`, `proposed_aws_lambda_expanded.yaml`, `databricks_jobs_api.yaml`, `e2e_live_system_flight_test.yaml`) to all 4 formats (.drawio, .svg, .png, .pptx).
+  - Headless geometric audit: `uv run bench diagram v2 audit specs/diagrams/ --strict` passed with 0 issues.
+  - Preflight stage audit: `uv run bench stage preflight output/ --strict` passed 5/5 gates across 476 deliverables.
+  - **Reference Handover:** [`docs/handovers/2026-10-17_multi_subsystem_defect_remediation_and_parity.md`](handovers/2026-10-17_multi_subsystem_defect_remediation_and_parity.md)
+
+---
+
+## [2026-10-16] - Autonomous PPTX File Watcher & Reverse Geometric Synchronization (Topic 12)
+
+**Timestamp:** `2026-10-16T18:50:00+07:00`
+
+### Summary
+Delivered the **Autonomous PPTX File Watcher & Reverse Geometric Synchronization Engine** (Milestone 40 / Tier 28) across Diagram Engine V2 (`src/ppt_engine/diagram_v2/watcher.py`, `src/ppt_engine/diagram_v2/reconciler.py`, and `src/cli/diagram_v2.py`). Closed the bidirectional authoring loop between PowerPoint visual editing and declarative YAML topologies: authors can drag card boundaries, nudge heights, tweak paddings, or update text in Microsoft PowerPoint and press `Cmd+S`, and the daemon immediately captures the save event, extracts coordinate changes across containers, nodes, badges, and bullet lists, snaps altered coordinates to clean $0.05''$ grid increments, reconciles the YAML AST on disk, and headlessly regenerates companion artifacts (`.svg`, `.png`, `.drawio`) without cyclic write loops (`--skip-pptx`).
+
+### Milestones Delivered
+- **Reverse Geometric Extraction & Grid Snapping (`reconciler.py`):**
+  - Extended `DiagramReconciler` to measure live shape bounding boxes (`left`, `top`, `width`, `height`) for containers (`container:<id>`), nodes (`node:<id>`), badges (`badge:<id>`), and bullet lists (`bullet_list:<id>`).
+  - Added noise threshold gate ($|\Delta| \ge 0.02''$) to drop mouse drag jitters and automatic grid snapping to $0.05''$ ($3.6\text{pt}$) increments.
+  - Implemented unit conversion helpers `_to_inches()`, `_to_spec_units()`, and `_snap_spec_coord()` supporting both inch and pixel unit specifications.
+  - Added `mutated_geometry` change category and `res.mutated_geometries` property to `ReconciliationResult`.
+  - Updated AST dictionaries (`raw_data`) and YAML dumper (`dump_diagram_yaml()`) to serialize clean snapped coordinates to disk.
+- **Autonomous File Watcher Daemon (`watcher.py`):**
+  - Built `PPTXWatcher` daemon with PowerPoint lock-file filtering (`~$*.pptx`).
+  - Implemented sliding $500\text{ms}$ debounce window and non-destructive ZIP central directory integrity validation (`zipfile.ZipFile.namelist()`) to await atomic write flush completion.
+  - Enforced origin suppression (`--skip-pptx`) during reverse reconciliation: compiles companion formats (`.svg`, `.png`, `.drawio`) without re-writing `.pptx`, eliminating infinite cyclic write loops.
+- **Unified CLI Expansion (`bench diagram v2 watch & reconcile`):**
+  - Deployed `uv run bench diagram v2 watch <spec.yaml> [--pptx <deck.pptx>] [--debounce 0.5] [--snap 0.05] [--skip-pptx]`.
+  - Upgraded `uv run bench diagram v2 reconcile` with `--snap`, `--threshold`, and `--skip-pptx` options, plus styled `[cyan]GEOMETRY[/cyan]` table action badges.
+- **Verification Evidence:**
+  - Automated headless multi-threaded verification in `scratch/test_watcher_and_geometry.py` confirming coordinate shift detection, grid snapping ($4.5'' \to 4.8''$), lock-file filtering, companion regeneration, and background daemon event debouncing.
+  - Reference Handover: [`docs/handovers/2026-10-16_autonomous_pptx_file_watcher_and_geometric_sync.md`](handovers/2026-10-16_autonomous_pptx_file_watcher_and_geometric_sync.md)
+
+---
+
+## [2026-10-16] - Milestone 39: Diagram Engine V2 Typographic Scale Drift Linter & Elastic Typography Auto-Fill (Tracks 3 & 4)
+
+**Timestamp:** `2026-10-16T16:20:00+07:00`
+
+### Summary
+Delivered **Diagram Engine V2 Typographic Scale Drift Linter & Elastic Typography Auto-Fill** (Milestone 39 / Tier 27) across Diagram Engine V2 (`src/ppt_engine/diagram_v2/`). Codified the **Canonical 4-Tier Geometric Typographic Scale** (`CANONICAL_TYPOGRAPHIC_SCALE`) in `models.py` (Tier A: 12.0pt title / 9.0pt subtitle / 8.0pt kicker, Tier B: 10.5pt / 8.5pt / 7.5pt, Tier C: 9.5pt / 8.0pt, Tier D: 7.5pt flow / 8.0pt badge) and unified font resolution across compilers (`pptx_compiler.py`, `svg_compiler.py`, `drawio_compiler.py`) and the geometric auditor (`auditor.py`) via `resolve_node_fonts(node, w_in, h_in)` and `classify_geometric_tier(w_in, h_in)`. Engineered **Check #14 (`TYPOGRAPHIC_SCALE_DRIFT`)** in `Tier1GeometricLinter` (`auditor.py`), providing 3-phase typographic auditing: Declared Cohort Spread (14a) auditing `(container_scope, tier)` peer groups with hero/focal exemptions and `_is_primary_entity_card` filtering; Effective Post-Shrink Drift (14b) simulating `_simulate_shrink_plan` to detect when greedy card shrinking causes fonts to drift $> 1.5\text{pt}$ below peer medians; and Badge and Flow Sprawl (14c) constraining flows to $\le 1$ distinct size and badges to $\le 2$ distinct sizes. Solved the one-way downward shrink bias in `PPTXCompiler._plan_card` by implementing **Elastic Typography Auto-Fill** (Track 4): a 4-step upward expansion algorithm for underfilled execution cards ($\text{occupancy} < 55\%$) scaling subtitle font size from 9.0pt up to 12.0pt with 4.0pt paragraph spacing under a strict zero-wrapping invariant and hard 85% height ceiling ($H_{\text{content}} \le 0.85 \cdot H_{\text{region}}$). Added `elastic_text: Optional[bool] = None` to `NodeSpec`, synchronized `_estimate_node_content_height` in `auditor.py`, and deployed Check #15 (`UNDERFILLED_EXECUTION_CARD`). Normalized `specs/diagrams/cdsw_expanded.yaml`, `specs/diagrams/proposed_aws_lambda_expanded.yaml`, and `specs/diagrams/databricks_jobs_api.yaml`, recompiling to all 4 formats (.drawio, .svg, .png, .pptx) with `uv run bench diagram v2 audit specs/diagrams/ --strict` passing at 0 critical issues and 0 warnings.
+
+### Milestones Delivered
+- **Canonical 4-Tier Geometric Typographic Scale & Resolver Unification (`models.py`, `pptx_compiler.py`, `svg_compiler.py`, `drawio_compiler.py`, `auditor.py`):**
+  - Codified `CANONICAL_TYPOGRAPHIC_SCALE` and `classify_geometric_tier(w_in, h_in)` in `models.py`: Tier A ($h \ge 1.15'', w \ge 1.00'' \implies 12.0\text{pt} / 9.0\text{pt} / 8.0\text{pt}$), Tier B ($0.50'' \le h < 1.15'' \implies 10.5\text{pt} / 8.5\text{pt} / 7.5\text{pt}$), Tier C ($h < 0.50'' \implies 9.5\text{pt} / 8.0\text{pt}$), and Tier D ($7.5\text{pt}$ flows / $8.0\text{pt}$ badges).
+  - Added `resolved_title_pt` and `resolved_subtitle_pt` properties to `NodeSpec`, and unified `resolve_node_fonts(node, w_in, h_in)` across all compilers and the geometric auditor, eliminating cross-compiler font divergence.
+- **Check #14: `TYPOGRAPHIC_SCALE_DRIFT` Linter (`auditor.py`):**
+  - *14a (Declared Cohort Spread):* Evaluates `(container_scope, tier)` peer groups and cross-container Tier A cards. Exempts hero/focal cards ($\text{area} \ge 1.75\times$ median or left/top code blocks with $\ge 3$ bullets). Emits `TYPOGRAPHIC_SCALE_DRIFT` (WARNING / `--strict` gate) when declared titles span $> 1.0\text{pt}$ or subtitles span $> 0.5\text{pt}$.
+  - *14b (Effective Post-Shrink Drift):* Simulates `PPTXCompiler._plan_card` shrink iterations via `_simulate_shrink_plan` to detect when isolated greedy shrinking drops a card $> 1.5\text{pt}$ below its cohort median.
+  - *14c (Badge and Flow Sprawl):* Enforces single font size across all connector flows ($\le 1$) and max two font sizes across standalone and container badges ($\le 2$).
+- **Track 4: Elastic Typography Auto-Fill (`models.py`, `pptx_compiler.py`, `auditor.py`):**
+  - *Activation Envelope:* Activates in `_plan_card` when $h \ge 1.80''$, `align == "left"`, `valign == "top"`, paragraph count $N \le 6$, initial $\text{occupancy} < 0.55$, and `elastic_text != False`.
+  - *4-Step Upward Expansion:* Scales subtitle fonts from 9.0pt up to 12.0pt with paragraph spacing up to 4.0pt under zero-wrapping invariant and hard 85% height ceiling ($H_{\text{content}} \le 0.85 \cdot H_{\text{region}}$).
+  - *Auditor Synchronization & Check #15:* Synchronized `_estimate_node_content_height` with elastic scaling and deployed Check #15 (`UNDERFILLED_EXECUTION_CARD`) warning on large execution cards with $< 50\%$ vertical occupancy when disabled or overridden.
+- **Spec Normalization & Verification:**
+  - Normalized `cdsw_expanded.yaml`, `proposed_aws_lambda_expanded.yaml`, and `databricks_jobs_api.yaml`, eliminating ad-hoc manual font overrides and recompiling to all 4 formats (.drawio, .svg, .png, .pptx).
+  - `uv run bench diagram v2 audit specs/diagrams/ --strict` passed cleanly with 0 critical issues, 0 warnings.
+  - **Reference Handover:** [`docs/handovers/2026-10-16_typographic_scale_drift_and_elastic_autofill.md`](handovers/2026-10-16_typographic_scale_drift_and_elastic_autofill.md)
+
+---
+
+## [2026-10-16] - Milestone 38: Diagram Engine V2 Standardization Tracks 1 & 2 (DeckHeaderContract, Check #15 DECK_HEADER_DRIFT, and Default Bottom-Edge Container Label Policy)
+
+**Timestamp:** `2026-10-16T16:15:00+07:00`
+
+### Summary
+Delivered **Diagram Engine V2 Standardization Tracks 1 & 2** (Milestone 38 / Tier 26) across Diagram Engine V2 (`src/ppt_engine/diagram_v2/`). Permanently codified the immutable slide header geometry contract into `DeckHeaderContract` in `src/ppt_engine/diagram_v2/models.py`, setting canonical coordinates across 1:2 ratio brand stripes ($w=0.045''$ red, $w=0.090''$ blue, $y=0.280''$) and unified action title text frames ($y=0.230''$, $w=9.800''$, $h=0.850''$). Established the **Canonical Container Ingress Line Invariant** ($y \ge 1.350''$ / $129.60\text{px}$), guaranteeing at least $0.270''$ ($25.92\text{px}$) of clear negative space headroom below the narrative subtitle frame. Engineered **Check #15 (`DECK_HEADER_DRIFT`)** in `Tier1GeometricLinter` (`src/ppt_engine/diagram_v2/auditor.py`) to audit single-spec header placement drift, container ingress breaches (`CANVAS_HEADER_OCCLUSION`), and subtitle headroom buffers (`HEADER_HEADROOM_INSUFFICIENT`), and built multi-slide presentation header consistency validation (`validate_bundle_headers`) in `src/ppt_engine/diagram_v2/stray_consolidator.py` enforcing $\Delta y \le 0.005''$ across presentation slides. Implemented the **Default Bottom-Edge Container Label Policy** (`BOTTOM_EDGE_CONTAINER_LABEL_POLICY`) across `models.py`, `pptx_compiler.py`, `svg_compiler.py`, `drawio_compiler.py`, and `auditor.py`: macro swimlanes ($h \ge 4.0''$) automatically anchor their boundary labels to the bottom edge (`resolved_vertical_align() == "bottom"`), opening an unobstructed $0.55''$ horizontal corridor ($y \in [1.30'', 1.85'']$) for cross-boundary dataflow connectors (`"1. Trigger"`, `"2. REST Request"`), while compact sub-containers ($h < 4.0''$) remain top-aligned; horizontal alignment defaults to centered for narrow isolated pillars ($w \le 2.0''$) and left-aligned for multi-column system zones ($w > 2.0''$). Engineered bottom-edge obstruction bypass and segment clamping (`_resolve_container_label_x()`) in `pptx_compiler.py` to prevent labels from colliding with low-altitude database cylinders or entity cards. Introduced the Model 2.1 Stray Visualization Harvester & Theme Consolidator in `stray_consolidator.py` and the unified `bench diagram v2 consolidate` CLI command.
+
+### Milestones Delivered
+- **Canonical DeckHeaderContract & Geometry Standards (`models.py`, `pptx_compiler.py`, `svg_compiler.py`, `drawio_compiler.py`):**
+  - Codified `DeckHeaderContract` with immutable geometry: brand stripes ($x=0.600''$, $y=0.280''$, $h=0.550''$, red $w=0.045''$, blue $w=0.090''$), unified text frame ($x=0.850''$ with stripes / $0.600''$ without, $y=0.230''$, $w=9.800''$ / $10.050''$, $h=0.850''$, bottom boundary $y=1.080''$).
+  - Action title typography: Arial 20.0pt Bold `#0F172A`; Subtitle typography: Arial 11.0pt Regular `#64748B`, `space_before = Pt(4)`.
+  - Canonical Container Ingress Line Invariant: `CANONICAL_INGRESS_Y_IN = 1.350''` ($129.60\text{px}$ at 96 DPI / $121.5\text{px}$ at 90 DPI), guaranteeing $\ge 0.270''$ ($25.92\text{px}$) clear negative space headroom below subtitle text.
+  - Aligned cross-compiler defaults in `HeaderConfig` (`x = 0.600`, `y = 0.280`), eliminating vertical coordinate flipbook jank across sequential presentation slides.
+- **Check #15: `DECK_HEADER_DRIFT` Linter (`auditor.py`, `stray_consolidator.py`):**
+  - *Single-Spec Compliance:* `Tier1GeometricLinter.check_deck_header_drift()` audits header placement drift ($\pm 0.010''$ tolerance), container/root node ingress breaches ($y < 1.350''$), and subtitle headroom clearance ($< 0.250''$).
+  - *Multi-Slide Bundle Consistency:* `validate_bundle_headers()` audits all constituent slides in multi-slide presentation bundles, enforcing $\Delta y_{\text{stripes}} \le 0.005''$, $\Delta y_{\text{title}} \le 0.005''$, and $\Delta x_{\text{title}} \le 0.005''$ with zero tolerance.
+- **Default Bottom-Edge Container Label Policy (`models.py`, `pptx_compiler.py`, `svg_compiler.py`, `drawio_compiler.py`, `auditor.py`):**
+  - *Height Threshold Heuristic:* `resolved_vertical_align()` defaults to `"bottom"` for macro swimlanes ($h \ge 4.0''$) and `"top"` for compact sub-containers ($h < 4.0''$); respects explicit YAML overrides.
+  - *Corridor Clearance:* Opens an unobstructed $0.55''$ horizontal corridor ($y \in [1.30'', 1.85'']$) across full-canvas architectures for clean ingress flow routing.
+  - *Horizontal Alignment Heuristic:* `resolved_align()` defaults to `"center"` for narrow isolated columns ($w \le 2.0''$) and `"left"` for multi-column system zones ($w > 2.0''$).
+  - *Obstruction Bypass & Segment Clamping:* `_resolve_container_label_x()` in `pptx_compiler.py` partitions the bottom boundary into open segments when low-altitude shapes or database cylinders intrude into the bottom band ($y \in [y2 - 0.40'', y2]$), shifting the label to the widest visible open segment.
+  - *Decoupled Tag Badges:* Container environment/status badges (`tag_badge`) remain cleanly decoupled at the top-right corner ($y = box.y + 0.12''$ / $+12\text{px}$) across PPTX and SVG compilers.
+  - *Auditor Check #11 Update:* Calibrated `CONTAINER_LABEL_OCCLUSION` in `Tier1GeometricLinter` to evaluate dynamic label hitboxes based on resolved alignment, eliminating false-positive collision reports.
+- **Model 2.1 Stray Visualization Harvester & Theme Consolidator (`stray_consolidator.py`, `src/cli/diagram_v2.py`):**
+  - Engineered automated discovery and AST node-inclusion clustering $V(A) \subseteq V(B)$ grouping scattered `.yaml`, `.pptx`, `.png`, `.svg`, and `.drawio` artifacts into domain themes.
+  - Identifies evolutionary lineage (`LATEST` vs `OUTDATED`), merges slides losslessly into unified presentation bundles under `output/bundles/`, archives standalone PPTXs to `.archive/strays/`, and generates `STRAY_BACKLOG.md`.
+  - Registered `bench diagram v2 consolidate` CLI command with `--workspace`, `--no-rename`, `--no-archive`, and `--dry-run` options.
+- **Canonical Architecture Specifications & Handover Reference:**
+  - Backlog specs updated: [`docs/backlog/deck_header_contract_and_linter.md`](backlog/deck_header_contract_and_linter.md) and [`docs/backlog/default_container_label_policy.md`](backlog/default_container_label_policy.md).
+  - **Reference Handover:** [`docs/handovers/2026-10-16_diagram_v2_standardization_tracks_1_and_2.md`](handovers/2026-10-16_diagram_v2_standardization_tracks_1_and_2.md)
+
+---
+
 ## [2026-10-16] - Milestone 37: Typed Semantic Clearance Matrix, Virtual Text Bounding Boxes, and Container Label Hitbox Insets
 
 **Timestamp:** `2026-10-16T01:46:19+07:00`
@@ -234,7 +352,7 @@ Delivered enterprise visual refinement and layout engine enhancements across nat
 - **Verified Deliverables & High-DPI Previews:**
   - Verified [`output/presentations/architecture_evolution_cdsw_to_lambda.pptx`](../output/presentations/architecture_evolution_cdsw_to_lambda.pptx) passes visual linter with zero collisions and zero collinear warnings.
   - Slide window previews verified in [`output/presentations/previews/slide_1.png`](../output/presentations/previews/slide_1.png) and [`output/presentations/previews/slide_2.png`](../output/presentations/previews/slide_2.png).
-- **Reference Handover:** [`docs/handovers/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`](handovers/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md)
+- **Reference Handover:** [`docs/handovers/handover_archive/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`](handovers/handover_archive/2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md)
 
 ---
 
@@ -261,7 +379,7 @@ Delivered an automated visual inspection and DrawingML collision remediation pip
 - **Verified Deliverables & High-DPI Previews:**
   - Verified [`output/presentations/architecture_evolution_cdsw_to_lambda.pptx`](../output/presentations/architecture_evolution_cdsw_to_lambda.pptx) passes visual linter with zero collisions.
   - Captured live slide previews in [`output/presentations/previews/slide_1.png`](../output/presentations/previews/slide_1.png) and [`output/presentations/previews/slide_2.png`](../output/presentations/previews/slide_2.png).
-- **Reference Handover:** [`docs/handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md`](handovers/2026-10-14_visual_qa_and_drawingml_collision_remediation.md)
+- **Reference Handover:** [`docs/handovers/handover_archive/2026-10-14_visual_qa_and_drawingml_collision_remediation.md`](handovers/handover_archive/2026-10-14_visual_qa_and_drawingml_collision_remediation.md)
 
 ---
 
@@ -287,7 +405,7 @@ Delivered an end-to-end modernization of diagram workflows, enterprise vector as
   - Built [`src/ppt_engine/pptx_diagram_compiler.py`](../src/ppt_engine/pptx_diagram_compiler.py) providing `PowerPointDiagramCompiler`.
   - Compiled diagram nodes into native `python-pptx` DrawingML shapes: dashed container boundaries (`MSO_SHAPE.RECTANGLE`), sharp rectangular cards with colored top accent stripes, dual brand accent stripes (1:2 ratio), rasterized 300 DPI vector icons, and directional connectors with triangle arrowheads (`MSO_CONNECTOR.STRAIGHT`).
   - Added CLI command `bench diagram export-pptx` in [`src/cli.py`](../src/cli.py), compiling the 2-slide architectural evolution deck in [`output/presentations/architecture_evolution_cdsw_to_lambda.pptx`](../output/presentations/architecture_evolution_cdsw_to_lambda.pptx).
-- **Reference Handover:** [`docs/handovers/2026-10-13_diagram_pipeline_and_asset_integration.md`](handovers/2026-10-13_diagram_pipeline_and_asset_integration.md)
+- **Reference Handover:** [`docs/handovers/handover_archive/2026-10-13_diagram_pipeline_and_asset_integration.md`](handovers/handover_archive/2026-10-13_diagram_pipeline_and_asset_integration.md)
 
 ---
 
@@ -312,7 +430,7 @@ Delivered enterprise-grade privacy protection, strict presentation geometry vali
   - Refactored [`presets/diagrams/fsd_architecture.yaml`](../presets/diagrams/fsd_architecture.yaml) to a balanced 3-column architecture topology with official SVG logos and clean gutter routing.
 - **Automated OpenXML Document Element Purging:**
   - Integrated `purge_docx_elements` into `TemplateStamper.render` and `stamp_template` in [`src/docx_engine/template_stamper.py`](../src/docx_engine/template_stamper.py) (`purge_elements=True` default), ensuring comment, highlight, and revision stripping on all stamped DOCX deliverables.
-- Reference Handover: [`docs/handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`](handovers/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md)
+- Reference Handover: [`docs/handovers/handover_archive/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md`](handovers/handover_archive/2026-09-26_comprehensive_antipattern_compliance_and_pii_purge.md)
 
 ---
 

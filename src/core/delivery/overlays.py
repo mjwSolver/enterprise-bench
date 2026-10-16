@@ -9,6 +9,9 @@ sharp rectangular geometry (`MSO_SHAPE.RECTANGLE`), and standardized badge ident
 from __future__ import annotations
 
 import logging
+import os
+import uuid
+import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union
 
@@ -57,6 +60,16 @@ _DEFAULT_PALETTE = {
 }
 
 
+def _verify_pptx_file(path: Path) -> None:
+    """Validates that path exists, is non-empty, and represents a readable PKZip archive."""
+    if not path.exists() or not path.is_file():
+        raise FileNotFoundError(f"Presentation file '{path}' does not exist.")
+    if path.stat().st_size == 0:
+        raise DeliveryError(f"Presentation file '{path.name}' is empty (0 bytes).")
+    if not zipfile.is_zipfile(path):
+        raise DeliveryError(f"Presentation file '{path.name}' is not a valid zip/OpenXML archive.")
+
+
 def _strip_shape_shadows(shape: Any) -> None:
     """
     OpenXML Sanitizer that strips theme drop shadows and style effects.
@@ -64,7 +77,7 @@ def _strip_shape_shadows(shape: Any) -> None:
     Guarantees flat consulting aesthetic with zero drop shadow inheritance:
     1. Sets shape.shadow.inherit = False (if attribute exists).
     2. Overrides <p:style>/<a:effectRef idx="0"> so theme drop shadows aren't inherited.
-    3. Cleans any existing effectLst or outerShdw in spPr and writes an explicit empty <a:effectLst/>.
+    3. Cleans any existing effectLst or outerShdw in spPr and maintains valid OpenXML schema ordering.
     """
     try:
         if hasattr(shape, "shadow"):
@@ -74,6 +87,8 @@ def _strip_shape_shadows(shape: Any) -> None:
 
     try:
         sp = getattr(shape, "_element", getattr(shape, "element", shape))
+        if sp is None:
+            return
 
         # 1. Reset theme style effectRef to idx="0"
         style = sp.find("{http://schemas.openxmlformats.org/presentationml/2006/main}style")
@@ -82,13 +97,37 @@ def _strip_shape_shadows(shape: Any) -> None:
             if effect_ref is not None:
                 effect_ref.set("idx", "0")
 
-        # 2. Clear out any existing effectLst / outerShdw and inject an explicit empty <a:effectLst/>
+        # 2. Schema-compliant effectLst handling in spPr
         sp_pr = getattr(sp, "spPr", None)
         if sp_pr is not None:
+            # Remove any standalone outerShdw tags directly inside spPr
             for child in list(sp_pr):
-                if child.tag.endswith("effectLst") or child.tag.endswith("outerShdw"):
+                if child.tag.endswith("outerShdw"):
                     sp_pr.remove(child)
-            sp_pr.append(OxmlElement("a:effectLst"))
+
+            # Locate existing effectLst if present
+            effect_lst = None
+            for child in sp_pr:
+                if child.tag.endswith("effectLst"):
+                    effect_lst = child
+                    break
+
+            if effect_lst is not None:
+                # Clear all children from effectLst to leave it empty without breaking XML sequence
+                effect_lst.clear()
+            else:
+                # Insert empty effectLst in schema-valid sequence order:
+                # Must precede effectDag, scene3d, sp3d, extLst
+                new_effect_lst = OxmlElement("a:effectLst")
+                inserted = False
+                for idx, child in enumerate(list(sp_pr)):
+                    tag = child.tag
+                    if any(tag.endswith(t) for t in ("effectDag", "scene3d", "sp3d", "extLst")):
+                        sp_pr.insert(idx, new_effect_lst)
+                        inserted = True
+                        break
+                if not inserted:
+                    sp_pr.append(new_effect_lst)
     except Exception:
         pass
 
@@ -97,6 +136,19 @@ class OverlayManager:
     """
     Headless status overlay badge controller for PowerPoint decks.
     """
+
+    @staticmethod
+    def _save_atomic(prs: Presentation, dest: Path) -> None:
+        """Saves presentation using an atomic write-and-rename pattern to prevent file corruption."""
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        temp_dest = dest.with_name(f".{dest.name}.tmp_{uuid.uuid4().hex[:8]}")
+        try:
+            prs.save(str(temp_dest))
+            temp_dest.replace(dest)
+        except Exception as exc:
+            if temp_dest.exists():
+                temp_dest.unlink(missing_ok=True)
+            raise DeliveryError(f"Failed saving presentation to '{dest.name}': {exc}") from exc
 
     def stamp(
         self,
@@ -118,11 +170,9 @@ class OverlayManager:
           OverlayReport detailing the stamped slides.
         """
         src = Path(pptx_path).resolve()
-        if not src.exists() or not src.is_file():
-            raise FileNotFoundError(f"Presentation file '{src}' does not exist.")
+        _verify_pptx_file(src)
 
         status_key = status.value if isinstance(status, OverlayStatus) else str(status).strip().upper()
-        resolved_status = OverlayStatus(status_key) if status_key in OverlayStatus._value2member_map_ else None
 
         palette = _STATUS_PALETTE.get(status_key, _DEFAULT_PALETTE)
         fill_color = palette["fill"]
@@ -138,7 +188,14 @@ class OverlayManager:
         if slides is None:
             target_indices = set(range(total_slides))
         else:
-            target_indices = {s - 1 for s in slides if 1 <= s <= total_slides}
+            target_indices = set()
+            for s in slides:
+                try:
+                    s_int = int(s)
+                    if 1 <= s_int <= total_slides:
+                        target_indices.add(s_int - 1)
+                except (TypeError, ValueError):
+                    continue
 
         badge_w = Inches(1.75)
         badge_h = Inches(0.35)
@@ -192,12 +249,8 @@ class OverlayManager:
             stamped_slides.append(idx + 1)
 
         dest = Path(output_path).resolve() if output_path else src
-        try:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            prs.save(str(dest))
-            logger.info("Stamped %d slide(s) with '%s' overlay into '%s'", len(stamped_slides), status_key, dest.name)
-        except Exception as exc:
-            raise DeliveryError(f"Failed saving stamped presentation to '{dest}': {exc}") from exc
+        self._save_atomic(prs, dest)
+        logger.info("Stamped %d slide(s) with '%s' overlay into '%s'", len(stamped_slides), status_key, dest.name)
 
         return self.inspect(dest)
 
@@ -216,8 +269,7 @@ class OverlayManager:
           output_path: Destination path. Defaults to overwriting pptx_path.
         """
         src = Path(pptx_path).resolve()
-        if not src.exists() or not src.is_file():
-            raise FileNotFoundError(f"Presentation file '{src}' does not exist.")
+        _verify_pptx_file(src)
 
         try:
             prs = Presentation(str(src))
@@ -229,7 +281,14 @@ class OverlayManager:
         if slides is None:
             target_indices = set(range(total_slides))
         else:
-            target_indices = {s - 1 for s in slides if 1 <= s <= total_slides}
+            target_indices = set()
+            for s in slides:
+                try:
+                    s_int = int(s)
+                    if 1 <= s_int <= total_slides:
+                        target_indices.add(s_int - 1)
+                except (TypeError, ValueError):
+                    continue
 
         stripped_slides: List[int] = []
 
@@ -241,12 +300,8 @@ class OverlayManager:
                 stripped_slides.append(idx + 1)
 
         dest = Path(output_path).resolve() if output_path else src
-        try:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            prs.save(str(dest))
-            logger.info("Stripped overlay badges from %d slide(s) in '%s'", len(stripped_slides), dest.name)
-        except Exception as exc:
-            raise DeliveryError(f"Failed saving stripped presentation to '{dest}': {exc}") from exc
+        self._save_atomic(prs, dest)
+        logger.info("Stripped overlay badges from %d slide(s) in '%s'", len(stripped_slides), dest.name)
 
         report = self.inspect(dest)
         report.stripped_slides = stripped_slides
@@ -257,8 +312,7 @@ class OverlayManager:
         Audits a presentation and returns slide-by-slide overlay badge telemetry.
         """
         src = Path(pptx_path).resolve()
-        if not src.exists() or not src.is_file():
-            raise FileNotFoundError(f"Presentation file '{src}' does not exist.")
+        _verify_pptx_file(src)
 
         try:
             prs = Presentation(str(src))
@@ -273,9 +327,15 @@ class OverlayManager:
             slide_num = idx + 1
             badge_found = False
             for shape in slide.shapes:
-                if shape.name == STATUS_BADGE_NAME or shape.name.startswith(f"{STATUS_BADGE_NAME}_"):
+                name = getattr(shape, "name", "")
+                if name == STATUS_BADGE_NAME or name.startswith(f"{STATUS_BADGE_NAME}_"):
                     badge_found = True
-                    text = shape.text_frame.text.strip() if hasattr(shape, "text_frame") else ""
+                    text = ""
+                    try:
+                        if getattr(shape, "has_text_frame", False):
+                            text = shape.text_frame.text.strip()
+                    except Exception:
+                        text = ""
                     shape_id = getattr(shape, "shape_id", None)
                     badge_infos.append(
                         SlideBadgeInfo(
@@ -315,11 +375,15 @@ class OverlayManager:
         """Removes all status overlay badge shapes from a single slide."""
         removed = 0
         for shape in list(slide.shapes):
-            if shape.name == STATUS_BADGE_NAME or shape.name.startswith(f"{STATUS_BADGE_NAME}_"):
+            name = getattr(shape, "name", "")
+            if name == STATUS_BADGE_NAME or name.startswith(f"{STATUS_BADGE_NAME}_"):
                 try:
-                    sp = shape._element
-                    sp.getparent().remove(sp)
-                    removed += 1
+                    sp = getattr(shape, "_element", None)
+                    if sp is not None:
+                        parent = sp.getparent()
+                        if parent is not None:
+                            parent.remove(sp)
+                            removed += 1
                 except Exception as exc:
                     logger.warning("Failed removing badge shape from slide: %s", exc)
         return removed

@@ -1,0 +1,283 @@
+id: "e2e_live_system_flight_test"
+name: "E2E Live System Flight Test: Hybrid Cloud Architecture"
+theme: "metrodata"
+
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: "in"
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+
+header:
+  show: true
+  action_title: "Proposed: Real-Time Hybrid Cloud Event & Analytics Architecture"
+  subtitle: "High-Throughput Stream Processing, Reconciled Lakehouse Persistence & Interactive Query Dataflow"
+  x: 0.600
+  y: 0.280
+  brand_stripes: true
+  stripe_ratio: "1:2"
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+
+containers:
+  - id: "group_clients"
+    label: "CLIENT INGRESS"
+    x: 0.60
+    y: 1.40
+    w: 1.80
+    h: 5.50
+    border_hex: "#94A3B8"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+
+  - id: "group_stream"
+    label: "DISTRIBUTED STREAM PROCESSING"
+    x: 3.60
+    y: 1.40
+    w: 4.20
+    h: 5.50
+    border_hex: "#EA580C"
+    fill_hex: "#FFFBF8"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+
+  - id: "group_lakehouse"
+    label: "DATA LAKEHOUSE & ANALYTICS"
+    x: 9.00
+    y: 1.40
+    w: 3.75
+    h: 5.50
+    border_hex: "#0284C7"
+    fill_hex: "#F0F9FF"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+
+nodes:
+  - id: "node_web_portal"
+    container_id: "group_clients"
+    title: "Web Portal"
+    subtitle: "Interactive UI\nSession Context"
+    bullets:
+      - "Next.js Edge Proxy"
+      - "OIDC / JWT Claims"
+    shape: "rounded"
+    x: 0.80
+    y: 1.70
+    w: 1.40
+    h: 1.80
+    align: "left"
+    valign: "top"
+    elastic_text: true
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    icon: "assets/icons/lucide/activity.svg"
+
+  - id: "node_iot_gateway"
+    container_id: "group_clients"
+    title: "IoT Gateway"
+    subtitle: "Telemetry Feed"
+    bullets:
+      - "MQTT / TLS Channel"
+      - "Schema Validation"
+    shape: "rounded"
+    x: 0.80
+    y: 3.80
+    w: 1.40
+    h: 1.80
+    align: "left"
+    valign: "top"
+    elastic_text: true
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    icon: "assets/icons/lucide/activity.svg"
+
+  - id: "node_kafka_broker"
+    container_id: "group_stream"
+    title: "Kafka Ingestion Cluster"
+    subtitle: "Partitioned Event Log with Dynamic Offsets"
+    bullets:
+      - "3x Multi-AZ Replication"
+      - "Zero-Copy Disk Transfer"
+      - "Avro Message Serialization"
+    shape: "rounded"
+    x: 3.85
+    y: 1.95
+    w: 3.70
+    h: 1.75
+    align: "left"
+    valign: "top"
+    elastic_text: true
+    stroke_hex: "#EA580C"
+    fill_hex: "#FFFFFF"
+    icon: "assets/icons/lucide/activity.svg"
+
+  - id: "node_spark_engine"
+    container_id: "group_stream"
+    title: "Spark Streaming Engine"
+    subtitle: "Micro-batch Stateful Window Transformations"
+    bullets:
+      - "Structured Streaming Pipeline"
+      - "Watermark & Deduplication"
+      - "Delta Transaction Log"
+    shape: "rounded"
+    x: 3.85
+    y: 4.00
+    w: 3.70
+    h: 2.10
+    align: "left"
+    valign: "top"
+    elastic_text: true
+    stroke_hex: "#EA580C"
+    fill_hex: "#FFFFFF"
+    icon: "assets/icons/lucide/activity.svg"
+
+  - id: "node_lakehouse_db"
+    container_id: "group_lakehouse"
+    title: "Lakehouse DB"
+    subtitle: "Iceberg Parquet"
+    shape: "cylinder"
+    x: 9.95
+    y: 1.95
+    w: 1.80
+    h: 1.70
+    icon: "assets/icons/lucide/database.svg"
+    icon_layout: "side"
+    stroke_hex: "#0284C7"
+    fill_hex: "#FFFFFF"
+
+  - id: "node_analytics_bi"
+    container_id: "group_lakehouse"
+    title: "BI Analytics Engine"
+    subtitle: "Real-Time Query Federation"
+    bullets:
+      - "Interactive Dashboards"
+      - "Sub-Second Query Latency"
+      - "Ad-Hoc SQL Aggregations"
+    shape: "rounded"
+    x: 9.25
+    y: 4.00
+    w: 3.25
+    h: 2.10
+    align: "left"
+    valign: "top"
+    elastic_text: true
+    stroke_hex: "#10B981"
+    fill_hex: "#ECFDF5"
+    title_color: "#047857"
+    icon: "assets/icons/lucide/activity.svg"
+
+badges:
+  - id: "badge_stream_active"
+    x: 3.85
+    y: 1.60
+    w: 1.60
+    h: 0.22
+    text: "P1 EVENT PIPELINE"
+    bg_hex: "#EFF6FF"
+    text_hex: "#1D4ED8"
+    border_hex: "#BFDBFE"
+    font_pt: 8.0
+
+  - id: "badge_acid_compliance"
+    x: 9.25
+    y: 1.60
+    w: 1.50
+    h: 0.22
+    text: "ACID RECONCILED"
+    bg_hex: "#ECFDF5"
+    text_hex: "#065F46"
+    border_hex: "#A7F3D0"
+    font_pt: 8.0
+
+flows:
+  - id: "flow_portal_to_kafka"
+    source: "node_web_portal"
+    target: "node_kafka_broker"
+    points:
+      - [2.20, 2.60]
+      - [3.85, 2.60]
+    label: "1. Event Ingress"
+    label_at: [3.025, 2.40]
+    label_position: "above"
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1D4ED8"
+    font_pt: 7.5
+
+  - id: "flow_iot_to_kafka"
+    source: "node_iot_gateway"
+    target: "node_kafka_broker"
+    points:
+      - [2.20, 4.70]
+      - [3.35, 4.70]
+      - [3.35, 3.40]
+      - [3.85, 3.40]
+    label: "2. Telemetry Batch"
+    label_at: [2.78, 4.50]
+    label_position: "above"
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1D4ED8"
+    font_pt: 7.5
+
+  - id: "flow_kafka_to_spark"
+    source: "node_kafka_broker"
+    target: "node_spark_engine"
+    points:
+      - [5.70, 3.70]
+      - [5.70, 4.00]
+    stroke_hex: "#EA580C"
+    stroke_width: 2.5
+
+  - id: "flow_spark_to_lakehouse"
+    source: "node_spark_engine"
+    target: "node_lakehouse_db"
+    points:
+      - [7.55, 4.50]
+      - [8.40, 4.50]
+      - [8.40, 2.80]
+      - [9.95, 2.80]
+    label: "3. Micro-Batch Sink"
+    label_at: [9.175, 2.60]
+    label_position: "above"
+    stroke_hex: "#0284C7"
+    stroke_width: 2.5
+    label_bg_hex: "#F0F9FF"
+    label_text_hex: "#0369A1"
+    font_pt: 7.5
+
+  - id: "flow_lakehouse_to_bi"
+    source: "node_lakehouse_db"
+    target: "node_analytics_bi"
+    points:
+      - [10.85, 3.65]
+      - [10.85, 4.00]
+    stroke_hex: "#0284C7"
+    stroke_width: 2.5
+
+  - id: "flow_bi_to_spark"
+    source: "node_analytics_bi"
+    target: "node_spark_engine"
+    points:
+      - [9.25, 5.50]
+      - [7.55, 5.50]
+    label: "4. Query Pushdown"
+    label_at: [8.40, 5.70]
+    label_position: "below"
+    stroke_hex: "#10B981"
+    stroke_width: 2.5
+    dashed: true
+    label_bg_hex: "#ECFDF5"
+    label_text_hex: "#065F46"
+    font_pt: 7.5

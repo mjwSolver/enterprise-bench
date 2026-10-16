@@ -22,6 +22,7 @@ Key Features:
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import re
 import tempfile
@@ -48,6 +49,16 @@ from src.docx_engine.table_engine import (
     style_table,
 )
 
+_INLINE_TOKEN_RE = re.compile(r"(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))")
+_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+_HEADING_RE = re.compile(r"^(#{1,4})\s+(.+)$")
+_ALERT_RE = re.compile(r"^\[!(NOTE|IMPORTANT|WARNING|CAUTION|TIP)\]\s*(.*)$", re.IGNORECASE)
+_NUM_LIST_RE = re.compile(r"^(\d+)\.\s+(.+)$")
+_IMAGE_RE = re.compile(r"^!\[(.*?)\]\((.+?)\)$")
+_HR_RE = re.compile(r"^(-{3,}|\*{3,}|_{3,})$")
+_TABLE_SEP_RE = re.compile(r"^:?-+:?$")
+_CODE_FENCE_RE = re.compile(r"^(`{3,})(.*)$")
+
 
 # ============================================================================
 # OpenXML XML Helper Functions
@@ -62,6 +73,9 @@ def _set_cell_borders(
 ) -> None:
     """Apply custom OpenXML borders to a table cell."""
     tcPr = cell._tc.get_or_add_tcPr()
+    existing_borders = tcPr.find(qn("w:tcBorders"))
+    if existing_borders is not None:
+        tcPr.remove(existing_borders)
     tcBorders = parse_xml(f'<w:tcBorders {nsdecls("w")}/>')
 
     borders = [("top", top), ("bottom", bottom), ("left", left), ("right", right)]
@@ -80,7 +94,10 @@ def _set_cell_borders(
             continue
         tcBorders.append(parse_xml(tag))
 
-    tcPr.append(tcBorders)
+    tcPr.insert_element_before(
+        tcBorders,
+        "w:shd", "w:noWrap", "w:tcMar", "w:textDirection", "w:tcFitText", "w:vAlign",
+    )
 
 
 def _add_page_number_to_run(run) -> None:
@@ -141,6 +158,12 @@ class SpecCompiler:
         else:
             self.theme = theme
 
+        self._rgb_text_primary = RGBColor(*parse_hex(self.theme.text_primary))
+        self._rgb_text_secondary = RGBColor(*parse_hex(self.theme.text_secondary))
+        self._rgb_accent_primary = RGBColor(*parse_hex(self.theme.accent_primary))
+        self._rgb_accent_secondary = RGBColor(*parse_hex(self.theme.accent_secondary))
+        self._rgb_white = RGBColor(255, 255, 255)
+
         self.metadata = metadata or SpecMetadata()
         self.base_dir = Path(base_dir) if base_dir else None
         self.doc = docx.Document()
@@ -183,7 +206,7 @@ class SpecCompiler:
         normal_style = styles["Normal"]
         normal_style.font.name = self.theme.font_body
         normal_style.font.size = Pt(10.5)
-        normal_style.font.color.rgb = RGBColor(*parse_hex(self.theme.text_primary))
+        normal_style.font.color.rgb = self._rgb_text_primary
         normal_style.paragraph_format.line_spacing = 1.2
         normal_style.paragraph_format.space_after = Pt(6)
 
@@ -192,7 +215,7 @@ class SpecCompiler:
         h1.font.name = self.theme.font_header
         h1.font.size = Pt(16)
         h1.font.bold = True
-        h1.font.color.rgb = RGBColor(*parse_hex(self.theme.accent_primary))
+        h1.font.color.rgb = self._rgb_accent_primary
         h1.paragraph_format.space_before = Pt(16)
         h1.paragraph_format.space_after = Pt(6)
         h1.paragraph_format.keep_with_next = True
@@ -202,7 +225,7 @@ class SpecCompiler:
         h2.font.name = self.theme.font_header
         h2.font.size = Pt(13)
         h2.font.bold = True
-        h2.font.color.rgb = RGBColor(*parse_hex(self.theme.accent_secondary))
+        h2.font.color.rgb = self._rgb_accent_secondary
         h2.paragraph_format.space_before = Pt(12)
         h2.paragraph_format.space_after = Pt(4)
         h2.paragraph_format.keep_with_next = True
@@ -212,7 +235,7 @@ class SpecCompiler:
         h3.font.name = self.theme.font_header
         h3.font.size = Pt(11)
         h3.font.bold = True
-        h3.font.color.rgb = RGBColor(*parse_hex(self.theme.text_primary))
+        h3.font.color.rgb = self._rgb_text_primary
         h3.paragraph_format.space_before = Pt(10)
         h3.paragraph_format.space_after = Pt(3)
         h3.paragraph_format.keep_with_next = True
@@ -223,7 +246,7 @@ class SpecCompiler:
             h4.font.name = self.theme.font_header
             h4.font.size = Pt(10.5)
             h4.font.bold = True
-            h4.font.color.rgb = RGBColor(*parse_hex(self.theme.text_secondary))
+            h4.font.color.rgb = self._rgb_text_secondary
             h4.paragraph_format.space_before = Pt(8)
             h4.paragraph_format.space_after = Pt(2)
             h4.paragraph_format.keep_with_next = True
@@ -267,7 +290,7 @@ class SpecCompiler:
         r_title.font.name = self.theme.font_header
         r_title.font.size = Pt(26)
         r_title.font.bold = True
-        r_title.font.color.rgb = RGBColor(*parse_hex(self.theme.accent_primary))
+        r_title.font.color.rgb = self._rgb_accent_primary
 
         # Subtitle Paragraph
         if self.metadata.subtitle:
@@ -277,7 +300,7 @@ class SpecCompiler:
             r_sub = p_sub.add_run(self.metadata.subtitle)
             r_sub.font.name = self.theme.font_body
             r_sub.font.size = Pt(13)
-            r_sub.font.color.rgb = RGBColor(*parse_hex(self.theme.text_secondary))
+            r_sub.font.color.rgb = self._rgb_text_secondary
 
         # Divider Hairline
         p_div = self.doc.add_paragraph()
@@ -324,19 +347,19 @@ class SpecCompiler:
         r_cl_name = p_cl_v.add_run(f"{self.metadata.client}\n")
         r_cl_name.font.size = Pt(11)
         r_cl_name.font.bold = True
-        r_cl_name.font.color.rgb = RGBColor(*parse_hex(self.theme.text_primary))
+        r_cl_name.font.color.rgb = self._rgb_text_primary
         r_cl_det = p_cl_v.add_run(f"Project Stakeholders & Engineering\nDate: {self.metadata.date}")
         r_cl_det.font.size = Pt(9.5)
-        r_cl_det.font.color.rgb = RGBColor(*parse_hex(self.theme.text_secondary))
+        r_cl_det.font.color.rgb = self._rgb_text_secondary
 
         p_vn_v = c_vn_val.paragraphs[0]
         r_vn_name = p_vn_v.add_run(f"{self.metadata.vendor}\n")
         r_vn_name.font.size = Pt(11)
         r_vn_name.font.bold = True
-        r_vn_name.font.color.rgb = RGBColor(*parse_hex(self.theme.text_primary))
+        r_vn_name.font.color.rgb = self._rgb_text_primary
         r_vn_det = p_vn_v.add_run(f"Solutions & Architecture Practice\nVersion: {self.metadata.version} ({self.metadata.status})")
         r_vn_det.font.size = Pt(9.5)
-        r_vn_det.font.color.rgb = RGBColor(*parse_hex(self.theme.text_secondary))
+        r_vn_det.font.color.rgb = self._rgb_text_secondary
 
         self.doc.add_page_break()
 
@@ -355,8 +378,11 @@ class SpecCompiler:
 
         headers = ["Date / Tanggal", "Version / Versi", "Author / Penulis", "Change Description / Modifikasi"]
         for idx, text in enumerate(headers):
-            tbl_ctrl.rows[0].cells[idx].paragraphs[0].text = text
-            tbl_ctrl.rows[0].cells[idx].paragraphs[0].runs[0].font.bold = True
+            p = tbl_ctrl.rows[0].cells[idx].paragraphs[0]
+            p.text = text
+            for run in p.runs:
+                run.font.bold = True
+                run.font.color.rgb = self._rgb_white
 
         for r_idx, row_data in enumerate(ctrl_rows, start=1):
             cells = tbl_ctrl.rows[r_idx].cells
@@ -380,8 +406,11 @@ class SpecCompiler:
 
         rev_headers = ["Role / Tanggung Jawab", "Stakeholder Name", "Status", "Sign-Off Date"]
         for idx, text in enumerate(rev_headers):
-            tbl_rev.rows[0].cells[idx].paragraphs[0].text = text
-            tbl_rev.rows[0].cells[idx].paragraphs[0].runs[0].font.bold = True
+            p = tbl_rev.rows[0].cells[idx].paragraphs[0]
+            p.text = text
+            for run in p.runs:
+                run.font.bold = True
+                run.font.color.rgb = self._rgb_white
 
         for r_idx, rev in enumerate(reviewers, start=1):
             cells = tbl_rev.rows[r_idx].cells
@@ -494,7 +523,7 @@ class SpecCompiler:
         r_body = p.add_run(text)
         r_body.font.name = self.theme.font_body
         r_body.font.size = Pt(9.5)
-        r_body.font.color.rgb = RGBColor(*parse_hex(self.theme.text_primary))
+        r_body.font.color.rgb = self._rgb_text_primary
 
         sp = self.doc.add_paragraph()
         sp.paragraph_format.space_before = Pt(0)
@@ -586,7 +615,10 @@ class SpecCompiler:
         if not rows_data:
             return
 
-        cols = len(rows_data[0])
+        cols = max((len(r) for r in rows_data), default=0)
+        if cols == 0:
+            return
+
         table = self.doc.add_table(rows=len(rows_data), cols=cols)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         
@@ -611,6 +643,7 @@ class SpecCompiler:
                     if r_idx == 0:
                         for run in p.runs:
                             run.font.bold = True
+                            run.font.color.rgb = self._rgb_white
                     else:
                         self._apply_status_badge(cell, val.strip())
 
@@ -647,8 +680,7 @@ class SpecCompiler:
 
     def _format_inline_text(self, paragraph, raw_text: str) -> None:
         """Parse inline Markdown formatting tokens (**bold**, *italic*, `code`)."""
-        pattern = re.compile(r"(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))")
-        tokens = pattern.split(raw_text)
+        tokens = _INLINE_TOKEN_RE.split(raw_text)
 
         for tok in tokens:
             if not tok:
@@ -663,25 +695,27 @@ class SpecCompiler:
                 r.font.name = self.theme.font_body
                 r.font.size = Pt(10)
                 r.font.bold = True
+                r.font.color.rgb = self._rgb_text_primary
             elif tok.startswith("*") and tok.endswith("*") and len(tok) >= 2:
                 r = paragraph.add_run(tok[1:-1])
                 r.font.name = self.theme.font_body
                 r.font.size = Pt(10)
                 r.font.italic = True
+                r.font.color.rgb = self._rgb_text_primary
             elif tok.startswith("[") and "](" in tok and tok.endswith(")"):
-                m = re.match(r"\[([^\]]+)\]\(([^)]+)\)", tok)
+                m = _LINK_RE.match(tok)
                 if m:
-                    label, url = m.groups()
+                    label, _ = m.groups()
                     r = paragraph.add_run(label)
                     r.font.name = self.theme.font_body
                     r.font.size = Pt(10)
                     r.font.underline = True
-                    r.font.color.rgb = RGBColor(*parse_hex(self.theme.accent_secondary))
+                    r.font.color.rgb = self._rgb_accent_secondary
             else:
                 r = paragraph.add_run(tok)
                 r.font.name = self.theme.font_body
                 r.font.size = Pt(10)
-                r.font.color.rgb = RGBColor(*parse_hex(self.theme.text_primary))
+                r.font.color.rgb = self._rgb_text_primary
 
     # ========================================================================
     # Markdown Block Parser
@@ -694,6 +728,7 @@ class SpecCompiler:
         total_lines = len(lines)
 
         in_code_block = False
+        code_fence = ""
         code_buffer: List[str] = []
         code_lang = ""
 
@@ -705,12 +740,21 @@ class SpecCompiler:
             stripped = line.strip()
 
             # 1. Code Block Processing (```lang ... ```)
-            if stripped.startswith("```"):
+            fence_m = _CODE_FENCE_RE.match(stripped)
+            if fence_m:
+                ticks, rest = fence_m.groups()
                 if not in_code_block:
+                    if in_table:
+                        self.add_markdown_table(table_buffer)
+                        table_buffer = []
+                        in_table = False
                     in_code_block = True
-                    code_lang = stripped.lstrip("`").strip()
+                    code_fence = ticks
+                    code_lang = rest.strip()
                     code_buffer = []
-                else:
+                    idx += 1
+                    continue
+                elif len(ticks) >= len(code_fence) and not rest.strip():
                     in_code_block = False
                     full_code = "\n".join(code_buffer)
                     if code_lang.lower() == "mermaid":
@@ -718,8 +762,10 @@ class SpecCompiler:
                     else:
                         self.add_code_callout(full_code, language=code_lang)
                     code_buffer = []
-                idx += 1
-                continue
+                    code_fence = ""
+                    code_lang = ""
+                    idx += 1
+                    continue
 
             if in_code_block:
                 code_buffer.append(line)
@@ -729,8 +775,13 @@ class SpecCompiler:
             # 2. Markdown Pipe Tables (| col1 | col2 |)
             if stripped.startswith("|") and stripped.endswith("|"):
                 row_cells = [c.strip() for c in stripped.strip("|").split("|")]
-                # Ignore separator row (|---|---|)
-                if not all(re.match(r"^:?-+:?$", c) for c in row_cells if c):
+                # Ignore separator row (|---|---|), ensuring empty rows (|  |  |) are not ignored
+                is_sep = (
+                    bool(row_cells)
+                    and any(c != "" for c in row_cells)
+                    and all(_TABLE_SEP_RE.match(c) for c in row_cells if c != "")
+                )
+                if not is_sep:
                     table_buffer.append(row_cells)
                 in_table = True
                 idx += 1
@@ -748,7 +799,7 @@ class SpecCompiler:
 
             # 3. Headings (# H1, ## H2, ### H3, #### H4)
             if stripped.startswith("#"):
-                m = re.match(r"^(#{1,4})\s+(.+)$", stripped)
+                m = _HEADING_RE.match(stripped)
                 if m:
                     level_hashes, title_text = m.groups()
                     level = len(level_hashes)
@@ -763,7 +814,7 @@ class SpecCompiler:
             # 4. GitHub-Style Alert / Callout Quotes (> [!NOTE])
             if stripped.startswith(">"):
                 quote_text = stripped.lstrip(">").strip()
-                alert_m = re.match(r"^\[!(NOTE|IMPORTANT|WARNING|CAUTION|TIP)\]\s*(.*)$", quote_text, re.IGNORECASE)
+                alert_m = _ALERT_RE.match(quote_text)
                 if alert_m:
                     alert_type, alert_body = alert_m.groups()
                     idx += 1
@@ -788,7 +839,7 @@ class SpecCompiler:
                 idx += 1
                 continue
 
-            num_m = re.match(r"^(\d+)\.\s+(.+)$", stripped)
+            num_m = _NUM_LIST_RE.match(stripped)
             if num_m:
                 _, num_text = num_m.groups()
                 p = self.doc.add_paragraph(style="List Number")
@@ -800,7 +851,7 @@ class SpecCompiler:
                 continue
 
             # 6. Markdown Images (![Caption](path/to/image.png))
-            img_m = re.match(r"^!\[(.*?)\]\((.+?)\)$", stripped)
+            img_m = _IMAGE_RE.match(stripped)
             if img_m:
                 caption_text, img_rel_path = img_m.groups()
                 img_clean_path = img_rel_path.strip().split(" ")[0].strip("\"'")
@@ -809,7 +860,7 @@ class SpecCompiler:
                 continue
 
             # 7. Horizontal Rules (---)
-            if re.match(r"^(-{3,}|\*{3,}|_{3,})$", stripped):
+            if _HR_RE.match(stripped):
                 p_hr = self.doc.add_paragraph()
                 p_hr.paragraph_format.space_before = Pt(8)
                 p_hr.paragraph_format.space_after = Pt(8)
@@ -819,13 +870,21 @@ class SpecCompiler:
                 idx += 1
                 continue
 
-            # 7. Standard Paragraph
+            # 8. Standard Paragraph
             p = self.doc.add_paragraph()
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(6)
             p.paragraph_format.line_spacing = 1.2
             self._format_inline_text(p, stripped)
             idx += 1
+
+        # Flush any unclosed code block
+        if in_code_block:
+            full_code = "\n".join(code_buffer)
+            if code_lang.lower() == "mermaid":
+                self.add_mermaid_diagram(full_code)
+            else:
+                self.add_code_callout(full_code, language=code_lang)
 
         # Flush any trailing table
         if in_table and table_buffer:
@@ -854,6 +913,24 @@ class SpecCompiler:
 # High-Level Orchestration Helpers
 # ============================================================================
 
+def _apply_frontmatter_to_metadata(meta: SpecMetadata, fm: Dict[str, Any]) -> None:
+    """Populate a SpecMetadata instance from a parsed frontmatter dictionary."""
+    meta.title = fm.get("title", meta.title)
+    meta.subtitle = fm.get("subtitle", meta.subtitle)
+    meta.client = fm.get("client", meta.client)
+    meta.vendor = fm.get("vendor", meta.vendor)
+    meta.version = str(fm.get("version", meta.version))
+    meta.date = str(fm.get("date", meta.date))
+    meta.status = fm.get("status", meta.status)
+    meta.confidentiality = fm.get("confidentiality", meta.confidentiality)
+    meta.authors = fm.get("authors", meta.authors)
+    meta.document_control = fm.get("document_control", meta.document_control)
+    meta.reviewers = fm.get("reviewers", meta.reviewers)
+    meta.reference_documents = fm.get("reference_documents", meta.reference_documents)
+    if "theme" in fm and fm["theme"]:
+        meta.theme = str(fm["theme"])
+
+
 def compile_markdown_to_docx(
     markdown_path: Union[str, Path],
     output_path: Union[str, Path],
@@ -868,25 +945,20 @@ def compile_markdown_to_docx(
 
     raw_content = md_p.read_text(encoding="utf-8")
 
-    # Extract YAML frontmatter if present
-    extracted_meta = metadata or SpecMetadata()
+    # Extract YAML frontmatter if present (copy caller's metadata to avoid in-place mutation)
+    extracted_meta = dataclasses.replace(metadata) if metadata is not None else SpecMetadata()
+    effective_theme = theme
     if raw_content.startswith("---"):
         parts = raw_content.split("---", 2)
         if len(parts) >= 3:
             fm = yaml.safe_load(parts[1]) or {}
             if isinstance(fm, dict):
-                extracted_meta.title = fm.get("title", extracted_meta.title)
-                extracted_meta.subtitle = fm.get("subtitle", extracted_meta.subtitle)
-                extracted_meta.client = fm.get("client", extracted_meta.client)
-                extracted_meta.vendor = fm.get("vendor", extracted_meta.vendor)
-                extracted_meta.version = fm.get("version", extracted_meta.version)
-                extracted_meta.date = fm.get("date", extracted_meta.date)
-                extracted_meta.confidentiality = fm.get("confidentiality", extracted_meta.confidentiality)
-                extracted_meta.document_control = fm.get("document_control", extracted_meta.document_control)
-                extracted_meta.reviewers = fm.get("reviewers", extracted_meta.reviewers)
+                _apply_frontmatter_to_metadata(extracted_meta, fm)
+                if "theme" in fm and fm["theme"] and theme == "metrodata":
+                    effective_theme = extracted_meta.theme
             raw_content = parts[2]
 
-    compiler = SpecCompiler(theme=theme, metadata=extracted_meta, base_dir=md_p.parent)
+    compiler = SpecCompiler(theme=effective_theme, metadata=extracted_meta, base_dir=md_p.parent)
     compiler.add_cover_page()
     compiler.add_governance_section()
     compiler.parse_markdown_content(raw_content)
@@ -910,21 +982,16 @@ def compile_spec_directory(
 
     # Load metadata file if present
     meta = SpecMetadata()
+    effective_theme = theme
     meta_path = s_dir / (metadata_file or "00_metadata.yaml")
     if meta_path.exists():
         fm = yaml.safe_load(meta_path.read_text(encoding="utf-8")) or {}
         if isinstance(fm, dict):
-            meta.title = fm.get("title", meta.title)
-            meta.subtitle = fm.get("subtitle", meta.subtitle)
-            meta.client = fm.get("client", meta.client)
-            meta.vendor = fm.get("vendor", meta.vendor)
-            meta.version = fm.get("version", meta.version)
-            meta.date = fm.get("date", meta.date)
-            meta.confidentiality = fm.get("confidentiality", meta.confidentiality)
-            meta.document_control = fm.get("document_control", meta.document_control)
-            meta.reviewers = fm.get("reviewers", meta.reviewers)
+            _apply_frontmatter_to_metadata(meta, fm)
+            if "theme" in fm and fm["theme"] and theme == "metrodata":
+                effective_theme = meta.theme
 
-    compiler = SpecCompiler(theme=theme, metadata=meta, base_dir=s_dir)
+    compiler = SpecCompiler(theme=effective_theme, metadata=meta, base_dir=s_dir)
     compiler.add_cover_page()
     compiler.add_governance_section()
 

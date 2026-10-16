@@ -17,6 +17,10 @@ rules and layout tolerances learned from the Milestone 33 post-mortem:
 11. SHAPE_PROPORTION_OVERSIZED: Database cylinders exceeding width threshold (>185px, e.g. 260px defect).
 12. FLOW_OBSTACLE_PENETRATION: Connector route lines cutting through unrelated entity cards.
 13. TEXT_OVERFLOW: Card text content exceeding available container height budget (with virtual text bounding boxes).
+14. DECK_HEADER_DRIFT: Header coordinates deviating from canonical DeckHeaderContract standard.
+15. CANVAS_HEADER_OCCLUSION & HEADER_HEADROOM_INSUFFICIENT: Canonical container ingress line invariant (y >= 1.350in / 129.60px) and subtitle headroom clearance.
+16. TYPOGRAPHIC_SCALE_DRIFT: Typographic scale drift across peer cohorts, post-shrink effective drift, and badge/flow sprawl.
+17. UNDERFILLED_EXECUTION_CARD: Underfilled large execution cards with excessive vacant whitespace.
 """
 
 from __future__ import annotations
@@ -24,16 +28,21 @@ from __future__ import annotations
 import logging
 import math
 import re
+import statistics
 from dataclasses import dataclass, field
-from typing import Dict, List, Literal, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple
 
 from src.ppt_engine.diagram_v2.models import (
     DiagramSpec,
+    DeckHeaderContract,
     ContainerSpec,
     NodeSpec,
     FlowSpec,
     BadgeSpec,
     BulletListSpec,
+    classify_geometric_tier,
+    CANONICAL_TYPOGRAPHIC_SCALE,
+    resolve_node_fonts,
 )
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
 
@@ -171,10 +180,14 @@ class Tier1GeometricLinter:
         """
         Estimates the virtual rendered text and content height for a node card in pixels.
         Includes title, subtitle, bullets, kicker, icon, and inner padding.
+        Synchronized with Elastic Typography Auto-Fill when qualified.
         """
-        title_pt = n.title_pt or 12.0
-        sub_pt = 9.0
-        b_pt = 9.0
+        card_w_in = card_w / 90.0
+        nh = n.h if n.h is not None else (1.25 if self.spec.canvas.unit == "in" else 100.0)
+        card_h_in = nh if self.spec.canvas.unit == "in" else (nh / 90.0)
+
+        title_pt, sub_pt, sp_pt = resolve_node_fonts(n, card_w_in, card_h_in)
+        b_pt = sub_pt
 
         # Estimate wrapped lines for title and subtitle
         char_w_title = title_pt * 0.55
@@ -193,11 +206,11 @@ class Tier1GeometricLinter:
             char_w_sub = sub_pt * 0.52
             sub_chars = max(12, int(usable_w / char_w_sub))
             sub_lines = 0
-            for seg in n.subtitle.split("\n"):
-                seg_s = seg.strip()
-                sub_lines += max(1, (len(seg_s) + sub_chars - 1) // sub_chars) if seg_s else 1
+            sub_segs = [s.strip() for s in n.subtitle.split("\n") if s.strip()]
+            for seg_s in sub_segs:
+                sub_lines += max(1, (len(seg_s) + sub_chars - 1) // sub_chars)
             sub_lines = max(1, sub_lines)
-            sub_h = sub_lines * sub_pt * 1.20 + 4.0
+            sub_h = sub_lines * sub_pt * 1.20 + (len(sub_segs) * sp_pt * 90.0 / 72.0)
 
         bullet_h = 0.0
         bullets = getattr(n, "bullets", None) or getattr(n, "items", None)
@@ -207,7 +220,7 @@ class Tier1GeometricLinter:
             for item in bullets:
                 item_s = str(item).strip()
                 b_lines = max(1, (len(item_s) + b_chars - 1) // b_chars) if item_s else 1
-                bullet_h += b_lines * b_pt * 1.20 + 3.0
+                bullet_h += b_lines * b_pt * 1.20 + (sp_pt * 90.0 / 72.0)
 
         kicker_h = 16.0 if n.kicker else 0.0
         icon_h = 28.0 if (n.icon or n.icon_emoji) else 0.0
@@ -235,6 +248,9 @@ class Tier1GeometricLinter:
         issues.extend(self.check_shape_proportions_and_database_sizing())
         issues.extend(self.check_flow_obstacle_penetration())
         issues.extend(self.check_node_text_overflow())
+        issues.extend(self.check_deck_header_drift())
+        issues.extend(self.check_typographic_scale_consistency())
+        issues.extend(self.check_underfilled_execution_cards())
         return issues
 
     # Alias for backward compatibility
@@ -310,7 +326,7 @@ class Tier1GeometricLinter:
             bw = max(98.0, len(c.tag_badge) * 8.5 * 0.6 + 24.0)
             bh = 24.0
             bx = c_box.x2 - bw - 15.0
-            by = c_box.y + 12.0 if c.vertical_align == "top" else c_box.y2 - bh - 12.0
+            by = c_box.y + 12.0
             badge_box = Box(bx, by, bw, bh)
 
             # Check against ALL nodes (child nodes, nested inner container nodes, foreign nodes)
@@ -378,18 +394,38 @@ class Tier1GeometricLinter:
         return issues
 
     # =========================================================================
-    # Rule 3: Container Top Header Label Occlusion
+    # Rule 3: Container Header Label Occlusion
     # =========================================================================
     def check_container_label_occlusion(self) -> List[AuditIssue]:
-        """Detects when an entity card invades a container's top header label zone."""
+        """Detects when an entity card invades a container's header label zone."""
         issues: List[AuditIssue] = []
 
         for c in self.spec.containers:
             c_box = self.container_boxes.get(c.id)
-            if not c_box or not c.label:
+            if not c_box or not c.label or not c.label.strip():
                 continue
 
-            label_box = Box(c_box.x, c_box.y, c_box.w, 36.0)
+            valign = c.resolved_vertical_align()
+            calign = c.resolved_align()
+
+            font_size_px = c.font_size * 1.333
+            estimated_text_w = max(60.0, min(c_box.w - 30.0, len(c.label) * (font_size_px * 0.55) + 24.0))
+            label_h = 36.0
+
+            if calign == "center":
+                label_x = c_box.x + (c_box.w - estimated_text_w) / 2.0
+            elif calign == "left":
+                label_x = c_box.x + 20.0
+            else:
+                label_x = c_box.x2 - estimated_text_w - 20.0
+
+            if valign == "bottom":
+                label_y = c_box.y2 - label_h
+            else:
+                label_y = c_box.y
+
+            label_box = Box(label_x, label_y, estimated_text_w, label_h)
+
             for n in self.spec.nodes:
                 n_box = self.node_boxes[n.id]
                 ox = max(0.0, min(label_box.x2, n_box.x2) - max(label_box.x, n_box.x))
@@ -399,8 +435,13 @@ class Tier1GeometricLinter:
                         severity="WARNING",
                         category="CONTAINER_LABEL_OCCLUSION",
                         element_id=c.id,
-                        description=f"Node '{n.id}' intrudes into container '{c.id}' top header label zone by {oy:.1f}px.",
-                        suggested_fix=f"Increase container '{c.id}' top margin or lower node '{n.id}' Y position (minimum y={c_box.y + 40:.1f}px).",
+                        description=f"Node '{n.id}' intrudes into container '{c.id}' {'bottom' if valign == 'bottom' else 'top'} label zone by {oy:.1f}px.",
+                        suggested_fix=(
+                            f"Increase container '{c.id}' bottom margin or raise node '{n.id}' Y position."
+                            if valign == "bottom"
+                            else f"Increase container '{c.id}' top margin or lower node '{n.id}' Y position (minimum y={c_box.y + 40:.1f}px)."
+                        ),
+                        coords=(label_box.x, label_box.y, label_box.w, label_box.h),
                     ))
 
         return issues
@@ -426,7 +467,7 @@ class Tier1GeometricLinter:
             header_zone = 36.0 if has_header else 12.0
             pad = 12.0
 
-            if has_header and c.vertical_align == "bottom":
+            if has_header and c.resolved_vertical_align() == "bottom":
                 inner_top = c_box.y + pad
                 inner_bottom = c_box.y2 - header_zone
             elif has_header:
@@ -476,9 +517,17 @@ class Tier1GeometricLinter:
                         suggested_fix=f"Expand container '{c.id}' bounds or reduce size/content of node '{n.id}'.",
                         coords=(c_box.x, c_box.y, c_box.w, c_box.h),
                     ))
+                n_inner_bottom = inner_bottom
+                if has_header and c.resolved_vertical_align() == "bottom":
+                    c_align = c.resolved_align()
+                    if c_align == "left" and card_x1 >= c_box.x + 100.0:
+                        n_inner_bottom = c_box.y2 - pad
+                    elif c_align == "right" and card_x2 <= c_box.x2 - 100.0:
+                        n_inner_bottom = c_box.y2 - pad
+
                 # Intrusion into inner padding or header zone
-                elif (card_x1 < inner_left - 0.5 or card_x2 > inner_right + 0.5 or
-                      card_y1 < inner_top - 0.5 or card_y2 > inner_bottom + 0.5):
+                if (card_x1 < inner_left - 0.5 or card_x2 > inner_right + 0.5 or
+                    card_y1 < inner_top - 0.5 or card_y2 > n_inner_bottom + 0.5):
                     issues.append(AuditIssue(
                         severity="WARNING",
                         category="CONTAINER_PADDING_VIOLATION",
@@ -530,18 +579,27 @@ class Tier1GeometricLinter:
                         suggested_fix=f"Expand parent container '{c.id}' or shrink child container '{child_c.id}'.",
                         coords=(c_box.x, c_box.y, c_box.w, c_box.h),
                     ))
-                elif (ch_x1 < inner_left - 0.5 or ch_x2 > inner_right + 0.5 or
-                      ch_y1 < inner_top - 0.5 or ch_y2 > inner_bottom + 0.5):
-                    issues.append(AuditIssue(
-                        severity="WARNING",
-                        category="CONTAINER_PADDING_VIOLATION",
-                        element_id=f"{child_c.id}_in_{c.id}",
-                        description=(
-                            f"Child container '{child_c.id}' encroaches into parent container '{c.id}' inner content clearance."
-                        ),
-                        suggested_fix=f"Ensure child container '{child_c.id}' leaves 12px padding inside parent container '{c.id}'.",
-                        coords=(c_box.x, c_box.y, c_box.w, c_box.h),
-                    ))
+                else:
+                    c_inner_bottom = inner_bottom
+                    if has_header and c.resolved_vertical_align() == "bottom":
+                        c_align = c.resolved_align()
+                        if c_align == "left" and ch_x1 >= c_box.x + 100.0:
+                            c_inner_bottom = c_box.y2 - pad
+                        elif c_align == "right" and ch_x2 <= c_box.x2 - 100.0:
+                            c_inner_bottom = c_box.y2 - pad
+
+                    if (ch_x1 < inner_left - 0.5 or ch_x2 > inner_right + 0.5 or
+                        ch_y1 < inner_top - 0.5 or ch_y2 > c_inner_bottom + 0.5):
+                        issues.append(AuditIssue(
+                            severity="WARNING",
+                            category="CONTAINER_PADDING_VIOLATION",
+                            element_id=f"{child_c.id}_in_{c.id}",
+                            description=(
+                                f"Child container '{child_c.id}' encroaches into parent container '{c.id}' inner content clearance."
+                            ),
+                            suggested_fix=f"Ensure child container '{child_c.id}' leaves 12px padding inside parent container '{c.id}'.",
+                            coords=(c_box.x, c_box.y, c_box.w, c_box.h),
+                        ))
 
         return issues
 
@@ -824,22 +882,22 @@ class Tier1GeometricLinter:
             b_src = self.node_boxes[f.source]
             b_tgt = self.node_boxes[f.target]
 
-            # Horizontal span between right of source and left of target
             if b_tgt.x > b_src.x2:
                 gap = b_tgt.x - b_src.x2
-                if gap < 110.0:
-                    font_size = f.font_pt or 9.0
-                    pill_w = len(f.label) * font_size * 0.55 + 16.0
+                font_size = f.font_pt or 9.0
+                pill_w = len(f.label) * font_size * 0.55 + 16.0
+                min_clearance = max(pill_w + 24.0, 72.0)
+                if gap < min_clearance:
                     issues.append(AuditIssue(
-                        severity="CRITICAL" if gap < 90.0 else "WARNING",
+                        severity="CRITICAL" if gap < min_clearance - 15.0 else "WARNING",
                         category="CONNECTOR_SPAN_INSUFFICIENT",
                         element_id=f.id or f.label,
                         description=(
                             f"Horizontal connector gap between '{f.source}' and '{f.target}' is only {gap:.1f}px "
-                            f"(violates Milestone 33 standard: minimum 140px-175px clearance for badge '{f.label}' of width {pill_w:.1f}px)."
+                            f"(violates standard: minimum {min_clearance:.1f}px clearance for badge '{f.label}' of width {pill_w:.1f}px)."
                         ),
                         suggested_fix=(
-                            f"Expand inter-column clearance to at least 140px (1.55in) to ensure unclipped arrowheads "
+                            f"Expand inter-column clearance to at least {min_clearance:.1f}px ({min_clearance/90.0:.2f}in) to ensure unclipped arrowheads "
                             f"and breathing room for status badge."
                         ),
                     ))
@@ -886,20 +944,6 @@ class Tier1GeometricLinter:
                     description=f"Node '{n.id}' top edge (y={nbox.y:.1f}px) breaches canvas ceiling safety margin.",
                     suggested_fix=f"Lower node '{n.id}' Y coordinate to at least y={min_ceiling_y + 10:.1f}px.",
                 ))
-
-        # Check slide canvas header band intrusion
-        if self.spec.header.show:
-            header_bottom = 85.0  # px (~0.95in)
-            for n in self.spec.nodes:
-                nbox = self.node_boxes[n.id]
-                if nbox.y < header_bottom:
-                    issues.append(AuditIssue(
-                        severity="WARNING",
-                        category="CANVAS_HEADER_OCCLUSION",
-                        element_id=n.id,
-                        description=f"Node '{n.id}' at y={nbox.y:.1f}px encroaches into the slide action title header zone.",
-                        suggested_fix=f"Lower node '{n.id}' to below y={header_bottom + 10:.1f}px (1.10in).",
-                    ))
 
         return issues
 
@@ -1057,6 +1101,438 @@ class Tier1GeometricLinter:
                     coords=(declared_box.x, declared_box.y, declared_box.w, declared_box.h),
                 ))
 
+        return issues
+
+    # =========================================================================
+    # Rule 15: Deck Header Placement Drift & Ingress Line Clearance
+    # =========================================================================
+    def check_deck_header_drift(self) -> List[AuditIssue]:
+        """
+        Codifies DeckHeaderContract geometry, canonical container ingress invariant,
+        and action title/subtitle headroom buffer:
+        1. Verifies header.y == 0.280in (+/- 0.010in tolerance).
+        2. Verifies container tops and root node tops satisfy y >= 1.350in (129.6px).
+        3. Verifies clearance between title bottom (1.080in / 103.68px) and uppermost
+           diagram element is >= 0.250in (24.0px).
+        """
+        issues: List[AuditIssue] = []
+
+        if not self.spec.header.show:
+            return issues
+
+        # a. Placement drift
+        header_y = self.spec.header.y if self.spec.header.y is not None else DeckHeaderContract.STRIPES_TOP_IN
+        drift = abs(header_y - DeckHeaderContract.STRIPES_TOP_IN)
+        if drift > DeckHeaderContract.HEADER_Y_TOLERANCE_IN:
+            issues.append(AuditIssue(
+                severity="WARNING",
+                category="DECK_HEADER_DRIFT",
+                element_id="header",
+                description=(
+                    f"Header vertical position (y={header_y:.3f}in) drifts from canonical "
+                    f"DeckHeaderContract standard ({DeckHeaderContract.STRIPES_TOP_IN:.3f}in ± {DeckHeaderContract.HEADER_Y_TOLERANCE_IN:.3f}in) "
+                    f"by {drift:.3f}in."
+                ),
+                suggested_fix=(
+                    f"Align header to canonical coordinate y={DeckHeaderContract.STRIPES_TOP_IN:.3f}in in YAML spec."
+                ),
+            ))
+
+        # b. Canonical container ingress line invariant (y >= 1.350in / 129.60px at 96 DPI, or 121.5px at 90 DPI)
+        ppi = getattr(self.norm, "PX_PER_INCH", 90.0)
+        min_ingress_in = DeckHeaderContract.CANONICAL_INGRESS_Y_IN
+        min_ingress_px = min_ingress_in * ppi
+
+        for c in self.spec.containers:
+            c_box = self.container_boxes.get(c.id)
+            if c_box and c_box.y < min_ingress_px - 0.5:
+                c_in_y = c_box.y / ppi
+                issues.append(AuditIssue(
+                    severity="CRITICAL",
+                    category="CANVAS_HEADER_OCCLUSION",
+                    element_id=c.id,
+                    description=(
+                        f"Container '{c.id}' top edge (y={c_in_y:.3f}in / {c_box.y:.1f}px) breaches the "
+                        f"canonical container ingress line (y >= {min_ingress_in:.3f}in / {min_ingress_px:.1f}px)."
+                    ),
+                    suggested_fix=(
+                        f"Lower container '{c.id}' top coordinate to at least y={min_ingress_in:.3f}in ({min_ingress_px:.1f}px)."
+                    ),
+                    coords=(c_box.x, c_box.y, c_box.w, c_box.h),
+                ))
+
+        for n in self.spec.nodes:
+            if n.container_id is None:
+                n_box = self.node_boxes.get(n.id)
+                if n_box and n_box.y < min_ingress_px - 0.5:
+                    n_in_y = n_box.y / ppi
+                    issues.append(AuditIssue(
+                        severity="CRITICAL",
+                        category="CANVAS_HEADER_OCCLUSION",
+                        element_id=n.id,
+                        description=(
+                            f"Root entity node '{n.id}' top edge (y={n_in_y:.3f}in / {n_box.y:.1f}px) breaches the "
+                            f"canonical container ingress line (y >= {min_ingress_in:.3f}in / {min_ingress_px:.1f}px)."
+                        ),
+                        suggested_fix=(
+                            f"Lower node '{n.id}' top coordinate to at least y={min_ingress_in:.3f}in ({min_ingress_px:.1f}px)."
+                        ),
+                        coords=(n_box.x, n_box.y, n_box.w, n_box.h),
+                    ))
+
+        # c. Subtitle headroom buffer
+        top_y_px_candidates: List[float] = [
+            self.container_boxes[c.id].y
+            for c in self.spec.containers
+            if c.id in self.container_boxes
+        ]
+        top_y_px_candidates.extend([
+            self.node_boxes[n.id].y
+            for n in self.spec.nodes
+            if n.container_id is None and n.id in self.node_boxes
+        ])
+
+        if top_y_px_candidates:
+            min_top_y_px = min(top_y_px_candidates)
+            title_bottom_in = DeckHeaderContract.TITLE_BOTTOM_IN
+            title_bottom_px = title_bottom_in * ppi
+            clearance_px = min_top_y_px - title_bottom_px
+            clearance_in = clearance_px / ppi
+            min_clearance_in = DeckHeaderContract.MIN_HEADROOM_CLEARANCE_IN
+            min_clearance_px = min_clearance_in * ppi
+
+            if clearance_px < min_clearance_px - 0.5:
+                issues.append(AuditIssue(
+                    severity="WARNING",
+                    category="HEADER_HEADROOM_INSUFFICIENT",
+                    element_id="header",
+                    description=(
+                        f"Clearance between action title/subtitle bottom ({title_bottom_in:.3f}in / {title_bottom_px:.1f}px) "
+                        f"and uppermost diagram element ({min_top_y_px / ppi:.3f}in / {min_top_y_px:.1f}px) is {clearance_in:.3f}in ({clearance_px:.1f}px), "
+                        f"which is less than the required {min_clearance_in:.3f}in ({min_clearance_px:.1f}px) clear headroom."
+                    ),
+                    suggested_fix=(
+                        f"Lower uppermost containers and root nodes to y >= {min_ingress_in:.3f}in ({min_ingress_px:.1f}px) "
+                        f"to guarantee at least {min_clearance_in:.3f}in clear headroom below subtitle."
+                    ),
+                ))
+
+        return issues
+
+    # =========================================================================
+    # Rule 16: Check #14 - Typographic Scale & Font Size Consistency (TYPOGRAPHIC_SCALE_DRIFT)
+    # =========================================================================
+    def _simulate_shrink_plan(self, n: NodeSpec) -> Tuple[float, float, bool]:
+        """
+        Simulates PPTXCompiler._plan_card line-wrapping and shrink iterations.
+        Returns (effective_t_pt, effective_s_pt, did_shrink).
+        """
+        box = self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+        w, h = box.w, box.h
+        ss = min(w, h)
+        pad_v = max(0.10, min(0.20, 0.11 * ss))
+        pad_h = max(0.08, min(0.18, 0.07 * w))
+        is_cylinder = n.is_cylinder or n.shape in ("cylinder", "database")
+        if is_cylinder:
+            pv = pad_v * 0.6
+            region_top = 0.25 * ss + pv
+            region_bottom = h - 0.125 * ss - pv
+        else:
+            region_top = pad_v
+            region_bottom = h - pad_v
+        region_h = max(0.10, region_bottom - region_top)
+
+        has_icon = bool(n.icon or n.icon_emoji)
+        mode = n.icon_layout
+        if mode == "auto":
+            mode = "side" if (is_cylinder and has_icon) else "stack"
+
+        t_pt = n.resolved_title_pt(w, h)
+        s_pt = n.resolved_subtitle_pt(w, h)
+        icon = max(0.28, min(0.40, 0.26 * ss)) if has_icon else 0.0
+        if mode == "side" and has_icon:
+            icon = min(icon, max(0.26, region_h * 0.80))
+        icon_gap = max(0.04, min(0.08, 0.05 * ss))
+
+        inner_w = w - 2 * pad_h
+        text_w = max(0.10, (inner_w - icon - icon_gap * 1.5) if (mode == "side" and has_icon) else inner_w)
+
+        title_lines = [s for s in n.title.split("\n") if s.strip()] if n.title else ["Title"]
+        sub_lines = [s for s in n.subtitle.split("\n") if s.strip()] if n.subtitle else []
+        bullets = getattr(n, "bullets", None) or []
+        all_sub = sub_lines + bullets
+
+        def _calc_h(cur_t: float, cur_s: float, cur_ic: float) -> float:
+            t_h = sum(max(1, math.ceil(len(l) * cur_t * 0.55 / 72.0 / text_w)) * cur_t * 1.25 / 72.0 for l in title_lines)
+            s_h = sum(max(1, math.ceil(len(l) * cur_s * 0.52 / 72.0 / text_w)) * cur_s * 1.20 / 72.0 + 2.0 / 72.0 for l in all_sub) if all_sub else 0.0
+            k_h = (8.0 * 1.25 + 1.0) / 72.0 if n.kicker else 0.0
+            tot_text = k_h + t_h + s_h
+            if mode == "side" and has_icon:
+                return max(cur_ic, tot_text)
+            else:
+                return (cur_ic + icon_gap if has_icon else 0.0) + tot_text
+
+        shrunk = False
+        for _ in range(16):
+            content_h = _calc_h(t_pt, s_pt, icon)
+            if content_h <= region_h + 1e-6:
+                break
+            shrunk = True
+            can_shrink = False
+            if t_pt > 9.5:
+                t_pt -= 0.5
+                can_shrink = True
+            if s_pt > 7.5:
+                s_pt -= 0.25
+                can_shrink = True
+            if has_icon and icon > 0.24:
+                icon -= 0.02
+                can_shrink = True
+            if not can_shrink:
+                break
+
+        return (t_pt, s_pt, shrunk)
+
+    def check_typographic_scale_consistency(self) -> List[AuditIssue]:
+        """
+        Check #14: TYPOGRAPHIC_SCALE_DRIFT
+        Verifies typographic scale consistency across peer cohorts, post-shrink drift, and badge/flow sprawl:
+        - 14a. Declared Cohort Spread (WARNING / --strict gate)
+        - 14b. Effective Post-Shrink Drift (WARNING)
+        - 14c. Badge & Flow Pill Sprawl (INFO / WARNING)
+        """
+        issues: List[AuditIssue] = []
+
+        # ---------------------------------------------------------------------
+        # 14a. Declared Cohort Spread
+        # ---------------------------------------------------------------------
+        cohorts: Dict[Tuple[str, str], List[NodeSpec]] = {}
+        node_boxes_in: Dict[str, Box] = {}
+
+        for n in self.spec.nodes:
+            box_in = self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+            node_boxes_in[n.id] = box_in
+            tier = classify_geometric_tier(box_in.w, box_in.h)
+            c_scope = n.container_id or "__root__"
+            cohorts.setdefault((c_scope, tier), []).append(n)
+
+        def _is_exempt(node: NodeSpec, peer_nodes: List[NodeSpec]) -> bool:
+            # Hero / Focal Card Exemption:
+            # 1. Bounding-box area > 1.75 * median area of peer cohort
+            areas = [node_boxes_in[pn.id].w * node_boxes_in[pn.id].h for pn in peer_nodes]
+            if areas:
+                med_area = statistics.median(areas)
+                node_area = node_boxes_in[node.id].w * node_boxes_in[node.id].h
+                if node_area > 1.75 * med_area:
+                    return True
+            # 2. Expanded code/inspection callout: align == "left" and valign == "top" with >= 3 bullets
+            sub_bullets = len([l for l in (node.subtitle or "").split("\n") if l.strip().startswith("•") or l.strip().startswith("-")])
+            total_b = sub_bullets + (len(node.bullets) if node.bullets else 0)
+            if getattr(node, "align", "center") == "left" and getattr(node, "valign", "middle") == "top" and total_b >= 3:
+                return True
+            return False
+
+        effective_font_sizes: Dict[str, Tuple[float, float, bool]] = {}
+        for n in self.spec.nodes:
+            effective_font_sizes[n.id] = self._simulate_shrink_plan(n)
+
+        for (c_scope, tier), nodes in cohorts.items():
+            non_exempt = [n for n in nodes if not _is_exempt(n, nodes)]
+            if len(non_exempt) < 2:
+                continue
+
+            resolved_pts = {n.id: n.resolved_title_pt(node_boxes_in[n.id].w, node_boxes_in[n.id].h) for n in non_exempt}
+            min_pt = min(resolved_pts.values())
+            max_pt = max(resolved_pts.values())
+            spread = max_pt - min_pt
+
+            if spread > 0.5:
+                med_pt = statistics.median(resolved_pts.values())
+                canonical_pt = CANONICAL_TYPOGRAPHIC_SCALE[tier]["title_pt"]
+                for n in non_exempt:
+                    pt = resolved_pts[n.id]
+                    if abs(pt - med_pt) > 0.25:
+                        scope_label = f"container '{c_scope}'" if c_scope != "__root__" else "root canvas"
+                        issues.append(AuditIssue(
+                            severity="WARNING",
+                            category="TYPOGRAPHIC_SCALE_DRIFT",
+                            element_id=n.id,
+                            description=(
+                                f"Peer card '{n.id}' in {scope_label} ({tier}) declares/resolves title_pt={pt:.1f}pt, "
+                                f"deviating by {abs(pt - med_pt):.1f}pt from cohort peers (spread: {min_pt:.1f}pt - {max_pt:.1f}pt)."
+                            ),
+                            suggested_fix=f"Normalize title_pt to {med_pt:.1f}pt (canonical {canonical_pt:.1f}pt) across peer cohort in {scope_label}.",
+                            coords=(self.node_boxes[n.id].x, self.node_boxes[n.id].y, self.node_boxes[n.id].w, self.node_boxes[n.id].h),
+                        ))
+
+        def _is_primary_entity_card(node: NodeSpec) -> bool:
+            if node.kicker and node.kicker.upper() in ("ALLOWED", "NOT ALLOWED", "YES", "NO", "SUCCESS", "FAILURE"):
+                return False
+            if node.container_id and any(term in node.container_id.lower() for term in ("step", "checker", "process", "workflow")):
+                return False
+            return True
+
+        # Global cross-container Tier A check
+        all_tier_a = [
+            n for n in self.spec.nodes
+            if classify_geometric_tier(node_boxes_in[n.id].w, node_boxes_in[n.id].h) == "Tier A"
+            and not _is_exempt(n, self.spec.nodes)
+            and _is_primary_entity_card(n)
+        ]
+        if len(all_tier_a) >= 2:
+            tier_a_pts = {n.id: n.resolved_title_pt(node_boxes_in[n.id].w, node_boxes_in[n.id].h) for n in all_tier_a}
+            min_a = min(tier_a_pts.values())
+            max_a = max(tier_a_pts.values())
+            if max_a - min_a > 1.0:
+                for n in all_tier_a:
+                    pt = tier_a_pts[n.id]
+                    if abs(pt - 12.0) > 1.0:
+                        if not any(i.element_id == n.id and i.category == "TYPOGRAPHIC_SCALE_DRIFT" for i in issues):
+                            issues.append(AuditIssue(
+                                severity="WARNING",
+                                category="TYPOGRAPHIC_SCALE_DRIFT",
+                                element_id=n.id,
+                                description=(
+                                    f"Primary entity card '{n.id}' declares title_pt={pt:.1f}pt, drifting "
+                                    f"from canonical Tier A standard (12.0pt, global Tier A range {min_a:.1f}pt - {max_a:.1f}pt)."
+                                ),
+                                suggested_fix="Normalize title_pt to canonical 12.0pt across primary entity cards.",
+                                coords=(self.node_boxes[n.id].x, self.node_boxes[n.id].y, self.node_boxes[n.id].w, self.node_boxes[n.id].h),
+                            ))
+
+        # ---------------------------------------------------------------------
+        # 14b. Effective Post-Shrink Drift
+        # ---------------------------------------------------------------------
+        for (c_scope, tier), nodes in cohorts.items():
+            non_exempt = [n for n in nodes if not _is_exempt(n, nodes)]
+            if not non_exempt:
+                continue
+
+            cohort_eff_pts = [effective_font_sizes[n.id][0] for n in non_exempt]
+            med_eff_pt = statistics.median(cohort_eff_pts)
+
+            for n in non_exempt:
+                eff_t, eff_s, did_shrink = effective_font_sizes[n.id]
+                box_in = node_boxes_in[n.id]
+                if did_shrink and tier == "Tier A" and eff_t < 11.0:
+                    if not any(i.element_id == n.id and "effective rendered font size shrank" in i.description for i in issues):
+                        issues.append(AuditIssue(
+                            severity="WARNING",
+                            category="TYPOGRAPHIC_SCALE_DRIFT",
+                            element_id=n.id,
+                            description=(
+                                f"Card '{n.id}' effective rendered font size shrank to {eff_t:.1f}pt (< 11.0pt for Tier A) "
+                                f"due to text crowding within bounding box (w={box_in.w:.2f}in, h={box_in.h:.2f}in)."
+                            ),
+                            suggested_fix=f"Widen card '{n.id}' or shorten title/subtitle to maintain at least 11.0pt legibility.",
+                            coords=(self.node_boxes[n.id].x, self.node_boxes[n.id].y, self.node_boxes[n.id].w, self.node_boxes[n.id].h),
+                        ))
+                elif did_shrink and len(non_exempt) >= 2 and (med_eff_pt - eff_t > 0.5):
+                    if not any(i.element_id == n.id and "effective post-shrink font size" in i.description for i in issues):
+                        issues.append(AuditIssue(
+                            severity="WARNING",
+                            category="TYPOGRAPHIC_SCALE_DRIFT",
+                            element_id=n.id,
+                            description=(
+                                f"Card '{n.id}' effective post-shrink font size ({eff_t:.1f}pt) dropped > 0.5pt below "
+                                f"cohort peers ({med_eff_pt:.1f}pt) due to text crowding."
+                            ),
+                            suggested_fix=f"Widen card '{n.id}' or shorten label to preserve uniform cohort scale.",
+                            coords=(self.node_boxes[n.id].x, self.node_boxes[n.id].y, self.node_boxes[n.id].w, self.node_boxes[n.id].h),
+                        ))
+
+        # ---------------------------------------------------------------------
+        # 14c. Badge & Flow Pill Sprawl
+        # ---------------------------------------------------------------------
+        flow_pts = {round(f.font_pt, 1) for f in self.spec.flows if f.label and f.label.strip()}
+        if len(flow_pts) > 1:
+            issues.append(AuditIssue(
+                severity="WARNING",
+                category="TYPOGRAPHIC_SCALE_DRIFT",
+                element_id="flows",
+                description=(
+                    f"Flow connectors use {len(flow_pts)} distinct font sizes ({sorted(flow_pts)}pt), "
+                    f"exceeding standard limit of 1 consistent size across flow labels."
+                ),
+                suggested_fix="Standardize all flow label font sizes to canonical font_pt: 7.5.",
+            ))
+
+        badge_pts = {round(b.font_pt, 1) for b in self.spec.badges}
+        if len(badge_pts) > 2:
+            issues.append(AuditIssue(
+                severity="WARNING",
+                category="TYPOGRAPHIC_SCALE_DRIFT",
+                element_id="badges",
+                description=(
+                    f"Standalone badges declare {len(badge_pts)} distinct font sizes ({sorted(badge_pts)}pt), "
+                    f"exceeding maximum of 2 distinct sizes across canvas."
+                ),
+                suggested_fix="Normalize standalone badges to canonical font_pt: 8.0.",
+            ))
+
+        return issues
+
+    _check_typographic_scale_consistency = check_typographic_scale_consistency
+
+    # =========================================================================
+    # Rule 17: Check #15 - Underfilled Large Execution Cards (UNDERFILLED_EXECUTION_CARD)
+    # =========================================================================
+    def check_underfilled_execution_cards(self) -> List[AuditIssue]:
+        """
+        Check #15: UNDERFILLED_EXECUTION_CARD
+        Flags execution cards (h >= 1.80in, align == 'left') with occupancy < 0.55 (<55%)
+        when elastic_text: false or manual undersized fonts are declared.
+        """
+        issues: List[AuditIssue] = []
+        for n in self.spec.nodes:
+            box = self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+            if box.h >= 1.80 and getattr(n, "align", "center") == "left":
+                if n.elastic_text is False or (n.title_pt is not None and n.title_pt <= 11.0):
+                    ss = min(box.w, box.h)
+                    pad_v = max(0.10, min(0.20, 0.11 * ss))
+                    is_cylinder = n.is_cylinder or n.shape in ("cylinder", "database")
+                    if is_cylinder:
+                        pv = pad_v * 0.6
+                        region_top = 0.25 * ss + pv
+                        region_bottom = box.h - 0.125 * ss - pv
+                    else:
+                        region_top = pad_v
+                        region_bottom = box.h - pad_v
+                    region_h = max(0.10, region_bottom - region_top)
+
+                    eff_t, eff_s, _ = self._simulate_shrink_plan(n)
+                    pad_h = max(0.08, min(0.18, 0.07 * box.w))
+                    has_icon = bool(n.icon or n.icon_emoji)
+                    icon = max(0.28, min(0.40, 0.26 * ss)) if has_icon else 0.0
+                    icon_gap = max(0.04, min(0.08, 0.05 * ss))
+                    inner_w = box.w - 2 * pad_h
+                    text_w = max(0.10, (inner_w - icon - icon_gap * 1.5) if (n.icon_layout == "side" and has_icon) else inner_w)
+
+                    title_lines = [s for s in n.title.split("\n") if s.strip()] if n.title else ["Title"]
+                    sub_lines = [s for s in n.subtitle.split("\n") if s.strip()] if n.subtitle else []
+                    bullets = getattr(n, "bullets", None) or []
+                    all_sub = sub_lines + bullets
+
+                    t_h = sum(max(1, math.ceil(len(l) * eff_t * 0.55 / 72.0 / text_w)) * eff_t * 1.25 / 72.0 for l in title_lines)
+                    s_h = sum(max(1, math.ceil(len(l) * eff_s * 0.52 / 72.0 / text_w)) * eff_s * 1.20 / 72.0 + 2.0 / 72.0 for l in all_sub) if all_sub else 0.0
+                    k_h = (8.0 * 1.25 + 1.0) / 72.0 if n.kicker else 0.0
+                    tot_text = k_h + t_h + s_h
+                    content_in = max(icon, tot_text) if (n.icon_layout == "side" and has_icon) else ((icon + icon_gap if has_icon else 0.0) + tot_text)
+
+                    occ = content_in / region_h if region_h > 0 else 1.0
+
+                    if occ < 0.55:
+                        issues.append(AuditIssue(
+                            severity="WARNING",
+                            category="UNDERFILLED_EXECUTION_CARD",
+                            element_id=n.id,
+                            description=(
+                                f"Execution card '{n.id}' (h={box.h:.2f}in) has vertical occupancy {occ*100:.1f}% (< 55%), "
+                                f"leaving excessive vacant dead space."
+                            ),
+                            suggested_fix="Enable elastic auto-fill (remove manual font overrides or set elastic_text: true) or reduce card height.",
+                            coords=(self.node_boxes[n.id].x, self.node_boxes[n.id].y, self.node_boxes[n.id].w, self.node_boxes[n.id].h),
+                        ))
         return issues
 
     # =========================================================================

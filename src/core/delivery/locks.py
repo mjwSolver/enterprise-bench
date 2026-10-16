@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -53,17 +54,25 @@ class LockManager:
           LockNotFoundError: If target original file does not exist.
           LockConflictError: If file is already locked by another user or session.
         """
+        if not user or not isinstance(user, str):
+            raise ValueError("Username must be a non-empty string.")
+        # Path traversal guard: disallow directory traversal tokens or path separators in user
+        if any(sep in user for sep in ("/", "\\", "\0")) or ".." in user:
+            raise ValueError(f"Invalid username '{user}': path separators and traversal tokens are prohibited.")
+
         target = Path(filepath).resolve()
         if not target.exists() or not target.is_file():
             raise LockNotFoundError(f"Cannot acquire lock: target file '{target}' does not exist.")
 
         lock_file = target.with_name(f"{target.name}.lock")
+
+        # Fast-path check: if lock sidecar already exists, report active holder immediately
         if lock_file.exists():
             try:
                 data = json.loads(lock_file.read_text(encoding="utf-8"))
                 existing = LockPayload.model_validate(data)
-                owner = existing.user
-                locked_at = existing.locked_at
+                owner = existing.user or "UNKNOWN"
+                locked_at = existing.locked_at or "UNKNOWN"
             except Exception:
                 owner = "UNKNOWN"
                 locked_at = "UNKNOWN"
@@ -79,28 +88,73 @@ class LockManager:
             )
 
         locked_copy = target.parent / f"{target.stem}_LOCKED_{user}{target.suffix}"
-        try:
-            shutil.copy2(target, locked_copy)
-        except OSError as exc:
-            raise DeliveryError(f"Failed to create working copy '{locked_copy.name}': {exc}") from exc
+        if locked_copy.resolve().parent != target.parent.resolve():
+            raise DeliveryError(f"Security violation: working copy path resolved outside target directory.")
 
-        now_utc = datetime.now(timezone.utc).isoformat()
-        payload = LockPayload(
-            filepath=str(target),
-            user=user,
-            reason=reason,
-            locked_at=now_utc,
-            locked_copy_path=str(locked_copy),
-            lock_file=str(lock_file),
-        )
-
+        # Kernel-level atomic lock creation (O_CREAT | O_EXCL) to eliminate TOCTOU race conditions
         try:
-            lock_file.write_text(payload.model_dump_json(indent=2), encoding="utf-8")
+            fd = os.open(str(lock_file), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except FileExistsError:
+            try:
+                data = json.loads(lock_file.read_text(encoding="utf-8"))
+                existing = LockPayload.model_validate(data)
+                owner = existing.user or "UNKNOWN"
+                locked_at = existing.locked_at or "UNKNOWN"
+            except Exception:
+                owner = "UNKNOWN"
+                locked_at = "UNKNOWN"
+            raise LockConflictError(
+                f"Cannot acquire lock on '{target.name}': file is already locked by '{owner}' since {locked_at}."
+            )
         except OSError as exc:
-            # Clean up copied file if sidecar write failed
+            raise DeliveryError(f"Failed to create lock sidecar '{lock_file.name}': {exc}") from exc
+
+        # File descriptor held; guarantee cleanup and zero descriptor leaks
+        fd_closed = False
+        try:
+            try:
+                shutil.copy2(target, locked_copy)
+            except OSError as exc:
+                if not fd_closed:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
+                    fd_closed = True
+                lock_file.unlink(missing_ok=True)
+                raise DeliveryError(f"Failed to create working copy '{locked_copy.name}': {exc}") from exc
+
+            now_utc = datetime.now(timezone.utc).isoformat()
+            payload = LockPayload(
+                filepath=str(target),
+                user=user,
+                reason=reason,
+                locked_at=now_utc,
+                locked_copy_path=str(locked_copy),
+                lock_file=str(lock_file),
+            )
+
+            try:
+                with open(fd, "w", encoding="utf-8") as f:
+                    fd_closed = True
+                    f.write(payload.model_dump_json(indent=2))
+            except OSError as exc:
+                if locked_copy.exists():
+                    locked_copy.unlink(missing_ok=True)
+                lock_file.unlink(missing_ok=True)
+                raise DeliveryError(f"Failed to write lock sidecar '{lock_file.name}': {exc}") from exc
+
+        except Exception:
+            if not fd_closed:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
             if locked_copy.exists():
                 locked_copy.unlink(missing_ok=True)
-            raise DeliveryError(f"Failed to write lock sidecar '{lock_file.name}': {exc}") from exc
+            if lock_file.exists():
+                lock_file.unlink(missing_ok=True)
+            raise
 
         logger.info(
             "Acquired lock on '%s' for user '%s' (working copy: '%s')",
@@ -147,11 +201,17 @@ class LockManager:
                 f"Pass force=True to override ownership."
             )
 
-        locked_copy = (
-            Path(payload.locked_copy_path)
-            if payload.locked_copy_path
-            else target.parent / f"{target.stem}_LOCKED_{payload.user}{target.suffix}"
-        )
+        # Path traversal guard: ensure locked_copy resides strictly inside target.parent
+        default_locked_copy = target.parent / f"{target.stem}_LOCKED_{payload.user}{target.suffix}"
+        if payload.locked_copy_path:
+            candidate_copy = Path(payload.locked_copy_path).resolve()
+            if candidate_copy.parent == target.parent.resolve() or candidate_copy.is_relative_to(target.parent.resolve()):
+                locked_copy = candidate_copy
+            else:
+                logger.warning("Rejecting untrusted working copy path '%s' outside parent directory.", payload.locked_copy_path)
+                locked_copy = default_locked_copy
+        else:
+            locked_copy = default_locked_copy
 
         if merge:
             if locked_copy.exists() and locked_copy.is_file():
@@ -169,19 +229,19 @@ class LockManager:
                     locked_copy.name,
                 )
 
-        # Cleanup working copy and lock sidecar
+        # Cleanup working copy and lock sidecar safely without race failures
         if locked_copy.exists():
             try:
-                locked_copy.unlink()
+                locked_copy.unlink(missing_ok=True)
                 logger.info("Cleaned up working copy '%s'", locked_copy.name)
             except OSError as exc:
                 logger.warning("Could not remove working copy '%s': %s", locked_copy.name, exc)
 
-        if lock_file.exists():
-            try:
-                lock_file.unlink()
-                logger.info("Removed lock sidecar '%s'", lock_file.name)
-            except OSError as exc:
+        try:
+            lock_file.unlink(missing_ok=True)
+            logger.info("Removed lock sidecar '%s'", lock_file.name)
+        except OSError as exc:
+            if lock_file.exists():
                 raise DeliveryError(f"Could not remove lock sidecar '{lock_file.name}': {exc}") from exc
 
         return payload
@@ -238,6 +298,7 @@ class LockManager:
         results: List[LockStatus] = []
         seen_targets: Set[str] = set()
 
+        # 1. Inspect all active .lock sidecars
         for lock_file in dir_path.rglob("*.lock"):
             if not lock_file.is_file():
                 continue
@@ -246,7 +307,7 @@ class LockManager:
             seen_targets.add(str(target_path))
             results.append(self.get_status(target_path))
 
-        # Check for any orphaned working copies without lock files
+        # 2. Check for any orphaned working copies without lock files
         for copy_file in dir_path.rglob("*_LOCKED_*"):
             if not copy_file.is_file() or copy_file.name.endswith(".lock"):
                 continue

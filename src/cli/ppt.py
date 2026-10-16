@@ -7,9 +7,8 @@ visual QA linter, and slide export.
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import typer
 from rich import print as rprint
@@ -54,13 +53,10 @@ def generate_ppt(
 ) -> None:
     """Generate an executive consulting presentation deck."""
     ensure_workspace_dirs()
-    out_path = Path(output) if output else OUTPUT_DIR / f"{theme}_deck" / "presentation.pptx"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
 
     rprint(f"[cyan]ℹ Generating deck with theme:[/cyan] [bold]{theme}[/bold]")
 
     from src.ppt_engine.consulting_archetypes import (
-        ConsultingDeckBuilder,
         create_presentation,
         HorizonColumnData,
         ScorecardQuadrantData,
@@ -71,8 +67,10 @@ def generate_ppt(
     from src.ppt_engine.theme_engine import get_theme
 
     active_theme = get_theme(theme)
+    out_path = Path(output) if output else OUTPUT_DIR / f"{theme}_deck" / "presentation.pptx"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
     prs = create_presentation(active_theme)
-    builder = ConsultingDeckBuilder(theme=active_theme)
 
     # Slide 1: BCG 3-Horizon Modernization
     h1 = HorizonColumnData(
@@ -113,31 +111,35 @@ def generate_ppt(
 
     # Slide 2: Balanced Scorecard
     q1 = ScorecardQuadrantData(
-        title="Financial Health",
+        quadrant_title="Financial Health",
+        tagline="Capital Optimization & TCO",
         metrics=[
-            ScorecardMetric("TCO Reduction", "34.2%", "Positive trajectory via workload right-sizing", "positive"),
-            ScorecardMetric("Cloud ROI", "2.8x", "Realized return over 18-month depreciation window", "positive"),
+            ScorecardMetric("TCO Reduction", "34.2%", "ON TRACK", "Positive trajectory via workload right-sizing"),
+            ScorecardMetric("Cloud ROI", "2.8x", "EXCEEDED", "Realized return over 18-month depreciation window"),
         ],
     )
     q2 = ScorecardQuadrantData(
-        title="Operational Velocity",
+        quadrant_title="Operational Velocity",
+        tagline="Release Cadence & Recovery",
         metrics=[
-            ScorecardMetric("Deployment Frequency", "24/wk", "Shift-left release cadence achieved", "positive"),
-            ScorecardMetric("Mean Time to Recovery", "14 min", "Target SLA: < 15 min across Tier 1 apps", "positive"),
+            ScorecardMetric("Deployment Frequency", "24/wk", "ON TRACK", "Shift-left release cadence achieved"),
+            ScorecardMetric("Mean Time to Recovery", "14 min", "ON TRACK", "Target SLA: < 15 min across Tier 1 apps"),
         ],
     )
     q3 = ScorecardQuadrantData(
-        title="Customer & Domain Impact",
+        quadrant_title="Customer & Domain Impact",
+        tagline="Stakeholder Experience & Latency",
         metrics=[
-            ScorecardMetric("Domain NPS", "+48", "Business unit stakeholder feedback score", "positive"),
-            ScorecardMetric("Query Latency", "120ms", "P95 response time across self-service marts", "neutral"),
+            ScorecardMetric("Domain NPS", "+48", "EXCEEDED", "Business unit stakeholder feedback score"),
+            ScorecardMetric("Query Latency", "120ms", "MONITORED", "P95 response time across self-service marts"),
         ],
     )
     q4 = ScorecardQuadrantData(
-        title="Risk & Security Posture",
+        quadrant_title="Risk & Security Posture",
+        tagline="Compliance & Vulnerability Hygiene",
         metrics=[
-            ScorecardMetric("Compliance Posture", "100%", "Zero high/critical CVEs in core staging images", "positive"),
-            ScorecardMetric("Audit Readiness", "Tier 1", "Passed annual regulatory security inspection", "positive"),
+            ScorecardMetric("Compliance Posture", "100%", "ON TRACK", "Zero high/critical CVEs in core staging images"),
+            ScorecardMetric("Audit Readiness", "Tier 1", "PASSED", "Passed annual regulatory security inspection"),
         ],
     )
     build_balanced_scorecard_slide(
@@ -180,8 +182,16 @@ def build_ppt_deck(
         rprint(f"[red]Error:[/red] Config file not found: {config}")
         raise typer.Exit(code=1)
 
-    with open(config_path, "r", encoding="utf-8") as f:
-        config_data = yaml.safe_load(f)
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config_data = yaml.safe_load(f)
+    except Exception as e:
+        rprint(f"[red]Error parsing YAML config '{config}':[/red] {e}")
+        raise typer.Exit(code=1)
+
+    if not isinstance(config_data, dict):
+        rprint(f"[red]Error:[/red] Deck configuration in '{config}' must be a YAML mapping/dictionary.")
+        raise typer.Exit(code=1)
 
     deck_type = config_data.get("deck_type", "weekly_progress")
     out_path = Path(output) if output else OUTPUT_DIR / "presentations" / f"{config_path.stem}.pptx"
@@ -189,8 +199,12 @@ def build_ppt_deck(
 
     engagement_ctx = None
     if context_file:
+        ctx_p = Path(context_file)
+        if not ctx_p.exists():
+            rprint(f"[red]Error:[/red] Engagement context file not found: {context_file}")
+            raise typer.Exit(code=1)
         engagement_ctx = load_engagement_context(context_file)
-    elif "context" in config_data:
+    elif isinstance(config_data.get("context"), dict):
         engagement_ctx = EngagementContext(**config_data["context"])
 
     if client:
@@ -263,6 +277,7 @@ def build_ppt_deck(
         builder.build_all()
         saved_file = builder.save(out_path, engagement_context=engagement_ctx)
 
+    saved_file = Path(saved_file)
     total_slides = len(builder.prs.slides)
     rprint(f"[green]✓ Generated consulting presentation ({total_slides} slides):[/green] [bold]{saved_file}[/bold]")
 
@@ -295,17 +310,27 @@ def replace_ppt_image(
         rprint(f"[red]Error:[/red] Replacement image not found: {new_image}")
         raise typer.Exit(code=1)
 
+    if slide is not None and slide < 1:
+        rprint(f"[red]Error:[/red] Slide number must be >= 1 (1-indexed), got {slide}.")
+        raise typer.Exit(code=1)
+
     out_path = Path(output_file) if output_file else in_path.parent / f"{in_path.stem}_substituted{in_path.suffix}"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
     rprint(f"[cyan]ℹ Processing PowerPoint:[/cyan] [bold]{in_path}[/bold]")
-    count, final_out = substitute_presentation_images(
-        prs_or_path=in_path,
-        new_image_path=img_path,
-        output_path=out_path,
-        slide_index=slide,
-        preserve_aspect_ratio=fit,
-    )
+    try:
+        count, final_out = substitute_presentation_images(
+            prs_or_path=in_path,
+            new_image_path=img_path,
+            output_path=out_path,
+            slide_index=slide,
+            preserve_aspect_ratio=fit,
+        )
+    except Exception as e:
+        rprint(f"[red]Error substituting presentation images:[/red] {e}")
+        raise typer.Exit(code=1)
 
+    final_out = Path(final_out)
     rprint(f"[green]✓ Substituted {count} image(s) -> created:[/green] [bold]{final_out}[/bold]")
 
     if open_deck:
@@ -378,6 +403,13 @@ def frame_mockup_cli(
 ) -> None:
     """Frame raw enterprise UI screenshots inside a high-DPI macOS desktop browser mockup."""
     from src.ppt_engine.image_engine import frame_browser_mockup, ImageEngine
+
+    if dpi < 200:
+        rprint(f"[red]Error:[/red] Target DPI must be >= 200, got {dpi}.")
+        raise typer.Exit(code=1)
+    if width_in <= 0:
+        rprint(f"[red]Error:[/red] Target mockup width (--width-in) must be > 0, got {width_in}.")
+        raise typer.Exit(code=1)
 
     # 1. Resolve source image
     src_input: Union[Path, Any]
@@ -492,8 +524,9 @@ def export_preview_cli(
 @ppt_app.command("visual-qa")
 def visual_qa_cli(
     file: str = typer.Option("output/presentations/architecture_evolution_cdsw_to_lambda.pptx", "--file", "-f", help="Path to .pptx presentation file"),
-    capture_live: bool = typer.Option(True, "--capture-live/--no-capture-live", help="Capture live window screenshots from Microsoft PowerPoint if running on macOS"),
+    capture_live: bool = typer.Option(False, "--capture-live/--no-capture-live", help="Capture live window screenshots from Microsoft PowerPoint if running on macOS"),
     output_dir: Optional[str] = typer.Option(None, "--output-dir", "-o", help="Directory to save preview screenshots"),
+    strict: bool = typer.Option(False, "--strict", help="Exit with error code on critical or warning issues"),
 ) -> None:
     """Run automated visual inspection and DrawingML collision linting on PowerPoint slides."""
     from src.ppt_engine.visual_qa import PPTVisualLinter, PowerPointScreenCaptureEngine
@@ -504,24 +537,34 @@ def visual_qa_cli(
         raise typer.Exit(code=1)
 
     out_dir = Path(output_dir) if output_dir else p_in.parent / "previews"
-    out_dir.mkdir(parents=True, exist_ok=True)
 
     rprint(f"[cyan]ℹ Running DrawingML Spatial Collision & Text Overflow Linter on:[/cyan] [bold]{p_in.name}[/bold]")
     linter = PPTVisualLinter(p_in)
     issues = linter.lint_presentation()
 
+    crit = 0
+    warn = 0
     if issues:
         rprint(f"[yellow]⚠ Found {len(issues)} spatial issue(s):[/yellow]")
         for issue in issues:
-            color = "red" if issue.severity == "CRITICAL" else "yellow"
+            if issue.severity == "CRITICAL":
+                color = "red"
+                crit += 1
+            else:
+                color = "yellow"
+                warn += 1
             rprint(f"  • [Slide {issue.slide_index}] [{color} bold]{issue.issue_type}[/{color} bold] on [bold]{issue.shape_name}[/bold]: {issue.description}")
             rprint(f"    [dim]↳ Fix: {issue.suggested_fix}[/dim]")
     else:
         rprint("[green]✓ Zero spatial collisions or text overflow hazards detected.[/green]")
 
     if capture_live and PowerPointScreenCaptureEngine.is_powerpoint_running():
+        out_dir.mkdir(parents=True, exist_ok=True)
         rprint(f"[cyan]ℹ Capturing live window screenshots from Microsoft PowerPoint...[/cyan]")
         captured = PowerPointScreenCaptureEngine.capture_live_slides(p_in, out_dir)
         rprint(f"[green]✓ Captured {len(captured)} slide image(s) to:[/green] [bold]{out_dir}[/bold]")
         for c in captured:
             rprint(f"  • {c.name}")
+
+    if strict and (crit > 0 or warn > 0):
+        raise typer.Exit(code=1)

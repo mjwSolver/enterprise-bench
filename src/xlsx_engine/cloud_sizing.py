@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 import openpyxl
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.core.config import OUTPUT_DIR, get_template_path, validate_clean_path
 
@@ -28,6 +29,22 @@ WAREHOUSE_CREDIT_RATES: Dict[str, float] = {
     "4XL": 128.0,
 }
 
+_SIZE_ALIASES: Dict[str, str] = {
+    "X-SMALL": "XS",
+    "XSMALL": "XS",
+    "SMALL": "S",
+    "MEDIUM": "M",
+    "LARGE": "L",
+    "X-LARGE": "XL",
+    "XLARGE": "XL",
+    "XXL": "2XL",
+    "2X-LARGE": "2XL",
+    "XXXL": "3XL",
+    "3X-LARGE": "3XL",
+    "XXXXL": "4XL",
+    "4X-LARGE": "4XL",
+}
+
 # AWS Jakarta Credit Pricing ($ / credit)
 TIER_PRICES_PER_CREDIT: Dict[str, float] = {
     "standard": 2.50,
@@ -40,10 +57,20 @@ TIER_PRICES_PER_CREDIT: Dict[str, float] = {
 class WarehouseSpec(BaseModel):
     """Specification for a Snowflake Virtual Warehouse."""
     name: str = Field(..., description="Warehouse purpose or name")
-    size: str = Field("XS", description="T-shirt size (XS, S, M, L, XL, 2XL)")
+    size: str = Field("XS", description="T-shirt size (XS, S, M, L, XL, 2XL, 3XL, 4XL)")
     days_per_month: int = Field(22, ge=0, le=31, description="Active working days per month")
     hours_per_day: float = Field(8.0, ge=0.0, le=24.0, description="Active running hours per day")
     months_per_year: int = Field(12, ge=1, le=12, description="Operating months per year")
+
+    @field_validator("size")
+    @classmethod
+    def normalize_and_validate_size(cls, v: str) -> str:
+        cleaned = str(v).strip().upper()
+        cleaned = _SIZE_ALIASES.get(cleaned, cleaned)
+        if cleaned not in WAREHOUSE_CREDIT_RATES:
+            valid = ", ".join(WAREHOUSE_CREDIT_RATES.keys())
+            raise ValueError(f"Unsupported warehouse size '{v}'. Valid sizes: {valid}")
+        return cleaned
 
 
 class CloudSizingConfig(BaseModel):
@@ -59,11 +86,11 @@ class CloudSizingConfig(BaseModel):
         ]
     )
     storage_tb: float = Field(1.0, ge=0.0, description="Provisioned monthly data storage in TB")
-    storage_price_per_tb: float = Field(25.0, description="Price per TB per month in USD")
-    cortex_ai_annual_usd: float = Field(3660.0, description="Snowflake Cortex AI annual allocation USD")
-    training_seats_usd: float = Field(1500.0, description="Mandatory Snowflake training cost USD")
-    wht_rate: float = Field(0.10, description="Withholding Tax (WHT) rate (0.10 = 10%)")
-    exchange_rate_idr: float = Field(16500.0, description="USD to IDR currency conversion rate")
+    storage_price_per_tb: float = Field(25.0, ge=0.0, description="Price per TB per month in USD")
+    cortex_ai_annual_usd: float = Field(3660.0, ge=0.0, description="Snowflake Cortex AI annual allocation USD")
+    training_seats_usd: float = Field(1500.0, ge=0.0, description="Mandatory Snowflake training cost USD")
+    wht_rate: float = Field(0.10, ge=0.0, le=1.0, description="Withholding Tax (WHT) rate (0.10 = 10%)")
+    exchange_rate_idr: float = Field(16500.0, gt=0.0, description="USD to IDR currency conversion rate")
 
 
 @dataclass
@@ -111,6 +138,24 @@ class CloudSizingResult:
         return "\n".join(lines)
 
 
+def _resolve_sizing_template(template_path: Optional[Union[str, Path]]) -> Path:
+    """Resolve and validate Cloud Sizing template path against clean_workspace boundary."""
+    if template_path is not None:
+        candidate = Path(template_path)
+        validate_clean_path(candidate)
+        if candidate.exists():
+            return validate_clean_path(candidate)
+        found = get_template_path(str(template_path))
+        if found and Path(found).exists():
+            return validate_clean_path(found)
+        raise FileNotFoundError(f"Cloud_Sizing_Calculator_Template.xlsx template not found: {template_path}")
+
+    found = get_template_path("Cloud_Sizing_Calculator_Template.xlsx")
+    if not found or not Path(found).exists():
+        raise FileNotFoundError("Cloud_Sizing_Calculator_Template.xlsx template not found.")
+    return validate_clean_path(found)
+
+
 def calculate_cloud_sizing(
     config: Optional[CloudSizingConfig] = None,
     template_path: Optional[Union[str, Path]] = None,
@@ -127,64 +172,69 @@ def calculate_cloud_sizing(
             f"received {len(cfg.warehouses)}. Please consolidate warehouse tiers."
         )
 
-    p = template_path or get_template_path("Cloud_Sizing_Calculator_Template.xlsx")
-    if not p or not Path(p).exists():
-        raise FileNotFoundError("Cloud_Sizing_Calculator_Template.xlsx template not found.")
+    p = _resolve_sizing_template(template_path)
 
-    wb = openpyxl.load_workbook(str(p), data_only=False)
-    ws = wb["Calculator (live)"]
-
-    # 1. Inject Header Metadata
-    ws["C2"] = cfg.client_name
-    ws["C4"] = cfg.platform
-
-    # 2. Inject Warehouse Configurations (Rows 7 to 14)
-    # Clear / zero out all 8 available slots first
     monthly_credits = 0.0
     annual_credits = 0.0
+    annual_storage_usd = cfg.storage_tb * cfg.storage_price_per_tb * 12.0
 
-    for slot_idx in range(8):
-        row = 7 + slot_idx
-        if slot_idx < len(cfg.warehouses):
-            wh = cfg.warehouses[slot_idx]
-            size_upper = wh.size.upper()
-            rate = WAREHOUSE_CREDIT_RATES.get(size_upper, 1.0)
-
-            ws[f"C{row}"] = wh.name
-            ws[f"D{row}"] = size_upper
-            ws[f"F{row}"] = wh.days_per_month
-            ws[f"G{row}"] = wh.hours_per_day
-            ws[f"H{row}"] = wh.months_per_year
-
-            wh_monthly = rate * wh.days_per_month * wh.hours_per_day
-            wh_annual = rate * wh.hours_per_day * (wh.days_per_month * wh.months_per_year)
-            monthly_credits += wh_monthly
-            annual_credits += wh_annual
-        else:
-            ws[f"C{row}"] = ""
-            ws[f"D{row}"] = "XS"
-            ws[f"F{row}"] = 0
-            ws[f"G{row}"] = 0
-            ws[f"H{row}"] = 0
-
-    # 3. Inject Storage Parameters
-    ws["I19"] = cfg.storage_tb
-    ws["H18"] = cfg.storage_price_per_tb
-    annual_storage_usd = cfg.storage_tb * cfg.storage_price_per_tb * 12
-
-    # 4. Inject AI & Training Parameters
-    ws["F32"] = cfg.cortex_ai_annual_usd
-    ws["F35"] = cfg.training_seats_usd
-
-    # 5. Inject Taxes & Foreign Exchange
-    ws["H39"] = cfg.wht_rate
-    ws["K39"] = cfg.exchange_rate_idr
-
-    # 6. Save Workbook
-    out = Path(output_path) if output_path else OUTPUT_DIR / f"calculated_Cloud_Sizing_{cfg.client_name.replace(' ', '_')}.xlsx"
+    safe_client = re.sub(r"[^\w\-]+", "_", cfg.client_name.strip()).strip("_") or "Client"
+    out = Path(output_path) if output_path else OUTPUT_DIR / f"calculated_Cloud_Sizing_{safe_client}.xlsx"
     out.parent.mkdir(parents=True, exist_ok=True)
-    wb.save(str(out))
-    wb.close()
+
+    wb = openpyxl.load_workbook(str(p), data_only=False)
+    try:
+        ws = wb["Calculator (live)"] if "Calculator (live)" in wb.sheetnames else wb.active
+        if ws is None:
+            raise ValueError(f"No worksheet found in template {p}")
+
+        # 1. Inject Header Metadata
+        ws["C2"] = cfg.client_name
+        ws["C4"] = cfg.platform
+
+        # 2. Inject Warehouse Configurations (Rows 7 to 14)
+        # Clear / zero out all 8 available slots first
+        for slot_idx in range(8):
+            row = 7 + slot_idx
+            if slot_idx < len(cfg.warehouses):
+                wh = cfg.warehouses[slot_idx]
+                size_upper = wh.size.strip().upper()
+                rate = WAREHOUSE_CREDIT_RATES.get(size_upper, 1.0)
+
+                ws[f"C{row}"] = wh.name
+                ws[f"D{row}"] = size_upper
+                ws[f"F{row}"] = wh.days_per_month
+                ws[f"G{row}"] = wh.hours_per_day
+                ws[f"H{row}"] = f"=F{row}*{wh.months_per_year}"
+
+                wh_monthly = rate * wh.days_per_month * wh.hours_per_day
+                wh_annual = wh_monthly * wh.months_per_year
+                monthly_credits += wh_monthly
+                annual_credits += wh_annual
+            else:
+                ws[f"C{row}"] = ""
+                ws[f"D{row}"] = "XS"
+                ws[f"F{row}"] = 0
+                ws[f"G{row}"] = 0
+                ws[f"H{row}"] = f"=F{row}*12"
+
+        # 3. Inject Storage Parameters
+        ws["I19"] = cfg.storage_tb
+        ws["H19"] = cfg.storage_price_per_tb
+        ws["D30"] = cfg.storage_price_per_tb
+
+        # 4. Inject AI & Training Parameters
+        ws["F32"] = cfg.cortex_ai_annual_usd
+        ws["F35"] = cfg.training_seats_usd
+
+        # 5. Inject Taxes & Foreign Exchange
+        ws["H39"] = cfg.wht_rate
+        ws["K39"] = cfg.exchange_rate_idr
+
+        # 6. Save Workbook
+        wb.save(str(out))
+    finally:
+        wb.close()
 
     # 7. Compute Python-Side Mathematical Verification
     tiers: Dict[str, TierCostSummary] = {}

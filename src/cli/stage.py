@@ -16,7 +16,6 @@ from rich.table import Table
 
 from src.core.delivery import (
     DeliveryError,
-    DeliveryManifest,
     LockConflictError,
     LockManager,
     LockNotFoundError,
@@ -29,8 +28,6 @@ from src.core.delivery import (
     StagingPipeline,
     SyncStatus,
     SyncTransmissionError,
-    discover_google_drive_mounts,
-    resolve_target_drive_root,
 )
 from src.cli.utils import console
 
@@ -64,8 +61,16 @@ def stage_checkout(
         # If presentation, stamp DRAFT overlay badge onto the working copy
         copy_p = Path(payload.locked_copy_path)
         if copy_p.suffix.lower() == ".pptx" and copy_p.exists():
-            overlay_mgr.stamp(copy_p, status=OverlayStatus.DRAFT)
-            rprint(f"  Status Badge: [yellow]Stamped [DRAFT] on working copy slides[/yellow]")
+            try:
+                overlay_mgr.stamp(copy_p, status=OverlayStatus.DRAFT)
+                rprint(f"  Status Badge: [yellow]Stamped [DRAFT] on working copy slides[/yellow]")
+            except Exception as exc:
+                try:
+                    lock_mgr.release_lock(target_path, user=user, merge=False, force=True)
+                except Exception:
+                    pass
+                rprint(f"[bold red]Overlay Stamp Error (lock rolled back):[/bold red] {exc}")
+                raise typer.Exit(code=1)
 
     except (LockConflictError, LockNotFoundError, DeliveryError) as exc:
         rprint(f"[bold red]Lock Error:[/bold red] {exc}")
@@ -85,15 +90,20 @@ def stage_commit(
     target, lock_file = lock_mgr._resolve_target_and_lock_paths(file)
 
     try:
-        # Determine working copy path from lock sidecar
-        locked_copy = target.parent / f"{target.stem}_LOCKED_{user}{target.suffix}"
-        if locked_copy.exists() and locked_copy.suffix.lower() == ".pptx":
-            if approved:
-                overlay_mgr.stamp(locked_copy, status=OverlayStatus.APPROVED)
-                rprint(f"[cyan]ℹ Stamped [APPROVED] overlay badge on working copy before merge.[/cyan]")
+        status = lock_mgr.get_status(file)
+        if status.is_locked and (status.user == user or force):
+            if status.locked_copy_path:
+                locked_copy = Path(status.locked_copy_path)
             else:
-                overlay_mgr.strip(locked_copy)
-                rprint(f"[cyan]ℹ Stripped working overlay badges from working copy before merge.[/cyan]")
+                locked_copy = target.parent / f"{target.stem}_LOCKED_{status.user or user}{target.suffix}"
+
+            if locked_copy.exists() and locked_copy.suffix.lower() == ".pptx":
+                if approved:
+                    overlay_mgr.stamp(locked_copy, status=OverlayStatus.APPROVED)
+                    rprint(f"[cyan]ℹ Stamped [APPROVED] overlay badge on working copy before merge.[/cyan]")
+                else:
+                    overlay_mgr.strip(locked_copy)
+                    rprint(f"[cyan]ℹ Stripped working overlay badges from working copy before merge.[/cyan]")
 
         payload = lock_mgr.release_lock(file, user=user, merge=True, force=force)
         rprint(f"[green]✓ Lock released and working copy merged:[/green] [bold]{target.name}[/bold]")
@@ -101,6 +111,9 @@ def stage_commit(
         rprint(f"  Master State: [bold green]{target}[/bold green]")
 
     except (LockNotFoundError, LockOwnershipError, DeliveryError) as exc:
+        rprint(f"[bold red]Release Error:[/bold red] {exc}")
+        raise typer.Exit(code=1)
+    except Exception as exc:
         rprint(f"[bold red]Release Error:[/bold red] {exc}")
         raise typer.Exit(code=1)
 
@@ -164,10 +177,18 @@ def stage_preflight(
 ) -> None:
     """Headless preflight verification (Gate 1 locks, Gate 2 badges, Gate 3 checksums & corruption)."""
     dir_path = Path(directory)
+    if not dir_path.exists() or not dir_path.is_dir():
+        rprint(f"[red]Error:[/red] Directory not found: {directory}")
+        raise typer.Exit(code=1)
+
     pipeline = StagingPipeline()
 
     rprint(f"[cyan]ℹ Running stage-gate preflight checks on:[/cyan] [bold]{directory}[/bold]")
-    report = pipeline.run_preflight(dir_path, fail_on_locks=strict)
+    try:
+        report = pipeline.run_preflight(dir_path, fail_on_locks=strict, fail_on_draft=strict)
+    except DeliveryError as exc:
+        rprint(f"[bold red]Preflight Error:[/bold red] {exc}")
+        raise typer.Exit(code=1)
 
     table = Table(title=f"Preflight Gate Verification: {dir_path.name}")
     table.add_column("Gate Name", style="bold cyan")
@@ -207,6 +228,10 @@ def stage_manifest(
 ) -> None:
     """Builds cryptographically signed SHA-256 staging manifest for delivery handover."""
     dir_path = Path(directory)
+    if not dir_path.exists() or not dir_path.is_dir():
+        rprint(f"[red]Error:[/red] Directory not found: {directory}")
+        raise typer.Exit(code=1)
+
     out_manifest = Path(output) if output else dir_path / "delivery_manifest.json"
     pipeline = StagingPipeline()
 
@@ -243,7 +268,7 @@ def stage_manifest(
 
         console.print(table)
 
-    except PreflightGateError as exc:
+    except (PreflightGateError, DeliveryError) as exc:
         rprint(f"[bold red]Manifest Generation Error:[/bold red] {exc}")
         raise typer.Exit(code=1)
 
@@ -303,14 +328,12 @@ def stage_sync(
         for candidate in [
             dir_path / ".staging_manifest.json",
             dir_path / "delivery_manifest.json",
-            Path(".staging_manifest.json"),
-            Path("delivery_manifest.json"),
         ]:
-            if candidate.exists():
+            if candidate.is_file():
                 manifest_p = candidate.resolve()
                 break
 
-    if not manifest_p or not manifest_p.exists():
+    if not manifest_p or not manifest_p.is_file():
         rprint(f"[bold red]Error:[/bold red] No delivery manifest found in '{directory}'. Run [bold cyan]bench stage manifest[/bold cyan] first.")
         raise typer.Exit(code=1)
 

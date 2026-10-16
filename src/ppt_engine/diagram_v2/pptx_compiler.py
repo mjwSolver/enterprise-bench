@@ -11,11 +11,12 @@ from __future__ import annotations
 import io
 import logging
 import os
+import re
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
@@ -28,10 +29,13 @@ from pptx.util import Emu, Inches, Pt
 from src.ppt_engine.diagram_v2.models import (
     DiagramSpec,
     ContainerSpec,
+    DeckHeaderContract,
     NodeSpec,
     FlowSpec,
     BadgeSpec,
     BulletListSpec,
+    classify_geometric_tier,
+    CANONICAL_TYPOGRAPHIC_SCALE,
 )
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
 
@@ -43,12 +47,21 @@ _ARIAL_EM_BOLD = 0.57
 _LINE_SPACING = 1.20
 
 
-def _hex_to_rgb(hex_code: str) -> RGBColor:
+def _hex_to_rgb(hex_code: Optional[str]) -> RGBColor:
     """Converts a hex code (#RRGGBB) to a python-pptx RGBColor."""
-    h = hex_code.lstrip("#")
+    if not hex_code:
+        return RGBColor(0, 0, 0)
+    h = re.sub(r"[^0-9a-fA-F]", "", str(hex_code))
     if len(h) == 3:
         h = "".join(c * 2 for c in h)
-    return RGBColor(int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+    elif len(h) >= 6:
+        h = h[:6]
+    else:
+        h = h.ljust(6, "0")
+    try:
+        return RGBColor(int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+    except Exception:
+        return RGBColor(0, 0, 0)
 
 
 def _clamp(val: float, lo: float, hi: float) -> float:
@@ -85,7 +98,13 @@ def _flatten(shape: Any) -> None:
             for child in list(sp_pr):
                 if child.tag.endswith("effectLst") or child.tag.endswith("outerShdw"):
                     sp_pr.remove(child)
-            sp_pr.append(OxmlElement("a:effectLst"))
+            # Schema sequence: ln, effectLst, effectDag, scene3d, sp3d, extLst
+            ext_lst = sp_pr.find("{http://schemas.openxmlformats.org/drawingml/2006/main}extLst")
+            effect_lst = OxmlElement("a:effectLst")
+            if ext_lst is not None:
+                sp_pr.insert(sp_pr.index(ext_lst), effect_lst)
+            else:
+                sp_pr.append(effect_lst)
     except Exception as e:
         logger.debug("Could not flatten shape: %s", e)
 
@@ -93,7 +112,10 @@ def _flatten(shape: Any) -> None:
 def _set_connector_arrowhead(connector: Any, arrow_type: str = "triangle", at_tail: bool = True) -> None:
     """Attaches an OpenXML DrawingML arrowhead to a connector line."""
     try:
-        ln_elem = connector._element.spPr.ln
+        sp_pr = connector._element.spPr
+        ln_elem = getattr(sp_pr, "ln", None)
+        if ln_elem is None:
+            ln_elem = sp_pr.get_or_add_ln()
         tag = "a:tailEnd" if at_tail else "a:headEnd"
         end_elem = OxmlElement(tag)
         end_elem.set("type", arrow_type)
@@ -141,19 +163,24 @@ def _svg_to_png_bytes(svg_path: Path) -> Optional[bytes]:
     except Exception:
         pass
 
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-        tmp_path = Path(tmp.name)
+    tmp_path: Optional[Path] = None
     try:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
         res = subprocess.run(
             ["rsvg-convert", "-z", "3", str(svg_path), "-o", str(tmp_path)],
             capture_output=True,
         )
         if res.returncode == 0 and tmp_path.exists():
-            data = tmp_path.read_bytes()
-            tmp_path.unlink()
-            return data
+            return tmp_path.read_bytes()
     except Exception:
         pass
+    finally:
+        if tmp_path is not None and tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
 
     return None
 
@@ -164,6 +191,9 @@ def _text_width_in(text: str, pt: float, bold: bool = False) -> float:
 
 
 def _wrapped_line_count(text: str, pt: float, width_in: float, bold: bool = False) -> int:
+    if width_in <= 0.0:
+        return max(1, len(text.split()))
+    pt = max(1.0, float(pt))
     total = 0
     space_w = _text_width_in(" ", pt, bold)
     for segment in text.split("\n"):
@@ -195,10 +225,12 @@ class _ParaSpec:
 
     def height_in(self, width_in: float) -> float:
         lines = _wrapped_line_count(self.text, self.pt, width_in, self.bold)
-        return (lines * self.pt * _LINE_SPACING + self.space_before_pt) / 72.0
+        segments = [s for s in self.text.split("\n") if s.strip()]
+        extra_space = (len(segments) - 1) * self.space_before_pt if len(segments) > 1 else 0.0
+        return (lines * self.pt * _LINE_SPACING + self.space_before_pt + extra_space) / 72.0
 
     def natural_width_in(self) -> float:
-        return max(_text_width_in(seg, self.pt, self.bold) for seg in self.text.split("\n"))
+        return max((_text_width_in(seg, self.pt, self.bold) for seg in self.text.split("\n")), default=0.0)
 
 
 @dataclass
@@ -229,6 +261,7 @@ class PPTXCompiler:
             canvas_unit=spec.canvas.unit,
         )
         self._node_boxes: Dict[str, Box] = {}
+        self._container_boxes: Dict[str, Box] = {}
 
     def _plan_card(
         self,
@@ -242,6 +275,11 @@ class PPTXCompiler:
         is_cylinder: bool,
         icon_layout: str = "auto",
         title_pt: Optional[float] = None,
+        subtitle_pt: Optional[float] = None,
+        align: str = "center",
+        valign: str = "middle",
+        elastic_text: Optional[bool] = None,
+        bullets: Optional[List[str]] = None,
     ) -> _CardPlan:
         ss = min(w, h)
         pad_v = _clamp(0.11 * ss, 0.10, 0.20)
@@ -259,15 +297,18 @@ class PPTXCompiler:
         if mode == "auto":
             mode = "side" if (is_cylinder and has_icon) else "stack"
 
-        t_pt = title_pt or (12.5 if h >= 1.15 else 11.0)
-        s_pt = 9.0
-        k_pt = 8.0
+        tier = classify_geometric_tier(w, h)
+        scale_dict = CANONICAL_TYPOGRAPHIC_SCALE.get(tier, CANONICAL_TYPOGRAPHIC_SCALE["Tier B"])
+        t_pt = title_pt or scale_dict["title_pt"]
+        s_pt = subtitle_pt or scale_dict.get("subtitle_pt", 9.0)
+        k_pt = scale_dict.get("kicker_pt", 8.0) or 8.0
         icon = _clamp(0.26 * ss, 0.28, 0.40) if has_icon else 0.0
         if mode == "side" and has_icon:
             icon = min(icon, max(0.26, (region_bottom - region_top) * 0.80))
         icon_gap = _clamp(0.05 * ss, 0.04, 0.08)
 
         plan = _CardPlan(mode, pad_h, region_top, region_bottom, icon, icon_gap)
+        shrunk_during_loop = False
         for _ in range(16):
             paras: List[_ParaSpec] = []
             if kicker:
@@ -275,10 +316,14 @@ class PPTXCompiler:
             paras.append(_ParaSpec(title, t_pt, True, "#0F172A", 1.0 if kicker else 0.0))
             if subtitle:
                 paras.append(_ParaSpec(subtitle, s_pt, False, "#64748B", 2.0))
+            if bullets:
+                for b in bullets:
+                    b_str = str(b)
+                    paras.append(_ParaSpec(b_str if b_str.startswith("•") else f"• {b_str}", s_pt, False, "#64748B", 2.0))
 
-            inner_w = w - 2 * pad_h
+            inner_w = max(0.20, w - 2 * pad_h)
             if mode == "side" and has_icon:
-                text_w = inner_w - icon - icon_gap * 1.5
+                text_w = max(0.20, inner_w - icon - icon_gap * 1.5)
                 text_h = sum(p.height_in(text_w) for p in paras)
                 content = max(icon, text_h)
             else:
@@ -289,6 +334,7 @@ class PPTXCompiler:
             plan.paras, plan.text_width, plan.content_h, plan.icon_size = paras, text_w, content, icon
             if content <= plan.region_h + 1e-6:
                 break
+            shrunk_during_loop = True
             shrunk = False
             if t_pt > 9.5:
                 t_pt -= 0.5
@@ -301,6 +347,75 @@ class PPTXCompiler:
                 shrunk = True
             if not shrunk:
                 break
+
+        # Step 2, 3 & 4: Elastic Typography Auto-Fill for Underfilled Execution Cards
+        if not shrunk_during_loop and elastic_text is not False:
+            is_forced = elastic_text is True
+            qualifies = is_forced
+            if not is_forced and elastic_text is None:
+                if title_pt is None and subtitle_pt is None:
+                    title_lines_cnt = len([s for s in title.split("\n") if s.strip()]) if title else 1
+                    sub_lines_cnt = len([s for s in subtitle.split("\n") if s.strip()]) if subtitle else 0
+                    bullet_cnt = len(bullets) if bullets else 0
+                    total_items = title_lines_cnt + sub_lines_cnt + bullet_cnt
+                    init_occ = plan.content_h / plan.region_h if plan.region_h > 0 else 1.0
+                    if h >= 1.80 and align == "left" and valign == "top" and total_items <= 6 and init_occ < 0.55:
+                        qualifies = True
+
+            if qualifies:
+                cur_t = t_pt
+                cur_s = s_pt
+                all_title_lines = [s for s in title.split("\n") if s.strip()] if title else []
+                all_sub_lines = ([s for s in subtitle.split("\n") if s.strip()] if subtitle else []) + (bullets or [])
+
+                while cur_s < 12.0:
+                    cand_s = cur_s + 0.5
+                    cand_t = min(16.5, cur_t + 0.5)
+
+                    # Zero-wrapping check
+                    wraps = False
+                    for line in all_title_lines:
+                        if _text_width_in(line, cand_t, bold=True) > plan.text_width:
+                            wraps = True
+                            break
+                    if wraps:
+                        break
+                    for line in all_sub_lines:
+                        b_line = line if (line.startswith("•") or not bullets) else f"• {line}"
+                        if _text_width_in(b_line, cand_s, bold=False) > plan.text_width:
+                            wraps = True
+                            break
+                    if wraps:
+                        break
+
+                    cand_sp = _clamp(2.0 + 2.0 * (cand_s - 9.0) / (12.0 - 9.0), 2.0, 4.0)
+
+                    cand_paras: List[_ParaSpec] = []
+                    if kicker:
+                        cand_paras.append(_ParaSpec(kicker.upper(), k_pt, True, stroke_hex))
+                    cand_paras.append(_ParaSpec(title, cand_t, True, "#0F172A", 1.0 if kicker else 0.0))
+                    if subtitle:
+                        cand_paras.append(_ParaSpec(subtitle, cand_s, False, "#64748B", cand_sp))
+                    if bullets:
+                        for b in bullets:
+                            b_str = str(b)
+                            cand_paras.append(_ParaSpec(b_str if b_str.startswith("•") else f"• {b_str}", cand_s, False, "#64748B", cand_sp))
+
+                    if mode == "side" and has_icon:
+                        cand_text_h = sum(p.height_in(plan.text_width) for p in cand_paras)
+                        cand_content = max(plan.icon_size, cand_text_h)
+                    else:
+                        cand_text_h = sum(p.height_in(plan.text_width) for p in cand_paras)
+                        cand_content = (plan.icon_size + plan.icon_gap if has_icon else 0.0) + cand_text_h
+
+                    if cand_content > 0.85 * plan.region_h + 1e-6:
+                        break
+
+                    cur_s = cand_s
+                    cur_t = cand_t
+                    plan.paras = cand_paras
+                    plan.content_h = cand_content
+
         return plan
 
     def _add_icon(
@@ -361,7 +476,14 @@ class PPTXCompiler:
 
     def compile_slide(self, slide: Any) -> None:
         """Compiles the diagram specification elements onto an existing PowerPoint slide."""
-        self._node_boxes.clear()
+        self._node_boxes = {
+            n.id: self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+            for n in self.spec.nodes
+        }
+        self._container_boxes = {
+            c.id: self.norm.to_inches(c.x, c.y, c.w, c.h)
+            for c in self.spec.containers
+        }
 
         # 1. Header & Brand Stripes
         if self.spec.header.show:
@@ -404,30 +526,45 @@ class PPTXCompiler:
 
     def _compile_header(self, slide: Any) -> None:
         h = self.spec.header
-        hx = h.x if h.x is not None else 0.60
-        hy = h.y if h.y is not None else 0.40
-        box = self.norm.to_inches(hx, hy, 11.5, 0.85)
+        hx = h.x if h.x is not None else DeckHeaderContract.STRIPES_LEFT_IN
+        hy = h.y if h.y is not None else DeckHeaderContract.STRIPES_TOP_IN
+        box = self.norm.to_inches(hx, hy, 11.5, DeckHeaderContract.TITLE_H_IN)
 
         if h.brand_stripes:
-            s_red = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(box.x), Inches(box.y), Inches(0.045), Inches(0.55))
+            s_red = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(box.x),
+                Inches(box.y),
+                Inches(DeckHeaderContract.STRIPE_RED_W_IN),
+                Inches(DeckHeaderContract.STRIPES_H_IN),
+            )
             s_red.name = "header:stripe:red"
             s_red.fill.solid()
             s_red.fill.fore_color.rgb = _hex_to_rgb(h.red_hex)
             s_red.line.fill.background()
             _flatten(s_red)
 
-            s_blue = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(box.x + 0.065), Inches(box.y), Inches(0.090), Inches(0.55))
+            s_blue_x = box.x + DeckHeaderContract.STRIPE_RED_W_IN + DeckHeaderContract.STRIPES_GAP_IN
+            s_blue = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(s_blue_x),
+                Inches(box.y),
+                Inches(DeckHeaderContract.STRIPE_BLUE_W_IN),
+                Inches(DeckHeaderContract.STRIPES_H_IN),
+            )
             s_blue.name = "header:stripe:blue"
             s_blue.fill.solid()
             s_blue.fill.fore_color.rgb = _hex_to_rgb(h.blue_hex)
             s_blue.line.fill.background()
             _flatten(s_blue)
-            tx = box.x + 0.25
+            tx = box.x + (DeckHeaderContract.TITLE_LEFT_WITH_STRIPES_IN - DeckHeaderContract.STRIPES_LEFT_IN)
+            title_w = DeckHeaderContract.TITLE_W_WITH_STRIPES_IN
         else:
             tx = box.x
- 
-        header_w = min(9.8, max(6.0, box.w - tx - 2.8))
-        tb = slide.shapes.add_textbox(Inches(tx), Inches(box.y - 0.05), Inches(header_w), Inches(0.85))
+            title_w = DeckHeaderContract.TITLE_W_NO_STRIPES_IN
+
+        title_y = box.y - (DeckHeaderContract.STRIPES_TOP_IN - DeckHeaderContract.TITLE_TOP_IN)
+        tb = slide.shapes.add_textbox(Inches(tx), Inches(title_y), Inches(title_w), Inches(DeckHeaderContract.TITLE_H_IN))
         tb.name = "header:title"
         _flatten(tb)
         tf = tb.text_frame
@@ -448,8 +585,101 @@ class PPTXCompiler:
         p_sub.font.color.rgb = _hex_to_rgb("#64748B")
         p_sub.space_before = Pt(4)
 
+    def _resolve_container_label_x(
+        self,
+        c: ContainerSpec,
+        box: Box,
+        estimated_text_w: float,
+        valign: str,
+        align: str,
+    ) -> float:
+        default_x = (
+            (box.x + (box.w - estimated_text_w) / 2.0)
+            if align == "center"
+            else (box.x + 0.2 if align == "left" else box.x2 - estimated_text_w - 0.2)
+        )
+
+        if valign != "bottom":
+            return default_x
+
+        # Obstruction detection: nodes inside container extending into bottom boundary band
+        bottom_threshold = box.y2 - 0.40
+        obstructing_nodes: List[Box] = []
+        for n in self.spec.nodes:
+            nbox = self._node_boxes.get(n.id) or self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+            is_inside = (n.container_id == c.id) or (
+                nbox.cx >= box.x and nbox.cx <= box.x2 and nbox.cy >= box.y and nbox.cy <= box.y2
+            )
+            if is_inside and nbox.y2 > bottom_threshold:
+                obstructing_nodes.append(nbox)
+
+        if not obstructing_nodes:
+            return default_x
+
+        # Check if default label position collides with any obstructing node
+        label_x1 = default_x
+        label_x2 = default_x + estimated_text_w
+        collides = False
+        for ob in obstructing_nodes:
+            if max(0.0, min(label_x2, ob.x2) - max(label_x1, ob.x)) > 0.05:
+                collides = True
+                break
+
+        if not collides:
+            return default_x
+
+        # Obstruction detected: partition bottom boundary into open segments
+        pad = 0.20
+        min_x = box.x + pad
+        max_x = box.x2 - pad
+        if min_x >= max_x:
+            return default_x
+
+        intervals: List[Tuple[float, float]] = []
+        for ob in obstructing_nodes:
+            ix1 = max(min_x, ob.x - 0.05)
+            ix2 = min(max_x, ob.x2 + 0.05)
+            if ix1 < ix2:
+                intervals.append((ix1, ix2))
+
+        intervals.sort(key=lambda item: item[0])
+        merged: List[Tuple[float, float]] = []
+        for iv in intervals:
+            if not merged or iv[0] > merged[-1][1]:
+                merged.append(iv)
+            else:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], iv[1]))
+
+        open_segments: List[Tuple[float, float]] = []
+        curr = min_x
+        for iv_start, iv_end in merged:
+            if iv_start > curr:
+                open_segments.append((curr, iv_start))
+            curr = max(curr, iv_end)
+        if curr < max_x:
+            open_segments.append((curr, max_x))
+
+        if not open_segments:
+            return default_x
+
+        # Pick widest open segment that fits text, or widest open segment overall
+        fitting = [s for s in open_segments if (s[1] - s[0]) >= estimated_text_w]
+        target_segments = fitting if fitting else open_segments
+        widest_seg = max(target_segments, key=lambda s: s[1] - s[0])
+        seg_w = widest_seg[1] - widest_seg[0]
+
+        if align == "center":
+            new_x = widest_seg[0] + max(0.0, (seg_w - estimated_text_w) / 2.0)
+        elif align == "left":
+            new_x = widest_seg[0]
+        else:
+            new_x = widest_seg[1] - estimated_text_w
+
+        return max(box.x + 0.1, min(box.x2 - estimated_text_w - 0.1, new_x))
+
     def _compile_container(self, slide: Any, c: ContainerSpec) -> None:
-        box = self.norm.to_inches(c.x, c.y, c.w, c.h)
+        box = self._container_boxes.get(c.id) or self.norm.to_inches(c.x, c.y, c.w, c.h)
+        self._container_boxes[c.id] = box
         shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(box.x), Inches(box.y), Inches(box.w), Inches(box.h))
         shape.name = f"container:{c.id}"
         shape.fill.solid()
@@ -460,27 +690,35 @@ class PPTXCompiler:
             shape.line.dash_style = MSO_LINE_DASH_STYLE.DASH
         _flatten(shape)
 
+        valign = c.resolved_vertical_align()
+        align = c.resolved_align()
+
         # Boundary Label
         if c.label and c.label.strip():
-            label_w = (box.w - 2.1) if c.tag_badge else (box.w - 0.4)
-            estimated_text_w = max(1.2, min(label_w, len(c.label) * 0.11 + 0.35)) if label_w >= 1.2 else max(0.5, label_w)
-            tb = slide.shapes.add_textbox(Inches(box.x + 0.2), Inches(box.y + 0.08), Inches(estimated_text_w), Inches(0.26))
+            label_w = (box.w - 2.1) if (c.tag_badge and valign == "top") else (box.w - 0.4)
+            estimated_text_w = max(0.8, min(label_w, len(c.label) * 0.08 + 0.30)) if label_w >= 0.8 else max(0.5, label_w)
+            label_y = (box.y2 - 0.32) if valign == "bottom" else (box.y + 0.08)
+            label_x = self._resolve_container_label_x(c, box, estimated_text_w, valign, align)
+            tb = slide.shapes.add_textbox(Inches(label_x), Inches(label_y), Inches(estimated_text_w), Inches(0.26))
             tb.name = f"container:{c.id}:label"
             _flatten(tb)
             tf = tb.text_frame
             tf.word_wrap = True
-            tf.vertical_anchor = MSO_ANCHOR.TOP
+            tf.vertical_anchor = MSO_ANCHOR.BOTTOM if valign == "bottom" else MSO_ANCHOR.TOP
             tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
             p = tf.paragraphs[0]
             p.text = c.label.upper()
+            p.alignment = PP_ALIGN.CENTER if align == "center" else (PP_ALIGN.LEFT if align == "left" else PP_ALIGN.RIGHT)
             p.font.name = "Arial"
             p.font.size = Pt(10)
             p.font.bold = True
             p.font.color.rgb = _hex_to_rgb(c.border_hex if c.border_hex != "#94A3B8" else "#64748B")
 
-        # Top-Right Badge
+        # Top-Right Badge (always decoupled at box.y + 0.12)
         if c.tag_badge:
-            badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(box.x2 - 1.8), Inches(box.y + 0.12), Inches(1.6), Inches(0.28))
+            bw = min(1.6, max(0.6, box.w - 0.2))
+            bx = box.x2 - bw - 0.10
+            badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(bx), Inches(box.y + 0.12), Inches(bw), Inches(0.28))
             badge.name = f"container:{c.id}:tag_badge"
             badge.fill.solid()
             badge.fill.fore_color.rgb = _hex_to_rgb(c.tag_bg_hex)
@@ -498,7 +736,7 @@ class PPTXCompiler:
             p_b.font.color.rgb = _hex_to_rgb(c.tag_text_hex)
 
     def _compile_node(self, slide: Any, n: NodeSpec) -> None:
-        box = self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+        box = self._node_boxes.get(n.id) or self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
         self._node_boxes[n.id] = box
 
         # Resolve Icon
@@ -526,12 +764,28 @@ class PPTXCompiler:
         card.line.width = Pt(n.stroke_width)
         _flatten(card)
 
-        plan = self._plan_card(box.w, box.h, n.title, n.subtitle, n.kicker, n.stroke_hex, has_icon, is_cylinder, n.icon_layout, n.title_pt)
+        plan = self._plan_card(
+            box.w,
+            box.h,
+            n.title,
+            n.subtitle,
+            n.kicker,
+            n.stroke_hex,
+            has_icon,
+            is_cylinder,
+            n.icon_layout,
+            n.title_pt,
+            n.subtitle_pt,
+            align=getattr(n, "align", "center"),
+            valign=getattr(n, "valign", "middle"),
+            elastic_text=getattr(n, "elastic_text", None),
+            bullets=getattr(n, "bullets", None),
+        )
         region_top = box.y + plan.region_top
         region_h = plan.region_h
 
         if plan.mode == "side" and has_icon:
-            natural_w = min(plan.text_width, max(p.natural_width_in() for p in plan.paras) + 0.06)
+            natural_w = min(plan.text_width, max((p.natural_width_in() for p in plan.paras), default=0.20) + 0.06)
             group_w = plan.icon_size + plan.icon_gap * 1.5 + natural_w
             gx = box.x + plan.pad_h + max(0.0, (box.w - 2 * plan.pad_h - group_w) / 2.0)
             icon_y = region_top + (region_h - plan.icon_size) / 2.0
@@ -589,7 +843,7 @@ class PPTXCompiler:
         p.text = b.text
         p.alignment = PP_ALIGN.CENTER
         p.font.name = "Arial"
-        p.font.size = Pt(b.font_pt)
+        p.font.size = Pt(b.font_pt or 9.0)
         p.font.bold = True
         p.font.color.rgb = _hex_to_rgb(b.text_hex)
 
@@ -607,7 +861,7 @@ class PPTXCompiler:
             p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
             p.text = f"• {item}"
             p.font.name = "Arial"
-            p.font.size = Pt(bl.font_size)
+            p.font.size = Pt(bl.font_size or 10.0)
             p.font.bold = True
             p.font.color.rgb = _hex_to_rgb(bl.font_color)
             if i > 0:
@@ -616,12 +870,19 @@ class PPTXCompiler:
     def _compile_flow(self, slide: Any, f: FlowSpec, idx: int = 0) -> None:
         flow_id = f.id or (f"{f.source}->{f.target}" if f.source and f.target else f"flow_{idx}")
         pts: List[Point] = []
+        all_boxes = {**self._container_boxes, **self._node_boxes}
         if f.points:
-            pts = [self.norm.point_to_inches(p) for p in f.points]
-        elif f.source and f.target and f.source in self._node_boxes and f.target in self._node_boxes:
-            src_box = self._node_boxes[f.source]
-            tgt_box = self._node_boxes[f.target]
-            pts = GeometryNormalizer.compute_auto_route(src_box, tgt_box, curve=f.curve)
+            pts = [self.norm.point_to_inches(p) for p in f.points if len(p) >= 2]
+        elif f.source and f.target and f.source in all_boxes and f.target in all_boxes:
+            src_box = all_boxes[f.source]
+            tgt_box = all_boxes[f.target]
+            pts = GeometryNormalizer.compute_auto_route(
+                src_box,
+                tgt_box,
+                curve=f.curve,
+                src_port=f.source_port,
+                tgt_port=f.target_port,
+            )
 
         if len(pts) < 2:
             return
@@ -679,7 +940,8 @@ class PPTXCompiler:
                 elif pos == "left":
                     lx -= (offset_in * 2.5)
 
-            lw = round(_text_width_in(f.label, f.font_pt, bold=True) + 0.20, 2)
+            flow_font_pt = f.font_pt or 9.0
+            lw = round(_text_width_in(f.label, flow_font_pt, bold=True) + 0.20, 2)
             lh = 0.22
             pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(lx - lw / 2.0), Inches(ly - lh / 2.0), Inches(lw), Inches(lh))
             pill.name = f"flow:{flow_id}:label"
@@ -697,6 +959,6 @@ class PPTXCompiler:
             p.text = f.label
             p.alignment = PP_ALIGN.CENTER
             p.font.name = "Arial"
-            p.font.size = Pt(f.font_pt)
+            p.font.size = Pt(flow_font_pt)
             p.font.bold = True
             p.font.color.rgb = _hex_to_rgb(f.label_text_hex)

@@ -75,7 +75,7 @@ def get_default_resources(root_dir: Path) -> list[ResourceSpec]:
         ),
         ResourceSpec(
             key="logo_snowflake_official",
-            target_path=root_dir / "assets" / "images" / "logos" / "snowflake_official.png",
+            target_path=root_dir / "assets" / "logos" / "snowflake_official.svg",
             canonical_url="https://upload.wikimedia.org/wikipedia/commons/f/ff/Snowflake_Logo.svg",
             fallback_url=None,
             fallback_type="typographic",

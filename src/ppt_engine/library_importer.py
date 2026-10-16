@@ -133,6 +133,8 @@ class MxLibraryDecoder:
             e_idx = xml_content.find("</shape>") + len("</shape>")
             stencil_xml = xml_content[s_idx:e_idx]
             svg_converted = MxLibraryDecoder._stencil_to_svg(stencil_xml, shape_item.get("w", 48), shape_item.get("h", 48))
+            if svg_converted:
+                return svg_converted, "svg"
         # Check for remote image URL: image=https://... or image=http://...
         m_http = re.search(r"image=(https?://[^;\"'\s]+)", xml_content)
         if m_http:

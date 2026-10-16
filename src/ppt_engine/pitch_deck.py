@@ -119,6 +119,9 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb
 
 logger = logging.getLogger(__name__)
 
+# Precompiled regex for footer slide pagination ("02 / 36")
+PAGE_REGEX = re.compile(r"^\d{2}\s*/\s*\d{2}$")
+
 
 class PitchDeckBuilder:
     """Specialized presentation generator for the 36-slide Presales Modernization Pitch Deck."""
@@ -135,7 +138,7 @@ class PitchDeckBuilder:
 
         self.prs: Presentation = create_presentation(self.theme)
         self.config: Dict[str, Any] = config_dict or {}
-        self.metadata: Dict[str, Any] = self.config.get("metadata", {})
+        self.metadata: Dict[str, Any] = self.config.get("metadata") or {}
         self.client_name: str = self.metadata.get("client_name", "[CLIENT_COMPANY_NAME]")
         self.vendor_name: str = self.metadata.get("vendor_name", "PT Metrodata Electronics Tbk")
         self.product: str = self.metadata.get("product", "Snowflake AI Data Cloud")
@@ -153,13 +156,13 @@ class PitchDeckBuilder:
         with open(p, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
-        theme_name = theme_override or data.get("theme", "metrodata")
+        theme_name = theme_override or (data.get("theme") if isinstance(data, dict) else "metrodata") or "metrodata"
         builder = cls(theme=theme_name, config_dict=data)
         return builder
 
     def build_all(self, slide_limit: Optional[int] = None) -> None:
         """Iterates through all declared slides in config and compiles them into the presentation."""
-        slides_cfg = self.config.get("slides", [])
+        slides_cfg = self.config.get("slides") or []
         if slide_limit is not None and slide_limit > 0:
             slides_cfg = slides_cfg[:slide_limit]
 
@@ -208,7 +211,7 @@ class PitchDeckBuilder:
                 )
 
         elif arch in ("agenda", "table_of_contents", "toc"):
-            raw_items = cfg.get("items", [])
+            raw_items = cfg.get("items") or []
             items = []
             for itm in raw_items:
                 if isinstance(itm, dict):
@@ -249,14 +252,40 @@ class PitchDeckBuilder:
             tree_raw = cfg.get("tree_data")
             tree_data = None
             if tree_raw and isinstance(tree_raw, dict):
-                p_nodes = [EquityEntityNode(**n) for n in tree_raw.get("public_shareholders", [])]
-                s_nodes = [EquityEntityNode(**n) for n in tree_raw.get("subsidiaries", [])]
+                p_nodes_raw = tree_raw.get("tier1_nodes") or tree_raw.get("public_shareholders") or []
+                s_nodes_raw = tree_raw.get("tier2_nodes") or tree_raw.get("subsidiaries") or []
+                p_nodes = [
+                    EquityEntityNode(
+                        name=n.get("name", ""),
+                        code=n.get("code", ""),
+                        percentage=str(n.get("percentage", "")),
+                        business_domain=n.get("business_domain") or n.get("domain", ""),
+                        tier=int(n.get("tier", 1)),
+                        parent_code=n.get("parent_code"),
+                        accent_color=n.get("accent_color"),
+                    )
+                    for n in p_nodes_raw
+                    if isinstance(n, dict)
+                ]
+                s_nodes = [
+                    EquityEntityNode(
+                        name=n.get("name", ""),
+                        code=n.get("code", ""),
+                        percentage=str(n.get("percentage", "")),
+                        business_domain=n.get("business_domain") or n.get("domain", ""),
+                        tier=int(n.get("tier", 2)),
+                        parent_code=n.get("parent_code"),
+                        accent_color=n.get("accent_color"),
+                    )
+                    for n in s_nodes_raw
+                    if isinstance(n, dict)
+                ]
                 tree_data = EquityTreeData(
-                    public_shareholders=p_nodes,
-                    subsidiaries=s_nodes,
-                    holding_ticker=tree_raw.get("holding_ticker", "IDX: MTDL"),
-                    holding_name=tree_raw.get("holding_name", "PT METRODATA ELECTRONICS TBK"),
-                    holding_subtitle=tree_raw.get("holding_subtitle", "Leading ICT Solutions & Distribution Ecosystem in Indonesia"),
+                    parent_company=tree_raw.get("parent_company") or tree_raw.get("holding_name", "PT METRODATA ELECTRONICS TBK"),
+                    parent_ticker=tree_raw.get("parent_ticker") or tree_raw.get("holding_ticker", "MTDL"),
+                    parent_subtitle=tree_raw.get("parent_subtitle") or tree_raw.get("holding_subtitle", "Leading ICT Solutions & Distribution Ecosystem in Indonesia"),
+                    tier1_nodes=p_nodes,
+                    tier2_nodes=s_nodes,
                     footnote=tree_raw.get("footnote", "* Consolidated group financial statements and ownership matrix."),
                 )
             build_equity_corporate_tree_slide(
@@ -272,7 +301,7 @@ class PitchDeckBuilder:
             )
 
         elif arch in ("card_grid", "capability_cards", "pillars_grid"):
-            raw_items = cfg.get("items", [])
+            raw_items = cfg.get("items") or []
             items = []
             for itm in raw_items:
                 if isinstance(itm, dict):
@@ -280,7 +309,7 @@ class PitchDeckBuilder:
                         title=itm.get("title", ""),
                         subtitle=itm.get("subtitle"),
                         icon=itm.get("icon"),
-                        bullets=itm.get("bullets", []),
+                        bullets=itm.get("bullets") or [],
                         accent_key=itm.get("accent_key", "accent"),
                         badge=itm.get("badge"),
                     ))
@@ -298,7 +327,7 @@ class PitchDeckBuilder:
             )
 
         elif arch in ("tech_logo_grid", "product_portfolio", "tech_grid"):
-            raw_items = cfg.get("items", [])
+            raw_items = cfg.get("items") or []
             items = []
             for itm in raw_items:
                 if isinstance(itm, dict):
@@ -324,7 +353,7 @@ class PitchDeckBuilder:
             )
 
         elif arch in ("badge_matrix", "certifications", "partner_matrix"):
-            raw_sections = cfg.get("sections", [])
+            raw_sections = cfg.get("sections") or []
             sections = []
             for s in raw_sections:
                 if isinstance(s, dict):
@@ -332,7 +361,7 @@ class PitchDeckBuilder:
                         section_title=s.get("section_title", ""),
                         accent_key=s.get("accent_key", "accent"),
                         badge_count_label=s.get("badge_count_label"),
-                        items=s.get("items", []),
+                        items=s.get("items") or [],
                     ))
             build_badge_matrix_slide(
                 self.prs,
@@ -363,7 +392,7 @@ class PitchDeckBuilder:
 
         elif arch in ("split_hero", "kpi_framework"):
             blocks = []
-            for b in cfg.get("blocks", []):
+            for b in (cfg.get("blocks") or []):
                 if isinstance(b, dict):
                     blocks.append(SplitHeroBlock(
                         title=b.get("title", ""),
@@ -412,9 +441,28 @@ class PitchDeckBuilder:
 
         elif arch in ("bcg_3_horizon", "3_tier_architecture", "horizons"):
             horizons = []
-            for h in cfg.get("horizons", []):
+            for h in (cfg.get("horizons") or []):
                 if isinstance(h, dict):
-                    horizons.append(HorizonColumnData(**h))
+                    h_tag = h.get("horizon_tag") or h.get("tag") or h.get("name") or "HORIZON"
+                    h_title = h.get("title") or ""
+                    h_focus = h.get("strategic_focus") or h.get("focus") or h.get("subtitle") or ""
+                    h_metric = h.get("metric_highlight") or h.get("metric") or ""
+                    h_label = h.get("metric_label") or h.get("subtext") or ""
+                    h_inits = h.get("initiatives") or h.get("bullets") or []
+                    horizons.append(HorizonColumnData(
+                        horizon_tag=h_tag,
+                        title=h_title,
+                        strategic_focus=h_focus,
+                        metric_highlight=h_metric,
+                        metric_label=h_label,
+                        initiatives=h_inits,
+                        accent_key=h.get("accent_key", "accent"),
+                        status_tag=h.get("status_tag") or h.get("status", "IN EXECUTION"),
+                        status_bg_key=h.get("status_bg_key", "badge_blue_fill"),
+                        status_text_key=h.get("status_text_key", "badge_blue_text"),
+                        icon=h.get("icon"),
+                        icon_path=h.get("icon_path"),
+                    ))
             build_bcg_3_horizon_slide(
                 self.prs,
                 self.theme,
@@ -459,14 +507,15 @@ class PitchDeckBuilder:
 
         elif arch in ("chevron_process", "process_flow", "value_chain"):
             steps = []
-            for s in cfg.get("steps", []):
+            for s in (cfg.get("steps") or []):
                 if isinstance(s, dict):
-                    acc_col = self.theme.get_rgb(s["accent_key"]) if "accent_key" in s else None
+                    acc_key = s.get("accent_key")
+                    acc_col = self.theme.get_rgb(acc_key) if acc_key else None
                     steps.append(ProcessChevronStep(
                         phase_number=s.get("phase_number", "01"),
                         title=s.get("title", ""),
                         duration_badge=s.get("duration_badge", s.get("subtitle")),
-                        deliverables=s.get("deliverables", []),
+                        deliverables=s.get("deliverables") or [],
                         status=s.get("status"),
                         accent_color=acc_col,
                     ))
@@ -487,10 +536,10 @@ class PitchDeckBuilder:
             g_data = None
             if g_raw and isinstance(g_raw, dict):
                 ws_list = []
-                for ws in g_raw.get("workstreams", []):
+                for ws in (g_raw.get("workstreams") or []):
                     if isinstance(ws, dict):
                         t_list = []
-                        for t in ws.get("tasks", []):
+                        for t in (ws.get("tasks") or []):
                             if isinstance(t, dict):
                                 t_dict = dict(t)
                                 if "start_period" not in t_dict and "start_week" in t_dict:
@@ -500,32 +549,43 @@ class PitchDeckBuilder:
                                         t_dict["end_period"] = float(t_dict.pop("end_week"))
                                     elif "duration_weeks" in t_dict:
                                         dur = float(t_dict.pop("duration_weeks"))
-                                        t_dict["end_period"] = float(t_dict["start_period"] + max(1.0, dur) - 1.0)
+                                        t_dict["end_period"] = float(t_dict.get("start_period", 1.0) + max(1.0, dur) - 1.0)
                                     else:
                                         t_dict["end_period"] = float(t_dict.get("start_period", 1.0))
                                 t_dict.pop("duration_weeks", None)
                                 t_dict.pop("end_week", None)
-                                t_list.append(GanttTask(**t_dict))
-                            else:
+                                t_list.append(GanttTask(
+                                    name=t_dict.get("name", ""),
+                                    start_period=float(t_dict.get("start_period", 1.0)),
+                                    end_period=float(t_dict.get("end_period", 1.0)),
+                                    progress_pct=float(t_dict.get("progress_pct", 100.0)),
+                                    status=t_dict.get("status", "COMPLETED"),
+                                    owner=t_dict.get("owner"),
+                                    is_milestone=bool(t_dict.get("is_milestone", False)),
+                                ))
+                            elif isinstance(t, GanttTask):
                                 t_list.append(t)
-                        ws_copy = dict(ws)
-                        ws_copy["tasks"] = t_list
-                        if "category" not in ws_copy and "name" in ws_copy:
-                            ws_copy["category"] = ws_copy.pop("name")
-                        if "accent_color" not in ws_copy and "accent_key" in ws_copy:
-                            ws_copy["accent_color"] = ws_copy.pop("accent_key")
-                        if "badge" not in ws_copy:
-                            ws_copy["badge"] = "WORKSTREAM"
-                        ws_list.append(GanttWorkstream(**ws_copy))
-                    else:
+                        cat = ws.get("category") or ws.get("name", "Workstream")
+                        accent_c = ws.get("accent_color") or ws.get("accent_key", "primary")
+                        badge_c = ws.get("badge", "WORKSTREAM")
+                        ws_list.append(GanttWorkstream(
+                            category=cat,
+                            badge=badge_c,
+                            accent_color=accent_c,
+                            tasks=t_list,
+                        ))
+                    elif isinstance(ws, GanttWorkstream):
                         ws_list.append(ws)
-                g_copy = dict(g_raw)
-                g_copy["workstreams"] = ws_list
-                if "total_periods" not in g_copy and "total_weeks" in g_copy:
-                    g_copy["total_periods"] = int(g_copy.pop("total_weeks"))
-                g_copy.pop("start_label", None)
-                g_copy.pop("end_label", None)
-                g_data = GanttTimelineData(**g_copy)
+                total_p = int(g_raw.get("total_periods") or g_raw.get("total_weeks", 12))
+                cur_marker = float(g_raw["current_period_marker"]) if "current_period_marker" in g_raw and g_raw["current_period_marker"] is not None else 6.0
+                g_data = GanttTimelineData(
+                    time_scale_label=g_raw.get("time_scale_label", "WEEKS"),
+                    total_periods=total_p,
+                    period_labels=g_raw.get("period_labels"),
+                    current_period_marker=cur_marker,
+                    workstreams=ws_list,
+                    footnote=g_raw.get("footnote", "*) Timeline reflects target PMO sprint velocity and scheduled governance gates."),
+                )
             build_timeline_gantt_slide(
                 self.prs,
                 self.theme,
@@ -572,18 +632,18 @@ class PitchDeckBuilder:
             )
 
         elif arch in ("table", "matrix_table", "milestones_table", "prerequisites_table", "communication_table", "risk_table", "table_matrix"):
-            raw_cols = cfg.get("columns", [])
+            raw_cols = cfg.get("columns") or []
             columns = []
             for c in raw_cols:
                 if isinstance(c, dict):
                     columns.append(TableColumnDef(
                         header=c.get("header", ""),
                         width=float(c.get("width", 2.0)),
-                        align=c.get("align", "LEFT").upper(),
-                        is_status=c.get("is_status", False),
-                        is_index=c.get("is_index", False),
+                        align=str(c.get("align", "LEFT")).upper(),
+                        is_status=bool(c.get("is_status", False)),
+                        is_index=bool(c.get("is_index", False)),
                     ))
-            rows = cfg.get("rows", [])
+            rows = cfg.get("rows") or []
             build_table_slide(
                 self.prs,
                 self.theme,
@@ -615,7 +675,27 @@ class PitchDeckBuilder:
 
         elif arch in ("feature_matrix", "harvey_balls"):
             m_raw = cfg.get("matrix_data")
-            m_data = FeatureMatrixData(**m_raw) if m_raw and isinstance(m_raw, dict) else None
+            m_data = None
+            if m_raw and isinstance(m_raw, dict):
+                f_rows = []
+                for r in (m_raw.get("rows") or []):
+                    if isinstance(r, dict):
+                        from src.ppt_engine.consulting_archetypes import FeatureScorecardRow
+                        f_rows.append(FeatureScorecardRow(
+                            category=r.get("category", ""),
+                            criteria=r.get("criteria", ""),
+                            scores=r.get("scores") or {},
+                            business_impact=r.get("business_impact", "HIGH"),
+                        ))
+                    elif hasattr(r, "category"):
+                        f_rows.append(r)
+                m_data = FeatureMatrixData(
+                    columns=m_raw.get("columns") or [],
+                    rows=f_rows,
+                    recommendation_badge=m_raw.get("recommendation_badge", "RECOMMENDED ARCHITECTURE"),
+                    recommended_column=m_raw.get("recommended_column", "Snowflake Data Cloud"),
+                    footnote=m_raw.get("footnote", "Harvey Balls: ● Full Native Support | ◐ Partial / Requires Extension | ○ Complex / Unsupported"),
+                )
             build_feature_matrix_slide(
                 self.prs,
                 self.theme,
@@ -651,27 +731,38 @@ class PitchDeckBuilder:
             if s_idx == 1:
                 continue
             for shape in slide.shapes:
-                if shape.has_text_frame:
-                    for paragraph in shape.text_frame.paragraphs:
-                        text_clean = paragraph.text.strip()
-                        if re.match(r"^\d{2}\s*/\s*\d{2}$", text_clean):
-                            new_page_str = f"{s_idx:02d} / {total_slides:02d}"
+                if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+                    continue
+                try:
+                    if getattr(shape, "top", None) is not None and shape.top < Inches(6.8):
+                        continue
+                except Exception:
+                    pass
+                for paragraph in shape.text_frame.paragraphs:
+                    text_clean = paragraph.text.strip()
+                    if PAGE_REGEX.match(text_clean):
+                        new_page_str = f"{s_idx:02d} / {total_slides:02d}"
+                        if paragraph.runs:
+                            r0 = paragraph.runs[0]
+                            font_name = r0.font.name
+                            font_size = r0.font.size
+                            font_bold = r0.font.bold
+                            font_color = None
+                            try:
+                                if r0.font.color and getattr(r0.font.color, "type", None) == 1:
+                                    font_color = r0.font.color.rgb
+                            except (AttributeError, ValueError):
+                                font_color = None
+                            paragraph.text = new_page_str
                             if paragraph.runs:
-                                r0 = paragraph.runs[0]
-                                font_name = r0.font.name
-                                font_size = r0.font.size
-                                font_bold = r0.font.bold
-                                font_color = r0.font.color.rgb if (r0.font.color and r0.font.color.type == 1) else None
-                                paragraph.text = new_page_str
-                                if paragraph.runs:
-                                    nr = paragraph.runs[0]
-                                    nr.font.name = font_name
-                                    nr.font.size = font_size
-                                    nr.font.bold = font_bold
-                                    if font_color:
-                                        nr.font.color.rgb = font_color
-                            else:
-                                paragraph.text = new_page_str
+                                nr = paragraph.runs[0]
+                                nr.font.name = font_name
+                                nr.font.size = font_size
+                                nr.font.bold = font_bold
+                                if font_color:
+                                    nr.font.color.rgb = font_color
+                        else:
+                            paragraph.text = new_page_str
 
     def save(
         self,

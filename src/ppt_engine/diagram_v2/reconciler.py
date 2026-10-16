@@ -59,8 +59,8 @@ def dump_diagram_yaml(data: Dict[str, Any], path: Union[str, Path]) -> Path:
 
 @dataclass
 class ReconciledChange:
-    """Individual structural or textual change detected between PPTX shapes and YAML AST."""
-    change_type: str  # "pruned_node", "pruned_flow", "pruned_container", "pruned_badge", "pruned_bullet_list", "mutated_text"
+    """Individual structural, textual, or geometric change detected between PPTX shapes and YAML AST."""
+    change_type: str  # "pruned_node", "pruned_flow", "pruned_container", "pruned_badge", "pruned_bullet_list", "mutated_text", "mutated_geometry"
     element_type: str  # "node", "flow", "container", "badge", "bullet_list", "header"
     element_id: str
     field_name: Optional[str] = None
@@ -96,6 +96,13 @@ class ReconciliationResult:
     def mutated_texts(self) -> List[ReconciledChange]:
         return [c for c in self.changes if c.change_type == "mutated_text"]
 
+    @property
+    def mutated_geometries(self) -> List[ReconciledChange]:
+        return [c for c in self.changes if c.change_type == "mutated_geometry"]
+
+
+_BULLET_PREFIX_RE = re.compile(r"^[•\-\*]\s*")
+
 
 def _clean_text(val: Optional[str]) -> Optional[str]:
     """Normalizes vertical tabs (\x0b / <a:br/>) and Windows line endings to \n."""
@@ -110,6 +117,8 @@ class PPTXDiagramDecompiler:
     with deterministic OpenXML names ('node:...', 'flow:...', 'container:...', etc.).
     """
 
+    _DETERMINISTIC_PREFIXES = ("node:", "flow:", "container:", "badge:", "header:", "bullet_list:")
+
     def __init__(self, pptx_path: Union[str, Path], slide_index: int = 1) -> None:
         self.pptx_path = Path(pptx_path)
         if not self.pptx_path.exists():
@@ -123,6 +132,7 @@ class PPTXDiagramDecompiler:
         self.slide = self.prs.slides[slide_index - 1]
         self.shapes = self._collect_shapes(self.slide.shapes)
         self.shapes_by_name: Dict[str, Any] = {}
+        self._shapes_by_element_key: Dict[str, List[Any]] = {}
         self.all_names: Set[str] = set()
 
         for s in self.shapes:
@@ -130,6 +140,10 @@ class PPTXDiagramDecompiler:
             if name:
                 self.shapes_by_name[name] = s
                 self.all_names.add(name)
+                parts = name.split(":", 2)
+                if len(parts) >= 2:
+                    elem_key = f"{parts[0]}:{parts[1]}"
+                    self._shapes_by_element_key.setdefault(elem_key, []).append(s)
 
     def _collect_shapes(self, shape_tree: Any) -> List[Any]:
         """Recursively flattens all slide shapes including nested group shapes."""
@@ -145,14 +159,26 @@ class PPTXDiagramDecompiler:
 
     def has_deterministic_names(self) -> bool:
         """Checks if the slide contains shapes tagged with Diagram Engine V2 deterministic names."""
-        prefixes = ("node:", "flow:", "container:", "badge:", "header:", "bullet_list:")
-        return any(any(name.startswith(p) for p in prefixes) for name in self.all_names)
+        return any(name.startswith(self._DETERMINISTIC_PREFIXES) for name in self.all_names)
 
     def get_shape(self, name: str) -> Optional[Any]:
         return self.shapes_by_name.get(name)
 
     def find_shapes_by_prefix(self, prefix: str) -> List[Any]:
-        return [s for s in self.shapes if (getattr(s, "name", "") or "").startswith(prefix)]
+        """
+        Finds shapes matching a deterministic prefix.
+        When given a 2-part element key like 'node:app', matches exact 'node:app' or
+        sub-elements 'node:app:*' without false-matching sibling prefixes like 'node:app_db'.
+        """
+        if not prefix.endswith(":") and prefix in self._shapes_by_element_key:
+            return list(self._shapes_by_element_key[prefix])
+        if prefix.endswith(":"):
+            return [s for s in self.shapes if (getattr(s, "name", "") or "").startswith(prefix)]
+        colon_prefix = f"{prefix}:"
+        return [
+            s for s in self.shapes
+            if (name := (getattr(s, "name", "") or "")) == prefix or name.startswith(colon_prefix)
+        ]
 
     @staticmethod
     def get_text_paragraphs(shape: Any) -> List[str]:
@@ -178,13 +204,18 @@ class DiagramReconciler:
         spec_path: Union[str, Path],
         pptx_path: Optional[Union[str, Path]] = None,
         slide_index: int = 1,
+        snap_grid: float = 0.05,
+        snap_threshold: float = 0.02,
     ) -> None:
         self.spec_path = Path(spec_path)
         if not self.spec_path.exists():
             raise FileNotFoundError(f"Diagram specification not found: {self.spec_path}")
 
         raw_text = self.spec_path.read_text(encoding="utf-8")
-        self.raw_data: Dict[str, Any] = yaml.safe_load(raw_text) or {}
+        loaded = yaml.safe_load(raw_text)
+        if not isinstance(loaded, dict):
+            raise ValueError(f"Invalid diagram YAML specification in {self.spec_path}: expected top-level mapping.")
+        self.raw_data: Dict[str, Any] = loaded
         self.spec = DiagramSpec.model_validate(self.raw_data)
 
         # Resolve PPTX path
@@ -194,6 +225,8 @@ class DiagramReconciler:
             self.pptx_path = self._auto_locate_pptx()
 
         self.slide_index = slide_index
+        self.snap_grid = max(0.001, float(snap_grid))
+        self.snap_threshold = max(0.0001, float(snap_threshold))
 
     def _auto_locate_pptx(self) -> Path:
         """Attempts to locate the compiled PPTX corresponding to the YAML spec."""
@@ -211,11 +244,31 @@ class DiagramReconciler:
             f"Please specify --pptx path/to/presentation.pptx"
         )
 
+    def _to_spec_units(self, inches_val: float) -> float:
+        """Converts inches to specification units (e.g. px if canvas.unit == 'px')."""
+        if self.spec.canvas.unit == "px":
+            return round(inches_val * 90.0, 2)
+        return inches_val
+
+    def _to_inches(self, spec_val: float) -> float:
+        """Converts specification units to inches for geometric comparison."""
+        if self.spec.canvas.unit == "px":
+            return spec_val / 90.0
+        return spec_val
+
+    def _snap_spec_coord(self, inches_val: float) -> float:
+        """Snaps an inch coordinate value to snap_grid and returns in spec units."""
+        snapped_in = round(round(inches_val / self.snap_grid) * self.snap_grid, 4)
+        if abs(snapped_in) < 1e-9:
+            snapped_in = 0.0
+        return self._to_spec_units(snapped_in)
+
     def reconcile(
         self,
         dry_run: bool = False,
         no_recompile: bool = False,
         formats: Sequence[str] = ("all",),
+        skip_pptx: bool = False,
     ) -> ReconciliationResult:
         """Executes full bidirectional reconciliation between PPTX shapes and YAML AST."""
         decompiler = PPTXDiagramDecompiler(self.pptx_path, slide_index=self.slide_index)
@@ -250,7 +303,7 @@ class DiagramReconciler:
                         description=f"Action title mutated from '{self.spec.header.action_title}' to '{new_title}'",
                     ))
                     self.spec.header.action_title = new_title
-                    if "header" in self.raw_data:
+                    if isinstance(self.raw_data.get("header"), dict):
                         self.raw_data["header"]["action_title"] = new_title
 
             if len(h_paras) >= 2:
@@ -266,8 +319,21 @@ class DiagramReconciler:
                         description=f"Header subtitle mutated from '{self.spec.header.subtitle}' to '{new_sub}'",
                     ))
                     self.spec.header.subtitle = new_sub
-                    if "header" in self.raw_data:
+                    if isinstance(self.raw_data.get("header"), dict):
                         self.raw_data["header"]["subtitle"] = new_sub
+            elif len(h_paras) == 1 and self.spec.header.subtitle:
+                changes.append(ReconciledChange(
+                    change_type="mutated_text",
+                    element_type="header",
+                    element_id="header",
+                    field_name="subtitle",
+                    old_value=self.spec.header.subtitle,
+                    new_value="",
+                    description="Header subtitle cleared in PPTX",
+                ))
+                self.spec.header.subtitle = ""
+                if isinstance(self.raw_data.get("header"), dict):
+                    self.raw_data["header"]["subtitle"] = ""
 
         # ----------------------------------------------------------------------
         # 2. Container Boundaries Reconciliation
@@ -291,6 +357,36 @@ class DiagramReconciler:
 
             surviving_containers.append(c)
 
+            # Check geometric position & dimensions
+            c_shape = decompiler.get_shape(f"container:{c.id}")
+            if c_shape and hasattr(c_shape, "left") and hasattr(c_shape, "top") and hasattr(c_shape, "width") and hasattr(c_shape, "height"):
+                cur_x_in = float(c_shape.left) / 914400.0
+                cur_y_in = float(c_shape.top) / 914400.0
+                cur_w_in = float(c_shape.width) / 914400.0
+                cur_h_in = float(c_shape.height) / 914400.0
+
+                for prop, cur_in, orig_val in [
+                    ("x", cur_x_in, c.x),
+                    ("y", cur_y_in, c.y),
+                    ("w", cur_w_in, c.w),
+                    ("h", cur_h_in, c.h),
+                ]:
+                    orig_in = self._to_inches(orig_val)
+                    if abs(cur_in - orig_in) >= self.snap_threshold:
+                        snapped_val = self._snap_spec_coord(cur_in)
+                        if abs(snapped_val - orig_val) > 1e-4:
+                            changes.append(ReconciledChange(
+                                change_type="mutated_geometry",
+                                element_type="container",
+                                element_id=c.id,
+                                field_name=prop,
+                                old_value=orig_val,
+                                new_value=snapped_val,
+                                description=f"Container '{c.id}' {prop.upper()} adjusted from {orig_val} to {snapped_val}",
+                            ))
+                            setattr(c, prop, snapped_val)
+                            self._update_container_dict(c.id, prop, snapped_val)
+
             # Check boundary label
             lbl_shape = decompiler.get_shape(f"container:{c.id}:label")
             if lbl_shape:
@@ -310,6 +406,53 @@ class DiagramReconciler:
                         ))
                         c.label = new_lbl
                         self._update_container_dict(c.id, "label", new_lbl)
+
+                # Check label vertical position (bottom-edge policy)
+                c_shape = decompiler.get_shape(f"container:{c.id}")
+                is_bottom = False
+                if c_shape and hasattr(c_shape, "top") and hasattr(c_shape, "height") and hasattr(lbl_shape, "top"):
+                    is_bottom = lbl_shape.top > (c_shape.top + c_shape.height / 2)
+                elif hasattr(lbl_shape, "top"):
+                    is_bottom = (lbl_shape.top / 914400.0) > (c.y + c.h / 2)
+
+                if is_bottom:
+                    if c.h < 4.0:
+                        if c.vertical_align != "bottom":
+                            changes.append(ReconciledChange(
+                                change_type="mutated_text",
+                                element_type="container",
+                                element_id=c.id,
+                                field_name="vertical_align",
+                                old_value=c.vertical_align,
+                                new_value="bottom",
+                                description=f"Container '{c.id}' bottom label detected for h={c.h:.2f} < 4.0''",
+                            ))
+                            c.vertical_align = "bottom"
+                            self._update_container_dict(c.id, "vertical_align", "bottom")
+                    else:
+                        # h >= 4.0'': omit vertical_align or keep clean to avoid YAML churn
+                        if c.vertical_align is not None:
+                            self._update_container_dict(c.id, "vertical_align", None)
+                            c.vertical_align = None
+                else:
+                    if c.h >= 4.0:
+                        if c.vertical_align != "top":
+                            changes.append(ReconciledChange(
+                                change_type="mutated_text",
+                                element_type="container",
+                                element_id=c.id,
+                                field_name="vertical_align",
+                                old_value=c.vertical_align,
+                                new_value="top",
+                                description=f"Container '{c.id}' top label detected for h={c.h:.2f} >= 4.0''",
+                            ))
+                            c.vertical_align = "top"
+                            self._update_container_dict(c.id, "vertical_align", "top")
+                    else:
+                        # h < 4.0'': omit vertical_align as top is already default
+                        if c.vertical_align is not None:
+                            self._update_container_dict(c.id, "vertical_align", None)
+                            c.vertical_align = None
 
             # Check tag badge
             tag_shape = decompiler.get_shape(f"container:{c.id}:tag_badge")
@@ -367,17 +510,72 @@ class DiagramReconciler:
                 ))
                 continue
 
+            if n.container_id and n.container_id in deleted_container_ids:
+                n.container_id = None
+                self._update_node_dict(n.id, "container_id", None)
+
             surviving_nodes.append(n)
+
+            # Check geometric position & dimensions
+            card_shape = decompiler.get_shape(f"node:{n.id}")
+            if card_shape and hasattr(card_shape, "left") and hasattr(card_shape, "top") and hasattr(card_shape, "width") and hasattr(card_shape, "height"):
+                cur_x_in = float(card_shape.left) / 914400.0
+                cur_y_in = float(card_shape.top) / 914400.0
+                cur_w_in = float(card_shape.width) / 914400.0
+                cur_h_in = float(card_shape.height) / 914400.0
+
+                for prop, cur_in, orig_val in [
+                    ("x", cur_x_in, n.x),
+                    ("y", cur_y_in, n.y),
+                    ("w", cur_w_in, n.w),
+                ]:
+                    orig_in = self._to_inches(orig_val)
+                    if abs(cur_in - orig_in) >= self.snap_threshold:
+                        snapped_val = self._snap_spec_coord(cur_in)
+                        if abs(snapped_val - orig_val) > 1e-4:
+                            changes.append(ReconciledChange(
+                                change_type="mutated_geometry",
+                                element_type="node",
+                                element_id=n.id,
+                                field_name=prop,
+                                old_value=orig_val,
+                                new_value=snapped_val,
+                                description=f"Node '{n.id}' {prop.upper()} adjusted from {orig_val} to {snapped_val}",
+                            ))
+                            setattr(n, prop, snapped_val)
+                            self._update_node_dict(n.id, prop, snapped_val)
+
+                # Node H: check against n.h (or compiled default 1.25 if n.h is None)
+                eff_h = n.h if n.h is not None else 1.25
+                eff_h_in = self._to_inches(eff_h)
+                if abs(cur_h_in - eff_h_in) >= self.snap_threshold:
+                    snapped_h = self._snap_spec_coord(cur_h_in)
+                    if abs(snapped_h - eff_h) > 1e-4:
+                        changes.append(ReconciledChange(
+                            change_type="mutated_geometry",
+                            element_type="node",
+                            element_id=n.id,
+                            field_name="h",
+                            old_value=n.h,
+                            new_value=snapped_h,
+                            description=f"Node '{n.id}' H adjusted from {eff_h} to {snapped_h}",
+                        ))
+                        n.h = snapped_h
+                        self._update_node_dict(n.id, "h", snapped_h)
 
             # Extract text from node text frame or card shape
             text_shape = decompiler.get_shape(f"node:{n.id}:text") or decompiler.get_shape(f"node:{n.id}")
             if text_shape:
                 paras = decompiler.get_text_paragraphs(text_shape)
                 if paras:
-                    if n.kicker is not None:
-                        # Kicker was present at paragraph 0
-                        new_kicker = paras[0]
-                        if _clean_text(new_kicker) != _clean_text(n.kicker) and _clean_text(new_kicker) != _clean_text(n.kicker).upper():
+                    remaining_paras = list(paras)
+
+                    # 1. Kicker extraction
+                    if n.kicker is not None and remaining_paras:
+                        new_kicker = remaining_paras.pop(0)
+                        clean_new_kicker = _clean_text(new_kicker) or ""
+                        clean_old_kicker = _clean_text(n.kicker) or ""
+                        if clean_new_kicker != clean_old_kicker and clean_new_kicker != clean_old_kicker.upper():
                             changes.append(ReconciledChange(
                                 change_type="mutated_text",
                                 element_type="node",
@@ -390,89 +588,95 @@ class DiagramReconciler:
                             n.kicker = new_kicker
                             self._update_node_dict(n.id, "kicker", new_kicker)
 
-                        if len(paras) >= 2:
-                            new_title = paras[1]
-                            if _clean_text(new_title) != _clean_text(n.title):
-                                changes.append(ReconciledChange(
-                                    change_type="mutated_text",
-                                    element_type="node",
-                                    element_id=n.id,
-                                    field_name="title",
-                                    old_value=n.title,
-                                    new_value=new_title,
-                                    description=f"Node '{n.id}' title mutated from '{n.title}' to '{new_title}'",
-                                ))
-                                n.title = new_title
-                                self._update_node_dict(n.id, "title", new_title)
+                    # 2. Separate bullet items from body paragraphs
+                    text_paras: List[str] = []
+                    bullet_paras: List[str] = []
+                    for p in remaining_paras:
+                        stripped = p.strip()
+                        if stripped.startswith("•"):
+                            bullet_paras.append(stripped.lstrip("•").strip())
+                        else:
+                            text_paras.append(p)
 
-                        if len(paras) >= 3:
-                            new_sub = "\n".join(paras[2:])
-                            if _clean_text(new_sub) != _clean_text(n.subtitle or ""):
-                                changes.append(ReconciledChange(
-                                    change_type="mutated_text",
-                                    element_type="node",
-                                    element_id=n.id,
-                                    field_name="subtitle",
-                                    old_value=n.subtitle,
-                                    new_value=new_sub,
-                                    description=f"Node '{n.id}' subtitle mutated from '{n.subtitle}' to '{new_sub}'",
-                                ))
-                                n.subtitle = new_sub
-                                self._update_node_dict(n.id, "subtitle", new_sub)
-                        elif len(paras) == 2 and n.subtitle is not None:
-                            changes.append(ReconciledChange(
-                                change_type="mutated_text",
-                                element_type="node",
-                                element_id=n.id,
-                                field_name="subtitle",
-                                old_value=n.subtitle,
-                                new_value=None,
-                                description=f"Node '{n.id}' subtitle cleared in PPTX",
-                            ))
-                            n.subtitle = None
-                            self._update_node_dict(n.id, "subtitle", None)
+                    # 3. Partition title vs subtitle respecting multi-line titles
+                    orig_title_lines = [s for s in n.title.split("\n") if s.strip()] if n.title else []
+                    expected_title_lines = max(1, len(orig_title_lines))
+
+                    if len(text_paras) <= expected_title_lines:
+                        new_title = "\n".join(text_paras) if text_paras else n.title
+                        new_sub = None
                     else:
-                        # No kicker was present; paragraph 0 is title
-                        new_title = paras[0]
-                        if _clean_text(new_title) != _clean_text(n.title):
-                            changes.append(ReconciledChange(
-                                change_type="mutated_text",
-                                element_type="node",
-                                element_id=n.id,
-                                field_name="title",
-                                old_value=n.title,
-                                new_value=new_title,
-                                description=f"Node '{n.id}' title mutated from '{n.title}' to '{new_title}'",
-                            ))
-                            n.title = new_title
-                            self._update_node_dict(n.id, "title", new_title)
+                        new_title = "\n".join(text_paras[:expected_title_lines])
+                        new_sub = "\n".join(text_paras[expected_title_lines:])
 
-                        if len(paras) >= 2:
-                            new_sub = "\n".join(paras[1:])
-                            if _clean_text(new_sub) != _clean_text(n.subtitle or ""):
-                                changes.append(ReconciledChange(
-                                    change_type="mutated_text",
-                                    element_type="node",
-                                    element_id=n.id,
-                                    field_name="subtitle",
-                                    old_value=n.subtitle,
-                                    new_value=new_sub,
-                                    description=f"Node '{n.id}' subtitle mutated from '{n.subtitle}' to '{new_sub}'",
-                                ))
-                                n.subtitle = new_sub
-                                self._update_node_dict(n.id, "subtitle", new_sub)
-                        elif len(paras) == 1 and n.subtitle is not None:
+                    # 4. Update title
+                    if new_title and _clean_text(new_title) != _clean_text(n.title):
+                        changes.append(ReconciledChange(
+                            change_type="mutated_text",
+                            element_type="node",
+                            element_id=n.id,
+                            field_name="title",
+                            old_value=n.title,
+                            new_value=new_title,
+                            description=f"Node '{n.id}' title mutated from '{n.title}' to '{new_title}'",
+                        ))
+                        n.title = new_title
+                        self._update_node_dict(n.id, "title", new_title)
+
+                    # 5. Update subtitle
+                    if new_sub:
+                        if _clean_text(new_sub) != _clean_text(n.subtitle or ""):
                             changes.append(ReconciledChange(
                                 change_type="mutated_text",
                                 element_type="node",
                                 element_id=n.id,
                                 field_name="subtitle",
                                 old_value=n.subtitle,
-                                new_value=None,
-                                description=f"Node '{n.id}' subtitle cleared in PPTX",
+                                new_value=new_sub,
+                                description=f"Node '{n.id}' subtitle mutated from '{n.subtitle}' to '{new_sub}'",
                             ))
-                            n.subtitle = None
-                            self._update_node_dict(n.id, "subtitle", None)
+                            n.subtitle = new_sub
+                            self._update_node_dict(n.id, "subtitle", new_sub)
+                    elif n.subtitle is not None:
+                        changes.append(ReconciledChange(
+                            change_type="mutated_text",
+                            element_type="node",
+                            element_id=n.id,
+                            field_name="subtitle",
+                            old_value=n.subtitle,
+                            new_value=None,
+                            description=f"Node '{n.id}' subtitle cleared in PPTX",
+                        ))
+                        n.subtitle = None
+                        self._update_node_dict(n.id, "subtitle", None)
+
+                    # 6. Update bullets
+                    if bullet_paras:
+                        old_bullets = n.bullets or []
+                        if bullet_paras != old_bullets:
+                            changes.append(ReconciledChange(
+                                change_type="mutated_text",
+                                element_type="node",
+                                element_id=n.id,
+                                field_name="bullets",
+                                old_value=n.bullets,
+                                new_value=bullet_paras,
+                                description=f"Node '{n.id}' bullets mutated in PPTX",
+                            ))
+                            n.bullets = bullet_paras
+                            self._update_node_dict(n.id, "bullets", bullet_paras)
+                    elif n.bullets is not None:
+                        changes.append(ReconciledChange(
+                            change_type="mutated_text",
+                            element_type="node",
+                            element_id=n.id,
+                            field_name="bullets",
+                            old_value=n.bullets,
+                            new_value=None,
+                            description=f"Node '{n.id}' bullets cleared in PPTX",
+                        ))
+                        n.bullets = None
+                        self._update_node_dict(n.id, "bullets", None)
 
         if deleted_node_ids:
             self.spec.nodes = surviving_nodes
@@ -485,20 +689,24 @@ class DiagramReconciler:
         # 4. Routed Flows / Connectors Reconciliation
         # ----------------------------------------------------------------------
         surviving_flows: List[FlowSpec] = []
+        deleted_endpoint_ids = deleted_node_ids | deleted_container_ids
+        pruned_flow_indices: Set[int] = set()
+
         for i, f in enumerate(self.spec.flows):
             flow_id = f.id or (f"{f.source}->{f.target}" if f.source and f.target else f"flow_{i}")
 
-            # Check if flow endpoints were deleted
-            if (f.source and f.source in deleted_node_ids) or (f.target and f.target in deleted_node_ids):
+            # Check if flow endpoints (node or container) were deleted
+            if (f.source and f.source in deleted_endpoint_ids) or (f.target and f.target in deleted_endpoint_ids):
                 deleted_flow_ids.add(flow_id)
-                culprit = f.source if f.source in deleted_node_ids else f.target
+                pruned_flow_indices.add(i)
+                culprit = f.source if f.source in deleted_endpoint_ids else f.target
                 changes.append(ReconciledChange(
                     change_type="pruned_flow",
                     element_type="flow",
                     element_id=flow_id,
                     old_value=f"{f.source} -> {f.target}",
                     new_value=None,
-                    description=f"Flow '{flow_id}' pruned because connected node '{culprit}' was deleted",
+                    description=f"Flow '{flow_id}' pruned because connected endpoint '{culprit}' was deleted",
                 ))
                 continue
 
@@ -506,6 +714,7 @@ class DiagramReconciler:
             line_shape = decompiler.get_shape(f"flow:{flow_id}")
             if not line_shape:
                 deleted_flow_ids.add(flow_id)
+                pruned_flow_indices.add(i)
                 changes.append(ReconciledChange(
                     change_type="pruned_flow",
                     element_type="flow",
@@ -555,7 +764,8 @@ class DiagramReconciler:
             if "flows" in self.raw_data:
                 self.raw_data["flows"] = [
                     fd for i, fd in enumerate(self.raw_data["flows"])
-                    if (fd.get("id") or (f"{fd.get('source')}->{fd.get('target')}" if fd.get("source") and fd.get("target") else f"flow_{i}")) not in deleted_flow_ids
+                    if i not in pruned_flow_indices
+                    and (fd.get("id") or (f"{fd.get('source')}->{fd.get('target')}" if fd.get("source") and fd.get("target") else f"flow_{i}")) not in deleted_flow_ids
                 ]
 
         # ----------------------------------------------------------------------
@@ -580,6 +790,36 @@ class DiagramReconciler:
                 continue
 
             surviving_badges.append(b)
+
+            # Check geometric position & dimensions
+            if hasattr(b_shape, "left") and hasattr(b_shape, "top") and hasattr(b_shape, "width") and hasattr(b_shape, "height"):
+                cur_x_in = float(b_shape.left) / 914400.0
+                cur_y_in = float(b_shape.top) / 914400.0
+                cur_w_in = float(b_shape.width) / 914400.0
+                cur_h_in = float(b_shape.height) / 914400.0
+
+                for prop, cur_in, orig_val in [
+                    ("x", cur_x_in, b.x),
+                    ("y", cur_y_in, b.y),
+                    ("w", cur_w_in, b.w),
+                    ("h", cur_h_in, b.h),
+                ]:
+                    orig_in = self._to_inches(orig_val)
+                    if abs(cur_in - orig_in) >= self.snap_threshold:
+                        snapped_val = self._snap_spec_coord(cur_in)
+                        if abs(snapped_val - orig_val) > 1e-4:
+                            changes.append(ReconciledChange(
+                                change_type="mutated_geometry",
+                                element_type="badge",
+                                element_id=badge_id,
+                                field_name=prop,
+                                old_value=orig_val,
+                                new_value=snapped_val,
+                                description=f"Badge '{badge_id}' {prop.upper()} adjusted from {orig_val} to {snapped_val}",
+                            ))
+                            setattr(b, prop, snapped_val)
+                            self._update_badge_dict(badge_id, i, prop, snapped_val)
+
             b_paras = decompiler.get_text_paragraphs(b_shape)
             if b_paras:
                 new_text = b_paras[0]
@@ -626,8 +866,37 @@ class DiagramReconciler:
                 continue
 
             surviving_bl.append(bl)
+
+            # Check geometric position & dimensions
+            if hasattr(bl_shape, "left") and hasattr(bl_shape, "top") and hasattr(bl_shape, "width") and hasattr(bl_shape, "height"):
+                cur_x_in = float(bl_shape.left) / 914400.0
+                cur_y_in = float(bl_shape.top) / 914400.0
+                cur_w_in = float(bl_shape.width) / 914400.0
+                cur_h_in = float(bl_shape.height) / 914400.0
+
+                for prop, cur_in, orig_val in [
+                    ("x", cur_x_in, bl.x),
+                    ("y", cur_y_in, bl.y),
+                    ("w", cur_w_in, bl.w),
+                    ("h", cur_h_in, bl.h),
+                ]:
+                    orig_in = self._to_inches(orig_val)
+                    if abs(cur_in - orig_in) >= self.snap_threshold:
+                        snapped_val = self._snap_spec_coord(cur_in)
+                        if abs(snapped_val - orig_val) > 1e-4:
+                            changes.append(ReconciledChange(
+                                change_type="mutated_geometry",
+                                element_type="bullet_list",
+                                element_id=bl_id,
+                                field_name=prop,
+                                old_value=orig_val,
+                                new_value=snapped_val,
+                                description=f"Bullet list '{bl_id}' {prop.upper()} adjusted from {orig_val} to {snapped_val}",
+                            ))
+                            setattr(bl, prop, snapped_val)
+                            self._update_bullet_list_dict(bl_id, i, prop, snapped_val)
             raw_paras = decompiler.get_text_paragraphs(bl_shape)
-            cleaned_items = [re.sub(r"^[•\-\*]\s*", "", p).strip() for p in raw_paras if p.strip()]
+            cleaned_items = [_BULLET_PREFIX_RE.sub("", p).strip() for p in raw_paras if p.strip()]
             if cleaned_items != bl.items:
                 changes.append(ReconciledChange(
                     change_type="mutated_text",
@@ -662,17 +931,26 @@ class DiagramReconciler:
 
         if changes and not dry_run:
             # Validate updated dictionary structure against Pydantic model
-            DiagramSpec.model_validate(self.raw_data)
+            validated_spec = DiagramSpec.model_validate(self.raw_data)
+            self.spec = validated_spec
+            res.updated_spec = validated_spec
             dump_diagram_yaml(self.raw_data, self.spec_path)
 
             if not no_recompile:
-                recompile_res = compile_diagram(
-                    spec_path_or_dict=self.spec_path,
-                    output_dir_or_file=self.pptx_path,
-                    formats=formats,
-                )
-                res.recompiled = True
-                res.recompile_result = recompile_res
+                effective_formats = list(formats)
+                if skip_pptx:
+                    if "all" in effective_formats:
+                        effective_formats = ["drawio", "svg", "png"]
+                    else:
+                        effective_formats = [f for f in effective_formats if f.lower() != "pptx"]
+                if effective_formats:
+                    recompile_res = compile_diagram(
+                        spec_path_or_dict=validated_spec,
+                        output_dir_or_file=self.pptx_path,
+                        formats=effective_formats,
+                    )
+                    res.recompiled = True
+                    res.recompile_result = recompile_res
 
         return res
 
@@ -688,12 +966,20 @@ class DiagramReconciler:
                 break
 
     def _update_flow_dict(self, flow_id: str, index: int, field_name: str, new_val: Any) -> None:
-        if "flows" not in self.raw_data or not isinstance(self.raw_data["flows"], list):
+        flows_list = self.raw_data.get("flows")
+        if not isinstance(flows_list, list):
             return
-        for i, fd in enumerate(self.raw_data["flows"]):
+        if 0 <= index < len(flows_list) and isinstance(flows_list[index], dict):
+            fd = flows_list[index]
+            if new_val is None:
+                fd.pop(field_name, None)
+            else:
+                fd[field_name] = new_val
+            return
+        for i, fd in enumerate(flows_list):
             if isinstance(fd, dict):
                 fid = fd.get("id") or (f"{fd.get('source')}->{fd.get('target')}" if fd.get("source") and fd.get("target") else f"flow_{i}")
-                if fid == flow_id or i == index:
+                if fid == flow_id:
                     if new_val is None:
                         fd.pop(field_name, None)
                     else:
@@ -712,12 +998,20 @@ class DiagramReconciler:
                 break
 
     def _update_badge_dict(self, badge_id: str, index: int, field_name: str, new_val: Any) -> None:
-        if "badges" not in self.raw_data or not isinstance(self.raw_data["badges"], list):
+        badges_list = self.raw_data.get("badges")
+        if not isinstance(badges_list, list):
             return
-        for i, bd in enumerate(self.raw_data["badges"]):
+        if 0 <= index < len(badges_list) and isinstance(badges_list[index], dict):
+            bd = badges_list[index]
+            if new_val is None:
+                bd.pop(field_name, None)
+            else:
+                bd[field_name] = new_val
+            return
+        for i, bd in enumerate(badges_list):
             if isinstance(bd, dict):
                 bid = bd.get("id") or f"badge_{i}"
-                if bid == badge_id or i == index:
+                if bid == badge_id:
                     if new_val is None:
                         bd.pop(field_name, None)
                     else:
@@ -725,12 +1019,20 @@ class DiagramReconciler:
                     break
 
     def _update_bullet_list_dict(self, bl_id: str, index: int, field_name: str, new_val: Any) -> None:
-        if "bullet_lists" not in self.raw_data or not isinstance(self.raw_data["bullet_lists"], list):
+        bl_list = self.raw_data.get("bullet_lists")
+        if not isinstance(bl_list, list):
             return
-        for i, bld in enumerate(self.raw_data["bullet_lists"]):
+        if 0 <= index < len(bl_list) and isinstance(bl_list[index], dict):
+            bld = bl_list[index]
+            if new_val is None:
+                bld.pop(field_name, None)
+            else:
+                bld[field_name] = new_val
+            return
+        for i, bld in enumerate(bl_list):
             if isinstance(bld, dict):
                 bid = bld.get("id") or f"bullet_list_{i}"
-                if bid == bl_id or i == index:
+                if bid == bl_id:
                     if new_val is None:
                         bld.pop(field_name, None)
                     else:
@@ -745,7 +1047,21 @@ def reconcile_diagram(
     dry_run: bool = False,
     no_recompile: bool = False,
     formats: Sequence[str] = ("all",),
+    skip_pptx: bool = False,
+    snap_grid: float = 0.05,
+    snap_threshold: float = 0.02,
 ) -> ReconciliationResult:
     """Public facade function to run diagram reconciliation and return the structured result."""
-    reconciler = DiagramReconciler(spec_path=spec_path, pptx_path=pptx_path, slide_index=slide_index)
-    return reconciler.reconcile(dry_run=dry_run, no_recompile=no_recompile, formats=formats)
+    reconciler = DiagramReconciler(
+        spec_path=spec_path,
+        pptx_path=pptx_path,
+        slide_index=slide_index,
+        snap_grid=snap_grid,
+        snap_threshold=snap_threshold,
+    )
+    return reconciler.reconcile(
+        dry_run=dry_run,
+        no_recompile=no_recompile,
+        formats=formats,
+        skip_pptx=skip_pptx,
+    )

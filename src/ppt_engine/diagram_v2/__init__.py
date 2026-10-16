@@ -11,11 +11,15 @@ from src.ppt_engine.diagram_v2.models import (
     DiagramSpec,
     CanvasConfig,
     HeaderConfig,
+    DeckHeaderContract,
     ContainerSpec,
     NodeSpec,
     FlowSpec,
     BadgeSpec,
     BulletListSpec,
+    classify_geometric_tier,
+    CANONICAL_TYPOGRAPHIC_SCALE,
+    resolve_node_fonts,
 )
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
 from src.ppt_engine.diagram_v2.drawio_compiler import DrawIOCompiler
@@ -47,16 +51,34 @@ from src.ppt_engine.diagram_v2.reconciler import (
     reconcile_diagram,
     dump_diagram_yaml,
 )
+from src.ppt_engine.diagram_v2.watcher import (
+    WatcherEvent,
+    PPTXWatcher,
+    watch_diagram,
+)
+from src.ppt_engine.diagram_v2.stray_consolidator import (
+    VisualizationPod,
+    ThemeCluster,
+    ConsolidationReport,
+    validate_bundle_headers,
+    scan_stray_visualizations,
+    cluster_and_rank_pods,
+    consolidate_stray_visualizations,
+)
 
 __all__ = [
     "DiagramSpec",
     "CanvasConfig",
     "HeaderConfig",
+    "DeckHeaderContract",
     "ContainerSpec",
     "NodeSpec",
     "FlowSpec",
     "BadgeSpec",
     "BulletListSpec",
+    "classify_geometric_tier",
+    "CANONICAL_TYPOGRAPHIC_SCALE",
+    "resolve_node_fonts",
     "GeometryNormalizer",
     "Box",
     "Point",
@@ -81,4 +103,15 @@ __all__ = [
     "DiagramReconciler",
     "reconcile_diagram",
     "dump_diagram_yaml",
+    "WatcherEvent",
+    "PPTXWatcher",
+    "watch_diagram",
+    "VisualizationPod",
+    "ThemeCluster",
+    "ConsolidationReport",
+    "validate_bundle_headers",
+    "scan_stray_visualizations",
+    "cluster_and_rank_pods",
+    "consolidate_stray_visualizations",
 ]
+

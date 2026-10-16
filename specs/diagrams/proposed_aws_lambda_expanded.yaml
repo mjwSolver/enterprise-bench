@@ -1,0 +1,457 @@
+id: "proposed_aws_lambda_expanded"
+name: "Proposed: AWS Lambda & Databricks (Expanded Architecture)"
+theme: "metrodata"
+
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: "in"
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+
+header:
+  show: true
+  action_title: "Proposed: AWS Lambda & Databricks (Expanded Architecture)"
+  subtitle: "Client Hardware Whitelist Verification, Event-Driven Serverless Compute & Lakehouse Persistence"
+  y: 0.28
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+
+containers:
+  - id: "group_user"
+    label: "USER ORIGIN"
+    x: 0.45
+    y: 1.35
+    w: 1.60
+    h: 5.87
+    border_hex: "#94A3B8"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "center"
+    vertical_align: "bottom"
+
+  - id: "group_device"
+    label: "LOCAL DEVICE"
+    x: 2.70
+    y: 1.35
+    w: 4.45
+    h: 5.87
+    border_hex: "#64748B"
+    fill_hex: "#F8FAFC"
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "left"
+    vertical_align: "bottom"
+
+  - id: "group_safe_checker"
+    label: ""
+    x: 4.35
+    y: 1.72
+    w: 2.65
+    h: 5.34
+    border_hex: "#0284C7"
+    fill_hex: "#FFFFFF"
+    fill_opacity: 1.0
+    stroke_width: 2.0
+    dashed: false
+    align: "center"
+    vertical_align: "top"
+    corner_radius: 12.0
+
+  - id: "group_aws"
+    label: "AWS CLOUD"
+    x: 9.75
+    y: 1.35
+    w: 3.35
+    h: 4.05
+    border_hex: "#F59E0B"
+    fill_hex: "#FFFBEB"
+    fill_opacity: 0.35
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: "8 6"
+    align: "left"
+    vertical_align: "bottom"
+
+nodes:
+  - id: "node_user"
+    container_id: "group_user"
+    title: "User"
+    subtitle: "Operator / Client"
+    shape: "rounded"
+    x: 0.58
+    y: 1.86
+    w: 1.34
+    h: 1.55
+    icon: "assets/icons/lucide/users_2563EB.svg"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_user_roles"
+    container_id: "group_user"
+    title: "EXAMPLE USERS"
+    subtitle: "• Security\n• Finance\n• Fraud\n• etc."
+    shape: "rounded"
+    x: 0.58
+    y: 3.65
+    w: 1.34
+    h: 1.85
+    stroke_hex: "#CBD5E1"
+    fill_hex: "#FFFFFF"
+    stroke_width: 1.5
+    title_pt: 10.0
+    align: "left"
+    valign: "top"
+
+  - id: "node_exe"
+    container_id: "group_device"
+    title: "EXE"
+    subtitle: "Client Executable\nSupports multiple types\n(recon_tool, audit)"
+    shape: "rounded"
+    x: 2.85
+    y: 1.86
+    w: 1.05
+    h: 1.88
+    icon: "assets/icons/lucide/cpu_0052CC.svg"
+    stroke_hex: "#3B82F6"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.0
+
+  - id: "node_safe_header"
+    container_id: "group_safe_checker"
+    title: "Safe Checker"
+    subtitle: "Pre-Run Whitelist Verifier"
+    shape: "rounded"
+    x: 4.52
+    y: 1.86
+    w: 2.20
+    h: 0.52
+    icon: "assets/icons/lucide/shield_0052CC.svg"
+    icon_layout: "side"
+    title_pt: 10.0
+    stroke_hex: "#BAE6FD"
+    fill_hex: "#E0F2FE"
+    stroke_width: 1.0
+    title_color: "#0369A1"
+    subtitle_color: "#64748B"
+
+  - id: "node_step_connect"
+    container_id: "group_safe_checker"
+    title: "• Connect to API Gateway"
+    shape: "rounded"
+    x: 4.52
+    y: 2.59
+    w: 2.20
+    h: 0.36
+    stroke_hex: "#E2E8F0"
+    fill_hex: "#F8FAFC"
+    stroke_width: 1.0
+    title_pt: 9.5
+    title_color: "#0F172A"
+
+  - id: "node_step_mac"
+    container_id: "group_safe_checker"
+    title: "• Get MAC Addresses"
+    shape: "rounded"
+    x: 4.52
+    y: 3.16
+    w: 2.20
+    h: 0.36
+    stroke_hex: "#E2E8F0"
+    fill_hex: "#F8FAFC"
+    stroke_width: 1.0
+    title_pt: 9.5
+    title_color: "#0F172A"
+
+  - id: "node_step_send_api"
+    container_id: "group_safe_checker"
+    title: "Send REST Request to API Gateway"
+    subtitle: "Payload: MAC + Client Identity"
+    shape: "rounded"
+    x: 4.52
+    y: 3.73
+    w: 2.20
+    h: 0.68
+    stroke_hex: "#7C3AED"
+    fill_hex: "#F5F3FF"
+    stroke_width: 1.5
+    title_pt: 9.5
+    title_color: "#6D28D9"
+    subtitle_color: "#7C3AED"
+
+  - id: "node_step_receive"
+    container_id: "group_safe_checker"
+    title: "Receive Status"
+    subtitle: "Response: Allowed / Denied"
+    shape: "rounded"
+    x: 4.52
+    y: 4.62
+    w: 2.20
+    h: 0.54
+    stroke_hex: "#F59E0B"
+    fill_hex: "#FFFBEB"
+    stroke_width: 1.5
+    title_pt: 9.5
+    title_color: "#B45309"
+    subtitle_color: "#D97706"
+
+  - id: "node_allowed"
+    container_id: "group_safe_checker"
+    title: "Continue"
+    subtitle: "Resume client\nexecution"
+    kicker: "ALLOWED"
+    shape: "rounded"
+    x: 4.55
+    y: 5.40
+    w: 0.98
+    h: 1.50
+    icon: "assets/icons/lucide/check-circle_10B981.svg"
+    stroke_hex: "#16A34A"
+    fill_hex: "#F0FDF4"
+    stroke_width: 1.5
+    title_pt: 9.5
+    title_color: "#16A34A"
+    subtitle_color: "#166534"
+    valign: "top"
+
+  - id: "node_not_allowed"
+    container_id: "group_safe_checker"
+    title: "Stopped"
+    subtitle: "Execution\nAborted"
+    kicker: "NOT ALLOWED"
+    shape: "rounded"
+    x: 5.80
+    y: 5.40
+    w: 0.98
+    h: 1.50
+    icon: "assets/icons/lucide/shield-alert.svg"
+    stroke_hex: "#DC2626"
+    fill_hex: "#FEF2F2"
+    stroke_width: 1.5
+    title_pt: 9.5
+    title_color: "#DC2626"
+    subtitle_color: "#991B1B"
+    valign: "top"
+
+  - id: "node_api_gw"
+    title: "API Gateway"
+    subtitle: "HTTP / REST Ingress\n& Response Delivery"
+    kicker: "API GATEWAY"
+    shape: "rounded"
+    x: 7.90
+    y: 2.20
+    w: 1.10
+    h: 2.80
+    icon: "assets/logos/aws/aws_api_gateway.svg"
+    stroke_hex: "#8B5CF6"
+    fill_hex: "#F5F3FF"
+    stroke_width: 2.0
+    title_pt: 12.0
+    title_color: "#6D28D9"
+    subtitle_color: "#475569"
+
+  - id: "node_code"
+    container_id: "group_aws"
+    title: "Code"
+    subtitle: "DEPLOYED"
+    shape: "rounded"
+    x: 9.95
+    y: 1.85
+    w: 1.40
+    h: 1.30
+    stroke_hex: "#10B981"
+    fill_hex: "#ECFDF5"
+    stroke_width: 1.8
+    title_pt: 12.0
+    title_color: "#047857"
+    subtitle_color: "#065F46"
+
+  - id: "node_secrets"
+    container_id: "group_aws"
+    title: "Secrets"
+    subtitle: "KMS / Manager"
+    kicker: "SECURITY"
+    shape: "rounded"
+    x: 11.55
+    y: 1.85
+    w: 1.40
+    h: 1.30
+    icon: "assets/logos/aws/aws_secrets_manager.svg"
+    stroke_hex: "#EF4444"
+    fill_hex: "#FEF2F2"
+    stroke_width: 2.0
+    title_pt: 12.0
+    title_color: "#DC2626"
+    subtitle_color: "#991B1B"
+
+  - id: "node_lambda"
+    container_id: "group_aws"
+    title: "AWS Lambda"
+    subtitle: "(Aws Lamda)\nServerless Compute"
+    shape: "rounded"
+    x: 9.95
+    y: 3.55
+    w: 3.00
+    h: 1.35
+    icon: "assets/logos/aws/aws_lambda.svg"
+    stroke_hex: "#D97706"
+    fill_hex: "#FFFFFF"
+    stroke_width: 2.5
+    title_pt: 12.0
+    title_color: "#B45309"
+    subtitle_color: "#475569"
+
+  - id: "node_dbx"
+    title: "DBX"
+    subtitle: "Databricks / DB"
+    shape: "cylinder"
+    is_cylinder: true
+    x: 10.55
+    y: 5.65
+    w: 1.80
+    h: 1.40
+    icon: "assets/logos/databricks/databricks.svg"
+    stroke_hex: "#0284C7"
+    fill_hex: "#F0F9FF"
+    stroke_width: 2.0
+    title_pt: 12.0
+    title_color: "#0369A1"
+    subtitle_color: "#0284C7"
+
+flows:
+  - id: "flow_user_to_exe"
+    source: "node_user"
+    target: "node_exe"
+    points:
+      - [1.92, 2.635]
+      - [2.85, 2.635]
+    label: "1. Trigger"
+    label_at: [2.38, 2.40]
+    font_pt: 7.5
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1D4ED8"
+
+  - id: "flow_exe_to_safe"
+    source: "node_exe"
+    target: "group_safe_checker"
+    points:
+      - [3.90, 2.635]
+      - [4.35, 2.635]
+    stroke_hex: "#2563EB"
+    stroke_width: 2.5
+
+  - id: "flow_send_api"
+    source: "node_step_send_api"
+    target: "node_api_gw"
+    points:
+      - [6.72, 4.07]
+      - [7.90, 4.07]
+    label: "2. REST Request"
+    label_at: [7.31, 3.87]
+    font_pt: 7.5
+    stroke_hex: "#7C3AED"
+    stroke_width: 2.5
+    label_bg_hex: "#F5F3FF"
+    label_text_hex: "#6D28D9"
+
+  - id: "flow_invoke"
+    source: "node_api_gw"
+    target: "node_lambda"
+    points:
+      - [9.00, 3.85]
+      - [9.95, 3.85]
+    label: "3. Invoke"
+    label_at: [9.47, 3.65]
+    font_pt: 7.5
+    stroke_hex: "#7C3AED"
+    stroke_width: 2.5
+    label_bg_hex: "#F5F3FF"
+    label_text_hex: "#6D28D9"
+
+  - id: "flow_code_deploy"
+    source: "node_code"
+    target: "node_lambda"
+    points:
+      - [10.65, 3.15]
+      - [10.65, 3.55]
+    stroke_hex: "#10B981"
+    stroke_width: 2.2
+
+  - id: "flow_secrets"
+    source: "node_secrets"
+    target: "node_lambda"
+    points:
+      - [12.25, 3.15]
+      - [12.25, 3.55]
+    label: "4. Secrets"
+    label_at: [12.25, 3.35]
+    font_pt: 7.5
+    dashed: true
+    stroke_hex: "#EF4444"
+    stroke_width: 2.0
+    label_bg_hex: "#FEF2F2"
+    label_text_hex: "#991B1B"
+
+  - id: "flow_dbx_query"
+    source: "node_lambda"
+    target: "node_dbx"
+    points:
+      - [11.45, 4.90]
+      - [11.45, 5.65]
+    label: "5. DBX Query"
+    label_at: [11.45, 5.27]
+    font_pt: 7.5
+    stroke_hex: "#0284C7"
+    stroke_width: 2.2
+    label_bg_hex: "#F0F9FF"
+    label_text_hex: "#0369A1"
+
+  - id: "flow_deliver"
+    source: "node_lambda"
+    target: "node_api_gw"
+    points:
+      - [9.95, 4.45]
+      - [9.00, 4.45]
+    label: "6. Deliver"
+    label_at: [9.47, 4.67]
+    font_pt: 7.5
+    stroke_hex: "#7C3AED"
+    stroke_width: 2.5
+    label_bg_hex: "#F5F3FF"
+    label_text_hex: "#6D28D9"
+
+  - id: "flow_return_status"
+    source: "node_api_gw"
+    target: "node_step_receive"
+    points:
+      - [7.90, 4.89]
+      - [6.72, 4.89]
+    label: "7. Return Status"
+    label_at: [7.31, 5.09]
+    font_pt: 7.5
+    stroke_hex: "#059669"
+    stroke_width: 2.5
+    label_bg_hex: "#ECFDF5"
+    label_text_hex: "#047857"
+
+badges:
+  - id: "divider_eval"
+    text: "• If / Else Evaluation:"
+    x: 4.52
+    y: 5.20
+    w: 2.20
+    h: 0.18
+    font_pt: 8.5
+    text_hex: "#475569"
+    bg_hex: "#FFFFFF"
+    border_hex: "#FFFFFF"
