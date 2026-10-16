@@ -38,6 +38,7 @@
 
 ## 3. Recently Completed Milestones (Archived from Active Queue)
 
+- **In-Flight System Verification & Corridor Geometry Standard (`IN_FLIGHT_VERIFICATION_AND_CORRIDOR_GEOMETRY`)** — Completed • Verified (Milestone 41). Spec: [`docs/specs/in_flight_verification_and_corridor_geometry.md`](docs/specs/in_flight_verification_and_corridor_geometry.md).
 - **Autonomous PPTX File Watcher & Reverse Geometric Sync (`bench diagram v2 watch`)** — Completed • Verified (Milestone 40). Spec: [`docs/specs/pptx_file_watcher_and_geometric_reconciliation.md`](docs/specs/pptx_file_watcher_and_geometric_reconciliation.md).
 - **Typographic Scale & Font Size Consistency Checker (`TYPOGRAPHIC_SCALE_DRIFT`)** — Completed • Verified (Milestone 39). Check #14. Spec: [`docs/backlog/typographic_scale_consistency_checker.md`](docs/backlog/typographic_scale_consistency_checker.md).
 - **Elastic Typography Auto-Fill for Execution Cards (`ELASTIC_TYPOGRAPHY_AUTOFILL`)** — Completed • Verified (Milestone 39). Check #15. Spec: [`docs/backlog/elastic_typography_autofill.md`](docs/backlog/elastic_typography_autofill.md).

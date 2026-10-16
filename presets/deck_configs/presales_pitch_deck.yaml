@@ -661,7 +661,7 @@ slides:
     tracker: "ANALYTICS APPLICATION | STREAMLIT CONSUMPTION"
     title: "Modern Streamlit Application Empowers Finance Teams with Self-Service Analytics"
     subtitle: "Interactive financial explorer directly connected to Snowflake Gold marts with automated scenario modeling."
-    url: "https://finance-analytics.tsusho.local/streamlit/margin-explorer"
+    url: "https://finance-analytics.enterprise-bench.local/streamlit/margin-explorer"
     telemetry_badges:
       - "⚡ Direct Query to Snowflake Gold"
       - "🔒 Role-Based Dynamic Masking Active"
@@ -773,7 +773,7 @@ slides:
     tracker: "ENGAGEMENT ASSUMPTIONS | REVENUE & SALES"
     title: "Financial Scoping Aligned with Target Data Entities and Calculation Logic"
     subtitle: "Standardized transactional scoping covers domestic sales, export orders, and gross profit reconciliation."
-    url: "https://finance-analytics.tsusho.local/streamlit/sales-scoping"
+    url: "https://finance-analytics.enterprise-bench.local/streamlit/sales-scoping"
     telemetry_badges:
       - "📋 Entity: Sales & Gross Margin"
       - "🔄 Daily Automated Reconciliation"
@@ -795,7 +795,7 @@ slides:
     tracker: "ENGAGEMENT ASSUMPTIONS | OPEX & EXPENSE ALLOCATION"
     title: "Operating Expense Modeling Aligned with Group Cost Center Hierarchy"
     subtitle: "Standardized expense allocation logic mapping GL accounts, departmental cost centers, and net margins."
-    url: "https://finance-analytics.tsusho.local/streamlit/opex-scoping"
+    url: "https://finance-analytics.enterprise-bench.local/streamlit/opex-scoping"
     telemetry_badges:
       - "📋 Entity: Operating Expenses (Opex)"
       - "🏛️ Cost Center Mapping: 42 Centers"
@@ -886,7 +886,7 @@ slides:
         tag: "LOCATION"
         icon: "building-2"
       - title: "Consulting Practice Contact"
-        body: "Email: contact@mii.co.id  |  Phone: +62 21 29345 777  |  Web: www.metrodata.co.id"
+        body: "Email: contact@enterprise-bench.local  |  Phone: +62 21 555 0199  |  Web: https://enterprise-bench.local"
         tag: "INQUIRIES"
         icon: "users"
       - title: "Engagement Leadership"
@@ -894,6 +894,6 @@ slides:
         tag: "LEADERSHIP"
         icon: "target"
       - title: "Confidentiality & Compliance"
-        body: "This presentation contains proprietary methodologies of PT Metrodata Electronics Tbk and PT Mitra Integrasi Informatika."
+        body: "This presentation contains proprietary enterprise consulting methodologies and delivery frameworks."
         tag: "LEGAL"
         icon: "shield"

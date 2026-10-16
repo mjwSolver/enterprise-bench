@@ -4,6 +4,32 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-10-17] - Milestone 41: System-Wide Hardening, Real-World Flight Test & In-Flight Verification Standards (Tier 29)
+
+**Timestamp:** `2026-10-17T02:00:00+07:00`
+
+### Summary
+Delivered the comprehensive **System-Wide Hardening, Real-World Flight Test & In-Flight Verification Standards** release (Milestone 41 / Tier 29) spanning multi-wave static hardening across `src/cli/`, `src/core/`, `src/core/delivery/`, `src/docx_engine/`, `src/ppt_engine/`, and `src/xlsx_engine/`. Executed a complete real-world in-flight PowerPoint flight test via `specs/diagrams/e2e_live_system_flight_test.yaml` that intercepted and auto-remediated live spatial collisions and constructor keyword exceptions. Codified the permanent architectural specification `docs/specs/in_flight_verification_and_corridor_geometry.md` defining the Corridor Half-Span Minimum Invariant ($L_{\text{segment}} \ge W_{\text{pill}} + 2 \times \text{Halo}$), Postel's Law constructor aliasing, deep PKZip central directory validation, and the cognitive subagent in-flight verification delegation contract.
+
+### Milestones Delivered
+- **Multi-Wave Static Code Hardening & Optimization (`src/`):**
+  - *Atomic Lock Acquisition (`src/core/delivery/locks.py`):* Replaced non-atomic file presence checks with kernel-level `os.open(..., os.O_CREAT | os.O_EXCL | os.O_WRONLY)` to eliminate TOCTOU race conditions; enforced strict traversal token sanitization on usernames.
+  - *Schema-Valid OpenXML Overlays & Atomic Saves (`src/core/delivery/overlays.py`):* Enforced schema-valid sequence ordering when clearing or inserting `<a:effectLst>` to eliminate repair dialogs; added atomic `os.replace` write cascades.
+  - *Deep PKZip Structural Integrity Gate (`src/core/delivery/staging.py`):* Upgraded Gate 4 (`ZERO_BYTE_CORRUPTION_GUARD`) from file-size checks to deep PKZip CRC validation via `zipfile.testzip()`; integrated Python 3.11+ kernel-level `hashlib.file_digest`.
+  - *Localization Engine Optimization (`src/core/locale_engine.py`):* Replaced $O(N)$ linear dictionary scans with precomputed inverted mappings (`_reverse_glossary`) for $O(1)$ glossary lookups; added dot-notation keypath memoization and precompiled regex replacement rules.
+  - *Consulting Presentation Postel's Law Absorption (`src/ppt_engine/consulting_archetypes.py`, `src/cli/ppt.py`):* Added `__post_init__` alias absorption to `ScorecardQuadrantData` mapping `title` to `quadrant_title` seamlessly with default `tagline = ""`; standardized diagnostic status pills (`ON TRACK`, `EXCEEDED`, `MONITORED`, `PASSED`).
+  - *Cross-Compiler Geometry & Typography Guards (`src/ppt_engine/diagram_v2/`):* Fixed fallback `KeyError: 'T2'` to canonical `"Tier B"` in `pptx_compiler.py`; guarded unhandled `NoneType` in font formatting strings in `svg_compiler.py`; precompiled port regexes in `geometry.py`.
+- **Real-World In-Flight Stress Test & Remediation (`specs/diagrams/e2e_live_system_flight_test.yaml`):**
+  - Created end-to-end multi-tier test topology exercising `DeckHeaderContract`, macro swimlanes with bottom-edge labels ($0.55''$ headroom), 3D database cylinders, elastic typography execution cards, and multi-segment routed flows.
+  - Intercepted and patched `FLOW_LABEL_NODE_COLLISION` on `flow_iot_to_kafka` by widening elbow span to $x=3.35''$ and centering pill at $x=2.78''$ ($>10\text{px}$ clearance).
+  - Verified 4-format compilation (`.drawio`, `.svg`, `.png`, `.pptx`), bidirectional AST reconciliation (`reconcile --dry-run`), consulting presentation generation, and strict stage-gate preflight (15/15 checks PASSED cleanly).
+- **Formal Architectural Standards & Subagent Delegation (`docs/specs/in_flight_verification_and_corridor_geometry.md`):**
+  - Formalized the Corridor Half-Span Minimum Invariant: $L_{\text{segment}} \ge W_{\text{pill}} + 2 \times \text{Clearance Halo}$ ($\text{Halo} \ge 14\text{pt} \approx 18.7\text{px}$).
+  - Codified the Subagent In-Flight Smoke Pass prompt contract, offloading heavy multi-format compilation and spatial linting from primary drafting agents to a dedicated `Role="In-Flight Verification Scout"` subagent.
+- **Reference Handover:** [`docs/handovers/2026-10-17_system_wide_hardening_and_in_flight_flight_test.md`](handovers/2026-10-17_system_wide_hardening_and_in_flight_flight_test.md)
+
+---
+
 ## [2026-10-17] - Milestone 40: Multi-Subsystem Defect Remediation & Coordinate Parity (Tier 28)
 
 **Timestamp:** `2026-10-17T00:25:00+07:00`

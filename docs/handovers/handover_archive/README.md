@@ -29,6 +29,7 @@
 | **2026-10-13** | Milestone 29 | [`2026-10-13_diagram_pipeline_and_asset_integration.md`](2026-10-13_diagram_pipeline_and_asset_integration.md) | Diagram pipeline and asset integration Phases 1–4, deterministic asset harvester and resolver CLI, Databricks/Cloudera/AWS stencils, hybrid editable `.drawio.svg` parity, and native PowerPoint DrawingML shape compiler. |
 | **2026-10-14** | Milestone 30 | [`2026-10-14_visual_qa_and_drawingml_collision_remediation.md`](2026-10-14_visual_qa_and_drawingml_collision_remediation.md) | DrawingML spatial collision linter, macOS live window screen capture, forward arrowhead orientation, card text overflow fixes, cylinder text clearance, and `bench ppt visual-qa` CLI. |
 | **2026-10-14** | Milestone 31 | [`2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`](2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md) | Flat DrawingML aesthetic standardization via `_flatten`, proportional padding engine `_plan_card`, Databricks 3D cylinder body alignment, single polyline routing, collinear boundary auditing. |
+| **2026-10-14** | Milestone 32 | [`2026-10-14_cdsw_to_lambda_architecture_evolution.md`](2026-10-14_cdsw_to_lambda_architecture_evolution.md) | Milestone 32 closeout (CDSW-to-Lambda architecture evolution presentation suite in `architecture_evolution_cdsw_to_lambda.pptx`, decoupled flow routing topology, Databricks 3D cylinder visual parity, Gear 2/3 high-density consulting archetypes, and Diagnostic Status Triad). |
 
 
 ---

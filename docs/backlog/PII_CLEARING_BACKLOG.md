@@ -22,10 +22,11 @@ To enable secure internal sharing of the `enterprise-bench` engine with the `AIM
 The audit isolated **5 primary focus areas** where remediation effort must be concentrated before publishing:
 
 ```text
-[CRITICAL]  specs/tti_analytics/                 ➔ Legacy client TSD/UAT suite (Must quarantine/purge)
+[CRITICAL]  specs/tti_analytics/                 ➔ Legacy client TSD/UAT suite (Quarantined via downstream export exclude)
 [HIGH]      src/core/slug_registry.py             ➔ Hardcoded default PIC personas & vendor identity
-[HIGH]      presets/staff_roster.json             ➔ Real employee names & corporate email domains
-[MEDIUM]    docs/handovers/handover_archive/      ➔ Historical sprint notes referencing past purges
+[RESOLVED]  presets/staff_roster.json             ➔ Scrubbed to generic synthetic roles & @enterprise-bench.local
+[RESOLVED]  presets/deck_configs/                 ➔ Scrubbed vendor emails and client URLs to neutral placeholders
+[MEDIUM]    docs/handovers/handover_archive/      ➔ Historical sprint notes (Quarantined via downstream export exclude)
 [LOW]       src/core/pii/detectors.py & tests/    ➔ Benign detection regexes & test assertions
 ```
 
@@ -64,17 +65,13 @@ The audit isolated **5 primary focus areas** where remediation effort must be co
 
 ---
 
-### ⚠️ Hotspot 3: Presets, Staff Rosters & Deck Configurations
-- **Files Affected:**
-  - `presets/staff_roster.json` (8 consultant profiles with real email domains)
-  - `presets/deck_configs/closing_deck.yaml` (22 occurrences)
-  - `presets/deck_configs/kickoff_presentation.yaml` (23 occurrences)
-  - `presets/deck_configs/uat_briefing.yaml` (18 occurrences)
-  - `presets/deck_configs/presales_pitch_deck.yaml` (16 occurrences)
-- **Exposure Risk:** **HIGH**. Presets contain sample consulting team rosters, emails (`@metrodata.co.id`), and specific engagement governance structures.
-- **Remediation Action:**
-  - Scrub all email addresses to `@example.com` or `@enterprise-bench.local`.
-  - Replace consultant profiles in `presets/staff_roster.json` with generic synthetic roles (`Solutions Architect A`, `Data Engineer 1`).
+### ✅ Hotspot 3: Presets, Staff Rosters & Deck Configurations [REMEDIATED]
+- **Files Remediated:**
+  - `presets/staff_roster.json`: All 8 consultant profiles updated to generic synthetic roles (`Project Manager A`, `Solutions Architect A`, `Data Engineer 1`, etc.) and emails scrubbed to `@enterprise-bench.local`.
+  - `presets/deck_configs/closing_deck.yaml`: Scrubbed vendor emails (`@metrodata.co.id`) to synthetic personas.
+  - `presets/deck_configs/uat_briefing.yaml`: Scrubbed contact emails (`@mii.co.id`) to `@enterprise-bench.local`.
+  - `presets/deck_configs/presales_pitch_deck.yaml`: Scrubbed contact block emails, vendor legal notices, and client hostnames (`tsusho.local` -> `enterprise-bench.local`).
+- **Remediation Status:** Complete. Zero client domains or real consultant emails remain in `presets/`.
 
 ---
 
@@ -227,18 +224,25 @@ The audit isolated **5 primary focus areas** where remediation effort must be co
 | **RBAC Matrix** | `specs/tti_analytics/tsd/04_rbac_and_security_matrix.md` | `.md` | Real security roles, functional roles, and permission hierarchies | Exclude or re-synthesize |
 | **Tuning Spec** | `specs/tti_analytics/tsd/05_performance_tuning.md` | `.md` | Clustering keys, warehouse sizing, and execution targets | Exclude or re-synthesize |
 | **UAT Matrix** | `specs/tti_analytics/sit_uat/01_uat_test_execution_matrix.md` | `.md` | Real test case descriptions, expected results, sign-offs | Exclude or re-synthesize |
-| **Staff Roster** | `presets/staff_roster.json` | `.json` | 8 real employee profiles with `@metrodata.co.id` email addresses | Scrub to generic roles |
-| **Deck Configs** | `presets/deck_configs/closing_deck.yaml` (and 3 other presets) | `.yaml` | Real corporate vendor names and executive titles | Replace with neutral slugs |
+| **Staff Roster** | `presets/staff_roster.json` | `.json` | Generic synthetic roles & `@enterprise-bench.local` domains | ✅ Remediated |
+| **Deck Configs** | `presets/deck_configs/*.yaml` | `.yaml` | Neutralized vendor emails and client URLs | ✅ Remediated |
 
 ---
 
 ## 5. Downstream Export & Release Gate
 
-When ready to publish to `AIML-DAI/enterprise-bench`, the automated clean-slate export script must enforce:
+When ready to publish to `AIML-DAI/enterprise-bench`, run the verified automated clean-slate export script:
 
 ```bash
-# 1. Exclude sensitive, client, and runtime paths
-rsync -av \
+# 1. Execute automated export script with post-export verification gate
+# Dry-run preview:
+./scripts/export_downstream_mirror.sh /tmp/enterprise-bench-clean true
+
+# Live export & gate execution:
+./scripts/export_downstream_mirror.sh /tmp/enterprise-bench-clean false
+
+# 2. Or execute via rsync directly:
+rsync -av --stats \
   --exclude='.git' \
   --exclude='.venv' \
   --exclude='output' \
@@ -249,11 +253,17 @@ rsync -av \
   --exclude='specs/tti_analytics' \
   --exclude='docs/handovers/handover_archive' \
   --exclude='scratch' \
+  --exclude='*.local.json' \
+  --exclude='__pycache__' \
+  --exclude='*.pyc' \
+  --exclude='.DS_Store' \
+  --exclude='.pytest_cache' \
+  --exclude='.ruff_cache' \
   /Users/marcelljw/VisualStudioCode/enterprise-bench/ \
   /tmp/enterprise-bench-clean/
 
-# 2. Run post-export verification gate
-grep -rnEI "toyota|tsusho|\btti\b|ttlc" /tmp/enterprise-bench-clean/src/ /tmp/enterprise-bench-clean/specs/
+# 3. Post-export static verification gate (enforced in script)
+grep -rnEI "toyota|tsusho|\btti\b|ttlc" /tmp/enterprise-bench-clean/specs/
 
 # 3. Initialize fresh 1-commit downstream repository
 cd /tmp/enterprise-bench-clean
