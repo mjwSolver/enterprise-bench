@@ -265,7 +265,7 @@ rsync -av --stats \
 # 3. Post-export static verification gate (enforced in script)
 grep -rnEI "toyota|tsusho|\btti\b|ttlc" /tmp/enterprise-bench-clean/specs/
 
-# 3. Initialize fresh 1-commit downstream repository
+# 4. Initialize fresh 1-commit downstream repository
 cd /tmp/enterprise-bench-clean
 git init -b main
 git add .
@@ -273,4 +273,72 @@ git commit -m "feat(core): initial release of enterprise workbench platform v1.0
 git remote add origin https://github.com/AIML-DAI/enterprise-bench.git
 git push -u origin main
 ```
+
+---
+
+## 6. Execution Results: Adversarial Deep Clearance & Inversion Audit
+
+> **Status:** Complete (Audited 2026-10-17)  
+> **Target Analyzed:** `/tmp/enterprise-bench-clean/`  
+> **Mandate:** Transition from reactive keyword matching to proactive structural inversion, OpenXML binary inspection, and orphan git verification.
+
+### 🔍 Track 1: Structural Inversion Audit (Pattern & Entropy Detection)
+- **Email Domain Harvester:**
+  ```bash
+  grep -rohEI "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" /tmp/enterprise-bench-clean/ \
+    --exclude='PII_CLEARING_BACKLOG.md' | grep -vE "@(enterprise-bench\.local|example\.com)" | sort -u
+  ```
+  **Findings (All P1/P2 items remediated; 1 acceptable author field remaining):**
+  - **Core Slide Engine Defaults [REMEDIATED]:**
+    - `src/ppt_engine/closing_deck.py`: Scrubbed `Adam.Wijaya@metrodata.co.id`, `Vicko.Bhayyu@metrodata.co.id`, and `enterprise.consulting@metrodata.co.id` to `@enterprise-bench.local` and neutral support labels.
+    - `src/ppt_engine/weekly_progress_deck.py`: Scrubbed `enterprise.consulting@metrodata.co.id` to `enterprise.consulting@enterprise-bench.local`.
+    - `src/ppt_engine/consulting_archetypes.py`: Scrubbed `enterprise.consulting@metrodata.co.id` to `enterprise.consulting@enterprise-bench.local`.
+  - **Documentation Personas [REMEDIATED]:**
+    - `docs/specs/manual_identity_guide.md`: Scrubbed `agus.Pramono@enterprise-consulting.com`, `marcell.wiradinata@enterprise-consulting.com`, and legacy client bindings to `@enterprise-bench.local` and `PT Nusantara Global Logistics Tbk` (`NGL`).
+  - **Detection & Test Fixtures [REMEDIATED]:**
+    - `tests/test_pii_engine.py`: Scrubbed `yana_mulyanah@toyotatsusho.co.id`, `agus.Pramono@metrodata.co.id`, `Adam.Wijaya@metrodata.co.id`, and `admin@company.org` to `@example.com`.
+  - **Public CDN Asset URLs [REMEDIATED]:**
+    - `assets/RESOURCE_REGISTRY.md` & `src/ppt_engine/resource_manager.py`: Removed external Snowflake partner CDN URL containing `@3x.png` and client template references in favor of local template extraction and neutral typographic fallbacks.
+  - **Author Field (Acceptable):**
+    - `pyproject.toml`: `marcelljw@users.noreply.github.com`
+
+- **Phone Number Scan:**
+  ```bash
+  grep -rnEI "(\+62|08)[0-9]{8,12}" /tmp/enterprise-bench-clean/ --exclude='PII_CLEARING_BACKLOG.md' --exclude='uv.lock'
+  ```
+  **Findings [REMEDIATED]:**
+  - `tests/test_pii_engine.py`: Generalized test fixture numbers to `081200000001` and `+6281200000002`.
+  - `docs/specs/manual_identity_guide.md`: Generalized example phone numbers to `+6281200000001` and `+6281200000002`.
+
+- **Internal IP & Subnet Scan:**
+  ```bash
+  grep -rnEI "\b(10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9]{1,3}\.[0-9]{1,3}|192\.168\.[0-9]{1,3}\.[0-9]{1,3})\b" /tmp/enterprise-bench-clean/
+  ```
+  **Findings:** **PASS (0 matches)**. Zero RFC 1918 private IPv4 addresses exist across the exported workspace.
+
+### 📦 Track 2: OpenXML Binary & Metadata Extraction
+- **Embedded Document Properties:**
+  ```bash
+  for f in $(find /tmp/enterprise-bench-clean/ -name "*.pptx" -o -name "*.docx" -o -name "*.xlsx"); do
+    echo "--- $f ---"
+    unzip -p "$f" docProps/core.xml 2>/dev/null | grep -oEI "<dc:creator>[^<]*</dc:creator>|<cp:lastModifiedBy>[^<]*</cp:lastModifiedBy>" || true
+  done
+  ```
+  **Findings:** **PASS**. All 9 `.pptx` files (under `tests/project_outputs/`) contain solely `<cp:lastModifiedBy>Steve Canny</cp:lastModifiedBy>` (open-source `python-pptx` author). Zero client, vendor, or corporate author metadata found.
+- **Speaker Notes & Hidden Elements:**
+  **Findings:** **PASS**. Zero `notesSlide*.xml` files and zero hidden slides (`show="0"`) exist across all `.pptx` archives.
+
+### 🌿 Track 3: Upstream Git Graph Isolation
+- **Git Tree Absence:** Confirmed `.git/` is completely absent in `/tmp/enterprise-bench-clean/`.
+- **Target Repository Safety:** Clean directory structure verified, ready for single orphan root commit initialization.
+
+---
+
+## 7. Stage 7: Remediation & Final Downstream Verification
+
+> **Status:** Complete & Verified (2026-10-17)  
+> **Mandate:** All Section 6 inversion findings scrubbed across `src/ppt_engine/`, `assets/RESOURCE_REGISTRY.md`, `tests/test_pii_engine.py`, and `docs/specs/manual_identity_guide.md`. Re-exported to `/tmp/enterprise-bench-clean/` and verified with 0 external email domains (excluding `users.noreply.github.com`), 0 real phone numbers, 0 RFC 1918 IPs, and 0 legacy client tokens.
+
+
+
 

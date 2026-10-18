@@ -5558,7 +5558,7 @@ def build_thank_you_slide(
         cp2.space_before = Pt(3)
 
         cp3 = ctf.add_paragraph()
-        cp3.text = "Official Support Channel: enterprise.consulting@metrodata.co.id"
+        cp3.text = "Official Support Channel: enterprise.consulting@enterprise-bench.local"
         cp3.font.name = theme.font_family
         cp3.font.size = Pt(11.0)
         cp3.font.color.rgb = theme.get_rgb("secondary")

@@ -9,14 +9,14 @@
 
 | Resource Key | Target Path (Gitignored) | Format & Resolution | Canonical Source / Download URL | Fallback / Local Extraction |
 | :--- | :--- | :--- | :--- | :--- |
-| `logo_metrodata_square` | `assets/images/logos/metrodata_square.png` | PNG (592×517, RGBA) | `https://www.snowflake.com/content/dam/snowflake-site/general/logos/partner-logos/pt-metrodata-electronics-tbk@3x.png` | Extract `ppt/media/image97.png` from `clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx` |
+| `logo_metrodata_square` | `assets/images/logos/metrodata_square.png` | PNG (592×517, RGBA) | Local Gitignored Asset (`assets/images/logos/`) | Extract `ppt/media/image97.png` from master pitch deck template |
 | `logo_snowflake` | `assets/logos/snowflake.svg` | SVG (Vector, 24×24 viewBox) | Tracked in Git under `assets/logos/` | Official Snowflake Brand Portal |
 | `logo_aws` | `assets/logos/aws.svg` | SVG (Vector, 24×24 viewBox) | Tracked in Git under `assets/logos/` | Official AWS Brand Portal |
 | `logo_kafka` | `assets/logos/kafka.svg` | SVG (Vector, 24×24 viewBox) | Tracked in Git under `assets/logos/` | Official Apache Software Foundation |
 | `logo_dbt` | `assets/logos/dbt.svg` | SVG (Vector, 24×24 viewBox) | Tracked in Git under `assets/logos/` | Official dbt Labs Brand Assets |
 | `logo_vault` | `assets/logos/vault.svg` | SVG (Vector, 24×24 viewBox) | Tracked in Git under `assets/logos/` | HashiCorp Brand Portal |
 
-> *Note on Partner Branding:* Metrodata's authentic corporate logo is `logo_metrodata_square` (`assets/images/logos/metrodata_square.png`). The previously extracted `image95.png` was client logo Toyota Tsusho Indonesia mislabeled as Metrodata and has been purged.
+> *Note on Partner Branding:* The advisory partner corporate logo is `logo_metrodata_square` (`assets/images/logos/metrodata_square.png`).
 
 ---
 
@@ -28,14 +28,10 @@ For automated setup after a fresh clone:
 # 1. Create target gitignored directory:
 mkdir -p assets/images/logos
 
-# 2. Download Metrodata square logo from Snowflake Partner CDN:
-curl -sSL "https://www.snowflake.com/content/dam/snowflake-site/general/logos/partner-logos/pt-metrodata-electronics-tbk@3x.png" \
-  -o assets/images/logos/metrodata_square.png
-
-# OR extract directly from clean master template:
+# 2. Extract partner square logo directly from clean master template:
 python3 -c "
 import zipfile
-pptx = 'clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx'
+pptx = 'clean_workspace/projects/sample_project/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx'
 with zipfile.ZipFile(pptx, 'r') as z:
     with open('assets/images/logos/metrodata_square.png', 'wb') as f:
         f.write(z.read('ppt/media/image97.png'))

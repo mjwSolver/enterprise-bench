@@ -49,14 +49,14 @@ def test_detectors_regex():
     contract_det = ContractIdDetector()
 
     # Email
-    node_email = TextNode(location="Test", text="Please contact yana_mulyanah@toyotatsusho.co.id regarding terms.", node_type="para")
+    node_email = TextNode(location="Test", text="Please contact client.contact@example.com regarding terms.", node_type="para")
     matches = email_det.detect(node_email)
     assert len(matches) == 1
-    assert matches[0].raw_value == "yana_mulyanah@toyotatsusho.co.id"
+    assert matches[0].raw_value == "client.contact@example.com"
     assert matches[0].category == PiiCategory.EMAIL
 
     # Indonesian Phone
-    node_phone = TextNode(location="Test", text="Call me at 081310352687 or +6281807475266 today.", node_type="para")
+    node_phone = TextNode(location="Test", text="Call me at 081200000001 or +6281200000002 today.", node_type="para")
     matches = phone_det.detect(node_phone)
     assert len(matches) == 2
     assert matches[0].category == PiiCategory.PHONE
@@ -100,7 +100,7 @@ def test_docx_handling(tmp_path: Path):
     tbl.rows[0].cells[0].paragraphs[0].text = "Contact Person"
     tbl.rows[0].cells[1].paragraphs[0].text = "Agus Pramono"
     tbl.rows[1].cells[0].paragraphs[0].text = "Email"
-    tbl.rows[1].cells[1].paragraphs[0].text = "agus.Pramono@metrodata.co.id"
+    tbl.rows[1].cells[1].paragraphs[0].text = "agus.pramono@example.com"
     # Header
     doc.sections[0].header.paragraphs[0].text = "Confidential - TTI Snowflake Implementation"
 
@@ -143,7 +143,7 @@ def test_pptx_handling(tmp_path: Path):
     slide_layout = prs.slide_layouts[0]
     slide = prs.slides.add_slide(slide_layout)
     slide.shapes.title.text = "Project Kick-off for Toyota Tsusho"
-    slide.placeholders[1].text = "Presented by Adam Wijaya (Adam.Wijaya@metrodata.co.id)"
+    slide.placeholders[1].text = "Presented by Adam Wijaya (adam.wijaya@example.com)"
 
     prs.save(str(ppt_path))
 
@@ -169,7 +169,7 @@ def test_pptx_handling(tmp_path: Path):
     assert clean_prs.core_properties.author != "Fredric Retanubun"
     clean_sub = clean_prs.slides[0].placeholders[1].text
     assert "Adam Wijaya" not in clean_sub
-    assert "@metrodata.co.id" not in clean_sub
+    assert "adam.wijaya@example.com" not in clean_sub
 
 
 # ============================================================================
@@ -184,13 +184,13 @@ def test_xlsx_handling(tmp_path: Path):
     wb.properties.creator = "Mulyanah"
 
     ws.append(["Name", "Email", "Phone"])
-    ws.append(["Mulyanah", "yana_mulyanah@toyotatsusho.co.id", "081310352687"])
+    ws.append(["Mulyanah", "client.contact@example.com", "081200000001"])
     wb.save(str(xlsx_path))
     wb.close()
 
     handler = XlsxHandler()
     nodes = handler.extract_text_nodes(xlsx_path)
-    assert any("yana_mulyanah@toyotatsusho.co.id" in n.text for n in nodes)
+    assert any("client.contact@example.com" in n.text for n in nodes)
 
     engine = PiiEngine()
     report = engine.scan_file(xlsx_path)
@@ -206,8 +206,8 @@ def test_xlsx_handling(tmp_path: Path):
     all_cells = [str(cell.value) for row in clean_ws.iter_rows() for cell in row if cell.value]
     joined_content = " ".join(all_cells)
 
-    assert "yana_mulyanah@toyotatsusho.co.id" not in joined_content
-    assert "081310352687" not in joined_content
+    assert "client.contact@example.com" not in joined_content
+    assert "081200000001" not in joined_content
     assert "Mulyanah" not in joined_content
     assert clean_wb.properties.creator != "Mulyanah"
     clean_wb.close()
@@ -251,7 +251,7 @@ def test_custom_format_extensibility(tmp_path: Path):
     engine = PiiEngine(registry=registry)
 
     custom_file = tmp_path / "data.custom"
-    custom_file.write_text("Hello from admin@company.org with contract 0012/ABC/DEF/X/2026", encoding="utf-8")
+    custom_file.write_text("Hello from admin@example.com with contract 0012/ABC/DEF/X/2026", encoding="utf-8")
 
     report = engine.scan_file(custom_file)
     assert report.total_matches == 2  # email + contract ID
@@ -261,7 +261,7 @@ def test_custom_format_extensibility(tmp_path: Path):
     result = engine.sanitize_file(custom_file, clean_file, mapping)
 
     clean_content = clean_file.read_text(encoding="utf-8")
-    assert "admin@company.org" not in clean_content
+    assert "admin@example.com" not in clean_content
     assert "{{ contract_number }}" in clean_content or "{{ contact_email" in clean_content
 
 

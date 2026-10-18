@@ -56,12 +56,12 @@ def get_default_resources(root_dir: Path) -> list[ResourceSpec]:
         ResourceSpec(
             key="logo_metrodata_square",
             target_path=root_dir / "assets" / "images" / "logos" / "metrodata_square.png",
-            canonical_url="https://www.snowflake.com/content/dam/snowflake-site/general/logos/partner-logos/pt-metrodata-electronics-tbk@3x.png",
+            canonical_url=None,
             fallback_url=None,
             fallback_type="typographic",
-            fallback_text="METRODATA",
+            fallback_text="ADVISORY PARTNER",
             impacted_slides=["Cover", "Chapter Divider"],
-            recovery_command='curl -sSL "https://www.snowflake.com/content/dam/snowflake-site/general/logos/partner-logos/pt-metrodata-electronics-tbk@3x.png" -o assets/images/logos/metrodata_square.png',
+            recovery_command="# Place corporate square logo at assets/images/logos/metrodata_square.png",
         ),
         ResourceSpec(
             key="logo_snowflake",

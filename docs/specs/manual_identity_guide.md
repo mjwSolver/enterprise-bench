@@ -11,7 +11,7 @@ All identities are kept in simple JSON text files on your local computer. Open t
 | Scope | File Path | Who / What It Contains | Git Status |
 | :--- | :--- | :--- | :--- |
 | **Global Vault** | `presets/staff_vault.local.json` | Default consulting team members & default client officers | 🔒 Gitignored (Stays only on your machine) |
-| **Project Vault** | `clean_workspace/projects/<project_id>/team_vault.local.json` | Project-specific assignments (e.g. TTI Snowflake) | 🔒 Gitignored (Stays only on your machine) |
+| **Project Vault** | `clean_workspace/projects/<project_id>/team_vault.local.json` | Project-specific assignments (e.g. Cloud Data Platform) | 🔒 Gitignored (Stays only on your machine) |
 | **Public Roster Archetypes** | `presets/staff_roster.json` | Anonymized generic roles (`ROLE_PROJECT_MANAGER`, etc.) | 🌐 Safe to commit |
 
 > [!IMPORTANT]
@@ -29,16 +29,16 @@ Locate the `"staff_bindings"` block. Replace the `"full_name"` and `"official_po
 
 ```json
 "ROLE_PROJECT_MANAGER": {
-  "full_name": "Agus Pramono",
+  "full_name": "Project Manager A",
   "official_position": "Senior Project Manager",
-  "email": "agus.Pramono@enterprise-consulting.com",
-  "phone": "+6281234567890"
+  "email": "pm.lead@enterprise-bench.local",
+  "phone": "+6281200000001"
 },
 "ROLE_STREAMLIT_DEV": {
-  "full_name": "Reza Pratama",
+  "full_name": "Analytics Engineer A",
   "official_position": "Analytics & UI Engineer",
-  "email": "marcell.wiradinata@enterprise-consulting.com",
-  "phone": "+6281234567893"
+  "email": "analytics.dev@enterprise-bench.local",
+  "phone": "+6281200000002"
 }
 ```
 
@@ -49,16 +49,16 @@ Scroll down to the `"client_bindings"` block. Fill in the client's company name 
 
 ```json
 "client_bindings": {
-  "CLIENT_COMPANY": "PT Toyota Tsusho Indonesia",
-  "CLIENT_COMPANY_SHORT": "Toyota Tsusho",
-  "CLIENT_ABBR": "TTI",
+  "CLIENT_COMPANY": "PT Nusantara Global Logistics Tbk",
+  "CLIENT_COMPANY_SHORT": "Nusantara Global",
+  "CLIENT_ABBR": "NGL",
   "CLIENT_STEERING_COMMITTEE": {
-    "full_name": "Tadahiko Onaka",
+    "full_name": "Client Executive A",
     "position": "CFO & Vice President"
   },
   "CLIENT_PROJECT_MANAGER": {
-    "full_name": "Fredric Retanubun",
-    "position": "Consolidated Accounting – Project Manager"
+    "full_name": "Client PM Lead",
+    "position": "Enterprise Data – Project Manager"
   }
 }
 ```

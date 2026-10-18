@@ -1653,13 +1653,13 @@ class ClosingDeckBuilder:
                 {
                     "name": "Andi Wijaya",
                     "role": "Solution Architect & Technical Lead",
-                    "email": "Adam.Wijaya@metrodata.co.id",
-                    "phone": "MII Technical Support Core",
+                    "email": "andi.wijaya@enterprise-bench.local",
+                    "phone": "Enterprise Technical Support Core",
                 },
                 {
                     "name": "Vicko Bhayyu",
                     "role": "Senior Data Engineer & Maintenance Lead",
-                    "email": "Vicko.Bhayyu@metrodata.co.id",
+                    "email": "vicko.bhayyu@enterprise-bench.local",
                     "phone": "Snowflake Engineering Practice",
                 },
             ],
@@ -2036,7 +2036,7 @@ class ClosingDeckBuilder:
             cp2.space_before = Pt(3)
 
             cp3 = ctf.add_paragraph()
-            cp3.text = "Official Support Channel: enterprise.consulting@metrodata.co.id"
+            cp3.text = "Official Support Channel: enterprise.consulting@enterprise-bench.local"
             cp3.font.name = self.theme.font_family
             cp3.font.size = Pt(11.0)
             cp3.font.color.rgb = self.theme.get_rgb("secondary")
