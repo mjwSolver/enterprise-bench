@@ -43,6 +43,7 @@ All incoming requests and deliverable modifications MUST be classified into one 
 - **📐 Lane 3: Greenfield Architecture & Declarative Staging:**
   - *Scope:* 0-to-1 net-new slides, complex system topologies, and multi-format diagram compilations.
   - *Rules:* Author declarative YAML specifications (`specs/diagrams/<name>.yaml`) and compile deterministically to all 4 formats (Draw.io XML, SVG, PNG, native editable PPTX) via Diagram Engine V2 (`uv run bench diagram v2 compile`). Zero imperative coordinate script bloat. Manage collaborative lifecycle through atomic stage locks (`bench stage checkout`/`commit`).
+  - *Zero Blind Re-compilation (Audit-First Invariant):* Always execute `uv run bench diagram v2 audit <spec.yaml>` to statically verify Tier 1 geometric clearances, node spans, and corridor rules *before* running expensive multi-format compilation (`bench diagram v2 compile`). Never iterate coordinates via blind trial-and-error re-compilation.
 
 ### 📚 Documentation Architecture & Subagent Delegation Protocol
 - **4-Tier Partitioning & Dual Root State Pointers:**

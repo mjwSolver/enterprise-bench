@@ -48,11 +48,16 @@ docs/
     ├── atomic_desktop_hot_reload.md
     ├── cover_slide_hero_and_opening_modernization.md
     ├── deck_header_contract_and_linter.md
+    ├── default_container_label_policy.md
     ├── diagram_architecture.md
     ├── diagram_pipeline_and_asset_integration_roadmap.md
+    ├── diagram_v2_constraint_layout_solver.md
+    ├── elastic_typography_autofill.md
     ├── localization_and_bilingual_deck_subsystem.md
+    ├── mermaid_to_yaml_transpiler.md
     ├── pii_clearing_backlog.md
     ├── pitch_deck_screenshot_modernization.md
+    ├── remote_cloud_drift_and_race_condition_guard.md
     ├── slide_design_variety.md
     ├── sprint_17_security_and_performance_quickwins.md
     ├── sprint_18_change_request_cli_and_closeout.md

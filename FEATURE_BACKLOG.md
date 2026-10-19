@@ -21,9 +21,15 @@
 - **Scope:** Expand declarative consulting architecture topologies under `specs/diagrams/` (Medallion Architecture, Active-Active DR, Streaming CDC Telemetry).
 - **Status:** Scoping Queued
 
-### 🔍 Feature: Tier 2 Adversarial Visual QA Perceptual Scanner Expansion
-- **Scope:** Expand `bench diagram v2 visual-qa` heuristic computer vision rules with automated color contrast ratio validation (WCAG AA $4.5:1$ threshold for text) and multi-resolution font legibility scanners.
-- **Status:** Backlog Queued
+### 📐 Feature: 2D Constraint & Flexbox Auto-Layout Solver
+- **Scope:** Declarative flexbox/gap container layout solver auto-calculating node bounding boxes from text length and guaranteeing collision-free coordinates without manual guesswork.
+- **Architecture Spec:** [`docs/backlog/diagram_v2_constraint_layout_solver.md`](docs/backlog/diagram_v2_constraint_layout_solver.md)
+- **Status:** Architecture Formulated • Backlog Queued
+
+### 🔄 Feature: Mermaid-to-YAML AST Transpiler (`diagram v2 ingest`)
+- **Scope:** Port and elevate V1 Mermaid support into native V2 YAML generation, transpiling flowchart code into audit-compliant starter specifications.
+- **Architecture Spec:** [`docs/backlog/mermaid_to_yaml_transpiler.md`](docs/backlog/mermaid_to_yaml_transpiler.md)
+- **Status:** Architecture Formulated • Backlog Queued
 
 ### 🔄 Feature: Remote Cloud Drift & Multi-Agent Race Condition Guard
 - **Scope:** Prevent silent cloud overwrite collisions and agent-human race conditions during distributed Google Drive synchronization via remote revision pinning (`headRevisionId`), Check-And-Set (CAS) validation gates, and Drive sidecar locks.

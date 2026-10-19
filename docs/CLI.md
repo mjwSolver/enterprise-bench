@@ -232,6 +232,9 @@ uv run bench diagram list-icons [--pack <name>] [--query <substring>]
 # Compile a declarative YAML specification into Draw.io XML, SVG, PNG, and native PPTX slides
 uv run bench diagram v2 compile <spec.yaml> [--output <dir>] [--format all|drawio|svg|png|pptx]
 
+> [!TIP]
+> **Audit-First Workflow (Zero Blind Re-compilation):** Always run `uv run bench diagram v2 audit <spec.yaml>` first to headlessly verify Tier 1 spatial clearances, node spans, and corridor rules in <100ms before running full multi-format compilation (`compile --format all`). Avoid trial-and-error re-compilation.
+
 # Validate schema integrity, port alignments, and icon references in a YAML spec
 uv run bench diagram v2 validate <spec.yaml>
 
