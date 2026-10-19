@@ -116,9 +116,9 @@ nodes:
     title: "EXE"
     subtitle: "Client Executable\nSupports multiple types\n(recon_tool, audit)"
     shape: "rounded"
-    x: 2.85
+    x: 2.75
     y: 1.86
-    w: 1.05
+    w: 1.25
     h: 1.88
     icon: "assets/icons/lucide/cpu_0052CC.svg"
     stroke_hex: "#3B82F6"
@@ -232,7 +232,7 @@ nodes:
     y: 5.40
     w: 0.98
     h: 1.50
-    icon: "assets/icons/lucide/shield-alert.svg"
+    icon: "assets/icons/lucide/shield-alert_DC2626.svg"
     stroke_hex: "#DC2626"
     fill_hex: "#FEF2F2"
     stroke_width: 1.5

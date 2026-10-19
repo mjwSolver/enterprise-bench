@@ -1015,8 +1015,10 @@ class PPTXCompiler:
                     lx -= (offset_in * 2.5)
 
             flow_font_pt = f.font_pt or 9.0
-            lw = round(_text_width_in(f.label, flow_font_pt, bold=True) + 0.20, 2)
-            lh = 0.22
+            label_lines = f.label.split("\n")
+            max_seg_w = max((_text_width_in(seg, flow_font_pt, bold=True) for seg in label_lines), default=0.0)
+            lw = round(max_seg_w + 0.20, 2)
+            lh = round(len(label_lines) * (flow_font_pt * 1.25 / 72.0) + 0.08, 2)
             pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(lx - lw / 2.0), Inches(ly - lh / 2.0), Inches(lw), Inches(lh))
             pill.name = f"flow:{flow_id}:label"
             pill.fill.solid()
@@ -1026,13 +1028,14 @@ class PPTXCompiler:
             _flatten(pill)
 
             tf = pill.text_frame
-            tf.word_wrap = False
+            tf.word_wrap = True
             tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
             tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-            p = tf.paragraphs[0]
-            p.text = f.label
-            p.alignment = PP_ALIGN.CENTER
-            p.font.name = "Arial"
-            p.font.size = Pt(flow_font_pt)
-            p.font.bold = True
-            p.font.color.rgb = _hex_to_rgb(f.label_text_hex)
+            for li, line_seg in enumerate(label_lines):
+                p = tf.paragraphs[0] if li == 0 else tf.add_paragraph()
+                p.text = line_seg
+                p.alignment = PP_ALIGN.CENTER
+                p.font.name = "Arial"
+                p.font.size = Pt(flow_font_pt)
+                p.font.bold = True
+                p.font.color.rgb = _hex_to_rgb(f.label_text_hex)

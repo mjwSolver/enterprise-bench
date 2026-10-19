@@ -295,8 +295,9 @@ class SVGCompiler:
         raw_bullets = [str(b).strip() for b in (getattr(n, "bullets", None) or []) if str(b).strip()]
         sub_lines = ([s for s in n.subtitle.split("\n") if s.strip()] if n.subtitle else []) + raw_bullets
 
+        is_side_icon = (getattr(n, "icon_layout", "auto") == "side") and has_svg_icon
         kicker_h = 24.0 if has_kicker else 0.0
-        icon_h = 40.0 if has_svg_icon else (34.0 if has_emoji else 0.0)
+        icon_h = 0.0 if is_side_icon else (40.0 if has_svg_icon else (34.0 if has_emoji else 0.0))
         title_h = t_pt + 4.0
         sub_h = len(sub_lines) * (resolved_sub_pt * 1.20 + sp_pt * 90.0 / 72.0) if sub_lines else 0.0
         total_content_h = kicker_h + icon_h + title_h + sub_h
@@ -307,7 +308,7 @@ class SVGCompiler:
         elif n.valign == "bottom":
             cur_y = box.y2 - total_content_h - 18.0
         else:
-            cur_y = box.y + max(12.0, (box.h - total_content_h) / 2.0)
+            cur_y = box.y + max(8.0, (box.h - total_content_h) / 2.0)
 
         # Kicker Pill Badge
         if has_kicker:
@@ -323,7 +324,11 @@ class SVGCompiler:
             cur_y += kicker_h
 
         # Tech Icon or Emoji
-        if has_svg_icon:
+        if is_side_icon:
+            isize = min(26.0, max(18.0, box.h - 14.0))
+            iy = box.cy - isize / 2.0
+            lines.append(f'    <image href="{icon_data_uri}" x="{box.x + 14.0:.1f}" y="{iy:.1f}" width="{isize:.1f}" height="{isize:.1f}"/>')
+        elif has_svg_icon:
             lines.append(f'    <image href="{icon_data_uri}" x="{box.cx - 15.0:.1f}" y="{cur_y:.1f}" width="30" height="30"/>')
             cur_y += icon_h
         elif has_emoji:
@@ -331,15 +336,23 @@ class SVGCompiler:
             cur_y += icon_h
 
         # Title
-        t_align = "start" if getattr(n, "align", "center") == "left" else "middle"
-        t_x = (box.x + 16.0) if t_align == "start" else box.cx
+        if is_side_icon:
+            isize = min(26.0, max(18.0, box.h - 14.0))
+            t_align = "start"
+            t_x = box.x + 14.0 + isize + 10.0
+        else:
+            t_align = "start" if getattr(n, "align", "center") == "left" else "middle"
+            t_x = (box.x + 16.0) if t_align == "start" else box.cx
         lines.append(f'    <text x="{t_x:.1f}" y="{cur_y + t_pt:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{t_pt:.1f}" font-weight="800" fill="{n.title_color}" text-anchor="{t_align}">{html.escape(n.title)}</text>')
         cur_y += title_h
 
         # Subtitle
         sub_font_size = resolved_sub_pt
         has_bullets = any(sl.strip().startswith("•") for sl in sub_lines) or bool(getattr(n, "bullets", None))
-        if getattr(n, "align", "center") == "center" and has_bullets:
+        if is_side_icon:
+            default_sub_x = t_x
+            default_sub_align = "start"
+        elif getattr(n, "align", "center") == "center" and has_bullets:
             max_bw_px = max(
                 (len(sl if (sl.strip().startswith("•") or not getattr(n, "bullets", None)) else f"• {sl}") * sub_font_size * 0.52 for sl in sub_lines),
                 default=0.0,
@@ -467,15 +480,26 @@ class SVGCompiler:
                     lx -= (offset_px * 2.5)
 
             font_pt = f.font_pt or 9.0
-            text_w = len(f.label) * font_pt * 0.55
+            label_lines = f.label.split("\n")
+            max_chars = max((len(seg) for seg in label_lines), default=0)
+            text_w = max_chars * font_pt * 0.55
             lw = max(48.0, text_w + 14.0)
-            lh = 18.0
+            lh = max(18.0, len(label_lines) * (font_pt * 1.35) + 6.0)
             border = f.label_border_hex or f.stroke_hex
+
+            text_tspans = []
+            line_height = font_pt * 1.25
+            first_y = ly - ((len(label_lines) - 1) * line_height) / 2.0 + 3.5
+            for idx, seg in enumerate(label_lines):
+                seg_y = first_y + idx * line_height
+                text_tspans.append(
+                    f'<tspan x="{lx:.1f}" y="{seg_y:.1f}">{html.escape(seg)}</tspan>'
+                )
 
             lines.extend([
                 f'  <g filter="url(#card-shadow)">',
                 f'    <rect x="{lx - lw/2.0:.1f}" y="{ly - lh/2.0:.1f}" width="{lw:.1f}" height="{lh:.1f}" rx="4" fill="{f.label_bg_hex}" stroke="{border}" stroke-width="1"/>',
-                f'    <text x="{lx:.1f}" y="{ly + 4.0:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{font_pt:.1f}" font-weight="700" fill="{f.label_text_hex}" text-anchor="middle">{html.escape(f.label)}</text>',
+                f'    <text font-family="Helvetica, Arial, sans-serif" font-size="{font_pt:.1f}" font-weight="700" fill="{f.label_text_hex}" text-anchor="middle">{"".join(text_tspans)}</text>',
                 '  </g>',
             ])
 
