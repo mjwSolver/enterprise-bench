@@ -195,7 +195,7 @@ nodes:
     stroke_width: 2.2
 
 flows:
-  # Upper Track Flows
+  # Upper Track Flows (Legacy Batch - Red Palette)
   - id: "flow_1a"
     source: "node_app1"
     target: "node_cdsw"
@@ -206,6 +206,9 @@ flows:
     label_position: "above"
     stroke_hex: "#DC2626"
     stroke_width: 2.2
+    label_bg_hex: "#FEF2F2"
+    label_text_hex: "#991B1B"
+    label_border_hex: "#DC2626"
 
   - id: "flow_2a"
     source: "node_cdsw"
@@ -217,6 +220,9 @@ flows:
     label_position: "above"
     stroke_hex: "#DC2626"
     stroke_width: 2.2
+    label_bg_hex: "#FEF2F2"
+    label_text_hex: "#991B1B"
+    label_border_hex: "#DC2626"
 
   - id: "flow_sql_query"
     source: "node_task"
@@ -228,6 +234,9 @@ flows:
     label_position: "above"
     stroke_hex: "#DC2626"
     stroke_width: 2.0
+    label_bg_hex: "#FEF2F2"
+    label_text_hex: "#991B1B"
+    label_border_hex: "#DC2626"
 
   # Milestone 33: Repositioned Return Loop Below Legacy Cluster in Inter-Track Gutter (y=3.85in / y=230px)
   - id: "flow_3a_return"
@@ -243,6 +252,9 @@ flows:
     stroke_hex: "#DC2626"
     stroke_width: 2.2
     dashed: true
+    label_bg_hex: "#FEF2F2"
+    label_text_hex: "#991B1B"
+    label_border_hex: "#DC2626"
 
   # Solid Vertical Modernization Bridges
   - id: "bridge_script"
@@ -255,6 +267,9 @@ flows:
     label_position: "side"
     stroke_hex: "#D97706"
     stroke_width: 2.5
+    label_bg_hex: "#FFFBEB"
+    label_text_hex: "#92400E"
+    label_border_hex: "#D97706"
 
   - id: "bridge_data"
     source: "node_legacy_db"
@@ -266,6 +281,9 @@ flows:
     label_position: "side"
     stroke_hex: "#0284C7"
     stroke_width: 2.5
+    label_bg_hex: "#F0F9FF"
+    label_text_hex: "#0369A1"
+    label_border_hex: "#0284C7"
 
   # Lower Track: Serverless Flows
   - id: "flow_1b"
@@ -278,6 +296,9 @@ flows:
     label_position: "above"
     stroke_hex: "#2563EB"
     stroke_width: 2.2
+    label_bg_hex: "#EFF6FF"
+    label_text_hex: "#1E40AF"
+    label_border_hex: "#2563EB"
 
   - id: "flow_2b"
     source: "node_api_gw"
@@ -289,6 +310,9 @@ flows:
     label_position: "above"
     stroke_hex: "#D97706"
     stroke_width: 2.2
+    label_bg_hex: "#FFFBEB"
+    label_text_hex: "#92400E"
+    label_border_hex: "#D97706"
 
   - id: "flow_3b"
     source: "node_lambda"
@@ -300,3 +324,6 @@ flows:
     label_position: "above"
     stroke_hex: "#0284C7"
     stroke_width: 2.2
+    label_bg_hex: "#F0F9FF"
+    label_text_hex: "#0369A1"
+    label_border_hex: "#0284C7"

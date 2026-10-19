@@ -382,7 +382,7 @@ class DrawIOCompiler:
         offset_xml = ""
         if f.label:
             border = _escape_attr(f.label_border_hex or f.stroke_hex)
-            label_style = f"labelBackgroundColor={_escape_attr(f.label_bg_hex)};labelBorderColor={border};"
+            label_style = f"labelBackgroundColor={_escape_attr(f.label_bg_hex)};labelBorderColor={border};fontColor={_escape_attr(f.label_text_hex)};"
 
             # Determine offset
             off_x, off_y = 0, 0

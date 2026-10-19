@@ -25,6 +25,11 @@
 - **Scope:** Expand `bench diagram v2 visual-qa` heuristic computer vision rules with automated color contrast ratio validation (WCAG AA $4.5:1$ threshold for text) and multi-resolution font legibility scanners.
 - **Status:** Backlog Queued
 
+### 🔄 Feature: Remote Cloud Drift & Multi-Agent Race Condition Guard
+- **Scope:** Prevent silent cloud overwrite collisions and agent-human race conditions during distributed Google Drive synchronization via remote revision pinning (`headRevisionId`), Check-And-Set (CAS) validation gates, and Drive sidecar locks.
+- **Architecture Spec:** [`docs/backlog/remote_cloud_drift_and_race_condition_guard.md`](docs/backlog/remote_cloud_drift_and_race_condition_guard.md)
+- **Status:** Architecture Formulated • Backlog Queued
+
 ---
 
 ## 2. Parked & Deferred Initiatives

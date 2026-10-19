@@ -391,8 +391,8 @@ class FlowSpec(BaseModel):
     label_at: Optional[List[float]] = None  # [x, y]
     label_position: Literal["center", "above", "below", "side", "left", "right", "auto"] = "auto"
     label_offset: Optional[float] = None
-    label_bg_hex: str = "#EFF6FF"
-    label_text_hex: str = "#1D4ED8"
+    label_bg_hex: Optional[str] = None
+    label_text_hex: Optional[str] = None
     label_border_hex: Optional[str] = None
     font_pt: float = 9.0
 
@@ -401,10 +401,39 @@ class FlowSpec(BaseModel):
             palette = DIAGNOSTIC_ROLE_PALETTES[self.role.lower()]
             if self.stroke_hex == "#2563EB":
                 self.stroke_hex = palette["stroke"]
-            if self.label_bg_hex == "#EFF6FF":
+            if not self.label_bg_hex:
                 self.label_bg_hex = palette["kicker_bg"]
-            if self.label_text_hex == "#1D4ED8":
+            if not self.label_text_hex:
                 self.label_text_hex = palette["text"]
+            if not self.label_border_hex:
+                self.label_border_hex = palette["stroke"]
+
+        if not self.label_bg_hex or not self.label_text_hex or not self.label_border_hex:
+            stroke_upper = (self.stroke_hex or "").upper()
+            if stroke_upper in ("#DC2626", "#EF4444", "#B91C1C", "#E11D48"):
+                self.label_bg_hex = self.label_bg_hex or "#FEF2F2"
+                self.label_text_hex = self.label_text_hex or "#991B1B"
+                self.label_border_hex = self.label_border_hex or self.stroke_hex
+            elif stroke_upper in ("#D97706", "#F59E0B", "#F97316", "#EA580C"):
+                self.label_bg_hex = self.label_bg_hex or "#FFFBEB"
+                self.label_text_hex = self.label_text_hex or "#92400E"
+                self.label_border_hex = self.label_border_hex or self.stroke_hex
+            elif stroke_upper in ("#0284C7", "#0369A1", "#38BDF8"):
+                self.label_bg_hex = self.label_bg_hex or "#F0F9FF"
+                self.label_text_hex = self.label_text_hex or "#0369A1"
+                self.label_border_hex = self.label_border_hex or self.stroke_hex
+            elif stroke_upper in ("#16A34A", "#10B981", "#059669"):
+                self.label_bg_hex = self.label_bg_hex or "#ECFDF5"
+                self.label_text_hex = self.label_text_hex or "#065F46"
+                self.label_border_hex = self.label_border_hex or self.stroke_hex
+            elif stroke_upper in ("#8B5CF6", "#7C3AED", "#9333EA"):
+                self.label_bg_hex = self.label_bg_hex or "#F5F3FF"
+                self.label_text_hex = self.label_text_hex or "#6D28D9"
+                self.label_border_hex = self.label_border_hex or self.stroke_hex
+            else:
+                self.label_bg_hex = self.label_bg_hex or "#EFF6FF"
+                self.label_text_hex = self.label_text_hex or "#1E40AF"
+                self.label_border_hex = self.label_border_hex or self.stroke_hex or "#2563EB"
 
 
 class BadgeSpec(BaseModel):
