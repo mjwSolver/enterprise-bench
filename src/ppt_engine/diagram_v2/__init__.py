@@ -65,6 +65,20 @@ from src.ppt_engine.diagram_v2.stray_consolidator import (
     cluster_and_rank_pods,
     consolidate_stray_visualizations,
 )
+from src.ppt_engine.diagram_v2.contrast import (
+    contrast_ratio,
+    relative_luminance,
+    is_dark_hex,
+    is_light_hex,
+    harmonize_diagram_contrast,
+    harmonize_node_contrast,
+    harmonize_container_contrast,
+    harmonize_flow_contrast,
+    WCAG_AA_NORMAL_TEXT,
+    WCAG_AA_LARGE_TEXT,
+    WCAG_AAA_ENHANCED,
+    MIN_BORDER_CONTRAST,
+)
 
 __all__ = [
     "DiagramSpec",
@@ -113,5 +127,17 @@ __all__ = [
     "scan_stray_visualizations",
     "cluster_and_rank_pods",
     "consolidate_stray_visualizations",
+    "contrast_ratio",
+    "relative_luminance",
+    "is_dark_hex",
+    "is_light_hex",
+    "harmonize_diagram_contrast",
+    "harmonize_node_contrast",
+    "harmonize_container_contrast",
+    "harmonize_flow_contrast",
+    "WCAG_AA_NORMAL_TEXT",
+    "WCAG_AA_LARGE_TEXT",
+    "WCAG_AAA_ENHANCED",
+    "MIN_BORDER_CONTRAST",
 ]
 

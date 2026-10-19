@@ -12,7 +12,7 @@ import base64
 import html
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
@@ -27,6 +27,7 @@ from src.ppt_engine.diagram_v2.models import (
     resolve_node_fonts,
 )
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
+from src.ppt_engine.icon_engine import recolor_svg, is_multicolor_vendor_logo
 
 
 _MIME_BY_SUFFIX: Dict[str, str] = {
@@ -56,7 +57,7 @@ def _escape_multiline_html(val: Optional[str]) -> str:
 class DrawIOCompiler:
     """Compiles a DiagramSpec into Draw.io mxGraph XML format."""
 
-    _GLOBAL_ICON_CACHE: Dict[str, str] = {}
+    _GLOBAL_ICON_CACHE: Dict[Tuple[str, Optional[str]], str] = {}
 
     def __init__(self, spec: DiagramSpec) -> None:
         self.spec = spec
@@ -65,7 +66,7 @@ class DrawIOCompiler:
             canvas_height=spec.canvas.height,
             canvas_unit=spec.canvas.unit,
         )
-        self._icon_cache: Dict[str, str] = self._GLOBAL_ICON_CACHE
+        self._icon_cache: Dict[Tuple[str, Optional[str]], str] = self._GLOBAL_ICON_CACHE
         self._node_boxes: Dict[str, Box] = {}
         self._container_boxes: Dict[str, Box] = {}
         self._used_cell_ids: set[str] = {"0", "1"}
@@ -81,12 +82,13 @@ class DrawIOCompiler:
         self._used_cell_ids.add(candidate)
         return _escape_attr(candidate)
 
-    def _resolve_icon_data_uri(self, icon_ref: Optional[str]) -> str:
+    def _resolve_icon_data_uri(self, icon_ref: Optional[str], target_color: Optional[str] = None) -> str:
         """Resolves an icon identifier or path to an embedded Base64 data URI."""
         if not icon_ref:
             return ""
-        if icon_ref in self._icon_cache:
-            return self._icon_cache[icon_ref]
+        cache_key = (icon_ref, target_color)
+        if cache_key in self._icon_cache:
+            return self._icon_cache[cache_key]
 
         data_uri = ""
         resolved_path: Optional[Path] = None
@@ -104,11 +106,23 @@ class DrawIOCompiler:
                 pass
 
         if resolved_path and resolved_path.exists():
+            is_svg = resolved_path.suffix.lower() == ".svg"
             mime = _MIME_BY_SUFFIX.get(resolved_path.suffix.lower(), "image/png")
-            b64_data = base64.b64encode(resolved_path.read_bytes()).decode("ascii")
+            if is_svg and target_color:
+                try:
+                    svg_content = resolved_path.read_text(encoding="utf-8", errors="ignore")
+                    if not is_multicolor_vendor_logo(resolved_path, svg_content):
+                        svg_content = recolor_svg(svg_content, target_color)
+                    raw_bytes = svg_content.encode("utf-8")
+                except Exception:
+                    raw_bytes = resolved_path.read_bytes()
+            else:
+                raw_bytes = resolved_path.read_bytes()
+
+            b64_data = base64.b64encode(raw_bytes).decode("ascii")
             data_uri = f"data:{mime};base64,{b64_data}"
 
-        self._icon_cache[icon_ref] = data_uri
+        self._icon_cache[cache_key] = data_uri
         return data_uri
 
     def compile_xml(self) -> str:
@@ -229,7 +243,8 @@ class DrawIOCompiler:
         content_parts: List[str] = []
 
         # 1. Tech Logo or Emoji
-        icon_data_uri = self._resolve_icon_data_uri(n.icon)
+        resolved_icon_col = n.icon_color or (n.stroke_hex if n.stroke_hex and n.stroke_hex.upper() not in ("#000000", "#64748B", "#FFFFFF", "#0F172A", "#334155") else None)
+        icon_data_uri = self._resolve_icon_data_uri(n.icon, target_color=resolved_icon_col)
         if icon_data_uri:
             content_parts.append(
                 f'&lt;div style=&quot;margin-bottom:6px;&quot;&gt;&lt;img src=&quot;{_escape_attr(icon_data_uri)}&quot; width=&quot;28&quot; height=&quot;28&quot; style=&quot;vertical-align:middle;&quot;/&gt;&lt;/div&gt;'

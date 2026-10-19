@@ -28,8 +28,8 @@ class DeckHeaderContract:
     TITLE_TOP_IN: float = 0.230
     TITLE_LEFT_WITH_STRIPES_IN: float = 0.850
     TITLE_LEFT_NO_STRIPES_IN: float = 0.600
-    TITLE_W_WITH_STRIPES_IN: float = 9.800
-    TITLE_W_NO_STRIPES_IN: float = 10.050
+    TITLE_W_WITH_STRIPES_IN: float = 12.000
+    TITLE_W_NO_STRIPES_IN: float = 12.233
     TITLE_H_IN: float = 0.850
     TITLE_BOTTOM_IN: float = 1.080
     TITLE_BOTTOM_PX: float = 103.68
@@ -65,6 +65,7 @@ class HeaderConfig(BaseModel):
     blue_hex: str = "#0284C7"
     x: float = 0.600
     y: float = 0.280
+    w: Optional[float] = None
 
 
 DIAGNOSTIC_ROLE_PALETTES: Dict[str, Dict[str, str]] = {
@@ -94,6 +95,29 @@ DIAGNOSTIC_ROLE_PALETTES: Dict[str, Dict[str, str]] = {
     # Slate: Neutral container
     "neutral": {"stroke": "#94A3B8", "fill": "#F8FAFC", "kicker_bg": "#F1F5F9", "text": "#475569"},
 }
+
+
+def _is_dark_hex(hex_color: Optional[str]) -> bool:
+    """
+    Determine if a hex color is perceptually dark using relative luminance:
+    lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+    Returns lum < 0.45. Gracefully handle None, empty, 3-char, 6-char, and invalid hexes without throwing exceptions.
+    """
+    if not hex_color or not isinstance(hex_color, str):
+        return False
+    clean = hex_color.strip().lstrip("#")
+    if len(clean) == 3:
+        clean = "".join(c * 2 for c in clean)
+    if len(clean) != 6:
+        return False
+    try:
+        r = int(clean[0:2], 16)
+        g = int(clean[2:4], 16)
+        b = int(clean[4:6], 16)
+        lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+        return lum < 0.45
+    except (ValueError, TypeError):
+        return False
 
 
 class ContainerSpec(BaseModel):
@@ -132,6 +156,11 @@ class ContainerSpec(BaseModel):
             return self.align
         return "center" if self.w <= 2.0 else "left"
 
+    def apply_contrast_auto_inversion(self) -> None:
+        """Auto-invert font color on perceptually dark background fills."""
+        if _is_dark_hex(self.fill_hex) and (self.font_color == "#64748B" or self.font_color.upper() == "#64748B"):
+            self.font_color = "#F8FAFC"
+
     def model_post_init(self, __context: Any) -> None:
         if self.role and self.role.lower() in DIAGNOSTIC_ROLE_PALETTES:
             palette = DIAGNOSTIC_ROLE_PALETTES[self.role.lower()]
@@ -139,6 +168,8 @@ class ContainerSpec(BaseModel):
                 self.border_hex = palette["stroke"]
             if self.fill_hex == "#F8FAFC":
                 self.fill_hex = palette["fill"]
+
+        self.apply_contrast_auto_inversion()
 
 
 
@@ -190,6 +221,7 @@ class NodeSpec(BaseModel):
     icon: Optional[str] = None  # Asset path, vendor slug (e.g. "aws:aws_lambda"), or SVG path
     icon_emoji: Optional[str] = None  # e.g. "🖥️"
     icon_layout: str = "auto"  # "auto", "stack", "side"
+    icon_color: Optional[str] = None
     stroke_hex: str = "#3B82F6"
     fill_hex: str = "#FFFFFF"
     stroke_width: float = 2.0
@@ -229,6 +261,16 @@ class NodeSpec(BaseModel):
             return v
         return False
 
+    def apply_contrast_auto_inversion(self) -> None:
+        """Auto-inverts title, subtitle, and icon colors on perceptually dark background fills."""
+        if _is_dark_hex(self.fill_hex):
+            if self.title_color == "#0F172A" or self.title_color.upper() == "#0F172A":
+                self.title_color = "#FFFFFF"
+            if self.subtitle_color == "#64748B" or self.subtitle_color.upper() == "#64748B":
+                self.subtitle_color = "#94A3B8"
+            if not self.icon_color and (not self.stroke_hex or self.stroke_hex.upper() in ("#000000", "#0F172A", "#1E293B")):
+                self.icon_color = "#FFFFFF"
+
     def model_post_init(self, __context: Any) -> None:
         if self.role and self.role.lower() in DIAGNOSTIC_ROLE_PALETTES:
             palette = DIAGNOSTIC_ROLE_PALETTES[self.role.lower()]
@@ -243,6 +285,8 @@ class NodeSpec(BaseModel):
                 self.icon_layout = "side"
         elif self.shape == "rect":
             self.is_rounded = False
+
+        self.apply_contrast_auto_inversion()
 
 
 def resolve_node_fonts(
@@ -476,4 +520,99 @@ class DiagramSpec(BaseModel):
     flows: List[FlowSpec] = Field(default_factory=list)
     badges: List[BadgeSpec] = Field(default_factory=list)
     bullet_lists: List[BulletListSpec] = Field(default_factory=list)
+
+    def model_post_init(self, __context: Any) -> None:
+        try:
+            from src.ppt_engine.theme_engine import load_theme
+        except ImportError:
+            try:
+                from ppt_engine.theme_engine import load_theme
+            except ImportError:
+                load_theme = None
+
+        try:
+            from src.ppt_engine.icon_engine import resolve_brand_color
+        except ImportError:
+            try:
+                from ppt_engine.icon_engine import resolve_brand_color
+            except ImportError:
+                resolve_brand_color = None
+
+        if self.theme and resolve_brand_color is not None:
+            loaded_theme = None
+            if load_theme is not None:
+                try:
+                    loaded_theme = load_theme(self.theme)
+                except Exception:
+                    loaded_theme = None
+
+            def _resolve_color(val: Optional[str]) -> Optional[str]:
+                if val and isinstance(val, str) and not val.strip().startswith("#"):
+                    try:
+                        return resolve_brand_color(val, theme=loaded_theme)
+                    except Exception:
+                        return val
+                return val
+
+            for node in self.nodes:
+                if node.stroke_hex and isinstance(node.stroke_hex, str) and not node.stroke_hex.strip().startswith("#"):
+                    node.stroke_hex = _resolve_color(node.stroke_hex) or node.stroke_hex
+                if node.fill_hex and isinstance(node.fill_hex, str) and not node.fill_hex.strip().startswith("#"):
+                    node.fill_hex = _resolve_color(node.fill_hex) or node.fill_hex
+                if node.title_color and isinstance(node.title_color, str) and not node.title_color.strip().startswith("#"):
+                    node.title_color = _resolve_color(node.title_color) or node.title_color
+                if node.subtitle_color and isinstance(node.subtitle_color, str) and not node.subtitle_color.strip().startswith("#"):
+                    node.subtitle_color = _resolve_color(node.subtitle_color) or node.subtitle_color
+                if node.icon_color and isinstance(node.icon_color, str) and not node.icon_color.strip().startswith("#"):
+                    node.icon_color = _resolve_color(node.icon_color)
+
+            for container in self.containers:
+                if container.border_hex and isinstance(container.border_hex, str) and not container.border_hex.strip().startswith("#"):
+                    container.border_hex = _resolve_color(container.border_hex) or container.border_hex
+                if container.fill_hex and isinstance(container.fill_hex, str) and not container.fill_hex.strip().startswith("#"):
+                    container.fill_hex = _resolve_color(container.fill_hex) or container.fill_hex
+                if container.font_color and isinstance(container.font_color, str) and not container.font_color.strip().startswith("#"):
+                    container.font_color = _resolve_color(container.font_color) or container.font_color
+
+            for flow in self.flows:
+                if flow.stroke_hex and isinstance(flow.stroke_hex, str) and not flow.stroke_hex.strip().startswith("#"):
+                    flow.stroke_hex = _resolve_color(flow.stroke_hex) or flow.stroke_hex
+                if flow.label_bg_hex and isinstance(flow.label_bg_hex, str) and not flow.label_bg_hex.strip().startswith("#"):
+                    flow.label_bg_hex = _resolve_color(flow.label_bg_hex)
+                if flow.label_text_hex and isinstance(flow.label_text_hex, str) and not flow.label_text_hex.strip().startswith("#"):
+                    flow.label_text_hex = _resolve_color(flow.label_text_hex)
+                if flow.label_border_hex and isinstance(flow.label_border_hex, str) and not flow.label_border_hex.strip().startswith("#"):
+                    flow.label_border_hex = _resolve_color(flow.label_border_hex)
+
+            # Run perceptual contrast auto-inversion pass on all nodes and containers after token resolution
+            for node in self.nodes:
+                if hasattr(node, "apply_contrast_auto_inversion"):
+                    node.apply_contrast_auto_inversion()
+
+            for container in self.containers:
+                if hasattr(container, "apply_contrast_auto_inversion"):
+                    container.apply_contrast_auto_inversion()
+
+        # Apply comprehensive Readability & Contrast Subsystem pass (WCAG 2.1 compliance,
+        # faded text elimination on light backgrounds, borderless layout protection)
+        try:
+            from src.ppt_engine.diagram_v2.contrast import harmonize_diagram_contrast
+        except ImportError:
+            try:
+                from ppt_engine.diagram_v2.contrast import harmonize_diagram_contrast
+            except ImportError:
+                try:
+                    from .contrast import harmonize_diagram_contrast
+                except ImportError:
+                    harmonize_diagram_contrast = None
+
+        if harmonize_diagram_contrast is not None:
+            try:
+                harmonize_diagram_contrast(self)
+            except Exception:
+                pass
+
+
+# Backward compatibility and ergonomic aliases
+Node = NodeSpec
 

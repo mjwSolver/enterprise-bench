@@ -38,8 +38,12 @@ from src.ppt_engine.diagram_v2.models import (
     CANONICAL_TYPOGRAPHIC_SCALE,
 )
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
+from src.ppt_engine.icon_engine import recolor_svg, normalize_color, is_multicolor_vendor_logo
 
 logger = logging.getLogger(__name__)
+
+# In-memory cache for converted PNG bytes: (resolved_svg_path_str, target_color) -> png_bytes
+_PNG_BYTES_CACHE: Dict[Tuple[str, Optional[str]], bytes] = {}
 
 # Typography width model (Arial average advance width as a fraction of the em)
 _ARIAL_EM_REGULAR = 0.52
@@ -135,10 +139,31 @@ def _set_round_join(shape: Any) -> None:
         logger.debug("Could not set round join: %s", e)
 
 
-def _svg_to_png_bytes(svg_path: Path) -> Optional[bytes]:
+def _svg_to_png_bytes(svg_path: Path, target_color: Optional[str] = None) -> Optional[bytes]:
     """Converts an SVG file to transparent PNG bytes using cairosvg or rsvg-convert."""
     if not svg_path.exists():
         return None
+
+    cache_key = (str(svg_path.resolve()), target_color)
+    if cache_key in _PNG_BYTES_CACHE:
+        return _PNG_BYTES_CACHE[cache_key]
+
+    try:
+        svg_text = svg_path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        svg_text = ""
+
+    if not svg_text:
+        return None
+
+    if target_color:
+        if not is_multicolor_vendor_logo(svg_path, svg_text):
+            try:
+                svg_text = recolor_svg(svg_text, target_color)
+            except Exception as e:
+                logger.debug("Failed to recolor SVG %s: %s", svg_path, e)
+
+    svg_bytes = svg_text.encode("utf-8")
 
     try:
         import ctypes
@@ -159,23 +184,38 @@ def _svg_to_png_bytes(svg_path: Path) -> Optional[bytes]:
 
         ctypes.util.find_library = custom_find
         import cairosvg
-        return cairosvg.svg2png(bytestring=svg_path.read_bytes(), scale=3.0)
+        png_bytes = cairosvg.svg2png(bytestring=svg_bytes, scale=3.0)
+        if png_bytes:
+            _PNG_BYTES_CACHE[cache_key] = png_bytes
+            return png_bytes
     except Exception:
         pass
 
     tmp_path: Optional[Path] = None
+    tmp_svg: Optional[Path] = None
     try:
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
             tmp_path = Path(tmp.name)
+        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp_s:
+            tmp_s.write(svg_bytes)
+            tmp_svg = Path(tmp_s.name)
         res = subprocess.run(
-            ["rsvg-convert", "-z", "3", str(svg_path), "-o", str(tmp_path)],
+            ["rsvg-convert", "-z", "3", str(tmp_svg), "-o", str(tmp_path)],
             capture_output=True,
         )
         if res.returncode == 0 and tmp_path.exists():
-            return tmp_path.read_bytes()
+            png_bytes = tmp_path.read_bytes()
+            if png_bytes:
+                _PNG_BYTES_CACHE[cache_key] = png_bytes
+                return png_bytes
     except Exception:
         pass
     finally:
+        if tmp_svg is not None and tmp_svg.exists():
+            try:
+                tmp_svg.unlink()
+            except OSError:
+                pass
         if tmp_path is not None and tmp_path.exists():
             try:
                 tmp_path.unlink()
@@ -427,9 +467,14 @@ class PPTXCompiler:
         icon_path: Optional[Path],
         icon_emoji: Optional[str],
         shape_name: Optional[str] = None,
+        icon_color: Optional[str] = None,
     ) -> None:
         if icon_path and icon_path.exists():
-            png_bytes = _svg_to_png_bytes(icon_path) if icon_path.suffix.lower() == ".svg" else icon_path.read_bytes()
+            png_bytes = (
+                _svg_to_png_bytes(icon_path, target_color=icon_color)
+                if icon_path.suffix.lower() == ".svg"
+                else icon_path.read_bytes()
+            )
             if png_bytes:
                 pic = slide.shapes.add_picture(io.BytesIO(png_bytes), Inches(x), Inches(y), width=Inches(size), height=Inches(size))
                 if shape_name:
@@ -560,10 +605,10 @@ class PPTXCompiler:
             s_blue.line.fill.background()
             _flatten(s_blue)
             tx = box.x + (DeckHeaderContract.TITLE_LEFT_WITH_STRIPES_IN - DeckHeaderContract.STRIPES_LEFT_IN)
-            title_w = DeckHeaderContract.TITLE_W_WITH_STRIPES_IN
+            title_w = h.w if h.w is not None else DeckHeaderContract.TITLE_W_WITH_STRIPES_IN
         else:
             tx = box.x
-            title_w = DeckHeaderContract.TITLE_W_NO_STRIPES_IN
+            title_w = h.w if h.w is not None else DeckHeaderContract.TITLE_W_NO_STRIPES_IN
 
         title_y = box.y - (DeckHeaderContract.STRIPES_TOP_IN - DeckHeaderContract.TITLE_TOP_IN)
         tb = slide.shapes.add_textbox(Inches(tx), Inches(title_y), Inches(title_w), Inches(DeckHeaderContract.TITLE_H_IN))
@@ -766,6 +811,8 @@ class PPTXCompiler:
         card.line.width = Pt(n.stroke_width)
         _flatten(card)
 
+        resolved_icon_col = n.icon_color or (n.stroke_hex if n.stroke_hex and n.stroke_hex.upper() not in ("#000000", "#64748B", "#FFFFFF", "#0F172A", "#334155") else None)
+
         plan = self._plan_card(
             box.w,
             box.h,
@@ -791,7 +838,7 @@ class PPTXCompiler:
             group_w = plan.icon_size + plan.icon_gap * 1.5 + natural_w
             gx = box.x + plan.pad_h + max(0.0, (box.w - 2 * plan.pad_h - group_w) / 2.0)
             icon_y = region_top + (region_h - plan.icon_size) / 2.0
-            self._add_icon(slide, gx, icon_y, plan.icon_size, icon_path, n.icon_emoji, shape_name=f"node:{n.id}:icon")
+            self._add_icon(slide, gx, icon_y, plan.icon_size, icon_path, n.icon_emoji, shape_name=f"node:{n.id}:icon", icon_color=resolved_icon_col)
 
             tx = gx + plan.icon_size + plan.icon_gap * 1.5
             tb = slide.shapes.add_textbox(Inches(tx), Inches(region_top), Inches(natural_w), Inches(region_h))
@@ -804,7 +851,7 @@ class PPTXCompiler:
             self._render_paras(tf, plan.paras, PP_ALIGN.LEFT)
         elif has_icon:
             start_y = region_top + max(0.0, (region_h - plan.content_h) / 2.0)
-            self._add_icon(slide, box.x + (box.w - plan.icon_size) / 2.0, start_y, plan.icon_size, icon_path, n.icon_emoji, shape_name=f"node:{n.id}:icon")
+            self._add_icon(slide, box.x + (box.w - plan.icon_size) / 2.0, start_y, plan.icon_size, icon_path, n.icon_emoji, shape_name=f"node:{n.id}:icon", icon_color=resolved_icon_col)
             text_top = start_y + plan.icon_size + plan.icon_gap
             text_h = max(0.30, (box.y2 - 0.04) - text_top)
 
@@ -897,6 +944,8 @@ class PPTXCompiler:
                 tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
                 align_choice = PP_ALIGN.LEFT if getattr(n, "align", "center") == "left" else PP_ALIGN.CENTER
                 self._render_paras(tf, plan.paras, align_choice)
+
+    _render_node = _compile_node
 
     def _compile_badge(self, slide: Any, b: BadgeSpec, idx: int = 0) -> None:
         badge_id = b.id or f"badge_{idx}"

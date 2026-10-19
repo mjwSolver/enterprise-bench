@@ -30,6 +30,7 @@ import math
 import re
 import statistics
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple
 
 from src.ppt_engine.diagram_v2.models import (
@@ -251,6 +252,8 @@ class Tier1GeometricLinter:
         issues.extend(self.check_deck_header_drift())
         issues.extend(self.check_typographic_scale_consistency())
         issues.extend(self.check_underfilled_execution_cards())
+        issues.extend(self.check_asset_resolution())
+        issues.extend(self.check_contrast_and_readability())
         return issues
 
     # Alias for backward compatibility
@@ -1533,6 +1536,196 @@ class Tier1GeometricLinter:
                             suggested_fix="Enable elastic auto-fill (remove manual font overrides or set elastic_text: true) or reduce card height.",
                             coords=(self.node_boxes[n.id].x, self.node_boxes[n.id].y, self.node_boxes[n.id].w, self.node_boxes[n.id].h),
                         ))
+        return issues
+
+    # =========================================================================
+    # Rule 18: Asset Resolution & Missing Icons
+    # =========================================================================
+    def check_asset_resolution(self) -> List[AuditIssue]:
+        """
+        Checks each node in self.spec.nodes with an icon to verify that the asset
+        can be resolved on disk or via IconRegistry.
+        """
+        issues: List[AuditIssue] = []
+        for n in self.spec.nodes:
+            if not n.icon:
+                continue
+
+            icon_str = str(n.icon).strip()
+            if not icon_str:
+                continue
+
+            resolved = False
+            try:
+                if Path(icon_str).exists():
+                    resolved = True
+            except Exception:
+                pass
+
+            if not resolved:
+                try:
+                    from src.ppt_engine.library_importer import IconRegistry
+                except ImportError:
+                    try:
+                        from ppt_engine.library_importer import IconRegistry
+                    except ImportError:
+                        IconRegistry = None
+                if IconRegistry is not None:
+                    try:
+                        reg_path = IconRegistry.resolve_icon(icon_str)
+                        if reg_path is not None and Path(reg_path).exists():
+                            resolved = True
+                    except Exception:
+                        pass
+
+            if not resolved:
+                coords = None
+                if n.id in self.node_boxes:
+                    b = self.node_boxes[n.id]
+                    coords = (b.x, b.y, b.w, b.h)
+                issues.append(
+                    AuditIssue(
+                        severity="WARNING",
+                        category="MISSING_ASSET",
+                        element_id=n.id,
+                        description=f"Node '{n.id}' icon '{n.icon}' cannot be resolved on disk or in IconRegistry.",
+                        suggested_fix="Check icon path or specify a valid Lucide icon name / asset path.",
+                        coords=coords,
+                    )
+                )
+
+        return issues
+
+    # =========================================================================
+    # Rule 19: Readability & Contrast Subsystem (WCAG 2.1 & Layout Bleed)
+    # =========================================================================
+    def check_contrast_and_readability(self) -> List[AuditIssue]:
+        """
+        Validates WCAG 2.1 relative luminance and contrast ratios across nodes,
+        containers, and flows. Detects faded/washed-out text and borderless layout bleed.
+        """
+        issues: List[AuditIssue] = []
+        try:
+            from src.ppt_engine.diagram_v2.contrast import (
+                contrast_ratio,
+                relative_luminance,
+                WCAG_AA_NORMAL_TEXT,
+                MIN_BORDER_CONTRAST,
+            )
+        except ImportError:
+            try:
+                from ppt_engine.diagram_v2.contrast import (
+                    contrast_ratio,
+                    relative_luminance,
+                    WCAG_AA_NORMAL_TEXT,
+                    MIN_BORDER_CONTRAST,
+                )
+            except ImportError:
+                try:
+                    from .contrast import (
+                        contrast_ratio,
+                        relative_luminance,
+                        WCAG_AA_NORMAL_TEXT,
+                        MIN_BORDER_CONTRAST,
+                    )
+                except ImportError:
+                    return issues
+        except Exception:
+            return issues
+
+        canvas_bg = getattr(self.spec.canvas, "background", "#FFFFFF") or "#FFFFFF"
+        canvas_lum = relative_luminance(canvas_bg, default_lum=1.0)
+
+        # 1. Inspect Node Text & Boundary Definition
+        for n in self.spec.nodes:
+            n_fill = n.fill_hex or "#FFFFFF"
+            coords = None
+            if n.id in self.node_boxes:
+                b = self.node_boxes[n.id]
+                coords = (b.x, b.y, b.w, b.h)
+
+            # Title contrast
+            t_col = n.title_color or "#0F172A"
+            t_cr = contrast_ratio(t_col, n_fill)
+            if t_cr < WCAG_AA_NORMAL_TEXT:
+                issues.append(AuditIssue(
+                    severity="CRITICAL",
+                    category="LOW_CONTRAST_READABILITY",
+                    element_id=n.id,
+                    description=(
+                        f"Node '{n.id}' title color '{t_col}' has insufficient contrast ratio "
+                        f"{t_cr:.2f}:1 against card fill '{n_fill}' (WCAG AA requires >= 4.5:1)."
+                    ),
+                    suggested_fix="Use a darker slate (e.g. #0F172A) or white (#FFFFFF on dark fills).",
+                    coords=coords,
+                ))
+
+            # Subtitle contrast
+            if n.subtitle:
+                s_col = n.subtitle_color or "#64748B"
+                s_cr = contrast_ratio(s_col, n_fill)
+                if s_cr < 3.5:
+                    issues.append(AuditIssue(
+                        severity="WARNING",
+                        category="LOW_CONTRAST_READABILITY",
+                        element_id=n.id,
+                        description=(
+                            f"Node '{n.id}' subtitle color '{s_col}' has low contrast ratio "
+                            f"{s_cr:.2f}:1 against card fill '{n_fill}' (minimum 3.5:1 recommended)."
+                        ),
+                        suggested_fix="Promote to #334155, #475569, or #E2E8F0 on dark fills.",
+                        coords=coords,
+                    ))
+
+            # Borderless layout bleed on white canvas
+            fill_lum = relative_luminance(n_fill, default_lum=1.0)
+            if fill_lum > 0.85 and canvas_lum > 0.85:
+                stroke_cr = contrast_ratio(n.stroke_hex, canvas_bg)
+                if stroke_cr < MIN_BORDER_CONTRAST:
+                    issues.append(AuditIssue(
+                        severity="WARNING",
+                        category="FADED_LAYOUT_BOUNDARY",
+                        element_id=n.id,
+                        description=(
+                            f"Node '{n.id}' card border '{n.stroke_hex}' blends invisibly into canvas "
+                            f"'{canvas_bg}' (contrast ratio {stroke_cr:.2f}:1 < 1.25:1), causing faded layout bleed."
+                        ),
+                        suggested_fix="Specify a visible boundary stroke (e.g. #CBD5E1 hairline or theme accent).",
+                        coords=coords,
+                    ))
+
+        # 2. Inspect Containers
+        for c in self.spec.containers:
+            c_fill = c.fill_hex or "#F8FAFC"
+            f_col = c.font_color or "#64748B"
+            f_cr = contrast_ratio(f_col, c_fill)
+            if f_cr < 3.5:
+                issues.append(AuditIssue(
+                    severity="WARNING",
+                    category="LOW_CONTRAST_READABILITY",
+                    element_id=c.id,
+                    description=(
+                        f"Container '{c.id}' label color '{f_col}' has low contrast {f_cr:.2f}:1 "
+                        f"against container fill '{c_fill}'."
+                    ),
+                    suggested_fix="Promote label color to #334155 or #F8FAFC on dark containers.",
+                ))
+
+            # Tag badge contrast
+            if c.tag_badge and c.tag_bg_hex and c.tag_text_hex:
+                tag_cr = contrast_ratio(c.tag_text_hex, c.tag_bg_hex)
+                if tag_cr < WCAG_AA_NORMAL_TEXT:
+                    issues.append(AuditIssue(
+                        severity="WARNING",
+                        category="LOW_CONTRAST_READABILITY",
+                        element_id=c.id,
+                        description=(
+                            f"Container '{c.id}' tag badge text '{c.tag_text_hex}' has low contrast "
+                            f"{tag_cr:.2f}:1 against badge bg '{c.tag_bg_hex}'."
+                        ),
+                        suggested_fix="Use high-contrast badge text (e.g. #78350F for amber badges, #991B1B for red).",
+                    ))
+
         return issues
 
     # =========================================================================

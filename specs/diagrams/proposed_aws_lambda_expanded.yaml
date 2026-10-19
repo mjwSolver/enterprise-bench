@@ -114,7 +114,7 @@ nodes:
   - id: "node_exe"
     container_id: "group_device"
     title: "EXE"
-    subtitle: "Client Executable\nSupports multiple types\n(recon_tool, audit)"
+    subtitle: "Client Executable"
     shape: "rounded"
     x: 2.75
     y: 1.86
@@ -143,9 +143,9 @@ nodes:
     title_color: "#0369A1"
     subtitle_color: "#64748B"
 
-  - id: "node_step_connect"
+  - id: "node_step_intercept"
     container_id: "group_safe_checker"
-    title: "• Connect to API Gateway"
+    title: "• Intercept & Hold Process"
     shape: "rounded"
     x: 4.52
     y: 2.59
@@ -159,7 +159,7 @@ nodes:
 
   - id: "node_step_mac"
     container_id: "group_safe_checker"
-    title: "• Get MAC Addresses"
+    title: "• Get MAC Addresses & IP"
     shape: "rounded"
     x: 4.52
     y: 3.16
@@ -173,8 +173,8 @@ nodes:
 
   - id: "node_step_send_api"
     container_id: "group_safe_checker"
-    title: "Send REST Request to API Gateway"
-    subtitle: "Payload: MAC + Client Identity"
+    title: "Send REST Request"
+    subtitle: "Payload: MAC + Identity"
     shape: "rounded"
     x: 4.52
     y: 3.73

@@ -245,7 +245,7 @@ nodes:
     kicker: "NOT ALLOWED"
     title: "Stopped"
     subtitle: "Execution\nAborted"
-    icon: "assets/icons/lucide/shield-alert.svg"
+    icon: "assets/icons/lucide/shield-alert_DC2626.svg"
     x: 6.82
     y: 5.42
     w: 1.02

@@ -180,6 +180,38 @@ def normalize_color(
     return "#000000"
 
 
+def is_multicolor_vendor_logo(svg_path: Optional[Path], svg_text: str) -> bool:
+    """
+    Checks if svg_path is in a logos directory or if svg_text contains >= 2 distinct
+    non-neutral hex colors (excluding #000, #000000, #fff, #ffffff, #231f20, #1e293b, #0f172a).
+    """
+    if svg_path is not None and "logos" in svg_path.parts:
+        return True
+
+    hex_matches = re.findall(r"#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b", svg_text)
+    neutral_set = {
+        "#000",
+        "#000000",
+        "#FFF",
+        "#FFFFFF",
+        "#231F20",
+        "#1E293B",
+        "#0F172A",
+    }
+    distinct_colors = set()
+    for h in hex_matches:
+        hu = h.upper()
+        if len(hu) == 4:
+            hu = "#" + "".join(c * 2 for c in hu[1:])
+        if hu not in neutral_set and h.upper() not in neutral_set:
+            distinct_colors.add(hu)
+
+    return len(distinct_colors) >= 2
+
+
+_is_multicolor_vendor_logo = is_multicolor_vendor_logo
+
+
 def recolor_svg(
     svg_content: str,
     color: Union[str, Tuple[int, ...]],

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 48 48" fill="none" role="img" aria-label="Databricks Jobs REST API">
+<title>Databricks Jobs REST API</title>
+<g transform="translate(4 4) scale(0.833)">
+  <!-- Top Node -->
+  <circle cx="24" cy="10" r="5" fill="#EA580C" stroke="#C2410C" stroke-width="2"/>
+  <!-- Bottom Left Node -->
+  <circle cx="11" cy="34" r="5" fill="#EA580C" stroke="#C2410C" stroke-width="2"/>
+  <!-- Bottom Right Node -->
+  <circle cx="37" cy="34" r="5" fill="#EA580C" stroke="#C2410C" stroke-width="2"/>
+  <!-- Interconnecting Curved Arcs -->
+  <path d="M21 14 C 15 22, 13 26, 13 29" stroke="#EA580C" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M27 14 C 33 22, 35 26, 35 29" stroke="#EA580C" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M16 35 C 22 37, 26 37, 32 35" stroke="#EA580C" stroke-width="3" stroke-linecap="round" fill="none"/>
+</g>
+</svg>

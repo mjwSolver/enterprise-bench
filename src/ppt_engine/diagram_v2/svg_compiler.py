@@ -25,6 +25,7 @@ from src.ppt_engine.diagram_v2.models import (
     resolve_node_fonts,
 )
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
+from src.ppt_engine.icon_engine import recolor_svg, is_multicolor_vendor_logo
 
 
 class SVGCompiler:
@@ -38,7 +39,7 @@ class SVGCompiler:
             canvas_unit=spec.canvas.unit,
         )
         self._used_colors: Set[str] = set()
-        self._icon_cache: Dict[str, str] = {}
+        self._icon_cache: Dict[Tuple[str, Optional[str]], str] = {}
         self._node_boxes: Dict[str, Box] = {}
         self._container_boxes: Dict[str, Box] = {}
 
@@ -49,12 +50,13 @@ class SVGCompiler:
         cleaned = re.sub(r"[^a-zA-Z0-9]", "", str(hex_color)).lower()
         return cleaned or "000000"
 
-    def _resolve_icon_data_uri(self, icon_ref: Optional[str]) -> str:
+    def _resolve_icon_data_uri(self, icon_ref: Optional[str], target_color: Optional[str] = None) -> str:
         """Resolves an icon identifier or path to an embedded Base64 data URI."""
         if not icon_ref:
             return ""
-        if icon_ref in self._icon_cache:
-            return self._icon_cache[icon_ref]
+        cache_key = (icon_ref, target_color)
+        if cache_key in self._icon_cache:
+            return self._icon_cache[cache_key]
 
         data_uri = ""
         resolved_path: Optional[Path] = None
@@ -70,11 +72,23 @@ class SVGCompiler:
                 pass
 
         if resolved_path and resolved_path.exists():
-            mime = "image/svg+xml" if resolved_path.suffix.lower() == ".svg" else "image/png"
-            b64_data = base64.b64encode(resolved_path.read_bytes()).decode("ascii")
+            is_svg = resolved_path.suffix.lower() == ".svg"
+            mime = "image/svg+xml" if is_svg else "image/png"
+            if is_svg and target_color:
+                try:
+                    svg_content = resolved_path.read_text(encoding="utf-8", errors="ignore")
+                    if not is_multicolor_vendor_logo(resolved_path, svg_content):
+                        svg_content = recolor_svg(svg_content, target_color)
+                    raw_bytes = svg_content.encode("utf-8")
+                except Exception:
+                    raw_bytes = resolved_path.read_bytes()
+            else:
+                raw_bytes = resolved_path.read_bytes()
+
+            b64_data = base64.b64encode(raw_bytes).decode("ascii")
             data_uri = f"data:{mime};base64,{b64_data}"
 
-        self._icon_cache[icon_ref] = data_uri
+        self._icon_cache[cache_key] = data_uri
         return data_uri
 
     def compile_svg(self) -> str:
@@ -236,7 +250,8 @@ class SVGCompiler:
     def _render_node(self, n: NodeSpec) -> str:
         box = self.norm.to_pixels(n.x, n.y, n.w, n.h if n.h is not None else (1.2 if self.spec.canvas.unit == "in" else 100.0))
         self._node_boxes[n.id] = box
-        icon_data_uri = self._resolve_icon_data_uri(n.icon)
+        resolved_icon_col = n.icon_color or (n.stroke_hex if n.stroke_hex and n.stroke_hex.upper() not in ("#000000", "#64748B", "#FFFFFF", "#0F172A", "#334155") else None)
+        icon_data_uri = self._resolve_icon_data_uri(n.icon, target_color=resolved_icon_col)
 
         lines: List[str] = [
             f'  <!-- Node Card: {html.escape(n.title)} -->',

@@ -1,5 +1,5 @@
 id: "cdsw_expanded"
-name: "Current: Legacy CDSW Job Execution (Expanded Hardware Safe-Checker)"
+name: "Current: Legacy CDSW Job Execution"
 theme: "metrodata"
 
 canvas:
@@ -12,7 +12,7 @@ canvas:
 
 header:
   show: true
-  action_title: "Current: Legacy CDSW Job Execution (Expanded Hardware Safe-Checker)"
+  action_title: "Current: Legacy CDSW Job Execution"
   subtitle: "Client Hardware Whitelist Verification, Model Serving & Bottleneck Execution Dataflow"
   y: 0.28
   brand_stripes: true
@@ -117,7 +117,7 @@ nodes:
   - id: "node_exe"
     container_id: "group_device"
     title: "EXE"
-    subtitle: "Client Executable\nSupports multiple types\n(recon_tool, audit)"
+    subtitle: "Client Executable"
     icon: "assets/icons/lucide/cpu_0052CC.svg"
     x: 2.85
     y: 1.86
@@ -176,8 +176,8 @@ nodes:
 
   - id: "node_step_send_api"
     container_id: "group_safe_checker"
-    title: "Send request API to Model Serving"
-    subtitle: "Payload: MAC + Client Identity"
+    title: "Send REST Request"
+    subtitle: "Payload: MAC + Identity"
     x: 4.50
     y: 3.73
     w: 3.10
@@ -230,7 +230,7 @@ nodes:
     kicker: "NOT ALLOWED"
     title: "Stopped"
     subtitle: "Execution\nAborted"
-    icon: "assets/icons/lucide/shield-alert.svg"
+    icon: "assets/icons/lucide/shield-alert_DC2626.svg"
     x: 6.15
     y: 5.38
     w: 1.45

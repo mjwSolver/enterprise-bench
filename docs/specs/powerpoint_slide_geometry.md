@@ -76,6 +76,13 @@ Never render Action Titles and Subtitles into separate floating text boxes with 
 1. **Single Text Box:** Place Action Title and Subtitle as sequential paragraphs within the **SAME text frame**.
 2. **Paragraph Spacing Offset:** Enforce a strict paragraph offset (`space_before = Pt(10)`) on the subtitle paragraph. PowerPoint's layout engine automatically flows the subtitle exactly 10pt below the final line of the title regardless of line wrap.
 
+### 5.3 Full-Width Canvas Header Architecture (The Wide-Header Invariant)
+1. **Maximized Horizontal Breathing Room:** The header container must naturally span as wide as possible horizontally across the 16:9 canvas ($13.333''$) to let titles breathe and prevent premature or awkward multi-line wrapping.
+2. **Standardized Header Width Contract:**
+   - **With Brand Stripes ($x = 0.600''$):** Title box begins at $x = 0.850''$ and spans to $w = 12.000''$ (reaching $x = 12.850''$, leaving $\approx 0.48''\text{--}0.60''$ right margin).
+   - **Without Brand Stripes:** Title box begins at $x = 0.600''$ and spans to $w = 12.233''$ (leaving symmetric $\approx 0.50''\text{--}0.60''$ right margin).
+3. **Zero Arbitrary Narrow Boxes:** Never constrain slide title containers to artificial narrow bounding boxes ($7.5''\text{--}9.8''$) when horizontal canvas space is available. Every slide header must standardize to the full available width.
+
 ---
 
 ## 6. Diagram Architecture & Visual Hierarchy Standard

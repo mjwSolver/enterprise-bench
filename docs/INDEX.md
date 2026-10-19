@@ -32,6 +32,8 @@ docs/
 │   ├── adaptive_documentation_scout_protocol.md
 │   ├── adr_drawio_pipeline_vs_mcp.md
 │   ├── change_request_subsystem.md
+│   ├── diagram_engine_v2_export_sop.md
+│   ├── document_anchored_deliverable_architecture.md
 │   ├── drawio_edge_routing_and_collision_prevention.md
 │   ├── drawio_icon_system_architecture.md
 │   ├── ingress_bus_routing_architecture.md
