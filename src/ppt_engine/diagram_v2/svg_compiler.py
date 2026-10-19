@@ -338,12 +338,28 @@ class SVGCompiler:
 
         # Subtitle
         sub_font_size = resolved_sub_pt
+        has_bullets = any(sl.strip().startswith("•") for sl in sub_lines) or bool(getattr(n, "bullets", None))
+        if getattr(n, "align", "center") == "center" and has_bullets:
+            max_bw_px = max(
+                (len(sl if (sl.strip().startswith("•") or not getattr(n, "bullets", None)) else f"• {sl}") * sub_font_size * 0.52 for sl in sub_lines),
+                default=0.0,
+            )
+            default_sub_x = box.cx - max_bw_px / 2.0
+            default_sub_align = "start"
+        elif getattr(n, "align", "center") == "center":
+            default_sub_x = box.cx
+            default_sub_align = "middle"
+        elif getattr(n, "align", "center") == "left" or has_bullets:
+            default_sub_x = box.x + 12.0
+            default_sub_align = "start"
+        else:
+            default_sub_x = box.cx
+            default_sub_align = "middle"
+
         for sl in sub_lines:
             cur_y += max(12.0, sub_font_size * 1.20 + sp_pt * 90.0 / 72.0)
             sl_text = sl if (sl.strip().startswith("•") or not getattr(n, "bullets", None)) else f"• {sl}"
-            sub_align = "start" if (sl_text.strip().startswith("•") or getattr(n, "align", "center") == "left") else "middle"
-            sub_x = (box.x + 12.0) if sub_align == "start" else box.cx
-            lines.append(f'    <text x="{sub_x:.1f}" y="{cur_y:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{sub_font_size:.1f}" font-weight="600" fill="{n.subtitle_color}" text-anchor="{sub_align}">{html.escape(sl_text)}</text>')
+            lines.append(f'    <text x="{default_sub_x:.1f}" y="{cur_y:.1f}" font-family="Helvetica, Arial, sans-serif" font-size="{sub_font_size:.1f}" font-weight="600" fill="{n.subtitle_color}" text-anchor="{default_sub_align}">{html.escape(sl_text)}</text>')
 
         lines.append('  </g>')
         return "\n".join(lines)

@@ -262,9 +262,14 @@ class DrawIOCompiler:
                 sub_items.append(b_s if b_s.startswith("•") else f"• {b_s}")
         if sub_items:
             sub_escaped = _escape_multiline_html("\n".join(sub_items))
-            content_parts.append(
-                f'&lt;div style=&quot;font-size:{s_pt:.1f}px; color:{_escape_attr(n.subtitle_color)}; margin-top:{sp_pt:.1f}px; line-height:1.2;&quot;&gt;{sub_escaped}&lt;/div&gt;'
-            )
+            if getattr(n, "align", "center") == "center" and any(s.strip().startswith("•") for s in sub_items):
+                content_parts.append(
+                    f'&lt;div style=&quot;display:inline-block; text-align:left; font-size:{s_pt:.1f}px; color:{_escape_attr(n.subtitle_color)}; margin-top:{sp_pt:.1f}px; line-height:1.2;&quot;&gt;{sub_escaped}&lt;/div&gt;'
+                )
+            else:
+                content_parts.append(
+                    f'&lt;div style=&quot;font-size:{s_pt:.1f}px; color:{_escape_attr(n.subtitle_color)}; margin-top:{sp_pt:.1f}px; line-height:1.2;&quot;&gt;{sub_escaped}&lt;/div&gt;'
+                )
 
         value_html = "".join(content_parts)
 

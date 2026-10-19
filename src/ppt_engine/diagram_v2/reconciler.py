@@ -563,10 +563,21 @@ class DiagramReconciler:
                         n.h = snapped_h
                         self._update_node_dict(n.id, "h", snapped_h)
 
-            # Extract text from node text frame or card shape
-            text_shape = decompiler.get_shape(f"node:{n.id}:text") or decompiler.get_shape(f"node:{n.id}")
-            if text_shape:
-                paras = decompiler.get_text_paragraphs(text_shape)
+            # Extract text from node text frames or card shape
+            text_shapes = [
+                s for s in decompiler.find_shapes_by_prefix(f"node:{n.id}:text")
+                + decompiler.find_shapes_by_prefix(f"node:{n.id}:title")
+                if s.has_text_frame
+            ]
+            if not text_shapes:
+                card_fallback = decompiler.get_shape(f"node:{n.id}")
+                if card_fallback and card_fallback.has_text_frame:
+                    text_shapes = [card_fallback]
+
+            if text_shapes:
+                paras: List[str] = []
+                for ts in text_shapes:
+                    paras.extend(decompiler.get_text_paragraphs(ts))
                 if paras:
                     remaining_paras = list(paras)
 
@@ -591,9 +602,11 @@ class DiagramReconciler:
                     # 2. Separate bullet items from body paragraphs
                     text_paras: List[str] = []
                     bullet_paras: List[str] = []
-                    for p in remaining_paras:
+                    for idx, p in enumerate(remaining_paras):
                         stripped = p.strip()
-                        if stripped.startswith("•"):
+                        # Only classify as bullet if not a single-line title or if existing node has bullets/multi-line
+                        is_single_title = len(remaining_paras) == 1 and n.bullets is None and (n.title or "").startswith("•")
+                        if stripped.startswith("•") and not is_single_title:
                             bullet_paras.append(stripped.lstrip("•").strip())
                         else:
                             text_paras.append(p)

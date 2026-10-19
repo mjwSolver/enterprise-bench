@@ -263,8 +263,8 @@ nodes:
     container_id: "group_backend"
     title: "Code"
     subtitle: "• Input metadata\n• SQL Query (Filter & Search)\n• Filter & Search Dev. ADD\n• Logging\n• Return Result"
-    valign: "top"
-    align: "left"
+    valign: "middle"
+    align: "center"
     x: 8.90
     y: 4.50
     w: 3.55

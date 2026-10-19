@@ -77,6 +77,7 @@ Full architectural runbook: [`docs/specs/powerpoint_slide_geometry.md`](docs/spe
 - **Unified Title & Subtitle Frame:** Action Title and Subtitle must flow in the **SAME text box** with `space_before = Pt(10)` on subtitle. Zero separate floating text boxes with hardcoded Y coordinates.
 - **Chapter Divider Split Layout:** Asymmetric 1/3 narrative panel + 2/3 photographic hero plate with 45% dark scrim (`#0B132B`).
 - **Diagram Hierarchy & Routing:** Aspect ratio $\sim 2.5:1$ to $3.5:1$, vector tech logos ($40\text{--}48\text{ px}$), gutter-channel routing ($sg.x \pm 18\text{ pt}$), vertical obstacle bypass ($24\text{ pt}$ perimeter jog), and dynamic edge port assignment.
+- **Centered-Block Container Alignment Standard (The Centered-List Invariant):** Multi-line content and bullet lists inside container cards must never be pinned flush to the left container margin. The content block as a whole MUST be centered horizontally within the container (`block_cx == container.cx`), while text lines within the block are internally left-aligned (`text-align: left`) so bullet glyphs (`•`) form a clean vertical column without ragged or scattered indentation.
 
 ---
 

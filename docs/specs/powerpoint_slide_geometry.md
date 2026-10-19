@@ -104,3 +104,21 @@ Intra-column edges between non-adjacent nodes must never cut straight through in
 
 ### 7.3 Dynamic Port Directionality
 Never hardcode edge ports (`exitX=1;entryX=0;`) for all connectors. `DrawIOConverter._build_edge_style` dynamically evaluates $(\Delta x, \Delta y)$ to assign exact attachment faces (top/bottom for vertical flows, left/right for forward/backward flows), guaranteeing interactive `.drawio` files match headless SVG/PNG previews with zero looping or doubled lines. Reference: [`docs/specs/drawio_edge_routing_and_collision_prevention.md`](drawio_edge_routing_and_collision_prevention.md).
+
+---
+
+## 8. Card Content Architecture: Centered-Block Container Alignment Standard (The Centered-List Invariant)
+
+### 8.1 The Lopsided Left-Pinned Anti-Pattern
+Never pin multi-line content or bullet lists to the far-left interior margin of a wide container card while leaving the right half vacant. Conversely, never center-align individual bullet lines with `text-align: center`, which causes bullet glyphs (`•`) to scatter horizontally into ragged, zigzag patterns.
+
+### 8.2 The Dual-Axis Centered-Block Standard
+In all diagram compilers (`PPTXCompiler`, `SVGCompiler`, `DrawIOCompiler`) and slide templates:
+1. **Container Centering (`block_cx == container_cx`):** The bounding box of the multi-line content or bullet group MUST be centered horizontally within the container card:
+   $$\text{box\_x} = \text{container.cx} - \frac{\text{block\_w}}{2.0}$$
+2. **Internal Left Alignment (`text-align: left`):** Within the centered bounding box, individual bullet items and text runs MUST be left-aligned relative to each other. This guarantees that all bullet glyphs (`•`) form a straight, neat vertical column.
+3. **Action Title Centering:** The node title is centered across the card's width (`align = PP_ALIGN.CENTER` / `text-anchor="middle"`), positioned immediately above the centered bullet block with proportional vertical rhythm (`gap = 0.08''\text{--}0.12''`).
+4. **Three-Engine Deterministic Parity:**
+   - **PowerPoint DrawingML:** Renders a centered title frame (`node:{id}:title`) plus a centered-block bullet frame (`node:{id}:text`) placed at `box.cx - bw / 2.0` with `PP_ALIGN.LEFT`.
+   - **Vector SVG & PNG:** Anchors bullet runs at `sub_x = box.cx - max_bw / 2.0` with `text-anchor="start"`.
+   - **Draw.io XML:** Encapsulates bullet items in `<div style="display:inline-block; text-align:left;">` inside centered mxCell containers.

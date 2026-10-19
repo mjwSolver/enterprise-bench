@@ -359,7 +359,7 @@ class PPTXCompiler:
                     bullet_cnt = len(bullets) if bullets else 0
                     total_items = title_lines_cnt + sub_lines_cnt + bullet_cnt
                     init_occ = plan.content_h / plan.region_h if plan.region_h > 0 else 1.0
-                    if h >= 1.80 and align == "left" and valign == "top" and total_items <= 6 and init_occ < 0.55:
+                    if h >= 1.80 and align in ("left", "center") and valign in ("top", "middle") and total_items <= 6 and init_occ < 0.55:
                         qualifies = True
 
             if qualifies:
@@ -461,7 +461,9 @@ class PPTXCompiler:
                 else:
                     p = tf.add_paragraph()
                 p.text = line_text
-                if line_text.strip().startswith("•") or align == PP_ALIGN.LEFT:
+                if align == PP_ALIGN.CENTER:
+                    p.alignment = PP_ALIGN.CENTER
+                elif line_text.strip().startswith("•") or align == PP_ALIGN.LEFT:
                     p.alignment = PP_ALIGN.LEFT
                 else:
                     p.alignment = align
@@ -805,24 +807,96 @@ class PPTXCompiler:
             self._add_icon(slide, box.x + (box.w - plan.icon_size) / 2.0, start_y, plan.icon_size, icon_path, n.icon_emoji, shape_name=f"node:{n.id}:icon")
             text_top = start_y + plan.icon_size + plan.icon_gap
             text_h = max(0.30, (box.y2 - 0.04) - text_top)
-            tb = slide.shapes.add_textbox(Inches(box.x + plan.pad_h), Inches(text_top), Inches(plan.text_width), Inches(text_h))
-            tb.name = f"node:{n.id}:text"
-            _flatten(tb)
-            tf = tb.text_frame
-            tf.word_wrap = True
-            tf.vertical_anchor = MSO_ANCHOR.TOP
-            align_choice = PP_ALIGN.LEFT if getattr(n, "align", "center") == "left" else PP_ALIGN.CENTER
-            self._render_paras(tf, plan.paras, align_choice)
+
+            bullet_paras = [p for p in plan.paras if p.text.strip().startswith("•")]
+            title_paras = [p for p in plan.paras if not p.text.strip().startswith("•")]
+            if getattr(n, "align", "center") == "center" and bullet_paras and title_paras:
+                title_h = sum(p.height_in(plan.text_width) for p in title_paras)
+                natural_bw = max(p.natural_width_in() for p in bullet_paras)
+                bw = min(plan.text_width, natural_bw + 0.15)
+                bullet_h = sum(p.height_in(bw) for p in bullet_paras)
+                gap = 0.08
+
+                # Centered Title
+                tb_title = slide.shapes.add_textbox(Inches(box.x + plan.pad_h), Inches(text_top), Inches(plan.text_width), Inches(title_h + 0.05))
+                tb_title.name = f"node:{n.id}:title"
+                _flatten(tb_title)
+                tf_title = tb_title.text_frame
+                tf_title.word_wrap = True
+                tf_title.vertical_anchor = MSO_ANCHOR.TOP
+                tf_title.margin_left = tf_title.margin_top = tf_title.margin_right = tf_title.margin_bottom = 0
+                self._render_paras(tf_title, title_paras, PP_ALIGN.CENTER)
+
+                # Centered-Block Left-Aligned Bullets
+                bx = box.cx - bw / 2.0
+                by = text_top + title_h + gap
+                tb_bullet = slide.shapes.add_textbox(Inches(bx), Inches(by), Inches(bw), Inches(bullet_h + 0.05))
+                tb_bullet.name = f"node:{n.id}:text"
+                _flatten(tb_bullet)
+                tf_bullet = tb_bullet.text_frame
+                tf_bullet.word_wrap = True
+                tf_bullet.vertical_anchor = MSO_ANCHOR.TOP
+                tf_bullet.margin_left = tf_bullet.margin_top = tf_bullet.margin_right = tf_bullet.margin_bottom = 0
+                self._render_paras(tf_bullet, bullet_paras, PP_ALIGN.LEFT)
+            else:
+                tb = slide.shapes.add_textbox(Inches(box.x + plan.pad_h), Inches(text_top), Inches(plan.text_width), Inches(text_h))
+                tb.name = f"node:{n.id}:text"
+                _flatten(tb)
+                tf = tb.text_frame
+                tf.word_wrap = True
+                tf.vertical_anchor = MSO_ANCHOR.TOP
+                align_choice = PP_ALIGN.LEFT if getattr(n, "align", "center") == "left" else PP_ALIGN.CENTER
+                self._render_paras(tf, plan.paras, align_choice)
         else:
-            tb = slide.shapes.add_textbox(Inches(box.x + plan.pad_h), Inches(region_top), Inches(plan.text_width), Inches(region_h))
-            tb.name = f"node:{n.id}:text"
-            _flatten(tb)
-            tf = tb.text_frame
-            tf.word_wrap = True
-            tf.vertical_anchor = MSO_ANCHOR.TOP if n.valign == "top" else (MSO_ANCHOR.BOTTOM if n.valign == "bottom" else MSO_ANCHOR.MIDDLE)
-            tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
-            align_choice = PP_ALIGN.LEFT if getattr(n, "align", "center") == "left" else PP_ALIGN.CENTER
-            self._render_paras(tf, plan.paras, align_choice)
+            bullet_paras = [p for p in plan.paras if p.text.strip().startswith("•")]
+            title_paras = [p for p in plan.paras if not p.text.strip().startswith("•")]
+            if getattr(n, "align", "center") == "center" and bullet_paras:
+                natural_bw = max(p.natural_width_in() for p in bullet_paras)
+                bw = min(plan.text_width, natural_bw + 0.15)
+                bullet_h = sum(p.height_in(bw) for p in bullet_paras)
+                title_h = sum(p.height_in(plan.text_width) for p in title_paras) if title_paras else 0.0
+                gap = 0.12 if title_paras else 0.0
+                total_h = title_h + gap + bullet_h
+
+                if n.valign == "top":
+                    top_y = region_top
+                elif n.valign == "bottom":
+                    top_y = box.y2 - total_h - plan.pad_h
+                else:
+                    top_y = region_top + max(0.0, (region_h - total_h) / 2.0)
+
+                # Centered Title (if present)
+                if title_paras:
+                    tb_title = slide.shapes.add_textbox(Inches(box.x + plan.pad_h), Inches(top_y), Inches(plan.text_width), Inches(title_h + 0.05))
+                    tb_title.name = f"node:{n.id}:title"
+                    _flatten(tb_title)
+                    tf_title = tb_title.text_frame
+                    tf_title.word_wrap = True
+                    tf_title.vertical_anchor = MSO_ANCHOR.TOP
+                    tf_title.margin_left = tf_title.margin_top = tf_title.margin_right = tf_title.margin_bottom = 0
+                    self._render_paras(tf_title, title_paras, PP_ALIGN.CENTER)
+
+                # Centered-Block Left-Aligned Bullets
+                bx = box.cx - bw / 2.0
+                by = top_y + (title_h + gap if title_paras else 0.0)
+                tb_bullet = slide.shapes.add_textbox(Inches(bx), Inches(by), Inches(bw), Inches(bullet_h + 0.05))
+                tb_bullet.name = f"node:{n.id}:text"
+                _flatten(tb_bullet)
+                tf_bullet = tb_bullet.text_frame
+                tf_bullet.word_wrap = True
+                tf_bullet.vertical_anchor = MSO_ANCHOR.TOP
+                tf_bullet.margin_left = tf_bullet.margin_top = tf_bullet.margin_right = tf_bullet.margin_bottom = 0
+                self._render_paras(tf_bullet, bullet_paras, PP_ALIGN.LEFT)
+            else:
+                tb = slide.shapes.add_textbox(Inches(box.x + plan.pad_h), Inches(region_top), Inches(plan.text_width), Inches(region_h))
+                tb.name = f"node:{n.id}:text"
+                _flatten(tb)
+                tf = tb.text_frame
+                tf.word_wrap = True
+                tf.vertical_anchor = MSO_ANCHOR.TOP if n.valign == "top" else (MSO_ANCHOR.BOTTOM if n.valign == "bottom" else MSO_ANCHOR.MIDDLE)
+                tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
+                align_choice = PP_ALIGN.LEFT if getattr(n, "align", "center") == "left" else PP_ALIGN.CENTER
+                self._render_paras(tf, plan.paras, align_choice)
 
     def _compile_badge(self, slide: Any, b: BadgeSpec, idx: int = 0) -> None:
         badge_id = b.id or f"badge_{idx}"

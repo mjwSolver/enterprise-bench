@@ -282,7 +282,7 @@ def resolve_node_fonts(
             return (t_pt, s_pt, space_before_pt)
         if eff_h < 1.80:
             return (t_pt, s_pt, space_before_pt)
-        if getattr(node, "align", "center") != "left" or getattr(node, "valign", "middle") != "top":
+        if getattr(node, "align", "center") not in ("left", "center") or getattr(node, "valign", "middle") not in ("top", "middle"):
             return (t_pt, s_pt, space_before_pt)
         if total_lines > 6:
             return (t_pt, s_pt, space_before_pt)
