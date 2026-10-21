@@ -42,6 +42,7 @@ from src.cli.pii import pii_app
 from src.cli.locale import locale_app
 from src.cli.cr import cr_app
 from src.cli.stage import stage_app
+from src.cli.vision import vision_app
 
 app = typer.Typer(
     name="bench",
@@ -59,6 +60,7 @@ app.add_typer(pii_app, name="pii")
 app.add_typer(locale_app, name="locale")
 app.add_typer(cr_app, name="cr")
 app.add_typer(stage_app, name="stage")
+app.add_typer(vision_app, name="vision")
 
 
 # ============================================================================
