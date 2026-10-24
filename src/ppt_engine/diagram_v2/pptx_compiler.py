@@ -568,6 +568,13 @@ class PPTXCompiler:
 
         self.compile_slide(slide)
 
+        # Ensure open presentation is dismissed in PowerPoint before overwriting to prevent stale cache/race condition
+        try:
+            from src.cli.utils import close_target_presentation
+            close_target_presentation(out_p)
+        except Exception as ex:
+            logger.debug("close_target_presentation failed or skipped: %s", ex)
+
         prs.save(str(out_p))
         return out_p
 
@@ -796,8 +803,10 @@ class PPTXCompiler:
                 try:
                     from src.ppt_engine.library_importer import IconRegistry
                     icon_path = IconRegistry.resolve_icon(n.icon)
-                except Exception:
-                    pass
+                    if icon_path is None:
+                        logger.warning("Diagram V2: Node '%s' specified icon '%s' which could not be resolved in IconRegistry.", n.id, n.icon)
+                except Exception as ex:
+                    logger.warning("Diagram V2: Exception resolving icon '%s' on node '%s': %s", n.icon, n.id, ex)
 
         has_icon = icon_path is not None or bool(n.icon_emoji)
         is_cylinder = n.is_cylinder or n.shape in ("cylinder", "database")

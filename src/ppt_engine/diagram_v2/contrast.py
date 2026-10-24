@@ -5,6 +5,8 @@ Enforces WCAG 2.1 relative luminance and contrast ratios across declarative
 diagram specifications. Eliminates faded/washed-out text on white/light
 backgrounds, prevents borderless layout bleed on white canvas, and ensures
 crisp typographic hierarchy on dark container fills.
+
+[MJW/AGY] Architecture & Systems Engineering Signature
 """
 
 from __future__ import annotations

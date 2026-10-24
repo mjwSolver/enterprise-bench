@@ -5,6 +5,8 @@ Deterministic compilation of enterprise architecture topologies from declarative
 YAML specifications into Draw.io XML (.drawio), standalone vector SVG (.svg),
 high-DPI PNG (.png), and 100% native PowerPoint DrawingML slides (.pptx).
 Includes Tier 1 geometric collision linting and Tier 2 adversarial Visual QA.
+
+[MJW/AGY] Architecture & Systems Engineering Signature
 """
 
 from src.ppt_engine.diagram_v2.models import (

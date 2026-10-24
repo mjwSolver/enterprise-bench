@@ -4,6 +4,8 @@ Diagram Engine V2 - Tier 1 Geometric Collision & Clearance Linter
 Deterministic, coordinate-level verification engine that codifies the geometric
 rules and layout tolerances learned from the Milestone 33 post-mortem:
 
+[MJW/AGY] Architecture & Systems Engineering Signature
+
 1. NODE_COLLISION: Direct bounding box overlap or insufficient gutter between entity cards (at least 14pt / 18px).
 2. CONTAINER_BADGE_OCCLUSION: Container tag badges covered by child nodes, foreign nodes, or other containers/badges.
 3. CONTAINER_LABEL_OCCLUSION: Container header label bands intruded upon by entity cards.
@@ -240,6 +242,7 @@ class Tier1GeometricLinter:
         issues.extend(self.check_container_badge_occlusion())
         issues.extend(self.check_container_label_occlusion())
         issues.extend(self.check_container_containment())
+        issues.extend(self.check_peer_container_collisions())
         issues.extend(self.check_badge_collisions())
         issues.extend(self.check_boundary_intersections())
         issues.extend(self.check_arrow_swallowing_and_crowding())
@@ -412,8 +415,14 @@ class Tier1GeometricLinter:
             calign = c.resolved_align()
 
             font_size_px = c.font_size * 1.333
-            estimated_text_w = max(60.0, min(c_box.w - 30.0, len(c.label) * (font_size_px * 0.55) + 24.0))
-            label_h = 36.0
+            max_label_w = max(60.0, c_box.w - 30.0 - (144.0 if (c.tag_badge and valign == "top") else 0.0))
+            raw_text_w = len(c.label) * (font_size_px * 0.55) + 24.0
+            estimated_text_w = min(max_label_w, max(60.0, raw_text_w))
+
+            # Dynamic wrapped line count and height calculation
+            lines = max(1, math.ceil(raw_text_w / max_label_w))
+            line_h = font_size_px * 1.35
+            label_h = max(36.0, lines * line_h + 12.0)
 
             if calign == "center":
                 label_x = c_box.x + (c_box.w - estimated_text_w) / 2.0
@@ -434,15 +443,17 @@ class Tier1GeometricLinter:
                 ox = max(0.0, min(label_box.x2, n_box.x2) - max(label_box.x, n_box.x))
                 oy = max(0.0, min(label_box.y2, n_box.y2) - max(label_box.y, n_box.y))
                 if ox > 10.0 and oy > 8.0:
+                    sev: Literal["CRITICAL", "WARNING"] = "CRITICAL" if oy > 10.0 else "WARNING"
+                    min_y = c_box.y + label_h + 8.0
                     issues.append(AuditIssue(
-                        severity="WARNING",
+                        severity=sev,
                         category="CONTAINER_LABEL_OCCLUSION",
                         element_id=c.id,
-                        description=f"Node '{n.id}' intrudes into container '{c.id}' {'bottom' if valign == 'bottom' else 'top'} label zone by {oy:.1f}px.",
+                        description=f"Node '{n.id}' intrudes into container '{c.id}' {'bottom' if valign == 'bottom' else 'top'} label zone by {oy:.1f}px (label_h={label_h:.1f}px).",
                         suggested_fix=(
                             f"Increase container '{c.id}' bottom margin or raise node '{n.id}' Y position."
                             if valign == "bottom"
-                            else f"Increase container '{c.id}' top margin or lower node '{n.id}' Y position (minimum y={c_box.y + 40:.1f}px)."
+                            else f"Increase container '{c.id}' top margin or lower node '{n.id}' Y position (minimum y={min_y:.1f}px)."
                         ),
                         coords=(label_box.x, label_box.y, label_box.w, label_box.h),
                     ))
@@ -467,7 +478,18 @@ class Tier1GeometricLinter:
                 continue
 
             has_header = bool((c.label and c.label.strip()) or c.tag_badge)
-            header_zone = 36.0 if has_header else 12.0
+            font_size_px = c.font_size * 1.333
+            valign = c.resolved_vertical_align()
+            if c.label and c.label.strip():
+                max_label_w = max(60.0, c_box.w - 30.0 - (144.0 if (c.tag_badge and valign == "top") else 0.0))
+                raw_text_w = len(c.label) * (font_size_px * 0.55) + 24.0
+                lines = max(1, math.ceil(raw_text_w / max_label_w))
+                line_h = font_size_px * 1.35
+                header_zone = max(36.0, lines * line_h + 12.0)
+            elif c.tag_badge:
+                header_zone = 36.0
+            else:
+                header_zone = 12.0
             pad = 12.0
 
             if has_header and c.resolved_vertical_align() == "bottom":
@@ -604,6 +626,49 @@ class Tier1GeometricLinter:
                             coords=(c_box.x, c_box.y, c_box.w, c_box.h),
                         ))
 
+        return issues
+
+    # =========================================================================
+    # Rule 3b-2: Peer / Sibling Container Physical Overlap
+    # =========================================================================
+    def check_peer_container_collisions(self) -> List[AuditIssue]:
+        """
+        Detects unintended physical collisions between peer (non-nested) containers.
+        Parent/child nested containers are exempt.
+        """
+        issues: List[AuditIssue] = []
+        containers = self.spec.containers
+        for i, c1 in enumerate(containers):
+            b1 = self.container_boxes.get(c1.id)
+            if not b1:
+                continue
+            for c2 in containers[i + 1:]:
+                b2 = self.container_boxes.get(c2.id)
+                if not b2:
+                    continue
+                # Exclude nested parent/child relationships
+                is_nested = (
+                    c1.parent_id == c2.id
+                    or c2.parent_id == c1.id
+                    or c1.container_id == c2.id
+                    or c2.container_id == c1.id
+                    or (b1.x >= b2.x - 1 and b1.x2 <= b2.x2 + 1 and b1.y >= b2.y - 1 and b1.y2 <= b2.y2 + 1)
+                    or (b2.x >= b1.x - 1 and b2.x2 <= b1.x2 + 1 and b2.y >= b1.y - 1 and b2.y2 <= b1.y2 + 1)
+                )
+                if is_nested:
+                    continue
+
+                ox = max(0.0, min(b1.x2, b2.x2) - max(b1.x, b2.x))
+                oy = max(0.0, min(b1.y2, b2.y2) - max(b1.y, b2.y))
+                if ox > 4.0 and oy > 4.0:
+                    issues.append(AuditIssue(
+                        severity="CRITICAL",
+                        category="CONTAINER_COLLISION",
+                        element_id=f"{c1.id}_vs_{c2.id}",
+                        description=f"Peer containers '{c1.id}' and '{c2.id}' physically overlap by {ox:.1f}px x {oy:.1f}px.",
+                        suggested_fix=f"Adjust coordinates of '{c1.id}' or '{c2.id}' to prevent container overlap.",
+                        coords=(min(b1.x, b2.x), min(b1.y, b2.y), max(b1.x2, b2.x2) - min(b1.x, b2.x), max(b1.y2, b2.y2) - min(b1.y, b2.y)),
+                    ))
         return issues
 
     # =========================================================================

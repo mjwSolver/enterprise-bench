@@ -4,6 +4,8 @@ Diagram Engine V2 - High-Level Unified Compiler Orchestrator
 Coordinates declarative YAML parsing, schema validation, geometry normalization,
 and deterministic compilation into Draw.io XML (.drawio), high-fidelity SVG (.svg),
 high-DPI PNG (.png), and 100% native PowerPoint slides (.pptx).
+
+[MJW/AGY] Architecture & Systems Engineering Signature
 """
 
 from __future__ import annotations

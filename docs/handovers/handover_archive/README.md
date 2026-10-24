@@ -30,6 +30,7 @@
 | **2026-10-14** | Milestone 30 | [`2026-10-14_visual_qa_and_drawingml_collision_remediation.md`](2026-10-14_visual_qa_and_drawingml_collision_remediation.md) | DrawingML spatial collision linter, macOS live window screen capture, forward arrowhead orientation, card text overflow fixes, cylinder text clearance, and `bench ppt visual-qa` CLI. |
 | **2026-10-14** | Milestone 31 | [`2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md`](2026-10-14_flat_aesthetic_padding_engine_and_flow_routing.md) | Flat DrawingML aesthetic standardization via `_flatten`, proportional padding engine `_plan_card`, Databricks 3D cylinder body alignment, single polyline routing, collinear boundary auditing. |
 | **2026-10-14** | Milestone 32 | [`2026-10-14_cdsw_to_lambda_architecture_evolution.md`](2026-10-14_cdsw_to_lambda_architecture_evolution.md) | Milestone 32 closeout (CDSW-to-Lambda architecture evolution presentation suite in `architecture_evolution_cdsw_to_lambda.pptx`, decoupled flow routing topology, Databricks 3D cylinder visual parity, Gear 2/3 high-density consulting archetypes, and Diagnostic Status Triad). |
+| **2026-10-14** | Milestone 33 | [`2026-10-14_interwoven_migration_topology_and_whitelisting.md`](2026-10-14_interwoven_migration_topology_and_whitelisting.md) | Unified Interwoven Migration Architecture diagram, database horizontal compression from 260px to 170px, expanded connector spans with 140-175px clearance, return loop repositioned below legacy cluster, and multi-format Draw.io/SVG/PNG/PowerPoint synchronization. |
 
 
 ---

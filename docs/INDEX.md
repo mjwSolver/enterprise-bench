@@ -14,10 +14,8 @@ docs/
 ├── handovers/             # Historical sprint and session handover briefings (Latest 10 active)
 │   ├── handover_archive/  # Completed briefings rotated out to preserve 10-handover limit
 │   │   ├── README.md      # Archive catalog with completion timestamps
-│   │   └── ...            # 20 archived briefings
+│   │   └── ...            # 22 archived briefings
 │   ├── CONTRACTOR_INSTRUCTIONS.md
-│   ├── 2026-10-14_cdsw_to_lambda_architecture_evolution.md
-│   ├── 2026-10-14_interwoven_migration_topology_and_whitelisting.md
 │   ├── 2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md
 │   ├── 2026-10-15_visual_vector_refinement_and_openxml_purge.md
 │   ├── 2026-10-16_bidirectional_pptx_decompiler_and_reconciliation.md
@@ -25,7 +23,9 @@ docs/
 │   ├── 2026-10-16_diagram_v2_standardization_tracks_1_and_2.md
 │   ├── 2026-10-16_typographic_scale_drift_and_elastic_autofill.md
 │   ├── 2026-10-16_autonomous_pptx_file_watcher_and_geometric_sync.md
-│   └── 2026-10-17_multi_subsystem_defect_remediation_and_parity.md
+│   ├── 2026-10-17_multi_subsystem_defect_remediation_and_parity.md
+│   ├── 2026-10-17_system_wide_hardening_and_in_flight_flight_test.md
+│   └── 2026-10-24_desktop_preview_lifecycle_and_diagram_v2_resilience.md
 │
 ├── specs/                 # Permanent architectural references, runbooks & ADRs
 │   ├── adaptive_complexity_gears_and_enterprise_density.md

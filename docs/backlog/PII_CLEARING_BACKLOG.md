@@ -173,7 +173,7 @@ The audit isolated **5 primary focus areas** where remediation effort must be co
 | `BSIM_Migration/` | `doc_files/BSIM - Proposed Timeline V02.xlsx` | `.xlsx` | Live Bank Sinarmas project timeline and cutover schedule | Customer Live / Keep in Workspace Only |
 | `BSIM_Migration/` | `doc_files/BSIM_Cloudera_Data_Platform_Modernization_Proposed_Timeline.xlsx` | `.xlsx` | Cloudera CDP to Databricks migration master timeline | Customer Live / Keep in Workspace Only |
 | `BSIM_Migration/` | `doc_files/BSIM_Presentation.pptx` | `.pptx` | Original Bank Sinarmas modernization presentation deck | Customer Live / Keep in Workspace Only |
-| `BSIM_Migration/` | `BSIM JIRA Cleaned.csv` | `.csv` | Jira extract with 54+ Workstream 4 workload tasks and statuses | Customer Live / Keep in Workspace Only |
+| `BSIM_Migration/` | `BSIM JIRA Cleaned.csv` | `.csv` | Jira extract with WS4 workload tasks (reflecting upstream ±54 epic title; active scope reconciled to 36 on 20 Oct 2026) | Customer Live / Keep in Workspace Only |
 
 ---
 

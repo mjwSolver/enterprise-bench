@@ -12,33 +12,49 @@ Any portable bundle produced under this SOP strictly enforces a 4-tier separatio
 
 ```text
 diagram_engine_v2_bundle_<TIMESTAMP>/
-├── compile.py              # Zero-overhead standalone runner script
-├── requirements.txt        # python-pptx, pydantic, pyyaml, pillow, cairosvg
-├── README.md               # Clear setup and boundary safety instructions
+├── compile.py                          # Zero-overhead standalone runner script
+├── requirements.txt                    # python-pptx, pydantic, pyyaml, pillow, cairosvg
+├── README.md                           # Clear setup, boundary safety & quick-test prompt
+├── VERSION_LOG.md                      # Release ledger with delta tracking vs. prior zips
+├── candidate_reference_slide_3.png     # Visual reference benchmark for testing prompts
 │
-├── 📂 my_specs/            # 🟢 SAFE ZONE: User's custom YAML specs (retained on update)
-├── 📂 my_output/           # 🟢 SAFE ZONE: User's compiled outputs (retained on update)
+├── 📂 my_specs/                        # 🟢 SAFE ZONE: User's custom YAML specs (retained on update)
+├── 📂 my_output/                       # 🟢 SAFE ZONE: User's compiled outputs (retained on update)
 │
-├── 📂 specs/               # Canonical reference and sample specifications
-├── 📂 engine/              # 🔴 ENGINE ZONE: Core compiler, auditor, geometry, and reconciler
-└── 📂 assets/              # 🔴 ASSET ZONE: Centralized vendor logos (AWS, Azure, etc.) & icons
+├── 📂 specs/                           # Canonical reference and sample specifications
+├── 📂 engine/                          # 🔴 ENGINE ZONE: Core compiler, auditor, geometry, reconciler
+│   ├── 📂 diagram_v2/                  # Core V2 modules, contrast engine, and VERSION_LOG.md
+│   ├── library_importer.py             # Vector icon catalog and index importer
+│   ├── asset_harvester.py              # Vendor asset discovery helper
+│   └── icon_engine.py                  # Dynamic icon tinting & multi-color logo guard
+└── 📂 assets/                          # 🔴 ASSET ZONE: Centralized vendor logos (AWS, Azure, etc.) & icons
 ```
 
 ---
 
-## 3. Dependency Decoupling & Transitive Closure
-The portable bundle extracts:
-1. **Core Package:** `src/ppt_engine/diagram_v2/` $\to$ `engine/diagram_v2/`
-2. **Icon & Asset Resolvers:**
+## 3. Mandatory Distributable Checklist & Invariants
+Whenever packaging a new zip distributable, the builder MUST guarantee:
+1. **Provenance Comment Signatures (`[MJW/AGY]`):**
+   - Verified present in header docstrings of key engine modules (`__init__.py`, `compiler.py`, `contrast.py`, `auditor.py`, `models.py`).
+2. **Version Log Ledger (`VERSION_LOG.md`):**
+   - Located both at `engine/diagram_v2/VERSION_LOG.md` and mirrored at the root of the archive (`VERSION_LOG.md`).
+   - Must explicitly note that it is compiled strictly for packaging and gzip/zip distribution tracking.
+   - Must contain the exact release timestamp (`YYYY-MM-DD HH:MM:SS +0700`) and a delta breakdown vs. previous releases.
+3. **Reference Visual Asset & Prompt:**
+   - Bundled `candidate_reference_slide_3.png` in archive root.
+   - Root `README.md` containing the lazy test seed prompt for immediate zero-friction onboarding.
+4. **Dependency Decoupling & Transitive Closure:**
+   - `src/ppt_engine/diagram_v2/` $\to$ `engine/diagram_v2/`
    - `src/ppt_engine/library_importer.py` $\to$ `engine/library_importer.py`
    - `src/ppt_engine/asset_harvester.py` $\to$ `engine/asset_harvester.py`
-3. **Vendor Icons & Manifests:**
+   - `src/ppt_engine/icon_engine.py` $\to$ `engine/icon_engine.py`
    - `assets/icons/` $\to$ `assets/icons/`
    - `assets/logos/` $\to$ `assets/logos/`
-4. **AST Import Rewrite:**
+5. **AST / String Import Rewrites:**
    - `src.ppt_engine.diagram_v2` $\to$ `engine.diagram_v2`
    - `src.ppt_engine.library_importer` $\to$ `engine.library_importer`
    - `src.ppt_engine.asset_harvester` $\to$ `engine.asset_harvester`
+   - `src.ppt_engine.icon_engine` $\to$ `engine.icon_engine`
    - `_REPO_ROOT = Path(__file__).resolve().parent.parent` in resolvers.
 
 ---

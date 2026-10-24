@@ -50,6 +50,56 @@ def open_desktop_review(path: Path | str, app_name: Optional[str] = None) -> boo
         return False
 
 
+def close_target_presentation(path: Path | str) -> bool:
+    """Close a specific target presentation in Microsoft PowerPoint on macOS if open.
+
+    Ensures that subsequent saves do not collide with stale in-memory buffers or cause
+    data-loss race conditions. Does NOT quit Microsoft PowerPoint and leaves other
+    open presentations untouched. Safe to call headlessly (checks pgrep first).
+    """
+    if sys.platform != "darwin":
+        return False
+
+    target = Path(path)
+    target_name = target.name
+
+    # Check if Microsoft PowerPoint is running before executing AppleScript to avoid auto-launching it
+    try:
+        check = subprocess.run(
+            ["pgrep", "-x", "Microsoft PowerPoint"],
+            capture_output=True,
+            text=True,
+        )
+        if check.returncode != 0:
+            return False
+    except Exception:
+        return False
+
+    script = """
+    on run argv
+        set targetName to item 1 of argv
+        tell application "Microsoft PowerPoint"
+            repeat with p in presentations
+                if name of p is targetName then
+                    close p saving no
+                end if
+            end repeat
+        end tell
+    end run
+    """
+    try:
+        subprocess.run(
+            ["osascript", "-e", script, target_name],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        )
+        return True
+    except Exception:
+        return False
+
+
 def handle_cli_error(e: Exception, verbose: bool = False) -> None:
     """Standardized error display handler for CLI commands."""
     console.print(f"[bold red]Error:[/bold red] {e}")

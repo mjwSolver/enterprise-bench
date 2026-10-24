@@ -3,6 +3,8 @@ Diagram Engine V2 - Declarative Specification Models
 =====================================================
 Pydantic v2 data models defining the declarative YAML schema for enterprise
 diagram topologies, container boundaries, entity nodes, and routed connectors.
+
+[MJW/AGY] Architecture & Systems Engineering Signature
 """
 
 from __future__ import annotations
@@ -10,7 +12,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 
@@ -145,6 +147,8 @@ class ContainerSpec(BaseModel):
     vertical_align: Optional[str] = None
     parent_id: Optional[str] = None
     container_id: Optional[str] = None
+    icon: Optional[str] = None
+    icon_emoji: Optional[str] = None
 
     def resolved_vertical_align(self) -> str:
         if self.vertical_align is not None and self.vertical_align in ("top", "bottom", "middle"):
@@ -520,6 +524,18 @@ class DiagramSpec(BaseModel):
     flows: List[FlowSpec] = Field(default_factory=list)
     badges: List[BadgeSpec] = Field(default_factory=list)
     bullet_lists: List[BulletListSpec] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _remap_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            # Remap 'connectors' or 'arrows' to 'flows' if flows is omitted or empty
+            if not data.get("flows"):
+                if data.get("connectors"):
+                    data["flows"] = data["connectors"]
+                elif data.get("arrows"):
+                    data["flows"] = data["arrows"]
+        return data
 
     def model_post_init(self, __context: Any) -> None:
         try:

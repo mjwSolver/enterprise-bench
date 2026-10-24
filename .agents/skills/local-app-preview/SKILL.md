@@ -74,6 +74,29 @@ open -a "Microsoft PowerPoint" "<path_to_file.pptx>"
 osascript -e 'tell application "Microsoft PowerPoint" to activate'
 ```
 
+#### 🔄 In-Situ Recompilation & Refresh Protocol (Dismiss Target Presentation)
+When modifying, re-generating, or micro-patching a PowerPoint file previously opened on desktop:
+1. Microsoft PowerPoint for Mac does **not** auto-reload modified files from disk; it caches the open presentation in memory.
+2. Saving or recompiling while the presentation is open results in stale preview display and creates an overwrite collision risk (AutoSave or `Cmd+S` overwrites disk changes).
+3. Always dismiss the target presentation window before saving new changes to disk (without quitting PowerPoint or closing other open decks):
+```bash
+TARGET_NAME="$(basename "<path_to_file.pptx>")"
+if pgrep -x "Microsoft PowerPoint" >/dev/null 2>&1; then
+  osascript -e '
+  on run argv
+    set targetName to item 1 of argv
+    tell application "Microsoft PowerPoint"
+      repeat with p in presentations
+        if name of p is targetName then
+          close p saving no
+        end if
+      end repeat
+    end tell
+  end run' "$TARGET_NAME"
+fi
+```
+*(Note: `src.cli.utils.close_target_presentation` executes this check and dismissal automatically in compilation and CLI generation pipelines).*
+
 ### 📐 Diagrams (`.drawio`, `.svg`, `.png`) & Images
 ```bash
 # Open vector diagrams or images in macOS Preview:
