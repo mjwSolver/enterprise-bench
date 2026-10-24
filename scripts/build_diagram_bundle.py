@@ -10,7 +10,8 @@ def build_bundle():
     bundle_name = f"diagram_engine_v2_bundle_{ts}"
     staging_root = f"/tmp/{bundle_name}"
     
-    repo_root = Path("/Users/marcelljw/VisualStudioCode/enterprise-bench")
+    # 100% self-contained within enterprise-bench
+    repo_root = Path(__file__).resolve().parent.parent
     
     if os.path.exists(staging_root):
         shutil.rmtree(staging_root)
@@ -54,14 +55,16 @@ def build_bundle():
         os.path.join(staging_root, "assets", "logos")
     )
 
-    # 5. Copy sample spec and candidate test slide
+    # 5. Copy sample spec and candidate test slide (from enterprise-bench)
     os.makedirs(os.path.join(staging_root, "specs"), exist_ok=True)
-    sample_spec = Path("/Users/marcelljw/Documents/antigravity/adventurous-darwin/BSIM_Migration/specs/diagrams/proposed_aws_dynamodb_whitelist.yaml")
+    sample_spec = repo_root / "specs/diagrams/sample_dynamodb_whitelist.yaml"
+    if not sample_spec.exists():
+        sample_spec = repo_root / "specs/diagrams/e2e_live_system_flight_test.yaml"
     if sample_spec.exists():
         shutil.copy(sample_spec, os.path.join(staging_root, "specs", "sample_dynamodb_whitelist.yaml"))
 
     # Copy candidate reference image directly to bundle root
-    candidate_img = Path("/Users/marcelljw/Documents/antigravity/adventurous-darwin/BSIM_Migration/output/candidate_reference_slide_3.png")
+    candidate_img = repo_root / "assets/candidate_reference_slide_3.png"
     if candidate_img.exists():
         shutil.copy(candidate_img, os.path.join(staging_root, "candidate_reference_slide_3.png"))
 
@@ -287,8 +290,8 @@ Your agent should author a new spec in `my_specs/` and run `python compile.py` t
     with open(os.path.join(staging_root, "README.md"), "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    # 11. Create timestamped zip archive in output/releases/
-    out_dir = Path("/Users/marcelljw/Documents/antigravity/adventurous-darwin/BSIM_Migration/output/releases")
+    # 11. Create timestamped zip archive strictly in enterprise-bench/output/releases/
+    out_dir = repo_root / "output/releases"
     out_dir.mkdir(parents=True, exist_ok=True)
     zip_path = out_dir / f"diagram_engine_v2_portable_{ts}.zip"
 
@@ -302,17 +305,10 @@ Your agent should author a new spec in `my_specs/` and run `python compile.py` t
                 rel_p = os.path.relpath(full_p, os.path.dirname(staging_root))
                 zipf.write(full_p, rel_p)
 
-    # Also mirror to enterprise-bench/output/releases/
-    bench_out_dir = repo_root / "output/releases"
-    bench_out_dir.mkdir(parents=True, exist_ok=True)
-    bench_zip_path = bench_out_dir / f"diagram_engine_v2_portable_{ts}.zip"
-    shutil.copy(zip_path, bench_zip_path)
-
     # Clean up staging directory
     shutil.rmtree(staging_root)
 
     print(f"ZIP_CREATED: {zip_path}")
-    print(f"BENCH_MIRROR: {bench_zip_path}")
     print(f"SIZE_MB: {os.path.getsize(zip_path) / (1024 * 1024):.2f}")
     return zip_path
 

@@ -1,0 +1,425 @@
+id: proposed_aws_dynamodb_whitelist
+name: 'Proposed: Client Guardrail & Amazon DynamoDB Whitelist Verification'
+theme: metrodata
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: in
+  background: '#FFFFFF'
+  show_grid: true
+  grid_spacing: 60.0
+header:
+  show: true
+  action_title: 'Proposed: Client Guardrail & Amazon DynamoDB Whitelist Verification'
+  subtitle: Local Device Metadata Capture, Low-Latency DynamoDB Key-Value Lookup & Realtime Audit Logging
+  brand_stripes: true
+  red_hex: '#DC2626'
+  blue_hex: '#0284C7'
+  tag_badge: PROPOSED AWS DYNAMODB ARCHITECTURE
+  tag_bg_hex: '#FFFBEB'
+  tag_text_hex: '#B45309'
+  tag_border_hex: '#FDE68A'
+containers:
+  - id: group_user
+    label: USER ORIGIN
+    x: 0.45
+    y: 1.35
+    w: 1.5
+    h: 5.9
+    border_hex: '#94A3B8'
+    fill_hex: '#F8FAFC'
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: 8 6
+    align: center
+    vertical_align: top
+  - id: group_device
+    label: LOCAL CLIENT MACHINE
+    x: 2.3
+    y: 1.35
+    w: 4.55
+    h: 5.9
+    border_hex: '#64748B'
+    fill_hex: '#F8FAFC'
+    fill_opacity: 0.5
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: 8 6
+    align: left
+    vertical_align: top
+  - id: group_safe_checker
+    label: ''
+    x: 4.05
+    y: 1.7
+    w: 2.5
+    h: 5.35
+    border_hex: '#0284C7'
+    fill_hex: '#FFFFFF'
+    fill_opacity: 1.0
+    stroke_width: 2.0
+    dashed: false
+    corner_radius: 12.0
+    align: center
+    vertical_align: top
+  - id: group_dynamodb
+    label: 'AWS CLOUD · AMAZON DYNAMODB ARCHITECTURE'
+    x: 7.25
+    y: 1.35
+    w: 5.70
+    h: 5.9
+    border_hex: '#F59E0B'
+    fill_hex: '#FFFBEB'
+    fill_opacity: 0.4
+    stroke_width: 2.0
+    dashed: true
+    dash_pattern: 8 6
+    align: left
+    vertical_align: top
+nodes:
+  - id: node_user
+    container_id: group_user
+    title: User
+    subtitle: Operator / Client
+    shape: rounded
+    x: 0.58
+    y: 1.86
+    w: 1.24
+    h: 1.55
+    icon: assets/icons/lucide/users_2563EB.svg
+    stroke_hex: '#3B82F6'
+    fill_hex: '#FFFFFF'
+    stroke_width: 2.0
+  - id: node_user_roles
+    container_id: group_user
+    title: EXAMPLE USERS
+    subtitle: "• Security\n• Finance\n• Fraud\n• etc."
+    shape: rounded
+    x: 0.58
+    y: 3.65
+    w: 1.24
+    h: 1.85
+    stroke_hex: '#CBD5E1'
+    fill_hex: '#FFFFFF'
+    stroke_width: 1.5
+    title_pt: 10.0
+    align: left
+    valign: top
+  - id: node_exe
+    container_id: group_device
+    title: EXE
+    subtitle: Client Executable
+    shape: rounded
+    x: 2.7
+    y: 1.86
+    w: 1.1
+    h: 1.88
+    icon: assets/icons/lucide/cpu_0052CC.svg
+    stroke_hex: '#3B82F6'
+    fill_hex: '#FFFFFF'
+    stroke_width: 2.0
+  - id: node_safe_header
+    container_id: group_safe_checker
+    title: Safe Checker
+    subtitle: Pre-Run Whitelist Verifier
+    shape: rounded
+    x: 4.18
+    y: 1.86
+    w: 2.24
+    h: 0.50
+    icon: assets/icons/lucide/shield_0052CC.svg
+    icon_layout: side
+    title_pt: 10.0
+    stroke_hex: '#BAE6FD'
+    fill_hex: '#E0F2FE'
+    stroke_width: 1.0
+    title_color: '#0369A1'
+    subtitle_color: '#64748B'
+  - id: node_step_intercept
+    container_id: group_safe_checker
+    title: • Intercept & Hold Process
+    shape: rounded
+    x: 4.18
+    y: 2.59
+    w: 2.24
+    h: 0.36
+    stroke_hex: '#E2E8F0'
+    fill_hex: '#F8FAFC'
+    stroke_width: 1.0
+    title_pt: 9.5
+    title_color: '#0F172A'
+  - id: node_step_mac
+    container_id: group_safe_checker
+    title: • Get MAC Addresses & IP
+    shape: rounded
+    x: 4.18
+    y: 3.16
+    w: 2.24
+    h: 0.36
+    stroke_hex: '#E2E8F0'
+    fill_hex: '#F8FAFC'
+    stroke_width: 1.0
+    title_pt: 9.5
+    title_color: '#0F172A'
+  - id: node_step_send_api
+    container_id: group_safe_checker
+    title: Send REST Request
+    subtitle: 'Payload: MAC + Identity'
+    shape: rounded
+    x: 4.18
+    y: 3.73
+    w: 2.24
+    h: 0.68
+    stroke_hex: '#7C3AED'
+    fill_hex: '#F5F3FF'
+    stroke_width: 1.5
+    title_pt: 9.5
+    title_color: '#6D28D9'
+    subtitle_color: '#7C3AED'
+  - id: node_step_receive
+    container_id: group_safe_checker
+    title: Receive Status
+    subtitle: 'Response: Allowed / Denied'
+    shape: rounded
+    x: 4.18
+    y: 4.60
+    w: 2.24
+    h: 0.58
+    stroke_hex: '#F59E0B'
+    fill_hex: '#FFFBEB'
+    stroke_width: 1.5
+    title_pt: 9.5
+    title_color: '#B45309'
+    subtitle_color: '#D97706'
+  - id: node_allowed
+    container_id: group_safe_checker
+    title: Continue
+    subtitle: Resume client execution
+    kicker: ALLOWED
+    shape: rounded
+    x: 4.18
+    y: 5.48
+    w: 1.02
+    h: 1.40
+    icon: assets/icons/lucide/check-circle_10B981.svg
+    stroke_hex: '#16A34A'
+    fill_hex: '#F0FDF4'
+    stroke_width: 1.5
+    title_pt: 9.5
+    title_color: '#16A34A'
+    subtitle_color: '#166534'
+    valign: top
+  - id: node_not_allowed
+    container_id: group_safe_checker
+    title: Stopped
+    subtitle: Execution Aborted
+    kicker: NOT ALLOWED
+    shape: rounded
+    x: 5.4
+    y: 5.48
+    w: 1.02
+    h: 1.40
+    icon: assets/icons/lucide/shield-alert_DC2626.svg
+    stroke_hex: '#DC2626'
+    fill_hex: '#FEF2F2'
+    stroke_width: 1.5
+    title_pt: 9.5
+    title_color: '#DC2626'
+    subtitle_color: '#991B1B'
+    valign: top
+  - id: node_api_gw
+    container_id: group_dynamodb
+    title: Amazon API Gateway
+    subtitle: "HTTPS REST Ingress\n& API Key / IAM Authorizer\n(Sub-10ms Overhead)"
+    kicker: AWS INGRESS
+    shape: rounded
+    x: 7.42
+    y: 2.05
+    w: 1.42
+    h: 3.10
+    icon: assets/logos/aws/aws_api_gateway.svg
+    stroke_hex: '#8B5CF6'
+    fill_hex: '#F5F3FF'
+    stroke_width: 2.0
+    title_pt: 10.5
+    title_color: '#6D28D9'
+    subtitle_color: '#475569'
+  - id: node_iam_role
+    container_id: group_dynamodb
+    title: IAM Role
+    subtitle: "SigV4 Auth Token\nZero DB Secrets\nScoped Policy"
+    kicker: SECURITY
+    shape: rounded
+    x: 7.42
+    y: 5.35
+    w: 1.42
+    h: 1.55
+    icon: assets/logos/aws/aws_secrets_manager.svg
+    stroke_hex: '#EF4444'
+    fill_hex: '#FEF2F2'
+    stroke_width: 1.8
+    title_pt: 10.0
+    title_color: '#DC2626'
+    subtitle_color: '#991B1B'
+  - id: node_dynamodb_engine
+    container_id: group_dynamodb
+    title: Amazon DynamoDB Service
+    subtitle: "Serverless NoSQL Key-Value Store · Single-Digit Millisecond Latency\n(AWS Direct Integration / Lambda Micro-Resolver)"
+    kicker: SERVERLESS STORAGE ENGINE
+    shape: rounded
+    x: 9.20
+    y: 1.86
+    w: 3.60
+    h: 1.55
+    icon: assets/logos/aws/aws_dynamodb.svg
+    stroke_hex: '#F59E0B'
+    fill_hex: '#FFFBEB'
+    stroke_width: 2.0
+    title_pt: 10.5
+    title_color: '#B45309'
+    subtitle_color: '#334155'
+  - id: table_dynamodb_whitelist
+    container_id: group_dynamodb
+    title: Whitelist Table
+    subtitle: device_whitelist
+    shape: cylinder
+    is_cylinder: true
+    x: 9.18
+    y: 3.75
+    w: 1.76
+    h: 3.15
+    icon: assets/logos/aws/aws_dynamodb.svg
+    stroke_hex: '#0284C7'
+    fill_hex: '#F0F9FF'
+    stroke_width: 2.0
+    title_pt: 10.5
+    title_color: '#0369A1'
+    subtitle_color: '#334155'
+    bullets:
+      - 'Key-Value lookup by:'
+      - '• PK: device_id / mac'
+      - '• SK: project_name'
+      - 'Sub-millisecond query'
+      - 'Validate expiration'
+      - 'Returns: ALLOW / DENY'
+  - id: table_dynamodb_audit
+    container_id: group_dynamodb
+    title: Audit Log Table
+    subtitle: device_audit_log
+    shape: cylinder
+    is_cylinder: true
+    x: 11.02
+    y: 3.75
+    w: 1.76
+    h: 3.15
+    icon: assets/logos/aws/aws_dynamodb.svg
+    stroke_hex: '#16A34A'
+    fill_hex: '#F0FDF4'
+    stroke_width: 2.0
+    title_pt: 10.5
+    title_color: '#15803D'
+    subtitle_color: '#334155'
+    bullets:
+      - 'Append-only events:'
+      - '• PK: mac_address'
+      - '• SK: timestamp_iso'
+      - '• Outbound client IP'
+      - '• Decision outcome'
+      - 'DynamoDB Streams log'
+flows:
+  - id: flow_user_to_exe
+    source: node_user
+    target: node_exe
+    points:
+      - [1.82, 2.635]
+      - [2.7, 2.635]
+    label: 1. Trigger
+    label_at: [2.26, 2.4]
+    stroke_hex: '#2563EB'
+    stroke_width: 2.2
+    label_bg_hex: '#EFF6FF'
+    label_text_hex: '#1D4ED8'
+  - id: flow_exe_to_safe
+    source: node_exe
+    target: group_safe_checker
+    points:
+      - [3.8, 2.635]
+      - [4.05, 2.635]
+    stroke_hex: '#2563EB'
+    stroke_width: 2.2
+  - id: flow_send_api
+    source: node_step_send_api
+    target: node_api_gw
+    points:
+      - [6.42, 4.07]
+      - [7.42, 4.07]
+    label: 2. REST
+    label_at: [6.92, 3.87]
+    stroke_hex: '#7C3AED'
+    stroke_width: 2.2
+    label_bg_hex: '#F5F3FF'
+    label_text_hex: '#6D28D9'
+  - id: flow_iam_auth
+    source: node_iam_role
+    target: node_api_gw
+    points:
+      - [8.13, 5.35]
+      - [8.13, 5.15]
+    dashed: true
+    stroke_hex: '#EF4444'
+    stroke_width: 1.8
+  - id: flow_api_to_engine
+    source: node_api_gw
+    target: node_dynamodb_engine
+    points:
+      - [8.84, 2.50]
+      - [9.20, 2.50]
+    stroke_hex: '#F59E0B'
+    stroke_width: 2.2
+  - id: flow_engine_to_whitelist
+    source: node_dynamodb_engine
+    target: table_dynamodb_whitelist
+    points:
+      - [10.06, 3.41]
+      - [10.06, 3.75]
+    stroke_hex: '#0284C7'
+    stroke_width: 2.0
+  - id: flow_engine_to_audit
+    source: node_dynamodb_engine
+    target: table_dynamodb_audit
+    points:
+      - [11.90, 3.41]
+      - [11.90, 3.75]
+    stroke_hex: '#16A34A'
+    stroke_width: 2.0
+  - id: flow_engine_return_api
+    source: node_dynamodb_engine
+    target: node_api_gw
+    points:
+      - [9.20, 3.20]
+      - [8.84, 3.20]
+    stroke_hex: '#7C3AED'
+    stroke_width: 2.0
+  - id: flow_api_to_client
+    source: node_api_gw
+    target: node_step_receive
+    points:
+      - [7.42, 4.89]
+      - [6.42, 4.89]
+    label: 3. Status
+    label_at: [6.92, 5.09]
+    stroke_hex: '#059669'
+    stroke_width: 2.2
+    label_bg_hex: '#ECFDF5'
+    label_text_hex: '#047857'
+badges:
+  - id: divider_eval
+    text: '• If / Else Evaluation:'
+    x: 4.18
+    y: 5.26
+    w: 2.24
+    h: 0.18
+    font_pt: 8.5
+    text_hex: '#475569'
+    bg_hex: '#FFFFFF'
+    border_hex: '#FFFFFF'
