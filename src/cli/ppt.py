@@ -584,3 +584,138 @@ def ppt_lint_cli(
     if res.returncode != 0:
         raise typer.Exit(code=res.returncode)
 
+
+@ppt_app.command("view")
+def view_ppt(
+    file: str = typer.Argument(..., help="Path to PowerPoint .pptx presentation file"),
+    slide: Optional[int] = typer.Option(None, "--slide", "-s", help="Inspect only a specific slide (1-indexed)"),
+    format: str = typer.Option("markdown", "--format", "-f", help="Output format: 'markdown', 'table', or 'json'"),
+    full: bool = typer.Option(False, "--full", help="Display full text and table cell contents without truncation"),
+) -> None:
+    """Inspect presentation structure, shape hierarchies, text copy, and token metrics (L1 Read)."""
+    import json
+    from src.ppt_engine.presentation_inspector import PresentationInspector
+
+    p_in = Path(file)
+    if not p_in.exists():
+        rprint(f"[red]Error:[/red] PowerPoint file not found: {file}")
+        raise typer.Exit(code=1)
+
+    try:
+        inspector = PresentationInspector(p_in)
+        info = inspector.inspect()
+    except Exception as e:
+        rprint(f"[red]Error inspecting presentation:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    if format == "json":
+        print(json.dumps(info.to_dict(), indent=2))
+    elif format == "table":
+        table = Table(title=f"Presentation Overview: {p_in.name}")
+        table.add_column("Metric", style="bold cyan")
+        table.add_column("Value", style="green")
+        table.add_row("Canvas Size", f"{info.slide_width:.2f}\" x {info.slide_height:.2f}\"")
+        table.add_row("Total Slides", str(info.total_slides))
+        table.add_row("Total Shapes", str(info.total_shapes))
+        table.add_row("Total Words", f"{info.total_words:,}")
+        table.add_row("Estimated Tokens", f"~{info.estimated_tokens:,}")
+        console.print(table)
+
+        target_slides = info.slides if slide is None else [s for s in info.slides if s.slide_index == slide]
+        for s in target_slides:
+            s_table = Table(title=f"Slide {s.slide_index}: {s.title or '(Untitled)'}")
+            s_table.add_column("ID", style="dim", width=6)
+            s_table.add_column("Shape Name", style="bold")
+            s_table.add_column("Type", style="magenta")
+            s_table.add_column("Bounds [x,y,w,h]", style="cyan")
+            s_table.add_column("Content Preview", style="white")
+
+            for sh in s.shapes:
+                preview = sh.text[:40] + "..." if (not full and len(sh.text) > 40) else sh.text
+                if sh.table_data:
+                    preview = f"Table ({len(sh.table_data)}x{len(sh.table_data[0]) if sh.table_data else 0})"
+                elif sh.image_info:
+                    preview = f"Image ({sh.image_info.get('content_type', '')})"
+                s_table.add_row(str(sh.shape_id), sh.name, sh.shape_type, sh.bounds_str, preview or "*(empty)*")
+            console.print(s_table)
+    else:  # markdown
+        print(info.to_markdown(full=full, slide_index=slide))
+
+
+@ppt_app.command("patch")
+def patch_ppt(
+    file: str = typer.Argument(..., help="Path to PowerPoint .pptx presentation file"),
+    find: Optional[str] = typer.Option(None, "--find", help="Text string to find and replace"),
+    replace: Optional[str] = typer.Option(None, "--replace", help="Replacement text string"),
+    shape: Optional[str] = typer.Option(None, "--shape", help="Target shape name or shape ID"),
+    set_text: Optional[str] = typer.Option(None, "--set-text", help="Set entire text content of target shape"),
+    image: Optional[str] = typer.Option(None, "--image", help="Replacement image path for target picture shape"),
+    slide: Optional[int] = typer.Option(None, "--slide", "-s", help="Restrict patch to a specific slide (1-indexed)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output .pptx path (defaults to <stem>_patched.pptx)"),
+    in_place: bool = typer.Option(False, "--in-place", "-i", help="Safely overwrite source file in-place"),
+) -> None:
+    """Targeted in-situ DOM micro-patching of text and images (L2 Micro-Patch)."""
+    from src.ppt_engine.presentation_patcher import PresentationPatcher
+
+    p_in = Path(file)
+    if not p_in.exists():
+        rprint(f"[red]Error:[/red] PowerPoint file not found: {file}")
+        raise typer.Exit(code=1)
+
+    if not find and not set_text and not image:
+        rprint("[red]Error:[/red] Must specify at least one operation: --find/--replace, --set-text, or --image.")
+        raise typer.Exit(code=1)
+
+    if find and replace is None:
+        rprint("[red]Error:[/red] When using --find, --replace must be provided.")
+        raise typer.Exit(code=1)
+
+    if set_text and not shape:
+        rprint("[red]Error:[/red] When using --set-text, --shape <name_or_id> must be specified.")
+        raise typer.Exit(code=1)
+
+    if image and not shape:
+        rprint("[red]Error:[/red] When using --image, --shape <name_or_id> must be specified.")
+        raise typer.Exit(code=1)
+
+    try:
+        patcher = PresentationPatcher(p_in)
+
+        if find and replace is not None:
+            shape_id = int(shape) if shape and shape.isdigit() else None
+            shape_name = shape if shape and not shape.isdigit() else None
+            count = patcher.replace_text(
+                find_text=find,
+                replace_text=replace,
+                slide_index=slide,
+                shape_name=shape_name,
+                shape_id=shape_id,
+            )
+            rprint(f"[cyan]ℹ Found and replaced {count} occurrence(s) of '{find}'[/cyan]")
+
+        if set_text and shape:
+            ok = patcher.set_shape_text(target=shape, new_text=set_text, slide_index=slide)
+            if ok:
+                rprint(f"[cyan]ℹ Set shape '{shape}' text successfully[/cyan]")
+            else:
+                rprint(f"[yellow]⚠ Target shape '{shape}' not found or had no text frame[/yellow]")
+
+        if image and shape:
+            ok = patcher.replace_shape_image(target=shape, new_image_path=image, slide_index=slide)
+            if ok:
+                rprint(f"[cyan]ℹ Replaced image in shape '{shape}' successfully[/cyan]")
+            else:
+                rprint(f"[yellow]⚠ Target picture shape '{shape}' not found[/yellow]")
+
+        report = patcher.save(output_path=output, in_place=in_place)
+        rprint(f"[green]✓ Micro-patch complete:[/green] [bold]{report.output_path}[/bold]")
+        if report.impacted_slides:
+            rprint(f"  • Impacted slide(s): {report.impacted_slides}")
+        for op in report.details:
+            rprint(f"  • {op}")
+
+    except Exception as e:
+        rprint(f"[red]Error patching presentation:[/red] {e}")
+        raise typer.Exit(code=1)
+
+

@@ -82,6 +82,17 @@ from .reference_slides import (
     build_snowflake_data_pipeline_slide,
 )
 
+from .presentation_inspector import (
+    PresentationInspector,
+    PresentationInfo,
+    SlideInfo,
+    ShapeInfo,
+)
+from .presentation_patcher import (
+    PresentationPatcher,
+    PatchReport,
+)
+
 __all__ = [
     "ClosingDeckBuilder",
     "ReferenceDeckBuilder",
@@ -148,4 +159,10 @@ __all__ = [
     "get_resource_manager",
     "resolve_asset",
     "check_resources",
+    "PresentationInspector",
+    "PresentationInfo",
+    "SlideInfo",
+    "ShapeInfo",
+    "PresentationPatcher",
+    "PatchReport",
 ]

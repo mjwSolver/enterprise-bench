@@ -23,6 +23,12 @@ from src.docx_engine.spec_compiler import (
     compile_markdown_to_docx,
     compile_spec_directory,
 )
+from src.docx_engine.document_inspector import (
+    DocumentInspector,
+    DocumentInfo,
+    HeadingInfo,
+    TableInfo,
+)
 
 __all__ = [
     "TemplateStamper",
@@ -39,5 +45,9 @@ __all__ = [
     "SpecMetadata",
     "compile_markdown_to_docx",
     "compile_spec_directory",
+    "DocumentInspector",
+    "DocumentInfo",
+    "HeadingInfo",
+    "TableInfo",
 ]
 

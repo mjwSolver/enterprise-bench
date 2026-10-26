@@ -242,3 +242,32 @@ def list_templates(
 ) -> None:
     """List available document and enterprise templates across project phases."""
     display_template_catalog(phase=phase, query=query)
+
+
+@doc_app.command("view")
+def view_doc(
+    file: str = typer.Argument(..., help="Path to Word .docx document file"),
+    format: str = typer.Option("markdown", "--format", "-f", help="Output format: 'markdown' or 'json'"),
+    full: bool = typer.Option(False, "--full", help="Show paragraph content preview"),
+) -> None:
+    """Inspect document structure, heading hierarchy, tables, and token metrics (L1 Read)."""
+    import json
+    from src.docx_engine.document_inspector import DocumentInspector
+
+    p_in = Path(file)
+    if not p_in.exists():
+        rprint(f"[red]Error:[/red] Word file not found: {file}")
+        raise typer.Exit(code=1)
+
+    try:
+        inspector = DocumentInspector(p_in)
+        info = inspector.inspect()
+    except Exception as e:
+        rprint(f"[red]Error inspecting document:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    if format == "json":
+        print(json.dumps(info.to_dict(), indent=2))
+    else:
+        print(info.to_markdown(full=full))
+

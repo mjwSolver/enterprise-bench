@@ -13,8 +13,8 @@
 ## ⚡ The 3-Lane Request Routing Triad
 
 Classify incoming requests into one execution lane:
-- **🔍 Lane 1: Inspection & Headless Audit:** Read-only verification, zero shape/coordinate modifications (`uv run bench diagram v2 audit <spec.yaml> --strict`, `uv run bench ppt lint`, `uv run bench stage preflight`).
-- **✏️ Lane 2: In-Situ Micro-Patch:** Localized text, typo, label, or image updates without altering coordinate grids or canvas bounding boxes (`uv run bench ppt replace-image`, `gdrive mutate update <file_id> <path.pptx>`). Target presentation window must be dismissed prior to saving if previously opened.
+- **🔍 Lane 1: Inspection & Headless Audit:** Read-only verification, zero shape/coordinate modifications (`uv run bench ppt view`, `uv run bench doc view`, `uv run bench diagram v2 audit <spec.yaml> --strict`, `uv run bench ppt lint`, `uv run bench stage preflight`).
+- **✏️ Lane 2: In-Situ Micro-Patch:** Localized text, typo, label, or image updates without altering coordinate grids or canvas bounding boxes (`uv run bench ppt patch`, `uv run bench ppt replace-image`, `gdrive mutate update <file_id> <path.pptx>`). Target presentation window must be dismissed prior to saving if previously opened.
 - **📐 Lane 3: Greenfield Architecture & Staging:** Declarative YAML (`specs/diagrams/<name>.yaml`) compiled via Diagram Engine V2 (`uv run bench diagram v2 compile`). Target presentation window must be dismissed prior to re-saving if previously opened.
   - *Audit-First Invariant:* Always execute `bench diagram v2 audit <spec.yaml>` to verify clearances *before* compiling. Never iterate via blind recompilation.
 

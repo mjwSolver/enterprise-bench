@@ -4,6 +4,56 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-10-26] - Release 5: v2.2 — Declarative Architecture Guardrails & Native Inspection/Patching Engine (Tier 31)
+
+**Timestamp:** `2026-10-26T14:25:00+07:00`
+
+### Summary
+Elevated `enterprise-bench` to a complete bidirectional lifecycle automation workbench (Release 5: v2.2 / Tier 31). Codified Directive 5 (Declarative YAML-First Architecture) across governance documentation and skill runbooks, backed by an empirical retrospective case study (ADR). Implemented a mechanical pre-commit AST guardrail (`scripts/lint_declarative_architecture.py` & `.githooks/pre-commit` & `uv run bench ppt lint`) detecting and blocking monolithic imperative layout scripts with 100% accuracy. Engineered zero-dependency, headless L1 Inspection (`bench ppt view` & `bench doc view`) for Markdown/Rich/JSON structural outlines, DrawingML bounding boxes, and token counts, alongside an L2 DOM Micro-Patcher (`bench ppt patch`) for in-situ text and image replacement without bespoke script generation.
+
+### Milestones Delivered
+- **Declarative Architecture Governance & Retrospective (`AGENTS.md`, `docs/decisions/`):**
+  - Codified Directive 5 in `AGENTS.md` and updated `skills/presentation-maker/SKILL.md` (Golden Rule 8) and `skills/enterprise-bench-dev/SKILL.md`.
+  - Authored `docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md` evaluating the empirical Databricks Environment Separation slide task (>92% token drop, 0 visual regressions, sub-second compile).
+- **Mechanical Pre-Commit Guardrail (`scripts/`, `.githooks/`, `src/cli/ppt.py`):**
+  - Engineered tri-signal AST heuristic linter (`scripts/lint_declarative_architecture.py`) checking `LOC >= 150`, imperative shapes $\ge 5$, and DrawingML coordinate calls $\ge 20$ without a YAML parser.
+  - Wired into `.githooks/pre-commit` and exposed via `uv run bench ppt lint`.
+- **L1 Headless Inspection Subsystem (`src/ppt_engine/`, `src/docx_engine/`, `src/cli/`):**
+  - Created `PresentationInspector` (`src/ppt_engine/presentation_inspector.py`) and `bench ppt view` reporting exact slide dimensions, shape hierarchies, IDs, names, types, DrawingML bounding boxes in inches, and word/token estimates.
+  - Created `DocumentInspector` (`src/docx_engine/document_inspector.py`) and `bench doc view` reporting heading hierarchies (H1-H4), tables, and token counts.
+  - Added Markdown, Rich table, and raw JSON export modes.
+- **L2 In-Situ DOM Micro-Patcher (`src/ppt_engine/presentation_patcher.py`, `src/cli/ppt.py`):**
+  - Created `PresentationPatcher` and `bench ppt patch` supporting string find-and-replace across text frames, tables, and groups while preserving run font sizes, colors, and weights.
+  - Added targeted shape text setting (`--shape` / `--set-text`), image swapping (`--shape` / `--image`), and atomic `--in-place` file updates.
+- **3-Lane Request Routing Triad Formalization:**
+  - Codified Lane 1 (Inspection & Headless Audit), Lane 2 (In-Situ Micro-Patch), and Lane 3 (Greenfield Architecture & Staging) directly in `AGENTS.md`.
+- **Reference Handover:** [`docs/handovers/2026-10-26_declarative_guardrails_and_inspection_engine.md`](handovers/2026-10-26_declarative_guardrails_and_inspection_engine.md)
+
+---
+
+## [2026-10-24] - Release 4: v2.1 — Desktop Preview Lifecycle & Diagram V2 Overlap & Schema Resilience (Tier 30)
+
+**Timestamp:** `2026-10-24T16:15:00+07:00`
+
+### Summary
+Delivered the Desktop Preview Lifecycle & Diagram V2 Overlap & Schema Resilience release (Release 4: v2.1 / Tier 30). Implemented headless-safe target presentation dismissal (`close_target_presentation`), eliminating macOS PowerPoint in-memory window caches and AutoSave/Cmd+S file-overwrite race conditions. Engineered dynamic multi-line container label height calculation in `auditor.py`, elevated `CONTAINER_LABEL_OCCLUSION` to `CRITICAL`, added peer container collision detection, and introduced Pydantic v2 `flows` alias remapping.
+
+### Milestones Delivered
+- **PowerPoint Preview Lifecycle & Target Deck Dismissal (`src/cli/utils.py`, `pptx_compiler.py`):**
+  - Added `close_target_presentation(path: Path | str) -> bool` using targeted AppleScript to close only matching presentation windows on macOS without quitting the application.
+  - Integrated automatic target presentation dismissal into `PPTXCompiler.compile_presentation` immediately prior to saving.
+- **Diagram Engine V2 Overlap & Spatial Clearance Hardening (`auditor.py`):**
+  - Dynamic multi-line container label height calculation replacing static 36px stubs.
+  - Elevated `CONTAINER_LABEL_OCCLUSION` to `CRITICAL` on substantial vertical overlap (`oy > 10.0`).
+  - Added Rule 3b-2 (`check_peer_container_collisions()`) to detect physical overlaps between non-nested sibling containers.
+- **Schema Resilience & Asset Diagnostics (`models.py`, `pptx_compiler.py`):**
+  - Added `@model_validator(mode="before")` to `DiagramSpec` remapping `connectors` and `arrows` keys to `flows`.
+  - Added `icon` and `icon_emoji` optional fields to `ContainerSpec`.
+  - Replaced silent exceptions with explicit warnings when an icon slug fails resolution in `IconRegistry`.
+- **Reference Handover:** [`docs/handovers/2026-10-24_desktop_preview_lifecycle_and_diagram_v2_resilience.md`](handovers/2026-10-24_desktop_preview_lifecycle_and_diagram_v2_resilience.md)
+
+---
+
 ## [2026-10-17] - Milestone 41: System-Wide Hardening, Real-World Flight Test & In-Flight Verification Standards (Tier 29)
 
 **Timestamp:** `2026-10-17T02:00:00+07:00`
