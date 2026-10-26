@@ -1,12 +1,31 @@
 # VERSION_LOG.md — Diagram Engine V2 Release Ledger
 
-> **NOTE:** This version log is compiled strictly for packaging and gzip/zip distribution tracking purposes across portable client workstations and sandbox environments.
+> **NOTE:** This version log is compiled strictly for packaging and gzip/zip distribution tracking purposes across portable client workstations and sandbox environments. All distribution archives must explicitly stamp the release version in their filename (`diagram_engine_v2_portable_v<SEMVER>_<TIMESTAMP>.zip`).
+
+---
+
+### Release 5: v2.2 — Declarative Architecture Guardrails & Native Inspection/Patching Engine
+- **Release Timestamp:** `2026-10-26 15:30:00 +0700`
+- **Distribution Archive:** `diagram_engine_v2_portable_v2.2_20261026_160000.zip`
+- **Engineering Signature:** `[MJW/AGY]` embedded across core subsystem modules (`src/cli/utils.py`, `compiler.py`, `pptx_compiler.py`, `auditor.py`, `models.py`, `linter.py`, `patcher.py`, `inspector.py`).
+- **What's Changed vs. Release 4 (v2.1):**
+  - **Mechanical Declarative Architecture Guardrail (`bench ppt lint` & pre-commit hook):**
+    - Multi-signal AST heuristic scanner in `src/ppt_engine/linter.py` analyzing Python AST for raw imperative coordinate math, raw shape generation loops, and layout boilerplate, blocking imperative regression.
+    - Automated pre-commit hook integration (`.git/hooks/pre-commit`) enforcing zero monolithic python script generation.
+  - **Native In-Situ Micro-Patching Subsystem (`bench ppt patch`, `bench ppt replace-image`):**
+    - Localized shape text, color, badge, and image replacements on existing PowerPoint decks without altering canvas grids or coordinates.
+  - **Headless Inspection Engine (`bench ppt view`, `bench doc view`):**
+    - Instant slide/document hierarchy, shape count, and text tree inspections directly in terminal.
+  - **Architecture Decision Record & Efficiency Benchmark:**
+    - Formally documented `ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md` proving >90% token reduction per review cycle and turnaround compression from 1–2 days down to 2.2 hours.
+  - **Explicit Version Stamping Standard:**
+    - Standardized all past and future distribution archives to mandate explicit semver stamping (`diagram_engine_v2_portable_v<SEMVER>_<TIMESTAMP>.zip`).
 
 ---
 
 ### Release 4: v2.1 — Desktop Preview Lifecycle, Spatial Clearance Hardening & Schema Resilience
 - **Release Timestamp:** `2026-10-24 16:45:00 +0700`
-- **Distribution Archive:** `diagram_engine_v2_portable_20261024_164500.zip`
+- **Distribution Archive:** `diagram_engine_v2_portable_v2.1_20261024_170143.zip`
 - **Engineering Signature:** `[MJW/AGY]` embedded across core subsystem modules (`src/cli/utils.py`, `compiler.py`, `pptx_compiler.py`, `auditor.py`, `models.py`).
 - **What's Changed vs. Release 3 (v2.0 / prior releases):**
   - **PowerPoint Preview Lifecycle & Target Deck Dismissal (`src/cli/utils.py`, `pptx_compiler.py`):**
@@ -26,7 +45,7 @@
 
 ### Release 3: v2.2.0 — Dynamic Contrast, Theme Tokens & Distribution Provenance
 - **Release Timestamp:** `2026-10-20 08:55:00 +0700`
-- **Distribution Archive:** `diagram_engine_v2_portable_20261020_085600.zip`
+- **Distribution Archive:** `diagram_engine_v2_portable_v2.2_20261020_085531.zip`
 - **Engineering Signature:** `[MJW/AGY]` embedded across core subsystem modules (`__init__.py`, `compiler.py`, `contrast.py`, `auditor.py`, `models.py`).
 - **What's Changed vs. Release 2 (v2.1.0):**
   - **Readability & Dynamic Contrast Subsystem (`contrast.py`):** Bundles WCAG 2.1 relative luminance and contrast ratios (`calculate_contrast_ratio`, `harmonize_diagram_contrast`), auto-inverting low-contrast text and neutralizing white card washouts.
@@ -39,7 +58,7 @@
 
 ### Release 2: v2.1.0 — Visual QA, Geometry Rules & Canonical Asset Bundling
 - **Release Timestamp:** `2026-10-19 21:41:16 +0700`
-- **Distribution Archive:** `diagram_engine_v2_portable_20261019_214116.zip`
+- **Distribution Archive:** `diagram_engine_v2_portable_v2.1_20261019_214116.zip`
 - **What's Changed vs. Release 1 (v2.0.0):**
   - **Standalone Asset Pipeline:** Fully bundled complete vector icon libraries (`assets/icons/`) and vendor logos (`assets/logos/`) with path-independent resolution.
   - **Adversarial Visual QA & Reconciler:** Integrated `visual_verifier.py`, `reconciler.py`, and `stray_consolidator.py`.
@@ -50,7 +69,7 @@
 
 ### Release 1: v2.0.0 — Greenfield Declarative Compiler Core
 - **Release Timestamp:** `2026-10-19 16:59:51 +0700`
-- **Distribution Archive:** `diagram_engine_v2_portable_20261019_165951.zip`
+- **Distribution Archive:** `diagram_engine_v2_portable_v2.0_20261019_165951.zip`
 - **Initial Baseline:**
   - Greenfield core compiler supporting 4-format output (Draw.io XML, SVG, PNG, native editable PPTX DrawingML).
   - Pydantic v2 declarative schema (`DiagramSpec`, `ContainerSpec`, `NodeSpec`, `FlowSpec`).

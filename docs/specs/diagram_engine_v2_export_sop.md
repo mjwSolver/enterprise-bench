@@ -1,9 +1,12 @@
 # SOP: Diagram Engine V2 Standalone Export Protocol
 
 ## 1. Overview & Objective
-This SOP defines the deterministic protocol for exporting the declarative **Diagram Engine V2** system from `enterprise-bench` into a 100% self-contained, portable, timestamped distribution (`diagram_engine_v2_portable_<TIMESTAMP>.zip`).
+This SOP defines the deterministic protocol for exporting the declarative **Diagram Engine V2** system from `enterprise-bench` into a 100% self-contained, portable, version-stamped distribution (`diagram_engine_v2_portable_v<SEMVER>_<TIMESTAMP>.zip`).
 
 The export boundary ensures external collaborators can run the entire compilation pipeline (Draw.io XML, SVG, PNG, native PPTX) with zero dependencies on `src.core` or root bench frameworks, while guaranteeing workspace separation so future engine updates never overwrite client diagrams.
+
+> **CRITICAL DIRECTIVE ON ARCHIVE NAMING:**
+> Never produce, distribute, or email unversioned or timestamp-only zip files (e.g., `diagram_bundle.zip` or `diagram_engine_v2_portable_20261024_170143.zip`). All archives MUST explicitly stamp their semver release version directly in the filename (`diagram_engine_v2_portable_v2.2_20261026_160000.zip`) and inner staging root (`diagram_engine_v2_bundle_v2.2_20261026_160000/`) so recipients and collaborators immediately know if they possess the right or wrong version.
 
 ---
 
@@ -11,7 +14,7 @@ The export boundary ensures external collaborators can run the entire compilatio
 Any portable bundle produced under this SOP strictly enforces a 4-tier separation:
 
 ```text
-diagram_engine_v2_bundle_<TIMESTAMP>/
+diagram_engine_v2_bundle_v<SEMVER>_<TIMESTAMP>/
 ├── compile.py                          # Zero-overhead standalone runner script
 ├── requirements.txt                    # python-pptx, pydantic, pyyaml, pillow, cairosvg
 ├── README.md                           # Clear setup, boundary safety & quick-test prompt
@@ -63,13 +66,17 @@ Whenever packaging a new zip distributable, the builder MUST guarantee:
 Whenever the user asks to *"export the library"*, *"export the visualization engine"*, or *"create a portable bundle"*, execute the canonical builder:
 
 ```bash
-# Run canonical builder script from workspace root
+# Run canonical builder script (auto-detects version from pyproject.toml / VERSION_LOG.md)
 python3 scripts/build_diagram_bundle.py
+
+# Or specify an explicit target version stamp
+python3 scripts/build_diagram_bundle.py --version v2.2
 ```
 
 ### Verification Gate
 Before releasing the archive:
-1. Extract into an ephemeral `/tmp/` environment.
-2. Compile the bundled sample spec headlessly (`specs/sample_dynamodb_whitelist.yaml`).
-3. Verify that Draw.io XML, SVG, and PPTX outputs exist and return zero errors.
-4. Verify destination `.zip` is ignored by `.gitignore`.
+1. Verify the generated zip is explicitly stamped: `diagram_engine_v2_portable_v<SEMVER>_<TIMESTAMP>.zip`.
+2. Extract into an ephemeral `/tmp/` environment.
+3. Compile the bundled sample spec headlessly (`specs/sample_dynamodb_whitelist.yaml`).
+4. Verify that Draw.io XML, SVG, and PPTX outputs exist and return zero errors.
+5. Verify destination `.zip` is ignored by `.gitignore` in `output/releases/`.

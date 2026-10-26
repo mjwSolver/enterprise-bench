@@ -3,21 +3,58 @@ import sys
 import shutil
 import zipfile
 import datetime
+import argparse
+import re
 from pathlib import Path
 
-def build_bundle():
-    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    bundle_name = f"diagram_engine_v2_bundle_{ts}"
-    staging_root = f"/tmp/{bundle_name}"
-    
+
+def resolve_version(repo_root: Path, requested_version: str | None = None) -> str:
+    """Resolve semver release stamp from CLI arg, pyproject.toml, or VERSION_LOG.md."""
+    if requested_version:
+        v = requested_version.strip()
+        if not v.startswith("v"):
+            v = f"v{v}"
+        return v
+
+    # 1. Inspect pyproject.toml
+    pyproject_p = repo_root / "pyproject.toml"
+    if pyproject_p.exists():
+        with open(pyproject_p, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip().startswith("version ="):
+                    raw_v = line.split("=")[1].strip().strip('"').strip("'")
+                    parts = raw_v.split(".")
+                    if len(parts) >= 2:
+                        return f"v{parts[0]}.{parts[1]}"
+                    return f"v{raw_v}"
+
+    # 2. Inspect VERSION_LOG.md
+    version_log_p = repo_root / "src/ppt_engine/diagram_v2/VERSION_LOG.md"
+    if version_log_p.exists():
+        with open(version_log_p, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("### Release"):
+                    m = re.search(r"v\d+(\.\d+)?", line)
+                    if m:
+                        return m.group(0)
+
+    return "v2.2"
+
+
+def build_bundle(version: str | None = None):
     # 100% self-contained within enterprise-bench
     repo_root = Path(__file__).resolve().parent.parent
+
+    version_tag = resolve_version(repo_root, version)
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    bundle_name = f"diagram_engine_v2_bundle_{version_tag}_{ts}"
+    staging_root = f"/tmp/{bundle_name}"
     
     if os.path.exists(staging_root):
         shutil.rmtree(staging_root)
     os.makedirs(staging_root, exist_ok=True)
 
-    print(f"Staging bundle at: {staging_root}")
+    print(f"Staging bundle at: {staging_root} (Version: {version_tag})")
 
     # 1. Copy diagram_v2 core
     shutil.copytree(
@@ -183,8 +220,8 @@ cairosvg>=2.7.0  # Optional: only needed if exporting high-DPI raster PNGs from 
         f.write(reqs)
 
     # 10. Create README.md
-    readme_content = f'''# Diagram Engine V2 — Standalone Portable Distribution
-**Snapshot Timestamp:** `{ts}`
+    readme_content = f'''# Diagram Engine V2 — Standalone Portable Distribution ({version_tag})
+**Release Version:** `{version_tag}` | **Snapshot Timestamp:** `{ts}`
 
 ---
 
@@ -293,7 +330,7 @@ Your agent should author a new spec in `my_specs/` and run `python compile.py` t
     # 11. Create timestamped zip archive strictly in enterprise-bench/output/releases/
     out_dir = repo_root / "output/releases"
     out_dir.mkdir(parents=True, exist_ok=True)
-    zip_path = out_dir / f"diagram_engine_v2_portable_{ts}.zip"
+    zip_path = out_dir / f"diagram_engine_v2_portable_{version_tag}_{ts}.zip"
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(staging_root):
@@ -313,4 +350,7 @@ Your agent should author a new spec in `my_specs/` and run `python compile.py` t
     return zip_path
 
 if __name__ == "__main__":
-    build_bundle()
+    parser = argparse.ArgumentParser(description="Build portable Diagram Engine V2 distribution bundle.")
+    parser.add_argument("--version", "-v", dest="version", default=None, help="Explicit release version stamp (e.g. v2.0, v2.1, v2.2)")
+    parsed_args = parser.parse_args()
+    build_bundle(version=parsed_args.version)

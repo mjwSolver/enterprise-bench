@@ -257,3 +257,19 @@ uv run bench doc purge --dir output/project_alpha/documents/
   3. **Revisions Purge:** Normalizes `<w:ins>`, removes `<w:del>` markup, and strips editorial change markers (`<w:rPrChange>`, `<w:pPrChange>`).
 - All stamped deliverables and newly generated files **MUST** be placed in `output/` or `project_outputs/<project_name>/`.
 - **NEVER** overwrite files in `clean_workspace/` with generated client deliverables; `clean_workspace/` is strictly for clean golden master templates.
+
+---
+
+## 6. Diagram Engine Export & Release Packaging Protocol
+
+When exporting standalone, portable versions of Diagram Engine V2 for client engagements or collaborators:
+```bash
+# Export standalone portable distribution (auto-detects version from pyproject.toml / VERSION_LOG.md)
+python3 scripts/build_diagram_bundle.py
+
+# Export with explicit target version tag
+python3 scripts/build_diagram_bundle.py --version v2.2
+```
+- **Explicit Version Stamping Mandate:** All export archives MUST follow `output/releases/diagram_engine_v2_portable_v<SEMVER>_<TIMESTAMP>.zip` containing `diagram_engine_v2_bundle_v<SEMVER>_<TIMESTAMP>/`.
+- Never distribute unversioned or timestamp-only archives. Recipients must instantly see the release version in the filename.
+
