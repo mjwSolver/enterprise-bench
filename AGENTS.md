@@ -6,6 +6,7 @@
 2. **Headless-First Verification:** All verifications must be 100% headless (CLI audits, linting, headless raster checks). NEVER launch desktop apps (`open -a`, `osascript`) unless user explicitly issues `"pop it"`, `"show me"`, `"open on desktop"`, or `"open in finder"`.
 3. **Line-Targeted Reading & Context Hygiene:** Never read entire multi-topic ledgers or documents >100 lines into context. Use line-targeted inspection (`StartLine`/`EndLine`). Avoid repo-wide blind `grep`/`find`; resolve paths via structured manifests (`docs/INDEX.md`).
 4. **Environment & Path Links:** Always execute commands via `uv run bench ...`. Always use relative markdown links (`[doc](path.md)`).
+5. **Declarative YAML-First Architecture:** NEVER write or iteratively patch monolithic, imperatively hardcoded layout scripts (e.g. 500–700 line Python scripts embedding raw coordinates, shapes, and copy). Content hierarchy, badges, copy, and layout parameters must reside in a declarative YAML spec (e.g. `specs/<topic>.yaml`), executed headlessly by a decoupled, reusable compiler (`uv run bench diagram v2 compile`, static runner). All iteration and content revisions must touch *only* the YAML spec, never re-emitting compiler boilerplate ([ADR](docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md)).
 
 ---
 
@@ -21,6 +22,7 @@ Classify incoming requests into one execution lane:
 
 ## 📐 Presentation & Diagram Architecture Standard
 
+- **Declarative Spec + Static Runner Invariant:** Content hierarchy, environment cards, badges, and copy reside in a declarative YAML specification (`specs/<topic>.yaml`), executed headlessly by a decoupled compiler. Never generate or patch monolithic layout scripts; all content revisions touch *only* the YAML spec ([case study](docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md)).
 - **Sketch/Image Confirmation Gate:** When provided an image or sketch, output a structural graph contract (Containers, Nodes + semantic colors, Connectors) *before* writing code or compiling.
 - **Single-Slide Ceiling:** Visualization prompts are strictly capped at **exactly 1 slide** (or single standalone diagram). No unsolicited multi-slide pitch decks or flat raster screenshots—compile to native DrawingML vector shapes.
 - **Core Geometry & Visual Invariants:**

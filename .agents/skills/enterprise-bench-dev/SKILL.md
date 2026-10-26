@@ -50,6 +50,10 @@ description: >-
 
 ### B. The Generative Presentation Engine (`src/ppt_engine/`)
 * **Philosophy**: Visual storytelling, layout flexibility, and collision prevention.
+* **Declarative Spec + Decoupled Compiler Architecture**:
+  - The engine enforces strict decoupling between declarative specifications (`specs/*.yaml`) and static headless compilers (`src/ppt_engine/diagram_engine_v2.py`, `src/ppt_engine/consulting_archetypes.py`, `cli.py`).
+  - Layout calculations, OpenXML sanitization (purging `<a:outerShdw>` and `<a:effectLst/>`), and typography rules are frozen in reusable compiler logic.
+  - Agents must never generate monolithic imperative layout scripts. All content iteration touches only YAML specifications ([ADR](../../docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md)).
 * **Core Modules**:
   - `consulting_archetypes.py`: Programmatic slide structures (BCG 3-Horizon, Balanced Scorecard, Metric Grids, Process Flows, De-Squared Chapter Dividers).
   - `diagram_engine.py`: Vector diagram drawing (cloud topologies, sequenced pipelines).

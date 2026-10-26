@@ -11,6 +11,9 @@ docs/
 ├── INDEX.md               # This master navigation index
 ├── CHANGELOG.md           # Authoritative historical milestone ledger (Milestones 1–28+)
 │
+├── decisions/             # Architecture Decision Records (ADRs) & retrospective case studies
+│   └── ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md
+│
 ├── handovers/             # Historical sprint and session handover briefings (Latest 10 active)
 │   ├── handover_archive/  # Completed briefings rotated out to preserve 10-handover limit
 │   │   ├── README.md      # Archive catalog with completion timestamps
@@ -122,7 +125,10 @@ docs/
 * [**`template_variable_and_slug_consolidation.md`**](backlog/template_variable_and_slug_consolidation.md): Unified slug catalog and pre-commit PII audit specifications.
 * [**`typographic_scale_consistency_checker.md`**](backlog/typographic_scale_consistency_checker.md) `[COMPLETED - 2026-10-16]`: Tier 1 geometric cohort font-drift linter (`TYPOGRAPHIC_SCALE_DRIFT`), post-shrink effective font simulation, and unified 4-tier compiler typography defaults.
 
-### 3. Active Session Handovers (`docs/handovers/` — Latest 10)
+### 3. Architecture Decision Records (`docs/decisions/`)
+* [**`ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md`**](decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md): Codifies the Declarative Spec + Static Runner architecture across presentation and document generation workflows. Analyzes the real-world Databricks Environment Separation case study, documenting >90% token reduction, zero visual drift, and sub-second compilation.
+
+### 4. Active Session Handovers (`docs/handovers/` — Latest 10)
 * [**`2026-10-14_interwoven_migration_topology_and_whitelisting.md`**](handovers/2026-10-14_interwoven_migration_topology_and_whitelisting.md): Milestone 33 closeout (Unified Interwoven Migration Architecture diagram, horizontal database compression from 260px to 170px, expanded connector spans with 140-175px clearance, return loop repositioned below legacy cluster, and multi-format Draw.io/SVG/PNG/PowerPoint synchronization).
 * [**`2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md`**](handovers/2026-10-14_tier1_collision_linting_and_tier2_adversarial_visual_qa.md): Milestone 34 closeout (Diagram Engine V2 Tier 1 geometric collision linter `Tier1GeometricLinter` with 11 spatial checks, Tier 2 adversarial visual QA verifier `Tier2VisualVerifier`, perceptual computer vision heuristics, 7-dimension weighted scorecard, `bench diagram v2 audit/visual-qa` CLI, and 100.0/100 reference manifest).
 * [**`2026-10-15_visual_vector_refinement_and_openxml_purge.md`**](handovers/2026-10-15_visual_vector_refinement_and_openxml_purge.md): Milestone 35 closeout (Visual & vector system refinement, sharp container swimlanes enclosing rounded icon+title cards, universal OpenXML drop shadow sanitizer `strip_shape_shadows()` reducing 821 defects across 874 shapes to 0, headless Draw.io vector stencil extraction CLI `export_drawio_stencil_to_svg()`, and Diagram Engine V2 spatial auditor vertical auto-offset calibration).

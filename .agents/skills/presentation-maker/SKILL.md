@@ -12,7 +12,7 @@ A comprehensive guide for generating high-impact, professional presentations usi
 
 ## 🚨 Primary Protocol: Unified CLI-First Execution
 
-> **CRITICAL RULE:** Do NOT write raw, throwaway Python scripts or manual slide assembly scripts from scratch. Always invoke presentation tasks through the unified `bench` CLI or import from `src.ppt_engine`.
+> **CRITICAL DIRECTIVE (DECLARATIVE YAML-FIRST):** Do NOT write raw, throwaway, monolithic Python scripts (e.g. 500–700 lines embedding coordinates, shapes, OpenXML boilerplate, and copy). All content hierarchy, badges, and layout parameters must reside in a declarative YAML spec (`specs/<topic>.yaml`), compiled headlessly by a static decoupled runner (`uv run bench diagram v2 compile` or dedicated compiler). All iterative revisions touch *only* the YAML spec ([ADR](../../docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md)). Always invoke presentation tasks through the unified `bench` CLI or declarative compiler runners.
 
 ### Exact 1-Line CLI Commands
 
@@ -190,6 +190,9 @@ Detailed code templates are available in [`references/python_pptx_recipes.md`](.
 7. **Single-Slide Scope Ceiling & Native Vector Fidelity**:
    - 🚨 **ANTI-PATTERN TO PREVENT**: Never generate multi-slide pitch decks (cover, diagram, closing) or insert raster PNG screenshots when asked to produce a visualization from a sketch/diagram.
    - **Enforcement Rule**: Requests for single visualizations or diagrams are strictly capped at **exactly 1 slide**. All shapes and connectors must be 100% native DrawingML vector elements compiled from declarative YAML (`bench diagram v2`), ensuring full user editability.
+8. **Declarative Spec + Static Runner Pattern (Zero Imperative Layout Scripting)**:
+   - 🚨 **ANTI-PATTERN TO PREVENT**: Never write or repeatedly patch monolithic, imperatively hardcoded layout scripts (e.g. 500–700 line Python scripts embedding raw coordinates, shapes, OpenXML manipulation, and slide copy). Monolithic scripts burn 15k–25k tokens per revision cycle, risk corrupting OpenXML placeholders, and force full file rewrites for minor copy edits.
+   - **Enforcement Rule**: Content hierarchy, badges, titles, card copy, step lists, and layout parameters must reside in a declarative YAML spec (e.g. `specs/<topic>.yaml`). Slide generation is performed headlessly by a decoupled, reusable compiler/runner (`bench diagram v2 compile`, static compiler runner). All iteration and content revisions MUST touch *only* the declarative YAML spec, never re-emitting compiler boilerplate. See full case study: [`ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md`](../../docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md).
 
 ---
 
