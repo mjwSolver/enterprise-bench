@@ -38,6 +38,14 @@ for FILE in $STAGED_FILES; do
     fi
 done
 
+# Mechanical Guardrail: Enforce Declarative YAML-First Architecture (Directive 5 & ADR)
+STAGED_PY_FILES=$(echo "$STAGED_FILES" | grep '\.py$' || true)
+if [ -n "$STAGED_PY_FILES" ]; then
+    if ! uv run python scripts/lint_declarative_architecture.py $STAGED_PY_FILES; then
+        FAILED=1
+    fi
+fi
+
 if [ $FAILED -ne 0 ]; then
     echo ""
     echo "❌ Commit aborted. Please unstage sensitive/binary files using: git reset HEAD <file>"

@@ -7,6 +7,7 @@ visual QA linter, and slide export.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -568,3 +569,18 @@ def visual_qa_cli(
 
     if strict and (crit > 0 or warn > 0):
         raise typer.Exit(code=1)
+
+
+@ppt_app.command("lint")
+def ppt_lint_cli(
+    files: Optional[list[str]] = typer.Argument(None, help="Specific script files to lint"),
+) -> None:
+    """Run mechanical guardrail verifying adherence to Declarative YAML-First Architecture (Directive 5 & ADR)."""
+    import subprocess
+    cmd = [sys.executable, "scripts/lint_declarative_architecture.py"]
+    if files:
+        cmd.extend(files)
+    res = subprocess.run(cmd)
+    if res.returncode != 0:
+        raise typer.Exit(code=res.returncode)
+
