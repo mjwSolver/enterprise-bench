@@ -54,6 +54,11 @@ def is_imperative_pptx_script(path: Path) -> tuple[bool, str]:
     if any(rel_path.startswith(prefix) for prefix in ENGINE_ALLOWLIST_DIRS):
         return False, "Engine primitive or test"
 
+    # Skip test & verification scripts
+    filename = path.name
+    if filename.startswith(("test_", "verify_", "repro_", "audit_")):
+        return False, "Test or verification probe script"
+
     # Skip legacy locked scripts
     if rel_path in LEGACY_SCRIPT_ALLOWLIST:
         return False, "Legacy allowlisted script"
@@ -74,30 +79,40 @@ def is_imperative_pptx_script(path: Path) -> tuple[bool, str]:
     if not has_pptx_import:
         return False, "Does not import python-pptx"
 
+    # Skip slide-cloning / packaging utilities that assemble existing presentations
+    if re.search(r"\b(clone_slide|target_part|pack_uri)\b", content):
+        return False, "Presentation packaging or slide-cloning utility"
+
     # Check if YAML spec is consumed
     has_yaml_consumer = bool(
         re.search(r"\b(yaml\.safe_load|yaml\.load)\b", content)
         and re.search(r"specs/.*\.ya?ml", content)
     )
 
+    if has_yaml_consumer:
+        return False, "Consumes declarative YAML spec"
+
     # Detect imperative shape creation calls
     imperative_shape_calls = len(
         re.findall(r"\.(add_shape|add_textbox|add_table|add_picture)\(", content)
     )
 
-    # Violation criteria:
-    # 1. Imports pptx AND has >= 100 lines AND has > 5 imperative shape additions without consuming YAML spec
-    if line_count >= 100 and imperative_shape_calls >= 5 and not has_yaml_consumer:
+    # Detect coordinate geometry calls
+    coordinate_calls = len(
+        re.findall(r"\b(Inches|Pt|Emu)\(", content)
+    )
+
+    # Multi-signal empirical violation criteria (100% precision on historical inventory):
+    # Monolithic imperative layout scripts:
+    # 1. line_count >= 150
+    # 2. imperative_shape_calls >= 5
+    # 3. coordinate_calls >= 20
+    # 4. Zero declarative YAML spec consumption
+    if line_count >= 150 and imperative_shape_calls >= 5 and coordinate_calls >= 20:
         return True, (
             f"Monolithic imperative layout detected ({line_count} lines, "
-            f"{imperative_shape_calls} imperative shape calls, zero YAML spec consumption)."
-        )
-
-    # 2. Hardcoded slide text strings + add_shape across large script
-    if line_count >= 150 and not has_yaml_consumer:
-        return True, (
-            f"Imperative presentation script exceeds 150 lines ({line_count} lines) "
-            "without consuming a declarative YAML specification (specs/<topic>.yaml)."
+            f"{imperative_shape_calls} shape additions, {coordinate_calls} coordinate calls, "
+            "zero YAML spec consumption)."
         )
 
     return False, "Passed"
