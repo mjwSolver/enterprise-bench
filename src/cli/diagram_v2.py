@@ -31,6 +31,7 @@ def compile_diagram_v2_cli(
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Destination file or directory for generated artifacts"),
     format: str = typer.Option("all", "--format", "-f", help="Target output format: 'all', 'drawio', 'svg', 'png', or 'pptx'"),
     open_deck: bool = typer.Option(False, "--open", help="Proactively launch generated PPTX slide deck on desktop"),
+    preview_ascii: bool = typer.Option(False, "--ascii", help="Print ASCII layout wireframe before compiling"),
 ) -> None:
     """Compile a declarative YAML specification deterministically into Draw.io XML, SVG, PNG, and native PowerPoint slides."""
     from src.ppt_engine.diagram_v2 import compile_diagram
@@ -39,6 +40,16 @@ def compile_diagram_v2_cli(
     if not spec_p.exists():
         rprint(f"[red]Error:[/red] Diagram specification file not found: {spec}")
         raise typer.Exit(code=1)
+
+    if preview_ascii:
+        import yaml
+        from rich.markup import escape
+        from src.ppt_engine.diagram_v2.ideas import render_ascii_wireframe
+        try:
+            raw_spec = yaml.safe_load(spec_p.read_text(encoding="utf-8"))
+            console.print(escape(render_ascii_wireframe(raw_spec)))
+        except Exception as err:
+            rprint(f"[dim](ASCII wireframe preview unavailable: {err})[/dim]")
 
     try:
         formats_list = [f.strip() for f in format.split(",") if f.strip()]
@@ -108,6 +119,71 @@ def sample_diagram_v2_cli(
         rprint(f"[green]✓ Sample YAML written to:[/green] [bold]{out_p}[/bold]")
     else:
         console.print(content)
+
+
+@diagram_v2_app.command("ideas")
+def ideas_diagram_v2_cli(
+    action: str = typer.Argument("list", help="Action: 'list', 'preview', or 'scaffold'"),
+    pattern: Optional[str] = typer.Option(None, "--pattern", "-p", help="Pattern name (e.g. '3-swimlane', 'interwoven-hub', 'data-pipeline', 'runbook-grid')"),
+    spec: Optional[str] = typer.Option(None, "--spec", "-s", help="Path to existing YAML spec to preview in ASCII"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Destination path for scaffolded YAML"),
+) -> None:
+    """Explore proven consulting layout patterns, preview ASCII wireframes, or scaffold starting specs."""
+    from src.ppt_engine.diagram_v2.ideas import list_idea_patterns, get_pattern, render_ascii_wireframe
+
+    act = action.lower().strip()
+    if act == "list":
+        patterns = list_idea_patterns()
+        table = Table(title="Diagram Engine V2 - Canonical Layout Patterns", show_header=True, header_style="bold cyan")
+        table.add_column("Pattern ID", style="bold green", width=18)
+        table.add_column("Name", style="bold white", width=32)
+        table.add_column("Node Capacity", style="yellow", width=22)
+        table.add_column("Description", style="dim", width=45)
+        for p in patterns:
+            table.add_row(p["id"], p["name"], p["recommended_nodes"], p["description"])
+        console.print(table)
+        rprint("\n[dim]To view ASCII wireframe: [bold]bench diagram v2 ideas preview -p <pattern>[/bold][/dim]")
+        rprint("[dim]To scaffold starter YAML: [bold]bench diagram v2 ideas scaffold -p <pattern> -o specs/my_slide.yaml[/bold][/dim]")
+
+    elif act == "preview":
+        from rich.markup import escape
+        if spec:
+            spec_p = Path(spec)
+            if not spec_p.exists():
+                rprint(f"[red]Error:[/red] Spec file not found: {spec}")
+                raise typer.Exit(code=1)
+            import yaml
+            raw = yaml.safe_load(spec_p.read_text(encoding="utf-8"))
+            console.print(escape(render_ascii_wireframe(raw)))
+        elif pattern:
+            pat = get_pattern(pattern)
+            if not pat:
+                rprint(f"[red]Error:[/red] Unknown pattern '{pattern}'. Run 'bench diagram v2 ideas list' to see available.")
+                raise typer.Exit(code=1)
+            rprint(f"[bold cyan]Wireframe Draft: {pat['name']}[/bold cyan]")
+            console.print(escape(pat.get("ascii_wireframe", "(No wireframe)")))
+        else:
+            rprint("[yellow]Specify --pattern <name> or --spec <path.yaml> to preview.[/yellow]")
+
+    elif act == "scaffold":
+        if not pattern:
+            pattern = "3-swimlane"
+        pat = get_pattern(pattern)
+        if not pat or not pat.get("yaml_template"):
+            rprint(f"[red]Error:[/red] Template for pattern '{pattern}' not found. Available: '3-swimlane', 'interwoven-hub'")
+            raise typer.Exit(code=1)
+
+        template_yaml = pat["yaml_template"]
+        if output:
+            out_p = Path(output)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            out_p.write_text(template_yaml, encoding="utf-8")
+            rprint(f"[green]✓ Scaffolded YAML written to:[/green] [bold]{out_p}[/bold]")
+        else:
+            console.print(template_yaml)
+    else:
+        rprint(f"[red]Unknown action '{action}'. Use 'list', 'preview', or 'scaffold'.[/red]")
+        raise typer.Exit(code=1)
 
 
 @diagram_v2_app.command("audit")

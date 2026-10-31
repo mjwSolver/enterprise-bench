@@ -110,6 +110,11 @@ def build_bundle(version: str | None = None):
     if version_log_src.exists():
         shutil.copy(version_log_src, os.path.join(staging_root, "VERSION_LOG.md"))
 
+    # Copy DIAGRAM_INSTRUCTIONS.md to bundle root for automated agent guidance
+    instructions_src = repo_root / "docs/specs/DIAGRAM_INSTRUCTIONS.md"
+    if instructions_src.exists():
+        shutil.copy(instructions_src, os.path.join(staging_root, "DIAGRAM_INSTRUCTIONS.md"))
+
     # 6. Create safe workspaces
     os.makedirs(os.path.join(staging_root, "my_specs"), exist_ok=True)
     with open(os.path.join(staging_root, "my_specs", ".gitkeep"), "w") as f:
@@ -173,6 +178,7 @@ This ensures that when a new engine zip is released, you can update without over
     parser.add_argument("-o", "--output", default="my_output", help="Output directory or file path (default: my_output)")
     parser.add_argument("-f", "--format", default="all", help="Target formats: all, pptx, svg, drawio, png (comma-separated)")
     parser.add_argument("--open", action="store_true", help="Open generated PowerPoint presentation on desktop")
+    parser.add_argument("--ascii", action="store_true", help="Print ASCII layout wireframe before compiling")
 
     args = parser.parse_args()
 
@@ -180,6 +186,15 @@ This ensures that when a new engine zip is released, you can update without over
     if not spec_p.exists():
         print(f"\\033[91m[Error]\\033[0m Spec file not found: {args.spec}")
         sys.exit(1)
+
+    if args.ascii:
+        import yaml
+        from engine.diagram_v2.ideas import render_ascii_wireframe
+        try:
+            raw_spec = yaml.safe_load(spec_p.read_text(encoding="utf-8"))
+            print(render_ascii_wireframe(raw_spec))
+        except Exception as err:
+            print(f"(ASCII wireframe preview unavailable: {err})")
 
     formats = [f.strip() for f in args.format.split(",") if f.strip()]
     out_path = Path(args.output)

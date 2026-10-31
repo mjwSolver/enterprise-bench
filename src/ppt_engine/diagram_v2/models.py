@@ -149,6 +149,7 @@ class ContainerSpec(BaseModel):
     container_id: Optional[str] = None
     icon: Optional[str] = None
     icon_emoji: Optional[str] = None
+    allow_dense_typography: bool = False  # Explicit bypass valve allowing typography down to 8pt (Gear 3 appendix/reading decks)
 
     def resolved_vertical_align(self) -> str:
         if self.vertical_align is not None and self.vertical_align in ("top", "bottom", "middle"):
@@ -524,6 +525,7 @@ class DiagramSpec(BaseModel):
     flows: List[FlowSpec] = Field(default_factory=list)
     badges: List[BadgeSpec] = Field(default_factory=list)
     bullet_lists: List[BulletListSpec] = Field(default_factory=list)
+    allow_dense_typography: bool = False  # Global diagram-level bypass valve for dense appendix slides
 
     @model_validator(mode="before")
     @classmethod

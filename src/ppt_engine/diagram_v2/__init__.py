@@ -81,6 +81,12 @@ from src.ppt_engine.diagram_v2.contrast import (
     WCAG_AAA_ENHANCED,
     MIN_BORDER_CONTRAST,
 )
+from src.ppt_engine.diagram_v2.ideas import (
+    CANONICAL_PATTERNS,
+    list_idea_patterns,
+    get_pattern,
+    render_ascii_wireframe,
+)
 
 __all__ = [
     "DiagramSpec",
@@ -141,5 +147,9 @@ __all__ = [
     "WCAG_AA_LARGE_TEXT",
     "WCAG_AAA_ENHANCED",
     "MIN_BORDER_CONTRAST",
+    "CANONICAL_PATTERNS",
+    "list_idea_patterns",
+    "get_pattern",
+    "render_ascii_wireframe",
 ]
 

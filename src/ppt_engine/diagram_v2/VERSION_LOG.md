@@ -4,6 +4,26 @@
 
 ---
 
+### Release 6: v2.3 — ASCII Layout Wireframing, Typographic Density Guardrail & Headless Vision Verification
+- **Release Timestamp:** `2026-10-31 20:45:00 +0700`
+- **Distribution Archive:** `diagram_engine_v2_portable_v2.3_20261031_204500.zip`
+- **Engineering Signature:** `[MJW/AGY]` embedded across core subsystem modules (`ideas.py`, `auditor.py`, `models.py`, `src/cli/diagram_v2.py`).
+- **What's Changed vs. Release 5 (v2.2):**
+  - **Canonical Layout Patterns & ASCII Wireframe Engine (`ideas.py`):**
+    - Introduced canonical pattern registry (`3-swimlane`, `interwoven-hub`, `data-pipeline`, `runbook-grid`).
+    - Added `render_ascii_wireframe(spec)` producing instant, human-readable terminal wireframes of containers, nodes, and flows for non-blocking conversational preambles.
+    - Added unified CLI command `bench diagram v2 ideas [list|preview|scaffold]` and `--ascii` flag to `bench diagram v2 compile`.
+  - **Check #16: Typographic Density & Font Floor Guardrail (`auditor.py`):**
+    - Enforced hard 11pt font floor (`title_pt >= 11.0`, `subtitle_pt >= 9.5`).
+    - Added Check #16 (`EXCESSIVE_NODE_DENSITY`) to `Tier1GeometricLinter`, failing when containers cram excessive nodes into narrow footprints and prescribing **Semantic Aggregation** ($\le 3\text{--}4$ cards) over font squishing.
+    - Implemented `allow_dense_typography: bool = False` bypass valve in `ContainerSpec` and `DiagramSpec`, safely relaxing font floor to 8pt for Gear 3 reading/appendix decks and regulatory footnotes.
+  - **Decoupled Instruction Contract (`DIAGRAM_INSTRUCTIONS.md`):**
+    - Codified agent behavior rules into `docs/specs/DIAGRAM_INSTRUCTIONS.md` without polluting root monorepo `AGENTS.md` context when bundled or distributed.
+  - **Headless Rasterization Specification (`docs/specs/headless_rendering_setup.md`):**
+    - Documented cross-platform setup (`soffice` + `poppler`) for macOS, Linux, and Windows, formalizing the graceful fallback to Tier 1 geometric linting when headless binaries are absent.
+
+---
+
 ### Release 5: v2.2 — Declarative Architecture Guardrails & Native Inspection/Patching Engine
 - **Release Timestamp:** `2026-10-26 15:30:00 +0700`
 - **Distribution Archive:** `diagram_engine_v2_portable_v2.2_20261026_160000.zip`

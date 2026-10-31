@@ -13,6 +13,8 @@
 
 ## ⚡ The 3-Lane Request Routing Triad
 
+*(Inspired by OfficeCLI architecture, credit: Vrieza — see [ADR](docs/decisions/ADR_OFFICECLI_EVALUATION_AND_NATIVE_ROUTING.md))*
+
 Classify incoming requests into one execution lane:
 - **🔍 Lane 1: Inspection & Headless Audit:** Read-only verification, zero shape/coordinate modifications (`uv run bench ppt view`, `uv run bench doc view`, `uv run bench diagram v2 audit <spec.yaml> --strict`, `uv run bench ppt lint`, `uv run bench stage preflight`).
 - **✏️ Lane 2: In-Situ Micro-Patch:** Localized text, typo, label, or image updates without altering coordinate grids or canvas bounding boxes (`uv run bench ppt patch`, `uv run bench ppt replace-image`, `gdrive mutate update <file_id> <path.pptx>`). Target presentation window must be dismissed prior to saving if previously opened.

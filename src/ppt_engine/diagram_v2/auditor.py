@@ -257,6 +257,7 @@ class Tier1GeometricLinter:
         issues.extend(self.check_underfilled_execution_cards())
         issues.extend(self.check_asset_resolution())
         issues.extend(self.check_contrast_and_readability())
+        issues.extend(self.check_excessive_node_density())
         return issues
 
     # Alias for backward compatibility
@@ -1789,6 +1790,100 @@ class Tier1GeometricLinter:
                             f"{tag_cr:.2f}:1 against badge bg '{c.tag_bg_hex}'."
                         ),
                         suggested_fix="Use high-contrast badge text (e.g. #78350F for amber badges, #991B1B for red).",
+                    ))
+
+        return issues
+
+    # =========================================================================
+    # Rule 20: Check #16 - Excessive Node Density & Font Floor Guardrail (EXCESSIVE_NODE_DENSITY)
+    # =========================================================================
+    def check_excessive_node_density(self) -> List[AuditIssue]:
+        """
+        Check #16: EXCESSIVE_NODE_DENSITY
+        Flags containers enclosing excessive nodes that violate the 11pt typographic
+        floor or compress cards into unreadable clutter.
+        Enforces Semantic Aggregation: aggregates 5-8 granular items into <= 3-4 cards.
+        Provides bypass via 'allow_dense_typography: true' (floor relaxed to 8pt for appendix).
+        """
+        issues: List[AuditIssue] = []
+        global_bypass = getattr(self.spec, "allow_dense_typography", False)
+
+        for c in self.spec.containers:
+            c_box = self.norm.to_inches(c.x, c.y, c.w, c.h)
+            container_bypass = global_bypass or getattr(c, "allow_dense_typography", False)
+
+            contained_nodes = [
+                n for n in self.spec.nodes
+                if getattr(n, "container_id", None) == c.id or (
+                    n.id in self.node_boxes and
+                    self.container_boxes.get(c.id) and
+                    self.container_boxes[c.id].contains(self.node_boxes[n.id].cx, self.node_boxes[n.id].cy)
+                )
+            ]
+
+            node_count = len(contained_nodes)
+            if node_count == 0:
+                continue
+
+            c_area = max(0.5, c_box.w * c_box.h)
+            density = node_count / c_area
+
+            sub_8pt_nodes = []
+            sub_floor_nodes = []
+            for n in contained_nodes:
+                eff_t, eff_s, _ = self._simulate_shrink_plan(n)
+                title_font = n.title_pt if n.title_pt is not None else eff_t
+                sub_font = n.subtitle_pt if n.subtitle_pt is not None else eff_s
+
+                # Unconditional < 8pt failure (illegible even on appendix)
+                if title_font < 8.0 or (n.subtitle and sub_font < 7.5):
+                    sub_8pt_nodes.append((n.id, title_font, sub_font))
+                elif not container_bypass:
+                    # Standard mode: card titles must maintain standard floor (>= 10.5pt) and subtitles >= 8.0pt
+                    if title_font < 10.5 or (n.subtitle and sub_font < 8.0):
+                        sub_floor_nodes.append((n.id, title_font, sub_font))
+
+            if sub_8pt_nodes:
+                bad_names = ", ".join(f"{nid} (T:{tf:.1f}pt/S:{sf:.1f}pt)" for nid, tf, sf in sub_8pt_nodes[:3])
+                issues.append(AuditIssue(
+                    severity="CRITICAL",
+                    category="EXCESSIVE_NODE_DENSITY",
+                    element_id=c.id,
+                    description=(
+                        f"Container '{c.id}' has {node_count} nodes with typography below the absolute 8pt floor: {bad_names}."
+                    ),
+                    suggested_fix="Aggregate element count down or expand container bounds. Fonts < 8pt are illegible even on appendix slides.",
+                    coords=(self.container_boxes[c.id].x, self.container_boxes[c.id].y, self.container_boxes[c.id].w, self.container_boxes[c.id].h) if c.id in self.container_boxes else None,
+                ))
+            elif container_bypass:
+                if sub_floor_nodes or node_count >= 6:
+                    issues.append(AuditIssue(
+                        severity="ADVISORY",
+                        category="EXCESSIVE_NODE_DENSITY",
+                        element_id=c.id,
+                        description=(
+                            f"Container '{c.id}' contains {node_count} nodes with dense typography permitted (allow_dense_typography: true)."
+                        ),
+                        suggested_fix="Dense layout verified under appendix/reading deck mode.",
+                        coords=(self.container_boxes[c.id].x, self.container_boxes[c.id].y, self.container_boxes[c.id].w, self.container_boxes[c.id].h) if c.id in self.container_boxes else None,
+                    ))
+            else:
+                # Standard mode: flag when density forces titles below 10.5pt or container holds >= 5 nodes in crowded space
+                if sub_floor_nodes or (node_count >= 5 and (c_box.w < 2.8 or density > 1.6)):
+                    bad_names = ", ".join(f"{nid} (title: {tf:.1f}pt)" for nid, tf, _ in sub_floor_nodes[:3]) if sub_floor_nodes else f"{node_count} nodes"
+                    issues.append(AuditIssue(
+                        severity="CRITICAL",
+                        category="EXCESSIVE_NODE_DENSITY",
+                        element_id=c.id,
+                        description=(
+                            f"Container '{c.id}' has excessive node density ({node_count} nodes in {c_box.w:.2f}\"x{c_box.h:.2f}\", {density:.1f} nodes/sq in). "
+                            f"Forces typography below presentation floor: {bad_names}."
+                        ),
+                        suggested_fix=(
+                            f"Perform Semantic Aggregation: collapse the {node_count} granular nodes into <= 3-4 logical cards. "
+                            f"If this is a dense reading deck or appendix runbook, set 'allow_dense_typography: true'."
+                        ),
+                        coords=(self.container_boxes[c.id].x, self.container_boxes[c.id].y, self.container_boxes[c.id].w, self.container_boxes[c.id].h) if c.id in self.container_boxes else None,
                     ))
 
         return issues

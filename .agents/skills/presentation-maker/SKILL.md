@@ -1,7 +1,7 @@
 ---
 name: presentation-maker
 description: >-
-  Expert system for designing, structuring, and generating professional presentation decks (PowerPoint / .pptx) using the unified CLI (`uv run bench ppt`), python-pptx, consulting frameworks, and modern slide design systems. Use whenever creating, editing, redesigning, or automating PowerPoint presentations.
+  Fallback legacy presentation skill. DO NOT invoke automatically. Use ONLY upon explicit manual user command or slash invocation (/presentation-maker).
 ---
 
 # Presentation Maker Skill
