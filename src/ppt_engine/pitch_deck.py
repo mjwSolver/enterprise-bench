@@ -317,6 +317,8 @@ class PitchDeckBuilder:
                         bullets=itm.get("bullets") or [],
                         accent_key=itm.get("accent_key", "accent"),
                         badge=itm.get("badge"),
+                        metric=itm.get("metric"),
+                        metric_label=itm.get("metric_label"),
                     ))
             build_card_grid_slide(
                 self.prs,

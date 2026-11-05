@@ -21,9 +21,19 @@ class DeckComparator:
         self.prs_after = Presentation(str(after_path)) if after_path.exists() else None
 
     def audit_slide_metrics(self, prs: Presentation) -> List[Dict[str, Any]]:
+        def _iter_all_shapes(shapes):
+            for shape in shapes:
+                if shape.shape_type == MSO_SHAPE_TYPE.GROUP or hasattr(shape, "shapes"):
+                    try:
+                        yield from _iter_all_shapes(shape.shapes)
+                    except Exception:
+                        pass
+                yield shape
+
         metrics = []
         for idx, slide in enumerate(prs.slides, start=1):
-            total_shapes = len(slide.shapes)
+            all_shapes = list(_iter_all_shapes(slide.shapes))
+            total_shapes = len(all_shapes)
             text_boxes = 0
             tables = 0
             images = 0
@@ -32,7 +42,7 @@ class DeckComparator:
             y_coords = []
             h_coords = []
 
-            for shape in slide.shapes:
+            for shape in all_shapes:
                 if shape.has_text_frame:
                     text_boxes += 1
                     raw_text = shape.text_frame.text.strip()

@@ -376,7 +376,7 @@ def add_slide_footer(
     tf_n = tb_n.text_frame
     tf_n.margin_left = tf_n.margin_right = tf_n.margin_top = tf_n.margin_bottom = 0
     p_n = tf_n.paragraphs[0]
-    p_n.text = notice
+    p_n.text = notice or "Enterprise Strategy Group  |  Confidential & Proprietary"
     p_n.font.name = theme.font_family
     p_n.font.size = Pt(thresholds.get("caption_pt", 8.5))
     p_n.font.color.rgb = theme.get_rgb("muted")
@@ -2246,6 +2246,10 @@ def build_chevron_process_slide(
             ),
         ]
 
+    if not steps:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
+
     n_steps = len(steps)
     total_w = Inches(11.733)
     start_x = Inches(0.8)
@@ -2519,6 +2523,10 @@ def build_split_hero_slide(
         p_sub.space_before = Pt(14)
 
     # 2. Right 2/3 Unbordered Narrative Detail Area
+    if not blocks:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
+
     right_x = Inches(4.75)
     right_w = Inches(7.783)
     n_blocks = len(blocks)
@@ -2726,6 +2734,10 @@ def build_gap_analysis_slide(
     p_h2.font.color.rgb = theme.get_rgb("primary")
 
     # 2. Content Rows
+    if not dimensions:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
+
     n_dim = len(dimensions)
     content_y = Inches(2.32)
     available_h = Inches(4.60)
@@ -4358,6 +4370,8 @@ class CardGridItem:
     bullets: List[str] = field(default_factory=list)
     accent_key: str = "accent"
     badge: Optional[str] = None
+    metric: Optional[str] = None
+    metric_label: Optional[str] = None
 
 
 @dataclass
@@ -4584,10 +4598,11 @@ def build_card_grid_slide(
             border_color=theme.get_rgb("border"),
         )
 
-        icon_dim = Inches(0.30)
-        icon_x = cx + Inches(0.14)
-        icon_y = cy + Inches(0.12)
+        has_header_elements = bool(itm.icon or itm.badge)
         if itm.icon:
+            icon_dim = Inches(0.30)
+            icon_x = cx + Inches(0.14)
+            icon_y = cy + Inches(0.12)
             try:
                 icon_path = get_brand_icon(itm.icon, brand_color=accent_rgb, theme=theme)
                 if icon_path and Path(icon_path).exists():
@@ -4610,42 +4625,123 @@ def build_card_grid_slide(
                 override_color_key=itm.accent_key,
             )
 
-        tb_x = cx + Inches(0.14)
-        tb_y = cy + Inches(0.46)
-        tb_w = card_w - Inches(0.28)
-        tb_h = card_h - Inches(0.50)
+        tb_y = cy + (Inches(0.46) if has_header_elements else Inches(0.18))
 
-        tb = slide.shapes.add_textbox(tb_x, tb_y, tb_w, tb_h)
-        tf = tb.text_frame
-        tf.word_wrap = True
-        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+        if itm.metric:
+            title_h = Inches(0.65) if itm.subtitle else Inches(0.35)
+            tb = slide.shapes.add_textbox(cx + Inches(0.16), tb_y, card_w - Inches(0.32), title_h)
+            tf = tb.text_frame
+            tf.word_wrap = True
+            tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
 
-        p_title = tf.paragraphs[0]
-        p_title.text = itm.title
-        p_title.font.name = theme.font_family_header
-        p_title.font.size = Pt(13.5 if rows == 1 else (10.0 if rows <= 2 else 9.0))
-        p_title.font.bold = True
-        p_title.font.color.rgb = theme.get_rgb("primary")
+            p_title = tf.paragraphs[0]
+            p_title.text = itm.title
+            p_title.font.name = theme.font_family_header
+            p_title.font.size = Pt(13.5 if rows == 1 else (10.0 if rows <= 2 else 9.0))
+            p_title.font.bold = True
+            p_title.font.color.rgb = theme.get_rgb("primary")
 
-        if itm.subtitle:
-            p_sub = tf.add_paragraph()
-            p_sub.text = itm.subtitle
-            p_sub.font.name = theme.font_family
-            p_sub.font.size = Pt(10.0 if rows == 1 else 8.0)
-            p_sub.font.color.rgb = theme.get_rgb("secondary")
-            p_sub.space_before = Pt(4 if rows == 1 else 2)
+            if itm.subtitle:
+                p_sub = tf.add_paragraph()
+                p_sub.text = itm.subtitle
+                p_sub.font.name = theme.font_family
+                p_sub.font.size = Pt(9.5 if rows == 1 else 8.0)
+                p_sub.font.color.rgb = theme.get_rgb("secondary")
+                p_sub.space_before = Pt(3)
 
-        bullet_font_sz = 10.5 if rows == 1 else (7.8 if rows <= 2 else 7.2)
-        bullet_space_before = 7.0 if rows == 1 else 2.5
-        for b in itm.bullets:
-            _add_bullet_paragraph(
-                tf,
-                b,
-                theme.font_family,
-                font_size_pt=bullet_font_sz,
-                font_color=theme.get_rgb("secondary"),
-                space_before_pt=bullet_space_before,
-            )
+            met_box_y = tb_y + title_h + Inches(0.08)
+            met_box_h = Inches(0.85)
+            met_box_w = card_w - Inches(0.32)
+
+            met_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.16), met_box_y, met_box_w, met_box_h)
+            met_card.shadow.inherit = False
+            met_card.fill.solid()
+            met_card.fill.fore_color.rgb = theme.get_rgb("surface_muted")
+            met_card.line.color.rgb = theme.get_rgb("border")
+            met_card.line.width = Pt(0.75)
+
+            stripe_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.16), met_box_y, Pt(3.5), met_box_h)
+            stripe_bar.shadow.inherit = False
+            stripe_bar.fill.solid()
+            stripe_bar.fill.fore_color.rgb = accent_rgb
+            stripe_bar.line.fill.background()
+
+            met_tb = slide.shapes.add_textbox(cx + Inches(0.28), met_box_y + Inches(0.06), met_box_w - Inches(0.24), met_box_h - Inches(0.12))
+            met_tf = met_tb.text_frame
+            met_tf.word_wrap = True
+            met_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            met_tf.margin_left = met_tf.margin_right = met_tf.margin_top = met_tf.margin_bottom = 0
+
+            p_met = met_tf.paragraphs[0]
+            p_met.text = itm.metric
+            p_met.font.name = theme.font_family_header
+            p_met.font.size = Pt(18.0)
+            p_met.font.bold = True
+            p_met.font.color.rgb = accent_rgb
+
+            if itm.metric_label:
+                p_ml = met_tf.add_paragraph()
+                p_ml.text = itm.metric_label.upper()
+                p_ml.font.name = theme.font_family_header
+                p_ml.font.size = Pt(8.0)
+                p_ml.font.bold = True
+                p_ml.font.color.rgb = theme.get_rgb("secondary")
+                p_ml.space_before = Pt(2)
+
+            bullets_start_y = met_box_y + met_box_h + Inches(0.16)
+            avail_bullets_h = (cy + card_h - Inches(0.16)) - bullets_start_y
+            tb_b = slide.shapes.add_textbox(cx + Inches(0.16), bullets_start_y, card_w - Inches(0.32), avail_bullets_h)
+            tf_b = tb_b.text_frame
+            tf_b.word_wrap = True
+            tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
+
+            bullet_font_sz = 10.5 if rows == 1 else (7.8 if rows <= 2 else 7.2)
+            bullet_space_before = 8.0 if rows == 1 else 2.5
+            for b in itm.bullets:
+                _add_bullet_paragraph(
+                    tf_b,
+                    b,
+                    theme.font_family,
+                    font_size_pt=bullet_font_sz,
+                    font_color=theme.get_rgb("secondary"),
+                    space_before_pt=bullet_space_before,
+                )
+        else:
+            tb_x = cx + Inches(0.14)
+            tb_w = card_w - Inches(0.28)
+            tb_h = card_h - Inches(0.50)
+
+            tb = slide.shapes.add_textbox(tb_x, tb_y, tb_w, tb_h)
+            tf = tb.text_frame
+            tf.word_wrap = True
+            tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+
+            p_title = tf.paragraphs[0]
+            p_title.text = itm.title
+            p_title.font.name = theme.font_family_header
+            p_title.font.size = Pt(13.5 if rows == 1 else (10.0 if rows <= 2 else 9.0))
+            p_title.font.bold = True
+            p_title.font.color.rgb = theme.get_rgb("primary")
+
+            if itm.subtitle:
+                p_sub = tf.add_paragraph()
+                p_sub.text = itm.subtitle
+                p_sub.font.name = theme.font_family
+                p_sub.font.size = Pt(10.0 if rows == 1 else 8.0)
+                p_sub.font.color.rgb = theme.get_rgb("secondary")
+                p_sub.space_before = Pt(4 if rows == 1 else 2)
+
+            bullet_font_sz = 10.5 if rows == 1 else (7.8 if rows <= 2 else 7.2)
+            bullet_space_before = 7.0 if rows == 1 else 2.5
+            for b in itm.bullets:
+                _add_bullet_paragraph(
+                    tf,
+                    b,
+                    theme.font_family,
+                    font_size_pt=bullet_font_sz,
+                    font_color=theme.get_rgb("secondary"),
+                    space_before_pt=bullet_space_before,
+                )
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
@@ -5319,7 +5415,7 @@ def build_table_slide(
             hdr_hl = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cur_x, header_y, cw, header_h)
             hdr_hl.shadow.inherit = False
             hdr_hl.fill.solid()
-            hdr_hl.fill.fore_color.rgb = theme.get_rgb("accent")
+            hdr_hl.fill.fore_color.rgb = hex_to_rgb("#1E3A8A")
             hdr_hl.line.fill.background()
 
         tb = slide.shapes.add_textbox(cur_x + Inches(0.08), header_y + Inches(0.06), cw - Inches(0.16), header_h - Inches(0.12))
@@ -5395,8 +5491,8 @@ def build_table_slide(
                 )
                 cell_card.shadow.inherit = False
                 cell_card.fill.solid()
-                cell_card.fill.fore_color.rgb = RGBColor(240, 247, 255)
-                cell_card.line.color.rgb = theme.get_rgb("accent")
+                cell_card.fill.fore_color.rgb = RGBColor(241, 245, 249)
+                cell_card.line.color.rgb = hex_to_rgb("#1E3A8A")
                 cell_card.line.width = Pt(1.5)
 
             cell_val = row[c_idx] if c_idx < len(row) else ""
@@ -5449,7 +5545,7 @@ def build_table_slide(
                     p.font.name = theme.font_family_header
                     p.font.size = Pt(font_size_pt)
                     p.font.bold = True
-                    p.font.color.rgb = theme.get_rgb("accent")
+                    p.font.color.rgb = hex_to_rgb("#1E3A8A")
                 elif c_idx == dim_idx:
                     p.font.name = theme.font_family_header
                     p.font.size = Pt(font_size_pt)
@@ -5503,7 +5599,7 @@ def build_table_slide(
             override_color_key=acc_key,
         )
 
-        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.20), takeaway_top + Inches(0.38), total_w - Inches(0.50), takeaway_h - Inches(0.42))
+        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.20), takeaway_top + Inches(0.36), total_w - Inches(0.40), takeaway_h - Inches(0.38))
         tf_tk = tb_tk.text_frame
         tf_tk.word_wrap = True
         tf_tk.margin_left = tf_tk.margin_right = tf_tk.margin_top = tf_tk.margin_bottom = 0
@@ -5511,7 +5607,7 @@ def build_table_slide(
         p_tkt = tf_tk.paragraphs[0]
         p_tkt.text = takeaway.get("title", "")
         p_tkt.font.name = theme.font_family_header
-        p_tkt.font.size = Pt(11.0)
+        p_tkt.font.size = Pt(13.0)
         p_tkt.font.bold = True
         p_tkt.font.color.rgb = theme.get_rgb("primary")
 
@@ -5519,11 +5615,9 @@ def build_table_slide(
             p_tkd = tf_tk.add_paragraph()
             p_tkd.text = takeaway.get("description")
             p_tkd.font.name = theme.font_family
-            p_tkd.font.size = Pt(9.5)
+            p_tkd.font.size = Pt(11.0)
             p_tkd.font.color.rgb = theme.get_rgb("secondary")
-            p_tkd.space_before = Pt(3)
-            p_tkd.font.color.rgb = theme.get_rgb("secondary")
-            p_tkd.space_before = Pt(3)
+            p_tkd.space_before = Pt(4)
 
     if footnote:
         foot_y = Inches(6.78)
