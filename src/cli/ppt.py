@@ -573,16 +573,51 @@ def visual_qa_cli(
 
 @ppt_app.command("lint")
 def ppt_lint_cli(
-    files: Optional[list[str]] = typer.Argument(None, help="Specific script files to lint"),
+    files: Optional[list[str]] = typer.Argument(None, help="Specific script or YAML spec files to lint"),
+    strict: bool = typer.Option(False, "--strict", "-s", help="Treat warnings as errors (for YAML specs)"),
 ) -> None:
-    """Run mechanical guardrail verifying adherence to Declarative YAML-First Architecture (Directive 5 & ADR)."""
+    """Run mechanical guardrails: YAML Spec Quality Audit (if .yaml) or Declarative YAML-First Architecture (Directive 5 & ADR)."""
     import subprocess
+    from src.ppt_engine.spec_linter import lint_presentation_spec
+
+    if files and any(f.endswith((".yaml", ".yml")) for f in files):
+        overall_passed = True
+        for f in files:
+            if f.endswith((".yaml", ".yml")):
+                report = lint_presentation_spec(Path(f), strict=strict)
+                report.render()
+                if not report.passed:
+                    overall_passed = False
+        if not overall_passed:
+            raise typer.Exit(code=1)
+        return
+
     cmd = [sys.executable, "scripts/lint_declarative_architecture.py"]
     if files:
         cmd.extend(files)
     res = subprocess.run(cmd)
     if res.returncode != 0:
         raise typer.Exit(code=res.returncode)
+
+
+@ppt_app.command("lint-spec")
+def ppt_lint_spec_cli(
+    spec: str = typer.Argument(..., help="Path to declarative YAML presentation spec"),
+    strict: bool = typer.Option(False, "--strict", "-s", help="Treat warnings as errors and exit with code 1"),
+) -> None:
+    """Lint a declarative YAML presentation spec for executive slidecraft, color discipline, and action titling."""
+    from src.ppt_engine.spec_linter import lint_presentation_spec
+
+    spec_p = Path(spec)
+    if not spec_p.exists():
+        rprint(f"[red]Error:[/red] Spec file not found: {spec}")
+        raise typer.Exit(code=1)
+
+    report = lint_presentation_spec(spec_p, strict=strict)
+    report.render()
+
+    if not report.passed:
+        raise typer.Exit(code=1)
 
 
 @ppt_app.command("view")

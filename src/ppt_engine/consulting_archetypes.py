@@ -497,12 +497,12 @@ def build_bcg_3_horizon_slide(
 
     # Layout Coordinates
     start_x = Inches(0.8)
-    timeline_y = Inches(1.58)
-    timeline_h = Inches(0.32)
-    row_y = Inches(2.00)
+    timeline_y = Inches(1.54)
+    timeline_h = Inches(0.36)
+    row_y = Inches(2.06)
     card_w = Inches(3.72)
     card_gap = Inches(0.28)
-    card_h = Inches(4.88)
+    card_h = Inches(4.60)
 
     for i, h_data in enumerate(horizons[:3]):
         cx = start_x + i * (card_w + card_gap)
@@ -530,28 +530,38 @@ def build_bcg_3_horizon_slide(
         s_tf.margin_right = Inches(0.14)
         s_tf.margin_top = s_tf.margin_bottom = 0
         p_step = s_tf.paragraphs[0]
-        p_step.text = f"{h_data.horizon_tag.upper()}  •  {h_data.status_tag}"
-        p_step.font.name = theme.font_family_header
-        p_step.font.size = Pt(8.5)
-        p_step.font.bold = True
-        p_step.font.color.rgb = theme.get_rgb(h_data.status_text_key)
         p_step.alignment = PP_ALIGN.CENTER
 
-        # Directional Timeline Connector Arrow between columns
+        r_tag = p_step.add_run()
+        r_tag.text = h_data.horizon_tag.upper()
+        r_tag.font.name = theme.font_family_header
+        r_tag.font.size = Pt(8.5)
+        r_tag.font.bold = True
+        r_tag.font.color.rgb = theme.get_rgb(h_data.status_text_key)
+
+        r_sep = p_step.add_run()
+        r_sep.text = "  •  "
+        r_sep.font.name = theme.font_family
+        r_sep.font.size = Pt(8.0)
+        r_sep.font.color.rgb = theme.get_rgb("muted")
+
+        r_stat = p_step.add_run()
+        r_stat.text = h_data.status_tag.upper()
+        r_stat.font.name = theme.font_family_header
+        r_stat.font.size = Pt(8.5)
+        r_stat.font.bold = True
+        r_stat.font.color.rgb = theme.get_rgb(h_data.status_text_key)
+
+        # Directional Timeline Connector Arrow between columns (Native Vector Shape)
         if i < 2:
-            arrow_x = cx + card_w + Inches(0.04)
-            arrow_w = card_gap - Inches(0.08)
-            arrow_tb = slide.shapes.add_textbox(arrow_x, timeline_y, arrow_w, timeline_h)
-            a_tf = arrow_tb.text_frame
-            a_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-            a_tf.margin_left = a_tf.margin_right = a_tf.margin_top = a_tf.margin_bottom = 0
-            p_arr = a_tf.paragraphs[0]
-            p_arr.text = "►"
-            p_arr.font.name = "Arial"
-            p_arr.font.size = Pt(9.5)
-            p_arr.font.bold = True
-            p_arr.alignment = PP_ALIGN.CENTER
-            p_arr.font.color.rgb = theme.get_rgb("muted")
+            arr_dim = Inches(0.16)
+            arrow_x = cx + card_w + (card_gap - arr_dim) / 2
+            arrow_y = timeline_y + (timeline_h - arr_dim) / 2
+            arr_shape = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, arrow_x, arrow_y, arr_dim, arr_dim)
+            arr_shape.shadow.inherit = False
+            arr_shape.fill.solid()
+            arr_shape.fill.fore_color.rgb = hex_to_rgb("#94A3B8")
+            arr_shape.line.fill.background()
 
         # ---------------------------------------------------------------------
         # 2. Clean Surface Container (Zero Top Stripe, Generous Whitespace)
@@ -572,7 +582,10 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         # 3. Column Header: Title & Strategic Focus
         # ---------------------------------------------------------------------
-        title_tb = slide.shapes.add_textbox(cx + Inches(0.24), row_y + Inches(0.22), card_w - Inches(0.48), Inches(0.74))
+        pad_x = Inches(0.28)
+        content_w = card_w - Inches(0.56)
+
+        title_tb = slide.shapes.add_textbox(cx + pad_x, row_y + Inches(0.28), content_w, Inches(0.74))
         title_tf = title_tb.text_frame
         title_tf.word_wrap = True
         title_tf.margin_left = title_tf.margin_right = title_tf.margin_top = title_tf.margin_bottom = 0
@@ -594,9 +607,9 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         # 4. Open-Air Floating Hero Metric (Typographic Scale Contrast)
         # ---------------------------------------------------------------------
-        metric_top_y = row_y + Inches(1.10)
-        metric_h = Inches(0.78)
-        m_tb = slide.shapes.add_textbox(cx + Inches(0.24), metric_top_y, card_w - Inches(0.48), metric_h)
+        metric_top_y = row_y + Inches(1.28)
+        metric_h = Inches(0.82)
+        m_tb = slide.shapes.add_textbox(cx + pad_x, metric_top_y, content_w, metric_h)
         m_tf = m_tb.text_frame
         m_tf.word_wrap = True
         m_tf.margin_left = m_tf.margin_right = m_tf.margin_top = m_tf.margin_bottom = 0
@@ -604,11 +617,11 @@ def build_bcg_3_horizon_slide(
         p_mval = m_tf.paragraphs[0]
         p_mval.text = h_data.metric_highlight
         p_mval.font.name = theme.font_family_header
-        base_metric_pt = 26.0
+        base_metric_pt = 28.0
         if len(h_data.metric_highlight) > 14:
             base_metric_pt = 18.0
         elif len(h_data.metric_highlight) > 9:
-            base_metric_pt = 21.0
+            base_metric_pt = 22.0
         p_mval.font.size = Pt(base_metric_pt)
         p_mval.font.bold = True
         p_mval.font.color.rgb = accent_rgb
@@ -616,44 +629,55 @@ def build_bcg_3_horizon_slide(
         p_mlbl = m_tf.add_paragraph()
         p_mlbl.text = h_data.metric_label
         p_mlbl.font.name = theme.font_family
-        p_mlbl.font.size = Pt(9.0)
+        p_mlbl.font.size = Pt(9.5)
         p_mlbl.font.color.rgb = theme.get_rgb("muted")
-        p_mlbl.space_before = Pt(2)
+        p_mlbl.space_before = Pt(3)
 
         # ---------------------------------------------------------------------
         # 5. Subtle Editorial Hairline Divider
         # ---------------------------------------------------------------------
-        divider_y = metric_top_y + metric_h + Inches(0.06)
-        div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.24), divider_y, card_w - Inches(0.48), Pt(0.75))
+        divider_y = row_y + Inches(2.28)
+        div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + pad_x, divider_y, content_w, Pt(0.75))
         div.shadow.inherit = False
         div.fill.solid()
         div.fill.fore_color.rgb = theme.get_rgb("border")
         div.line.fill.background()
 
         # ---------------------------------------------------------------------
-        # 6. Strategic Deliverables (Direct Bullet Flow, Zero Boxy Sub-Headers)
+        # 6. Strategic Deliverables (Direct Bullet Flow, Dynamic Vertical Spacing)
         # ---------------------------------------------------------------------
-        content_top = divider_y + Inches(0.18)
+        content_top = divider_y + Inches(0.24)
         content_h = card_h - (content_top - row_y) - Inches(0.20)
         content_tb = slide.shapes.add_textbox(
-            cx + Inches(0.24),
+            cx + pad_x,
             content_top,
-            card_w - Inches(0.48),
+            content_w,
             content_h,
         )
         content_tf = content_tb.text_frame
         content_tf.word_wrap = True
         content_tf.margin_left = content_tf.margin_right = content_tf.margin_top = content_tf.margin_bottom = 0
 
+        n_inits = len(h_data.initiatives)
+        if n_inits <= 2:
+            bullet_size_pt = 11.0
+            bullet_space_before = 20.0
+        elif n_inits == 3:
+            bullet_size_pt = 10.5
+            bullet_space_before = 12.0
+        else:
+            bullet_size_pt = thresholds.get("bullet_pt", 10.0)
+            bullet_space_before = 7.0
+
         for b_idx, init_item in enumerate(h_data.initiatives):
             _add_bullet_paragraph(
                 content_tf,
                 text=init_item,
                 font_name=theme.font_family,
-                font_size_pt=thresholds.get("bullet_pt", 10.0),
+                font_size_pt=bullet_size_pt,
                 font_color=theme.get_rgb("secondary"),
                 lead_color=theme.get_rgb("primary"),
-                space_before_pt=8.0 if b_idx > 0 else 2.0,
+                space_before_pt=bullet_space_before if b_idx > 0 else 2.0,
             )
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
@@ -2662,13 +2686,15 @@ def build_gap_analysis_slide(
     # Mode A: 2-Column Comparative Matrix (Before vs After)
     # =========================================================================
     if left_items and right_items:
-        card_y = Inches(1.72)
-        card_h = Inches(4.30)
+        card_y = Inches(1.68)
+        card_h = Inches(4.14)
         col_w = Inches(5.60)
         col1_x = Inches(0.80)
         col2_x = Inches(6.93)
         center_x = Inches(6.40)
         center_w = Inches(0.53)
+        pad_x = Inches(0.28)
+        content_w = col_w - Inches(0.56)
 
         # 1. Left Card: BEFORE (Clean Surface, subtle neutral border)
         add_card(
@@ -2684,7 +2710,7 @@ def build_gap_analysis_slide(
             border_width_pt=0.75,
         )
 
-        tb_l = slide.shapes.add_textbox(col1_x + Inches(0.24), card_y + Inches(0.20), col_w - Inches(0.48), Inches(0.68))
+        tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(0.22), content_w, Inches(0.68))
         tf_l = tb_l.text_frame
         tf_l.word_wrap = True
         tf_l.margin_left = tf_l.margin_right = tf_l.margin_top = tf_l.margin_bottom = 0
@@ -2703,13 +2729,13 @@ def build_gap_analysis_slide(
             p_ls.font.color.rgb = theme.get_rgb("muted")
             p_ls.space_before = Pt(3)
 
-        div_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x + Inches(0.24), card_y + Inches(0.96), col_w - Inches(0.48), Pt(0.75))
+        div_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x + pad_x, card_y + Inches(0.96), content_w, Pt(0.75))
         div_l.shadow.inherit = False
         div_l.fill.solid()
         div_l.fill.fore_color.rgb = hex_to_rgb("#E2E8F0")
         div_l.line.fill.background()
 
-        list_tb_l = slide.shapes.add_textbox(col1_x + Inches(0.24), card_y + Inches(1.10), col_w - Inches(0.48), card_h - Inches(1.25))
+        list_tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(1.12), content_w, card_h - Inches(1.26))
         list_tf_l = list_tb_l.text_frame
         list_tf_l.word_wrap = True
         list_tf_l.margin_left = list_tf_l.margin_right = list_tf_l.margin_top = list_tf_l.margin_bottom = 0
@@ -2722,21 +2748,18 @@ def build_gap_analysis_slide(
                 font_size_pt=thresholds.get("bullet_pt", 10.0),
                 font_color=theme.get_rgb("secondary"),
                 lead_color=theme.get_rgb("primary"),
-                space_before_pt=8.0 if b_idx > 0 else 2.0,
+                space_before_pt=12.0 if b_idx > 0 else 2.0,
             )
 
-        # 2. Center Directional Transition Arrow
-        arr_tb = slide.shapes.add_textbox(center_x, card_y + Inches(1.80), center_w, Inches(0.60))
-        arr_tf = arr_tb.text_frame
-        arr_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        arr_tf.margin_left = arr_tf.margin_right = arr_tf.margin_top = arr_tf.margin_bottom = 0
-        p_arr = arr_tf.paragraphs[0]
-        p_arr.text = "►"
-        p_arr.font.name = "Arial"
-        p_arr.font.size = Pt(14.0)
-        p_arr.font.bold = True
-        p_arr.alignment = PP_ALIGN.CENTER
-        p_arr.font.color.rgb = theme.get_rgb("accent")
+        # 2. Center Directional Transition Arrow (Native Vector Shape)
+        arr_dim = Inches(0.22)
+        arr_x = center_x + (center_w - arr_dim) / 2
+        arr_y = card_y + (card_h - arr_dim) / 2
+        arr_shape = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, arr_x, arr_y, arr_dim, arr_dim)
+        arr_shape.shadow.inherit = False
+        arr_shape.fill.solid()
+        arr_shape.fill.fore_color.rgb = theme.get_rgb("accent")
+        arr_shape.line.fill.background()
 
         # 3. Right Card: AFTER (Clean Surface, subtle accent border)
         add_card(
@@ -2752,7 +2775,7 @@ def build_gap_analysis_slide(
             border_width_pt=1.0,
         )
 
-        tb_r = slide.shapes.add_textbox(col2_x + Inches(0.24), card_y + Inches(0.20), col_w - Inches(0.48), Inches(0.68))
+        tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(0.22), content_w, Inches(0.68))
         tf_r = tb_r.text_frame
         tf_r.word_wrap = True
         tf_r.margin_left = tf_r.margin_right = tf_r.margin_top = tf_r.margin_bottom = 0
@@ -2771,13 +2794,13 @@ def build_gap_analysis_slide(
             p_rs.font.color.rgb = theme.get_rgb("muted")
             p_rs.space_before = Pt(3)
 
-        div_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + Inches(0.24), card_y + Inches(0.96), col_w - Inches(0.48), Pt(0.75))
+        div_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + pad_x, card_y + Inches(0.96), content_w, Pt(0.75))
         div_r.shadow.inherit = False
         div_r.fill.solid()
         div_r.fill.fore_color.rgb = hex_to_rgb("#BAE6FD")
         div_r.line.fill.background()
 
-        list_tb_r = slide.shapes.add_textbox(col2_x + Inches(0.24), card_y + Inches(1.10), col_w - Inches(0.48), card_h - Inches(1.25))
+        list_tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(1.12), content_w, card_h - Inches(1.26))
         list_tf_r = list_tb_r.text_frame
         list_tf_r.word_wrap = True
         list_tf_r.margin_left = list_tf_r.margin_right = list_tf_r.margin_top = list_tf_r.margin_bottom = 0
@@ -2790,13 +2813,13 @@ def build_gap_analysis_slide(
                 font_size_pt=thresholds.get("bullet_pt", 10.0),
                 font_color=theme.get_rgb("secondary"),
                 lead_color=theme.get_rgb("primary"),
-                space_before_pt=8.0 if b_idx > 0 else 2.0,
+                space_before_pt=12.0 if b_idx > 0 else 2.0,
             )
 
         # 4. Single Executive Synthesis Bar at Bottom (The ONLY focal banner)
         takeaway_text = takeaway or "EXECUTIVE TAKEAWAY: Transitioning from unstructured bullets to native MBB slidecraft ensures board-level clarity and cuts synthesis cycles by 60%."
-        syn_y = Inches(6.16)
-        syn_h = Inches(0.74)
+        syn_y = Inches(6.04)
+        syn_h = Inches(0.82)
         syn_w = Inches(11.73)
 
         add_card(
@@ -2819,7 +2842,7 @@ def build_gap_analysis_slide(
         stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
         stripe_syn.line.fill.background()
 
-        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.18), syn_y + Inches(0.12), syn_w - Inches(0.30), syn_h - Inches(0.24))
+        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.22), syn_y + Inches(0.12), syn_w - Inches(0.36), syn_h - Inches(0.24))
         syn_tf = syn_tb.text_frame
         syn_tf.word_wrap = True
         syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE

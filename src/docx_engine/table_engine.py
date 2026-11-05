@@ -71,6 +71,26 @@ def prevent_row_split(row: _Row) -> None:
         trPr.append(parse_xml(f'<w:cantSplit {nsdecls("w")}/>'))
 
 
+def set_table_borders(table: Table, border_color: str = "#CBD5E1", sz: str = "4") -> None:
+    """Apply consistent subtle borders to a table via w:tblBorders."""
+    clean_hex = border_color.strip().lstrip("#").upper()
+    tblPr = table._tbl.tblPr
+    existing_borders = tblPr.find(qn("w:tblBorders"))
+    if existing_borders is not None:
+        tblPr.remove(existing_borders)
+    borders_xml = (
+        f'<w:tblBorders {nsdecls("w")}>'
+        f'<w:top w:val="single" w:sz="{sz}" w:space="0" w:color="{clean_hex}"/>'
+        f'<w:left w:val="none"/>'
+        f'<w:bottom w:val="single" w:sz="{sz}" w:space="0" w:color="{clean_hex}"/>'
+        f'<w:right w:val="none"/>'
+        f'<w:insideH w:val="single" w:sz="{sz}" w:space="0" w:color="{clean_hex}"/>'
+        f'<w:insideV w:val="none"/>'
+        f'</w:tblBorders>'
+    )
+    tblPr.append(parse_xml(borders_xml))
+
+
 def style_table(
     table: Table,
     header_bg: str = "#2563EB",
@@ -81,6 +101,9 @@ def style_table(
 ) -> None:
     """Apply unified enterprise styling to a python-docx table."""
     header_rgb = RGBColor(*parse_hex(header_text_color)) if header_text_color else None
+
+    if border_color:
+        set_table_borders(table, border_color)
 
     # Ensure rows don't split awkwardly across page breaks
     for i, row in enumerate(table.rows):

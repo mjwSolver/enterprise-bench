@@ -249,6 +249,27 @@ class PurePythonSlideRenderer:
                     (x + notch, y + h / 2),
                 ]
                 overlay_draw.polygon(pts, fill=fill_rgba, outline=border_rgba)
+            elif auto_type == MSO_SHAPE.RIGHT_ARROW:
+                shaft_h = h * 0.40
+                y_mid = y + h / 2
+                head_w = min(w * 0.45, h * 0.8) if (w > 0 and h > 0) else 6
+                pts = [
+                    (x, y_mid - shaft_h / 2),
+                    (x + w - head_w, y_mid - shaft_h / 2),
+                    (x + w - head_w, y),
+                    (x + w, y_mid),
+                    (x + w - head_w, y + h),
+                    (x + w - head_w, y_mid + shaft_h / 2),
+                    (x, y_mid + shaft_h / 2),
+                ]
+                overlay_draw.polygon(pts, fill=fill_rgba, outline=border_rgba)
+            elif auto_type == MSO_SHAPE.OVAL:
+                overlay_draw.ellipse(
+                    [x, y, x + w, y + h],
+                    fill=fill_rgba,
+                    outline=border_rgba,
+                    width=border_width if border_rgba else 0,
+                )
             else:
                 overlay_draw.rectangle(
                     [x, y, x + w, y + h],
@@ -285,6 +306,33 @@ class PurePythonSlideRenderer:
                 pts,
                 fill=fill_rgba,
                 outline=border_rgba,
+            )
+
+        elif auto_type == MSO_SHAPE.RIGHT_ARROW:
+            shaft_h = h * 0.40
+            y_mid = y + h / 2
+            head_w = min(w * 0.45, h * 0.8) if (w > 0 and h > 0) else 6
+            pts = [
+                (x, y_mid - shaft_h / 2),
+                (x + w - head_w, y_mid - shaft_h / 2),
+                (x + w - head_w, y),
+                (x + w, y_mid),
+                (x + w - head_w, y + h),
+                (x + w - head_w, y_mid + shaft_h / 2),
+                (x, y_mid + shaft_h / 2),
+            ]
+            draw.polygon(
+                pts,
+                fill=fill_rgba,
+                outline=border_rgba,
+            )
+
+        elif auto_type == MSO_SHAPE.OVAL:
+            draw.ellipse(
+                [x, y, x + w, y + h],
+                fill=fill_rgba,
+                outline=border_rgba,
+                width=border_width if border_rgba else 0,
             )
 
         elif auto_type == MSO_SHAPE.RECTANGLE:

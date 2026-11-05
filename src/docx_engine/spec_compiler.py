@@ -587,13 +587,26 @@ class SpecCompiler:
             self.add_callout_alert(f"Image not found: {image_path}", alert_type="WARNING")
             return False
 
+        temp_png_path: Optional[Path] = None
         try:
+            embed_path = path_obj
+            if path_obj.suffix.lower() == ".svg":
+                from src.tool_helper.asset_fetcher import rasterize_svg_bytes
+                svg_bytes = path_obj.read_bytes()
+                png_bytes = rasterize_svg_bytes(svg_bytes, scale=3.0)
+                if png_bytes:
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                        tmp.write(png_bytes)
+                        temp_png_path = Path(tmp.name)
+                        embed_path = temp_png_path
+
             p_img = self.doc.add_paragraph()
             p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p_img.paragraph_format.space_before = Pt(12)
             p_img.paragraph_format.space_after = Pt(4)
             run_img = p_img.add_run()
-            run_img.add_picture(str(path_obj), width=Inches(6.2))
+            run_img.add_picture(str(embed_path), width=Inches(6.2))
 
             if caption:
                 p_cap = self.doc.add_paragraph()
@@ -609,6 +622,9 @@ class SpecCompiler:
         except Exception as e:
             self.add_callout_alert(f"Failed to embed image '{image_path}': {e}", alert_type="WARNING")
             return False
+        finally:
+            if temp_png_path and temp_png_path.exists():
+                temp_png_path.unlink(missing_ok=True)
 
     def add_markdown_table(self, rows_data: List[List[str]]) -> None:
         """Parse pipe-table rows and apply unified enterprise table styling."""

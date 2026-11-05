@@ -26,6 +26,10 @@ palette:
   badge_amber_text: "#B45309"
   badge_red_fill: "#FEF2F2"
   badge_red_text: "#991B1B"
+  badge_slate_fill: "#F1F5F9"
+  badge_slate_text: "#334155"
+  badge_muted_fill: "#F8FAFC"
+  badge_muted_text: "#64748B"
 
 geometry:
   corner_radius: 0

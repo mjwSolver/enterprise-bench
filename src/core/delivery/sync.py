@@ -308,6 +308,12 @@ class RemoteSyncEngine:
                     progress_callback(idx, total_files, name, SyncStatus.FAILED)
                 continue
 
+            if not sha_expected:
+                try:
+                    sha_expected = _compute_sha256(local_file)
+                except Exception as exc:
+                    logger.debug("Could not compute source sha256 for '%s': %s", local_file, exc)
+
             # Resolve remote destination path
             # item["drive_relpath"] typically starts with f"{target_folder_name}/..."
             drive_rel = item.get("drive_relpath", "")
@@ -399,7 +405,7 @@ class RemoteSyncEngine:
 
                 shutil.copy2(local_file, temp_dest)
                 written_sha = _compute_sha256(temp_dest)
-                if written_sha != sha_expected:
+                if sha_expected and written_sha != sha_expected:
                     if temp_dest.exists():
                         temp_dest.unlink()
                     raise SyncTransmissionError(

@@ -416,6 +416,10 @@ class ThemeEngine:
                     "badge_amber_text": "#B45309",
                     "badge_red_fill": "#FEE2E2",
                     "badge_red_text": "#B91C1C",
+                    "badge_slate_fill": "#F1F5F9",
+                    "badge_slate_text": "#334155",
+                    "badge_muted_fill": "#F8FAFC",
+                    "badge_muted_text": "#64748B",
                 },
                 geometry={"corner_radius": 8, "enable_shadows": False, "card_border_width_pt": 1.0},
             )

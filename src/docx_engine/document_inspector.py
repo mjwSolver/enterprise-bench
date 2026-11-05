@@ -144,8 +144,17 @@ class DocumentInspector:
                 for cell in table.rows[0].cells:
                     headers.append(cell.text.strip())
 
-            # Count words in table cells
-            table_words = sum(len(c.text.split()) for r in table.rows for c in r.cells if c.text.strip())
+            # Count words in table cells (deduplicating merged cells)
+            seen_tc = set()
+            table_words = 0
+            for r in table.rows:
+                for c in r.cells:
+                    tc_id = id(c._tc)
+                    if tc_id not in seen_tc:
+                        seen_tc.add(tc_id)
+                        txt = c.text.strip()
+                        if txt:
+                            table_words += len(txt.split())
             total_words += table_words
 
             tables_info.append(

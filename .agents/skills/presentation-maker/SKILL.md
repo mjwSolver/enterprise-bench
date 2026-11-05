@@ -26,7 +26,12 @@ A comprehensive guide for generating high-impact, professional presentations usi
    uv run bench ppt themes
    ```
 
-3. **Verify Generation & Fast Unit Sanity:**
+3. **Lint Declarative YAML Presentation Spec (Slidecraft Quality Audit):**
+   ```bash
+   uv run bench ppt lint-spec specs/<deck>.yaml
+   ```
+
+4. **Verify Generation & Fast Unit Sanity:**
    ```bash
    uv run bench test --unit
    ```
