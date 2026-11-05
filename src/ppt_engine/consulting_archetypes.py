@@ -97,7 +97,7 @@ def add_slide_header(
     resolved_title = action_title or title or ""
 
     # 1. Tracker Breadcrumb
-    tb_tr = slide.shapes.add_textbox(Inches(0.8), Inches(0.40), Inches(11.733), Inches(0.26))
+    tb_tr = slide.shapes.add_textbox(Inches(0.8), Inches(0.36), Inches(11.733), Inches(0.22))
     tf_tr = tb_tr.text_frame
     tf_tr.word_wrap = True
     tf_tr.margin_left = tf_tr.margin_right = tf_tr.margin_top = tf_tr.margin_bottom = 0
@@ -109,7 +109,7 @@ def add_slide_header(
     p_tr.font.color.rgb = tracker_rgb
 
     # 2. Action Headline & Context Subtitle (Unified Text Frame for Consistent Spacing)
-    tb_header = slide.shapes.add_textbox(Inches(0.8), Inches(0.66), Inches(11.733), Inches(0.65))
+    tb_header = slide.shapes.add_textbox(Inches(0.8), Inches(0.58), Inches(11.733), Inches(0.65))
     tf_h = tb_header.text_frame
     tf_h.word_wrap = True
     tf_h.margin_left = tf_h.margin_right = tf_h.margin_top = tf_h.margin_bottom = 0
@@ -129,9 +129,9 @@ def add_slide_header(
         p_s = tf_h.add_paragraph()
         p_s.text = subtitle
         p_s.font.name = theme.font_family
-        p_s.font.size = Pt(thresholds.get("subtitle_pt", 11.0))
+        p_s.font.size = Pt(thresholds.get("subtitle_pt", 10.0))
         p_s.font.color.rgb = theme.get_rgb("secondary")
-        p_s.space_before = Pt(10)
+        p_s.space_before = Pt(4)
 
 
 def add_card(
@@ -497,12 +497,12 @@ def build_bcg_3_horizon_slide(
 
     # Layout Coordinates
     start_x = Inches(0.8)
-    timeline_y = Inches(1.54)
+    timeline_y = Inches(1.70)
     timeline_h = Inches(0.36)
-    row_y = Inches(2.06)
+    row_y = Inches(2.22)
     card_w = Inches(3.72)
     card_gap = Inches(0.28)
-    card_h = Inches(4.60)
+    card_h = Inches(4.58)
 
     for i, h_data in enumerate(horizons[:3]):
         cx = start_x + i * (card_w + card_gap)
@@ -585,7 +585,7 @@ def build_bcg_3_horizon_slide(
         pad_x = Inches(0.28)
         content_w = card_w - Inches(0.56)
 
-        title_tb = slide.shapes.add_textbox(cx + pad_x, row_y + Inches(0.28), content_w, Inches(0.74))
+        title_tb = slide.shapes.add_textbox(cx + pad_x, row_y + Inches(0.26), content_w, Inches(0.70))
         title_tf = title_tb.text_frame
         title_tf.word_wrap = True
         title_tf.margin_left = title_tf.margin_right = title_tf.margin_top = title_tf.margin_bottom = 0
@@ -607,8 +607,8 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         # 4. Open-Air Floating Hero Metric (Typographic Scale Contrast)
         # ---------------------------------------------------------------------
-        metric_top_y = row_y + Inches(1.28)
-        metric_h = Inches(0.82)
+        metric_top_y = row_y + Inches(1.20)
+        metric_h = Inches(0.80)
         m_tb = slide.shapes.add_textbox(cx + pad_x, metric_top_y, content_w, metric_h)
         m_tf = m_tb.text_frame
         m_tf.word_wrap = True
@@ -636,7 +636,7 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         # 5. Subtle Editorial Hairline Divider
         # ---------------------------------------------------------------------
-        divider_y = row_y + Inches(2.28)
+        divider_y = row_y + Inches(2.16)
         div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + pad_x, divider_y, content_w, Pt(0.75))
         div.shadow.inherit = False
         div.fill.solid()
@@ -661,7 +661,7 @@ def build_bcg_3_horizon_slide(
         n_inits = len(h_data.initiatives)
         if n_inits <= 2:
             bullet_size_pt = 11.0
-            bullet_space_before = 20.0
+            bullet_space_before = 18.0
         elif n_inits == 3:
             bullet_size_pt = 10.5
             bullet_space_before = 12.0
@@ -2686,8 +2686,8 @@ def build_gap_analysis_slide(
     # Mode A: 2-Column Comparative Matrix (Before vs After)
     # =========================================================================
     if left_items and right_items:
-        card_y = Inches(1.68)
-        card_h = Inches(4.14)
+        card_y = Inches(1.80)
+        card_h = Inches(4.08)
         col_w = Inches(5.60)
         col1_x = Inches(0.80)
         col2_x = Inches(6.93)
@@ -2710,7 +2710,7 @@ def build_gap_analysis_slide(
             border_width_pt=0.75,
         )
 
-        tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(0.22), content_w, Inches(0.68))
+        tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(0.20), content_w, Inches(0.66))
         tf_l = tb_l.text_frame
         tf_l.word_wrap = True
         tf_l.margin_left = tf_l.margin_right = tf_l.margin_top = tf_l.margin_bottom = 0
@@ -2729,13 +2729,13 @@ def build_gap_analysis_slide(
             p_ls.font.color.rgb = theme.get_rgb("muted")
             p_ls.space_before = Pt(3)
 
-        div_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x + pad_x, card_y + Inches(0.96), content_w, Pt(0.75))
+        div_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x + pad_x, card_y + Inches(0.90), content_w, Pt(0.75))
         div_l.shadow.inherit = False
         div_l.fill.solid()
         div_l.fill.fore_color.rgb = hex_to_rgb("#E2E8F0")
         div_l.line.fill.background()
 
-        list_tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(1.12), content_w, card_h - Inches(1.26))
+        list_tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(1.06), content_w, card_h - Inches(1.18))
         list_tf_l = list_tb_l.text_frame
         list_tf_l.word_wrap = True
         list_tf_l.margin_left = list_tf_l.margin_right = list_tf_l.margin_top = list_tf_l.margin_bottom = 0
@@ -2748,7 +2748,7 @@ def build_gap_analysis_slide(
                 font_size_pt=thresholds.get("bullet_pt", 10.0),
                 font_color=theme.get_rgb("secondary"),
                 lead_color=theme.get_rgb("primary"),
-                space_before_pt=12.0 if b_idx > 0 else 2.0,
+                space_before_pt=10.5 if b_idx > 0 else 2.0,
             )
 
         # 2. Center Directional Transition Arrow (Native Vector Shape)
@@ -2775,7 +2775,7 @@ def build_gap_analysis_slide(
             border_width_pt=1.0,
         )
 
-        tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(0.22), content_w, Inches(0.68))
+        tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(0.20), content_w, Inches(0.66))
         tf_r = tb_r.text_frame
         tf_r.word_wrap = True
         tf_r.margin_left = tf_r.margin_right = tf_r.margin_top = tf_r.margin_bottom = 0
@@ -2794,13 +2794,13 @@ def build_gap_analysis_slide(
             p_rs.font.color.rgb = theme.get_rgb("muted")
             p_rs.space_before = Pt(3)
 
-        div_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + pad_x, card_y + Inches(0.96), content_w, Pt(0.75))
+        div_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + pad_x, card_y + Inches(0.90), content_w, Pt(0.75))
         div_r.shadow.inherit = False
         div_r.fill.solid()
         div_r.fill.fore_color.rgb = hex_to_rgb("#BAE6FD")
         div_r.line.fill.background()
 
-        list_tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(1.12), content_w, card_h - Inches(1.26))
+        list_tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(1.06), content_w, card_h - Inches(1.18))
         list_tf_r = list_tb_r.text_frame
         list_tf_r.word_wrap = True
         list_tf_r.margin_left = list_tf_r.margin_right = list_tf_r.margin_top = list_tf_r.margin_bottom = 0
@@ -2813,13 +2813,13 @@ def build_gap_analysis_slide(
                 font_size_pt=thresholds.get("bullet_pt", 10.0),
                 font_color=theme.get_rgb("secondary"),
                 lead_color=theme.get_rgb("primary"),
-                space_before_pt=12.0 if b_idx > 0 else 2.0,
+                space_before_pt=10.5 if b_idx > 0 else 2.0,
             )
 
         # 4. Single Executive Synthesis Bar at Bottom (The ONLY focal banner)
         takeaway_text = takeaway or "EXECUTIVE TAKEAWAY: Transitioning from unstructured bullets to native MBB slidecraft ensures board-level clarity and cuts synthesis cycles by 60%."
-        syn_y = Inches(6.04)
-        syn_h = Inches(0.82)
+        syn_y = Inches(6.10)
+        syn_h = Inches(0.78)
         syn_w = Inches(11.73)
 
         add_card(
@@ -2902,6 +2902,10 @@ def build_gap_analysis_slide(
                 deficit_tag="AUDIT RISK",
             ),
         ]
+
+    if not dimensions:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
 
     # Geometry Layout
     header_y = Inches(1.85)
@@ -6036,7 +6040,7 @@ def build_thank_you_slide(
             for item in next_steps:
                 if isinstance(item, dict):
                     m = item.get("milestone", item.get("title", ""))
-                    d = item.get("detail", item.get("description", ""))
+                    d = item.get("detail", item.get("description", item.get("body", "")))
                     formatted_items.append(f"**{m}:** {d}" if d else m)
                 else:
                     formatted_items.append(str(item))

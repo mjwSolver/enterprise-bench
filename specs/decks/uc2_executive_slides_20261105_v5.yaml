@@ -1,0 +1,173 @@
+deck_type: pitch_deck
+theme: snowblue
+metadata:
+  project_name: "Morula IVF AI Data Cloud - UC2 Executive Situational Report V5"
+  client_name: "Morula IVF Indonesia"
+  vendor_name: "PT Mitra Integrasi Informatika"
+  product: "Snowflake AI Data Cloud"
+  date_str: "November 2026"
+  confidentiality: "Morula IVF Indonesia & Metrodata Consulting  |  Confidential & Proprietary"
+
+slides:
+  # Slide 01: Master Cover Slide
+  - archetype: cover
+    tracker: "MORULA IVF AI DATA CLOUD | UC2 EXECUTIVE SITUATIONAL REPORT"
+    title: "Use Case 2: Treatment Analysis & Feasibility Report"
+    subtitle: "Clinical Data Integrity, Cross-Cycle Severance, and the Operational Bridge to AI"
+    client: "Morula IVF Indonesia"
+    vendor: "PT Mitra Integrasi Informatika"
+    product: "Snowflake AI Data Cloud"
+    date_str: "November 2026"
+    client_logo_path: "assets/logos/morula_ivf.png"
+    product_logo_path: "assets/images/logos/snowflake_official.png"
+    client_sublabel: "Pak Anton (Head of IT/DE) & Morula Clinical Leadership (Sp.OG-KFER)"
+    vendor_sublabel: "Marcell Jeremy Wiradinata (@mjwSolver) & Metrodata Snowflake Practice"
+
+  # Slide 02: The Conceptual Vision (Split-Hero)
+  - archetype: split_hero
+    tracker: "SLIDE 01 | THE CONCEPTUAL GOAL"
+    title: "The Vision: Predicting Treatment Success to Support Clinicians"
+    subtitle: "Analyzing patient stimulation, embryology development, and transfer protocols to optimize pregnancy outcomes."
+    hero_stat: "UC2"
+    hero_stat_label: "Clinical Target"
+    hero_stat_subtext: "End-to-end outcome modeling from baseline to live birth"
+    blocks:
+      - title: "The Clinical & Business Intent"
+        category_tag: "CLINICAL VALUE"
+        description: "Empower Sp.OG clinicians with data-driven decision support during patient intake, personalizing ovarian stimulation protocols and reducing emotional and financial dropout rates."
+      - title: "The Hypothesized Treatment Chain"
+        category_tag: "ML HYPOTHESIS"
+        description: "Assumes an unbroken trajectory linking Day 1 Maternal Demographics (AMH, AFC) through Day 3–5 Embryo Lab Culture (Oocytes, 2PN, Blastocysts) to Day 14+ Pregnancy Outcomes (Beta-hCG)."
+      - title: "The Machine Learning Prerequisite"
+        category_tag: "CORE DEPENDENCY"
+        description: "Supervised models require complete, unbroken relational links connecting every clinical intervention directly to a verified medical outcome."
+
+  # Slide 03: The Data Reality (Card Grid: 2 Columns)
+  - archetype: card_grid
+    tracker: "SLIDE 02 | THE DATA REALITY"
+    title: "The Data Reality: Patient 360 Is Solid, But Treatment Lineage Is Severed"
+    subtitle: "Patient identity and historical profiles are fully restored, but cross-cycle clinical links have major capture gaps."
+    columns: 2
+    items:
+      - title: "1. Patient 360 (Fully Restored & Operational)"
+        subtitle: "High operational clarity across patient demographics and visit histories"
+        metric: "100%"
+        metric_label: "GOLDEN RECORD CLARITY"
+        accent_key: "primary"
+        bullets:
+          - "**Master Identity Resolved:** Golden Record IDs unify patient profiles, MR numbers, and clinic registrations across branches."
+          - "**Historical Profile Visibility:** Reliable cohort visibility into total patient visits, historical cycles, and maternal age."
+      - title: "2. Treatment Journey Lineage (Fundamentally Severed)"
+        subtitle: "Cross-cycle relational links unmapped for 90–95% of IVF treatments"
+        metric: "0%"
+        metric_label: "CRYO SEVERANCE RISK"
+        accent_key: "danger"
+        bullets:
+          - "**The Cryopreservation Void:** 90–95% of cycles are Freeze-All; thawed embryos lack foreign keys linking to retrieval cycles."
+          - "**Unclosed Clinical Outcomes:** 67.2% of transfers lack Day-14 Beta-hCG outcomes, leaving models without ground truth."
+
+  # Slide 04: Root Cause Analysis (Card Grid: 3 Columns)
+  - archetype: card_grid
+    tracker: "SLIDE 03 | ROOT CAUSE ANALYSIS"
+    title: "The Root Cause: An Operational Data Input Issue, Not an ETL Defect"
+    subtitle: "Data engineering cannot reconstruct or programmatically infer clinical events that were never entered in the clinic EMR."
+    columns: 3
+    items:
+      - title: "1. Straw Attribution Gap"
+        subtitle: "Physical straw IDs unrecorded at thaw"
+        metric: "100%"
+        metric_label: "UNATTRIBUTED STRAWS"
+        accent_key: "accent"
+        bullets:
+          - "**Clinic EMR Capture:** Thaw logs record embryo counts but omit which specific cryo straw was thawed."
+          - "**Downstream Reality:** DE pipelines cannot programmatically infer which retrieved egg produced the embryo."
+      - title: "2. Unclosed Outcome Records"
+        subtitle: "Two-week follow-up stored in siloed notes"
+        metric: "67.2%"
+        metric_label: "UNCLOSED OUTCOMES"
+        accent_key: "accent"
+        bullets:
+          - "**EMR Workflow Timing:** Outcome records are generated on transfer day but never updated with Beta-hCG."
+          - "**Label Deficiency:** Without verified pregnancy closures, supervised ML models lack target variables."
+      - title: "3. Cartesian Join Multiplications"
+        subtitle: "Ad-hoc joins produce 760x artificial inflation"
+        metric: "760x"
+        metric_label: "ROW EXPLOSION BLOCKER"
+        accent_key: "danger"
+        bullets:
+          - "**Cartesian Multiplication:** Joining unlinked OPU cycles to FET procedures inflates patient records 760x."
+          - "**Model Corruption:** Training predictive algorithms on multiplied rows causes severe hallucinations."
+
+  # Slide 05: The Operational Bridge (Browser Mockup with Real Streamlit UI)
+  - archetype: browser_mockup
+    tracker: "SLIDE 04 | THE OPERATIONAL BRIDGE"
+    title: "The Bridge: Real-Time Treatment Journey & Missingness Dashboard"
+    subtitle: "An interactive command center to audit treatment stages, identify data gaps per patient, and reconcile missing records."
+    screenshot_path: "assets/images/mockups/streamlit_treatment_copilot.png"
+    url: "https://morulaivf.snowflakecomputing.com/streamlit/uc2-copilot"
+    telemetry_badges:
+      - "🧬 Snowflake Streamlit"
+      - "🔍 Zero-Query Frozen Benchmarks"
+      - "🛡️ PII De-Identified"
+      - "📊 Stage-Level Gap Audit"
+    takeaways_title: "OPERATIONAL CAPABILITIES & WORKFLOW IMPACT"
+    takeaways:
+      - tag: "CLINIC & LAB STAFF"
+        tag_color: "accent"
+        title: "Patient-Level Stage Tracking"
+        body: "Enables lab and clinic personnel to audit individual patients across all 4 stages (OPU, Embryo Lab, Transfer, Outcome), highlighting exactly which clinical data point is missing."
+      - tag: "DATA ENGINEERING"
+        tag_color: "primary"
+        title: "Targeted Missingness Ledger"
+        body: "Provides DE and IT teams with an aggregated hit-list of missing documentation stages across branches, replacing manual investigation with structured gap priorities."
+      - tag: "PROJECT ALIGNMENT"
+        tag_color: "accent"
+        title: "The Single Truth Interface"
+        body: "Serves as the common operational bridge between clinic staff, data engineering, and project leadership to reconcile records before any AI modeling is attempted."
+
+  # Slide 06: Conclusion & Delivery Sequence (Card Grid: 2 Columns)
+  - archetype: card_grid
+    tracker: "SLIDE 05 | CONCLUSION & STRATEGIC ROADMAP"
+    title: "The Conclusion: Operational Reconciliation Must Precede Predictive AI"
+    subtitle: "Deploying machine learning on fractured data compromises clinical trust; our focus must shift to operational data capture."
+    columns: 2
+    items:
+      - title: "Phase 1: Operational Data Reconciliation (Immediate Focus)"
+        subtitle: "Deploy monitoring UI and calibrate clinic EMR capture workflows"
+        metric: "Phase 1"
+        metric_label: "CURRENT MILESTONE"
+        accent_key: "accent"
+        bullets:
+          - "**Operationalize Streamlit:** Equip clinic teams with the journey UI to systematically identify and close missing outcomes."
+          - "**Calibrate EMR Entry:** Partner with Pak Anton and clinic IT to mandate cryo straw barcode logging during thaw."
+      - title: "Phase 2: Predictive Clinical Modeling (Future Milestone)"
+        subtitle: "Train validated machine learning models once relational lineage is unbroken"
+        metric: "Phase 2"
+        metric_label: "FUTURE MILESTONE"
+        accent_key: "primary"
+        bullets:
+          - "**Scientifically Valid ML:** Resume training predictive models once cross-cycle foreign keys are deterministically mapped."
+          - "**Protected Clinical Trust:** Ensures AI delivered to Sp.OG clinicians is trained on mathematically verified data."
+
+  # Slide 07: Closing Governance & Action Alignment
+  - archetype: thank_you
+    tracker: "MORULA IVF & METRODATA | PROJECT ALIGNMENT"
+    title: "Strengthening Foundations for World-Class IVF Intelligence"
+    subtitle: "Factual situational alignment across Data Engineering, Project Management, Technical Leadership, and Morula IVF."
+    notice: "Morula IVF Indonesia & Metrodata Consulting  |  Confidential & Proprietary"
+    next_steps:
+      - title: "1. Data Engineering Alignment"
+        detail: "Fact-check relational schemas and integrate the Streamlit missingness ledger into pipeline triage."
+      - title: "2. Project & Technical Management"
+        detail: "Formalize Phase 1 data reconciliation as an explicit milestone to protect delivery timelines."
+      - title: "3. Morula IT & Clinical Leadership"
+        detail: "Review EMR capture workflows with Pak Anton to mandate straw barcode and outcome documentation."
+    contacts:
+      - name: "Marcell Jeremy Wiradinata"
+        role: "Lead Architect & Snowflake Practice Lead (@mjwSolver)"
+        email: "marcell.wiradinata@metrodata.co.id"
+        accent_key: "primary"
+      - name: "Pak Anton"
+        role: "Head of IT & Data Engineering (Client Sponsor)"
+        email: "anton@morulaivf.co.id"
+        accent_key: "accent"
