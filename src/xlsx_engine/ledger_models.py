@@ -299,7 +299,7 @@ def append_stakeholder_to_register(
 
 class CloseoutChecklistItem(BaseModel):
     """Payload representing status update for a closeout deliverable or gate."""
-    item_no: int = Field(..., description="Item number in the list")
+    item_no: int = Field(..., ge=1, description="Item number in the list (must be >= 1)")
     deliverable: str = Field(..., description="Deliverable or checklist requirement")
     status: str = Field("Delivered", description="Status (Delivered, Done, Yes, Partial, TBD)")
     section: str = Field("1. Deliverables", description="1. Deliverables, 2. Ruang Lingkup, 3. Closing Checklist")
@@ -324,7 +324,13 @@ def update_closeout_checklist(
 
     for upd in updates:
         if "row" in upd and "status" in upd:
-            ws.cell(row=int(upd["row"]), column=3, value=upd["status"])
+            try:
+                row_val = int(upd["row"])
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"Invalid row number for closeout update: {upd.get('row')}") from e
+            if row_val < 1:
+                raise ValueError(f"Row number must be >= 1, got {row_val}")
+            ws.cell(row=row_val, column=3, value=upd["status"])
             continue
 
         item_name = str(upd.get("item_name", "")).strip().lower()
