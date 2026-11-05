@@ -1519,6 +1519,16 @@ def _add_contained_image(
     Guarantees zero distortion and zero container overflow.
     """
     p = Path(img_path)
+    if p.suffix.lower() == ".svg":
+        for cand in [
+            p.with_suffix(".png"),
+            p.parent / f"{p.stem}.png",
+            p.parent.parent / "images" / "logos" / f"{p.stem}.png",
+            p.parent.parent / "images" / f"{p.stem}.png",
+        ]:
+            if cand.is_file():
+                p = cand
+                break
     if not p.is_file():
         return None
     try:
@@ -1695,6 +1705,8 @@ def build_cover_slide(
         p_c = Path(client_logo_path)
         if p_c.is_file():
             resolved_client_logo = p_c
+    elif client and "morula" in client.lower():
+        resolved_client_logo = rm.resolve_asset("logo_morula_ivf", impacted_slide="Cover")
 
     resolved_product_logo: Optional[Path] = None
     if product_logo_path is not None:
@@ -4246,6 +4258,7 @@ def _add_bullet_paragraph(
     clean_font = font_name.split(",")[0].strip().strip('"\'') if font_name else "Calibri"
     if not clean_font:
         clean_font = "Calibri"
+    p.text = clean_text
     p.font.name = clean_font
     p.font.size = Pt(font_size_pt)
     if font_color:
@@ -5244,6 +5257,7 @@ def build_table_slide(
     columns: Optional[List[TableColumnDef]] = None,
     rows: Optional[List[List[Any]]] = None,
     footnote: Optional[str] = None,
+    takeaway: Optional[Dict[str, Any]] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
@@ -5301,7 +5315,12 @@ def build_table_slide(
     num_rows = len(rows)
     avail_row_h = Inches(4.70) if not footnote else Inches(4.45)
     row_gap = Inches(0.05) if num_rows > 8 else Inches(0.07)
-    row_h = min(Inches(0.46), max(Inches(0.28), (avail_row_h - (num_rows - 1) * row_gap) / num_rows))
+    if takeaway:
+        avail_table_h = Inches(2.70) if num_rows <= 5 else Inches(3.10)
+        row_h = min(Inches(0.50), max(Inches(0.30), (avail_table_h - (num_rows - 1) * row_gap) / num_rows))
+    else:
+        max_h = Inches(0.62) if num_rows <= 5 else Inches(0.48)
+        row_h = min(max_h, max(Inches(0.28), (avail_row_h - (num_rows - 1) * row_gap) / num_rows))
 
     row_start_y = header_y + header_h + Inches(0.08)
 
@@ -5383,9 +5402,62 @@ def build_table_slide(
 
             cur_cx += cw
 
+    if takeaway and isinstance(takeaway, dict):
+        takeaway_top = row_start_y + num_rows * (row_h + row_gap) + Inches(0.14)
+        takeaway_h = Inches(1.35)
+        acc_key = takeaway.get("accent_key", "accent")
+        acc_rgb = theme.get_rgb(acc_key)
+        add_card_with_top_stripe(
+            slide,
+            theme,
+            start_x,
+            takeaway_top,
+            total_w,
+            takeaway_h,
+            accent_rgb=acc_rgb,
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+            stripe_height_in=0.05,
+        )
+
+        badge_txt = takeaway.get("badge", "STRATEGIC TAKEAWAY")
+        pill_w = Inches(2.35)
+        pill_h = Inches(0.24)
+        _add_status_pill(
+            slide=slide,
+            theme=theme,
+            left=start_x + Inches(0.18),
+            top=takeaway_top + Inches(0.12),
+            width=pill_w,
+            height=pill_h,
+            status=badge_txt,
+            font_size_pt=8.0,
+            override_color_key=acc_key,
+        )
+
+        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.18), takeaway_top + Inches(0.42), total_w - Inches(0.36), takeaway_h - Inches(0.48))
+        tf_tk = tb_tk.text_frame
+        tf_tk.word_wrap = True
+        tf_tk.margin_left = tf_tk.margin_right = tf_tk.margin_top = tf_tk.margin_bottom = 0
+
+        p_tkt = tf_tk.paragraphs[0]
+        p_tkt.text = takeaway.get("title", "")
+        p_tkt.font.name = theme.font_family_header
+        p_tkt.font.size = Pt(11.5)
+        p_tkt.font.bold = True
+        p_tkt.font.color.rgb = theme.get_rgb("primary")
+
+        if takeaway.get("description"):
+            p_tkd = tf_tk.add_paragraph()
+            p_tkd.text = takeaway.get("description")
+            p_tkd.font.name = theme.font_family
+            p_tkd.font.size = Pt(9.5)
+            p_tkd.font.color.rgb = theme.get_rgb("secondary")
+            p_tkd.space_before = Pt(3)
+
     if footnote:
-        foot_y = row_start_y + num_rows * (row_h + row_gap) + Inches(0.04)
-        tb_fn = slide.shapes.add_textbox(start_x, foot_y, total_w, Inches(0.25))
+        foot_y = Inches(6.78)
+        tb_fn = slide.shapes.add_textbox(start_x, foot_y, total_w, Inches(0.22))
         tf_fn = tb_fn.text_frame
         tf_fn.word_wrap = False
         tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
@@ -5406,6 +5478,7 @@ def build_thank_you_slide(
     title: str = "Thank You",
     subtitle: Optional[str] = "Partnering to accelerate enterprise data modernization with Snowflake AI Data Cloud.",
     contacts: Optional[List[Dict[str, str]]] = None,
+    next_steps: Optional[Dict[str, Any]] = None,
     company: str = "PT Metrodata Electronics Tbk  |  PT Mitra Integrasi Informatika",
     office: str = "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470",
     current_idx: int = 19,
@@ -5467,12 +5540,121 @@ def build_thank_you_slide(
     p_s.font.color.rgb = theme.get_rgb("secondary")
     p_s.space_before = Pt(10)
 
-    # 3. Contact Cards
-    if contacts:
+    # 3. Content Area: Structured Split Layout if next_steps provided
+    if next_steps and isinstance(next_steps, dict):
+        col_gap = Inches(0.25)
+        left_w = Inches(5.80)
+        right_w = text_width - left_w - col_gap
+        content_y = Inches(3.70)
+        content_h = Inches(2.65)
+
+        # 3a. Left Column: Immediate Governance / Next Steps Card
+        ns_title = next_steps.get("title", "IMMEDIATE GOVERNANCE & ACTION PLAN")
+        ns_items = next_steps.get("items", [])
+        ns_badge = next_steps.get("badge", "NEXT HORIZONS")
+        acc_key = next_steps.get("accent_key", "accent")
+
+        add_card_with_top_stripe(
+            slide=slide,
+            theme=theme,
+            left=text_left,
+            top=content_y,
+            width=left_w,
+            height=content_h,
+            accent_rgb=theme.get_rgb(acc_key),
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+            stripe_height_in=0.06,
+        )
+
+        _add_status_pill(
+            slide=slide,
+            theme=theme,
+            left=text_left + Inches(0.20),
+            top=content_y + Inches(0.14),
+            width=Inches(1.80),
+            height=Inches(0.22),
+            status=ns_badge,
+            font_size_pt=7.5,
+            override_color_key=acc_key,
+        )
+
+        ns_tb = slide.shapes.add_textbox(text_left + Inches(0.20), content_y + Inches(0.42), left_w - Inches(0.40), content_h - Inches(0.50))
+        ns_tf = ns_tb.text_frame
+        ns_tf.word_wrap = True
+        ns_tf.margin_left = ns_tf.margin_right = ns_tf.margin_top = ns_tf.margin_bottom = 0
+
+        p_nst = ns_tf.paragraphs[0]
+        p_nst.text = ns_title
+        p_nst.font.name = theme.font_family_header
+        p_nst.font.size = Pt(12.0)
+        p_nst.font.bold = True
+        p_nst.font.color.rgb = theme.get_rgb("primary")
+
+        for item in ns_items:
+            _add_bullet_paragraph(
+                ns_tf,
+                item,
+                theme.font_family,
+                font_size_pt=9.5,
+                font_color=theme.get_rgb("secondary"),
+                space_before_pt=4.0,
+            )
+
+        # 3b. Right Column: Contact Cards
+        right_x = text_left + left_w + col_gap
+        if contacts:
+            num_c = len(contacts)
+            c_gap = Inches(0.12)
+            c_h = (content_h - (num_c - 1) * c_gap) / num_c
+
+            for i, c in enumerate(contacts[:3]):
+                cy = content_y + i * (c_h + c_gap)
+                acc_k = c.get("accent_key", "accent" if i == 0 else "accent_teal")
+                add_card_with_top_stripe(
+                    slide=slide,
+                    theme=theme,
+                    left=right_x,
+                    top=cy,
+                    width=right_w,
+                    height=c_h,
+                    accent_rgb=theme.get_rgb(acc_k),
+                    bg_color=theme.get_rgb("surface"),
+                    border_color=theme.get_rgb("border"),
+                    stripe_height_in=0.05,
+                )
+
+                ctb = slide.shapes.add_textbox(right_x + Inches(0.18), cy + Inches(0.12), right_w - Inches(0.36), c_h - Inches(0.20))
+                ctf = ctb.text_frame
+                ctf.word_wrap = True
+                ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
+
+                cp1 = ctf.paragraphs[0]
+                cp1.text = c.get("name", "")
+                cp1.font.name = theme.font_family_header
+                cp1.font.size = Pt(12.0)
+                cp1.font.bold = True
+                cp1.font.color.rgb = theme.get_rgb("primary")
+
+                cp2 = ctf.add_paragraph()
+                cp2.text = c.get("role", "")
+                cp2.font.name = theme.font_family
+                cp2.font.size = Pt(9.5)
+                cp2.font.color.rgb = theme.get_rgb("accent")
+                cp2.space_before = Pt(2)
+
+                if c.get("email"):
+                    cp3 = ctf.add_paragraph()
+                    cp3.text = f"Email: {c['email']}"
+                    cp3.font.name = theme.font_family
+                    cp3.font.size = Pt(9.5)
+                    cp3.font.color.rgb = theme.get_rgb("secondary")
+                    cp3.space_before = Pt(2)
+    elif contacts:
         num_c = len(contacts)
         card_gap = Inches(0.25)
         card_w = min(Inches(5.40), (text_width - (num_c - 1) * card_gap) / num_c)
-        card_h = Inches(1.50)
+        card_h = Inches(1.80)
         card_y = Inches(3.85)
 
         for i, c in enumerate(contacts[:4]):
@@ -5522,7 +5704,7 @@ def build_thank_you_slide(
     else:
         # Clean corporate closing card (no personal staff names)
         card_w = Inches(7.50)
-        card_h = Inches(1.50)
+        card_h = Inches(1.80)
         card_y = Inches(3.85)
 
         card, stripe = add_card_with_top_stripe(
@@ -5564,21 +5746,21 @@ def build_thank_you_slide(
         cp3.font.color.rgb = theme.get_rgb("secondary")
         cp3.space_before = Pt(4)
 
-    # 4. Corporate Address Footer
-    otb = slide.shapes.add_textbox(text_left, Inches(5.65), text_width, Inches(0.60))
+    # 4. Corporate Address Footer Anchored at Bottom
+    otb = slide.shapes.add_textbox(text_left, Inches(6.55), text_width, Inches(0.50))
     otf = otb.text_frame
     otf.word_wrap = True
     otf.margin_left = otf.margin_right = otf.margin_top = otf.margin_bottom = 0
     op1 = otf.paragraphs[0]
     op1.text = f"{company}  |  {office}"
     op1.font.name = theme.font_family
-    op1.font.size = Pt(11.0)
+    op1.font.size = Pt(10.0)
     op1.font.color.rgb = theme.get_rgb("secondary")
 
     op2 = otf.add_paragraph()
     op2.text = notice
     op2.font.name = theme.font_family
-    op2.font.size = Pt(11.0)
+    op2.font.size = Pt(8.5)
     op2.font.color.rgb = theme.get_rgb("muted")
     return slide
 

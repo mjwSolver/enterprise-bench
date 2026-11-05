@@ -719,3 +719,36 @@ def patch_ppt(
         raise typer.Exit(code=1)
 
 
+@ppt_app.command("compare-decks")
+def compare_decks_cli(
+    before: str = typer.Argument(..., help="Path to original (baseline) .pptx file"),
+    after: str = typer.Argument(..., help="Path to revised/patched .pptx file"),
+) -> None:
+    """Compare two PowerPoint presentations headlessly across word volume, canvas coverage, and empty shapes."""
+    from src.tool_helper.deck_comparator import DeckComparator
+
+    p_before = Path(before)
+    p_after = Path(after)
+
+    if not p_before.exists():
+        rprint(f"[red]Error:[/red] Before deck not found: {before}")
+        raise typer.Exit(code=1)
+    if not p_after.exists():
+        rprint(f"[red]Error:[/red] After deck not found: {after}")
+        raise typer.Exit(code=1)
+
+    comparator = DeckComparator(p_before, p_after)
+    diff = comparator.compare()
+
+    rprint(f"\n[bold cyan]═══ Deck Comparison: {p_before.name} vs. {p_after.name} ═══[/bold cyan]")
+    rprint(f"• Slides: {diff['before_slides']} ➔ {diff['after_slides']}")
+    rprint(f"• Total Words: {diff['total_before_words']} ➔ {diff['total_after_words']} ([bold green]{diff['net_word_delta']:+d}[/bold green])\n")
+
+    rprint("[bold]Slide-by-Slide Verification Matrix:[/bold]")
+    for s in diff["slide_diffs"]:
+        w_delta_str = f"[green]+{s['word_delta']}[/green]" if s["word_delta"] > 0 else (f"[red]{s['word_delta']}[/red]" if s["word_delta"] < 0 else "[dim]0[/dim]")
+        cov_delta_str = f"[green]+{s['coverage_delta']:.1f}%[/green]" if s["coverage_delta"] > 0 else (f"[red]{s['coverage_delta']:.1f}%[/red]" if s["coverage_delta"] < 0 else "[dim]0.0%[/dim]")
+        rprint(f"  • Slide {s['slide_idx']:02d}: Words: {s['before_words']:3d} ➔ {s['after_words']:3d} ({w_delta_str}) | Canvas Vertical Coverage: {s['before_coverage']:.1f}% ➔ {s['after_coverage']:.1f}% ({cov_delta_str})")
+
+
+

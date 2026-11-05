@@ -54,6 +54,16 @@ def get_default_resources(root_dir: Path) -> list[ResourceSpec]:
     """Default enterprise presentation assets registry."""
     return [
         ResourceSpec(
+            key="logo_morula_ivf",
+            target_path=root_dir / "assets" / "logos" / "morula_ivf.png",
+            canonical_url=None,
+            fallback_url=None,
+            fallback_type="typographic",
+            fallback_text="MORULA IVF",
+            impacted_slides=["Cover"],
+            recovery_command="# Generated via Pillow in assets/logos/morula_ivf.png",
+        ),
+        ResourceSpec(
             key="logo_metrodata_square",
             target_path=root_dir / "assets" / "images" / "logos" / "metrodata_square.png",
             canonical_url=None,
@@ -75,7 +85,7 @@ def get_default_resources(root_dir: Path) -> list[ResourceSpec]:
         ),
         ResourceSpec(
             key="logo_snowflake_official",
-            target_path=root_dir / "assets" / "logos" / "snowflake_official.svg",
+            target_path=root_dir / "assets" / "images" / "logos" / "snowflake_official.png",
             canonical_url="https://upload.wikimedia.org/wikipedia/commons/f/ff/Snowflake_Logo.svg",
             fallback_url=None,
             fallback_type="typographic",

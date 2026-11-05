@@ -474,12 +474,20 @@ class PurePythonSlideRenderer:
 
             # Check if paragraph has multi-run formatting (e.g. bold header + normal body)
             if len(p.runs) > 1:
+                render_runs = list(p.runs)
                 # If bulleted, draw bullet glyph at left margin
                 if has_bullet:
                     draw.text((x + left_margin, cur_y), bullet_char, fill=(*color_rgb, 255), font=pil_font)
+                    if p.runs and p.runs[0].text and p.runs[0].text.lstrip().startswith("•"):
+                        class _RunProxy:
+                            def __init__(self, run, clean_txt):
+                                self.text = clean_txt
+                                self.font = run.font
+                        first_clean = p.runs[0].text.lstrip("•\t ").strip()
+                        render_runs = [_RunProxy(p.runs[0], first_clean)] + list(p.runs[1:])
                 cur_y = self._render_multi_run_paragraph(
                     draw=draw,
-                    runs=p.runs,
+                    runs=render_runs,
                     x=x + left_margin + bullet_indent,
                     y=cur_y,
                     usable_w=usable_w - bullet_indent,

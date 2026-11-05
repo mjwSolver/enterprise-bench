@@ -208,6 +208,11 @@ class PitchDeckBuilder:
                     product=cfg.get("product", self.product),
                     date_str=cfg.get("date_str", self.date_str),
                     tracker=cfg.get("tracker", "ENTERPRISE PRESALES MODERNIZATION"),
+                    client_logo_path=cfg.get("client_logo_path"),
+                    product_logo_path=cfg.get("product_logo_path"),
+                    vendor_logo_path=cfg.get("vendor_logo_path"),
+                    client_sublabel=cfg.get("client_sublabel", "Steering Committee & Executive Sponsors"),
+                    vendor_sublabel=cfg.get("vendor_sublabel", "Data & AI Modernization Practice"),
                 )
 
         elif arch in ("agenda", "table_of_contents", "toc"):
@@ -653,6 +658,7 @@ class PitchDeckBuilder:
                 columns=columns if columns else None,
                 rows=rows if rows else None,
                 footnote=cfg.get("footnote"),
+                takeaway=cfg.get("takeaway") or cfg.get("callout"),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
@@ -666,6 +672,7 @@ class PitchDeckBuilder:
                 title=cfg.get("title", "Thank You"),
                 subtitle=cfg.get("subtitle", "Partnering to accelerate enterprise data modernization with Snowflake AI Data Cloud."),
                 contacts=cfg.get("contacts"),
+                next_steps=cfg.get("next_steps"),
                 company=cfg.get("company", f"{self.vendor_name}  |  PT Mitra Integrasi Informatika"),
                 office=cfg.get("office", "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"),
                 current_idx=idx,
