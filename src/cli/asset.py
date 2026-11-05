@@ -145,3 +145,31 @@ def import_asset_library_cli(
     except Exception as e:
         rprint(f"[red]Error importing library:[/red] {e}")
         raise typer.Exit(code=1)
+
+
+@asset_app.command("fetch-logo")
+def fetch_logo_cli(
+    domain_or_url: str = typer.Argument(..., help="Domain name (e.g. 'morulaivf.co.id') or direct logo image URL"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Explicit destination file path (.png or .svg)"),
+    name: Optional[str] = typer.Option(None, "--name", "-n", help="Asset key / file stem name (defaults to domain slug)"),
+) -> None:
+    """Deterministically fetch or discover authentic corporate logo from web domain or URL."""
+    from src.tool_helper.asset_fetcher import AssetFetcher
+
+    rprint(f"[cyan]ℹ Fetching authentic logo for:[/cyan] [bold]{domain_or_url}[/bold]")
+    try:
+        if domain_or_url.startswith("http://") or domain_or_url.startswith("https://"):
+            # Check if direct image link or web domain
+            if any(domain_or_url.lower().endswith(ext) for ext in (".png", ".svg", ".jpg", ".jpeg", ".webp")):
+                out_p = Path(output) if output else Path("assets/logos") / f"{name or 'logo'}.png"
+                saved = AssetFetcher.fetch_from_url(domain_or_url, out_p)
+            else:
+                saved = AssetFetcher.discover_and_fetch(domain_or_url, dest_path=output, asset_name=name)
+        else:
+            saved = AssetFetcher.discover_and_fetch(domain_or_url, dest_path=output, asset_name=name)
+
+        rprint(f"[green]✓ Successfully acquired authentic brand asset:[/green] [bold]{saved}[/bold]")
+    except Exception as e:
+        rprint(f"[red]✗ Asset fetch failed:[/red] {e}")
+        raise typer.Exit(code=1)
+
