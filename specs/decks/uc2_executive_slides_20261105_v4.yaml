@@ -92,7 +92,6 @@ slides:
         subtitle: "Confining scope strictly to incubator culture"
         metric: "0%"
         metric_label: "CRYO SEVERANCE RISK"
-        badge: "PILLAR 01"
         accent_key: "accent"
         bullets:
           - "**Intra-Cycle Scope:** Connects ovarian stimulation directly to Day 5 blastocyst formation within one unsevered cycle."
@@ -101,7 +100,6 @@ slides:
         subtitle: "Deterministic embryo-to-cycle table joins"
         metric: "100%"
         metric_label: "TABLE JOIN INTEGRITY"
-        badge: "PILLAR 02"
         accent_key: "success"
         bullets:
           - "**Flawless Table Joins:** 328,435 of 328,435 embryo records cleanly link to retrieval cycles on (CYCLE_ID, GROUP_ID)."
@@ -110,7 +108,6 @@ slides:
         subtitle: "Target variable lacks standardized coding"
         metric: "52.3%"
         metric_label: "UNSTRUCTURED LAB NOTES"
-        badge: "PILLAR 03"
         accent_key: "warning"
         bullets:
           - "**Non-Standard Notes:** 52.3% blank or arrested; 47.7% informal text ('Good', 'Moderat') with zero Gardner codes."

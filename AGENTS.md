@@ -32,6 +32,12 @@ Classify incoming requests into one execution lane:
   - **Full-Width Canvas Header:** Action title and subtitle flow in a **single text box** ($w \ge 11.85''$, `space_before = Pt(10)` on subtitle).
   - **Sharp Rectangles:** Sharp rectangles (`MSO_SHAPE.RECTANGLE`) for cards and top accent stripes. Zero top stripes on rounded cards.
   - **Zero Drop Shadows:** Strip OpenXML drop shadows (`<a:outerShdw>`, `<a:effectLst/>`).
+  - **Zero Redundant Badging (No Badge Crutches):** Never place a status/sequence badge (e.g. `PILLAR 01`) if the card title or eyebrow already includes numbering/sequence, or if top stripes establish the semantic category.
+  - **Flat Open Canvas (Zero Nested Callout Boxes):** Never nest bordered callout boxes or inner vertical stripes inside card containers (`met_card` inside `card`). Hero stats ($32\text{--}36\text{ pt}$) float directly on the open canvas above a 0.75 pt hairline divider.
+  - **Contiguous Data Tables (`row_gap = 0.0`):** Table rows must sit completely flush. Zero gaps between alternating zebra fills; hairline dividers serve as the sole row boundary to eliminate double-line seam artifacts.
+  - **Calibrated 3-Tier Severity (Zero "Red Wave"):** Avoid uniform red panic states and flat monotone tables. Scale severity: Neutral Slate for unmapped keys/metadata $\to$ Amber for operational warnings $\to$ Crimson Red strictly for fatal technical blockers.
+  - **Max 2 Punchy Bullets (Anti-Academic Invariant):** Eliminate dense "research paper" text columns. Limit cards to 2 bullets maximum, each starting with bold lead phrases and $\ge 10.5\text{ pt}$ typography with generous vertical breathing room.
+  - **Pristine Color Hygiene:** Clean ice-blue (`#F0F9FF`/`#E0F2FE`) and crisp white surfaces; strictly eliminate muddy mint-green/yellowish tinges (`#F0FDF4`).
   - **Centered-Block Alignment:** Container bullet lists are centered as a block (`block_cx == container.cx`) with left-aligned internal text lines.
   - **Zero Unsolicited Sub-Captions:** Never invent boilerplate captions/subtitles (e.g. "Architecture Working Group"). If not provided by user, leave empty.
 - **Semantic Colors:** Red (`#DC2626` bottleneck/defect), Amber (`#D97706` boundary/wait), Blue (`#0284C7` active flow), Green (`#16A34A` target state).
