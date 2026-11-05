@@ -117,6 +117,14 @@ class CalculatorStamper:
         if data:
             self._apply_data(wb, data)
 
+        # Pre-flight check for cyclic formula references
+        cycles = detect_cyclic_references(wb)
+        if cycles:
+            first_sheet = next(iter(cycles))
+            cycle_path = " -> ".join(cycles[first_sheet][0])
+            wb.close()
+            raise ValueError(f"Cyclic cell reference detected in worksheet '{first_sheet}': {cycle_path}")
+
         if output_path is None:
             output_p = OUTPUT_DIR / f"calculated_{self.template_path.name}"
         else:
