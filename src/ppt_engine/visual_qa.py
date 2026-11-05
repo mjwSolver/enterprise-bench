@@ -55,6 +55,7 @@ class PPTVisualLinter:
 
         boundaries: List[Dict[str, Any]] = []
         pills: List[Dict[str, Any]] = []
+        content_textboxes: List[Dict[str, Any]] = []
 
         for shape in slide.shapes:
             x = shape.left.inches
@@ -83,6 +84,9 @@ class PPTVisualLinter:
                 # Exclude pills (single short line) and slide header zone (y < 1.15")
                 is_pill = (w <= 1.8 and h <= 0.40 and para_count <= 1)
                 is_header = y < 1.15
+
+                if not is_pill and not is_header:
+                    content_textboxes.append({"text": text, "x": x, "y": y, "w": w, "h": h, "shape": shape})
 
                 if not is_pill and not is_header and h < 3.0:
                     # Estimate text height based on font sizes and line count
@@ -206,6 +210,35 @@ class PPTVisualLinter:
                                 f"bottom boundary line of '{b['name']}' at y={by+bh:.2f}\"."
                             ),
                             suggested_fix="Shift pill vertical position by ±0.25\" away from bottom boundary line.",
+                            bbox=(px, py, pw, ph),
+                        )
+                    )
+
+        # Check direct spatial overlap between status pills and content text frames
+        for pill in pills:
+            px, py, pw, ph = pill["x"], pill["y"], pill["w"], pill["h"]
+            for tb in content_textboxes:
+                if tb["shape"] == pill["shape"]:
+                    continue
+                tx, ty, tw, th = tb["x"], tb["y"], tb["w"], tb["h"]
+                # Skip large background containers that intentionally enclose pills
+                if tw > 3.0 and th > 2.5:
+                    continue
+                # Calculate bounding box intersection
+                ix = max(0.0, min(px + pw, tx + tw) - max(px, tx))
+                iy = max(0.0, min(py + ph, ty + th) - max(py, ty))
+                if ix > 0.12 and iy > 0.12:
+                    issues.append(
+                        VisualIssue(
+                            slide_index=slide_idx,
+                            issue_type="SHAPE_COLLISION",
+                            shape_name=f"Pill '{pill['text']}'",
+                            severity="CRITICAL",
+                            description=(
+                                f"Badge pill '{pill['text']}' directly overlaps text frame '{tb['text'][:25]}...' "
+                                f"by {ix:.2f}\" x {iy:.2f}\"."
+                            ),
+                            suggested_fix="Decouple text frame width (right_w - pill_w) or shift vertical offset.",
                             bbox=(px, py, pw, ph),
                         )
                     )
