@@ -100,13 +100,20 @@ class RegexDetector(BaseDetector):
 
 class EmailDetector(RegexDetector):
     def __init__(self):
+        # Hardened RFC 5322-compliant bounded pattern to prevent catastrophic backtracking (ReDoS)
+        pattern = r"\b[a-zA-Z0-9_.+-]{1,64}@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,24}\b"
         super().__init__(
             name="email_regex",
             category=PiiCategory.EMAIL,
-            pattern=r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+",
+            pattern=pattern,
             confidence=PiiConfidence.HIGH,
             default_placeholder="{{ contact_email }}",
         )
+
+    def detect(self, node: TextNode) -> List[PiiMatch]:
+        if "@" not in node.text:
+            return []
+        return super().detect(node)
 
 
 class PhoneDetector(RegexDetector):
@@ -120,6 +127,11 @@ class PhoneDetector(RegexDetector):
             confidence=PiiConfidence.HIGH,
             default_placeholder="{{ contact_phone }}",
         )
+
+    def detect(self, node: TextNode) -> List[PiiMatch]:
+        if "62" not in node.text and "08" not in node.text:
+            return []
+        return super().detect(node)
 
 
 class GovernmentIdDetector(RegexDetector):
@@ -135,11 +147,16 @@ class GovernmentIdDetector(RegexDetector):
             default_placeholder="{{ national_id }}",
         )
 
+    def detect(self, node: TextNode) -> List[PiiMatch]:
+        if not any(ch.isdigit() for ch in node.text):
+            return []
+        return super().detect(node)
+
 
 class ContractIdDetector(RegexDetector):
     """Enterprise contract / PKS / BAST identifiers, e.g. 0073/ECP/IMPL/I/2026."""
     def __init__(self):
-        pattern = r"\b\d{3,4}/[A-Z0-9_-]+/[A-Z0-9_-]+/[IVXLCDM]+/\d{4}\b"
+        pattern = r"\b\d{3,4}/[A-Z0-9_-]{1,32}/[A-Z0-9_-]{1,32}/[IVXLCDM]{1,16}/\d{4}\b"
         super().__init__(
             name="contract_id_regex",
             category=PiiCategory.CONTRACT_ID,
@@ -147,6 +164,11 @@ class ContractIdDetector(RegexDetector):
             confidence=PiiConfidence.HIGH,
             default_placeholder="{{ contract_number }}",
         )
+
+    def detect(self, node: TextNode) -> List[PiiMatch]:
+        if "/" not in node.text:
+            return []
+        return super().detect(node)
 
 
 class NetworkDetector(RegexDetector):
@@ -160,6 +182,11 @@ class NetworkDetector(RegexDetector):
             confidence=PiiConfidence.MEDIUM,
             default_placeholder="{{ server_ip }}",
         )
+
+    def detect(self, node: TextNode) -> List[PiiMatch]:
+        if "." not in node.text:
+            return []
+        return super().detect(node)
 
 
 class DictionaryDetector(BaseDetector):

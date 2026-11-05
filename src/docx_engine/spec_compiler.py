@@ -673,22 +673,26 @@ class SpecCompiler:
             zebra_odd_bg="#FFFFFF",
         )
 
+        t_rows = table.rows
         for r_idx, row in enumerate(rows_data):
+            row_cells = t_rows[r_idx].cells
+            is_header = (r_idx == 0)
             for c_idx, val in enumerate(row):
                 if c_idx < cols:
-                    cell = table.rows[r_idx].cells[c_idx]
+                    cell = row_cells[c_idx]
                     p = cell.paragraphs[0]
                     p.paragraph_format.space_before = Pt(2)
                     p.paragraph_format.space_after = Pt(2)
                     p.paragraph_format.line_spacing = 1.15
-                    self._format_inline_text(p, val.strip())
+                    clean_val = val.strip()
+                    self._format_inline_text(p, clean_val)
 
-                    if r_idx == 0:
+                    if is_header:
                         for run in p.runs:
                             run.font.bold = True
                             run.font.color.rgb = self._rgb_white
                     else:
-                        self._apply_status_badge(cell, val.strip())
+                        self._apply_status_badge(cell, clean_val)
 
         sp = self.doc.add_paragraph()
         sp.paragraph_format.space_before = Pt(0)
@@ -697,25 +701,14 @@ class SpecCompiler:
     def _apply_status_badge(self, cell: _Cell, text: str) -> None:
         """Highlight scenario status badges: PASSED, FAILED, PENDING, BLOCKED."""
         clean = text.strip().upper()
-        badges = {
-            "PASSED": {"bg": "DCFCE7", "color": "15803D"},   # Green
-            "PASS": {"bg": "DCFCE7", "color": "15803D"},
-            "APPROVED": {"bg": "DCFCE7", "color": "15803D"},
-            "FAILED": {"bg": "FEE2E2", "color": "B91C1C"},   # Red
-            "FAIL": {"bg": "FEE2E2", "color": "B91C1C"},
-            "REJECTED": {"bg": "FEE2E2", "color": "B91C1C"},
-            "PENDING": {"bg": "FEF3C7", "color": "B45309"},  # Amber
-            "IN PROGRESS": {"bg": "FEF3C7", "color": "B45309"},
-            "BLOCKED": {"bg": "F3E8FF", "color": "6B21A8"},  # Purple
-        }
-        if clean in badges:
-            cfg = badges[clean]
+        cfg = _STATUS_BADGES.get(clean)
+        if cfg:
             set_cell_background(cell, cfg["bg"])
             for p in cell.paragraphs:
                 for r in p.runs:
                     r.font.bold = True
                     r.font.size = Pt(9)
-                    r.font.color.rgb = RGBColor(*parse_hex(cfg["color"]))
+                    r.font.color.rgb = cfg["color"]
 
     # ========================================================================
     # Inline Markdown Parser (Bold, Italic, Monospace Code, Links)
@@ -723,6 +716,13 @@ class SpecCompiler:
 
     def _format_inline_text(self, paragraph, raw_text: str) -> None:
         """Parse inline Markdown formatting tokens (**bold**, *italic*, `code`)."""
+        if not ("`" in raw_text or "*" in raw_text or "[" in raw_text):
+            r = paragraph.add_run(raw_text)
+            r.font.name = self.theme.font_body
+            r.font.size = Pt(10)
+            r.font.color.rgb = self._rgb_text_primary
+            return
+
         tokens = _INLINE_TOKEN_RE.split(raw_text)
 
         for tok in tokens:

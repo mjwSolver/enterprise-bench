@@ -4,7 +4,11 @@ Spreadsheet & Financial Calculation Engine
 Spreadsheet models, financial calculators, S-curve generators, and openpyxl automation.
 """
 
-from src.xlsx_engine.calculator_stamper import CalculatorStamper, calculate_spreadsheet
+from src.xlsx_engine.calculator_stamper import (
+    CalculatorStamper,
+    calculate_spreadsheet,
+    detect_cyclic_references,
+)
 from src.xlsx_engine.cloud_sizing import (
     CloudSizingConfig,
     CloudSizingResult,
@@ -37,6 +41,7 @@ from src.xlsx_engine.timeline_aggregator import (
 __all__ = [
     "CalculatorStamper",
     "calculate_spreadsheet",
+    "detect_cyclic_references",
     "SCurveGenerator",
     "generate_s_curve",
     "SCurvePoint",
