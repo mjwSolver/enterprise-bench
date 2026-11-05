@@ -1657,8 +1657,8 @@ def build_cover_slide(
     client_logo_path: Optional[Union[str, Path]] = None,
     vendor_logo_path: Optional[Union[str, Path]] = None,
     product_logo_path: Optional[Union[str, Path]] = None,
-    client_sublabel: str = "Steering Committee & Executive Sponsors",
-    vendor_sublabel: str = "Data & AI Modernization Practice",
+    client_sublabel: Optional[str] = None,
+    vendor_sublabel: Optional[str] = None,
     prepared_for_label: str = "PREPARED FOR",
     engagement_partner_label: str = "ENGAGEMENT PARTNER",
     date_classification_label: str = "DATE & CLASSIFICATION",
@@ -1899,12 +1899,13 @@ def build_cover_slide(
     p1_val.font.color.rgb = theme.get_rgb("primary")
     p1_val.space_before = Pt(2)
 
-    p1_sub = tf_c1.add_paragraph()
-    p1_sub.text = client_sublabel
-    p1_sub.font.name = theme.font_family
-    p1_sub.font.size = Pt(11.0)
-    p1_sub.font.color.rgb = theme.get_rgb("secondary")
-    p1_sub.space_before = Pt(2)
+    if client_sublabel:
+        p1_sub = tf_c1.add_paragraph()
+        p1_sub.text = client_sublabel
+        p1_sub.font.name = theme.font_family
+        p1_sub.font.size = Pt(11.0)
+        p1_sub.font.color.rgb = theme.get_rgb("secondary")
+        p1_sub.space_before = Pt(2)
 
     # Column 2: Engagement Partner
     tb_c2 = slide.shapes.add_textbox(Inches(6.0), meta_y, Inches(3.8), Inches(1.3))
@@ -1927,12 +1928,13 @@ def build_cover_slide(
     p2_val.font.color.rgb = theme.get_rgb("primary")
     p2_val.space_before = Pt(2)
 
-    p2_sub = tf_c2.add_paragraph()
-    p2_sub.text = vendor_sublabel
-    p2_sub.font.name = theme.font_family
-    p2_sub.font.size = Pt(11.0)
-    p2_sub.font.color.rgb = theme.get_rgb("secondary")
-    p2_sub.space_before = Pt(2)
+    if vendor_sublabel:
+        p2_sub = tf_c2.add_paragraph()
+        p2_sub.text = vendor_sublabel
+        p2_sub.font.name = theme.font_family
+        p2_sub.font.size = Pt(11.0)
+        p2_sub.font.color.rgb = theme.get_rgb("secondary")
+        p2_sub.space_before = Pt(2)
 
     # Column 3: Date & Classification
     tb_c3 = slide.shapes.add_textbox(Inches(10.1), meta_y, Inches(2.433), Inches(1.3))
@@ -1983,8 +1985,8 @@ def build_hero_cover_slide(
     client_logo_path: Optional[Union[str, Path]] = None,
     vendor_logo_path: Optional[Union[str, Path]] = None,
     product_logo_path: Optional[Union[str, Path]] = None,
-    client_sublabel: str = "Steering Committee & Executive Sponsors",
-    vendor_sublabel: str = "Data & AI Modernization Practice",
+    client_sublabel: Optional[str] = None,
+    vendor_sublabel: Optional[str] = None,
     prepared_for_label: str = "PREPARED FOR",
     engagement_partner_label: str = "ENGAGEMENT PARTNER",
 ) -> Any:
@@ -5979,16 +5981,6 @@ def build_table_slide(
                     status=cell_str,
                     font_size_pt=max(8.0, font_size_pt - 1.5),
                 )
-                _add_status_pill(
-                    slide=slide,
-                    theme=theme,
-                    left=pill_x,
-                    top=pill_y,
-                    width=pill_w,
-                    height=pill_h,
-                    status=cell_str,
-                    font_size_pt=max(7.5, font_size_pt - 1.5),
-                )
             else:
                 tb = slide.shapes.add_textbox(cur_cx + Inches(0.08), cur_ry + Inches(0.02), cw - Inches(0.16), row_h - Inches(0.04))
                 tf = tb.text_frame
@@ -6198,8 +6190,12 @@ def build_thank_you_slide(
 
     if next_steps and isinstance(next_steps, dict):
         col_gap = Inches(0.25)
-        left_w = Inches(5.80)
-        right_w = text_width - left_w - col_gap
+        if contacts:
+            left_w = Inches(5.80)
+            right_w = text_width - left_w - col_gap
+        else:
+            left_w = text_width
+            right_w = Inches(0.0)
         content_y = Inches(3.70)
         content_h = Inches(2.65)
 
