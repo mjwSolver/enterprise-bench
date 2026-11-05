@@ -9,14 +9,33 @@ from __future__ import annotations
 
 import logging
 import re
+from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import openpyxl
+from openpyxl.utils.cell import coordinate_to_tuple
 
 from src.core.config import OUTPUT_DIR, get_template_path, validate_clean_path
 
 logger = logging.getLogger(__name__)
+
+_COORD_REGEX = re.compile(r"^\$?[A-Za-z]+\$?[0-9]+$")
+
+
+@lru_cache(maxsize=8192)
+def _fast_coord_to_tuple(coord: str) -> Tuple[int, int]:
+    """LRU-cached coordinate-to-tuple converter avoiding repeated regex overhead."""
+    return coordinate_to_tuple(coord)
+
+
+def _fast_set_cell_value(ws: openpyxl.worksheet.worksheet.Worksheet, cell_ref: str, val: Any) -> None:
+    """Inject cell value using cached row/column tuples with fallback to standard setter."""
+    try:
+        r, c = _fast_coord_to_tuple(cell_ref)
+        ws.cell(row=r, column=c, value=val)
+    except Exception:
+        ws[cell_ref] = val
 
 
 def detect_cyclic_references(wb: openpyxl.Workbook) -> Dict[str, List[List[str]]]:
@@ -26,7 +45,6 @@ def detect_cyclic_references(wb: openpyxl.Workbook) -> Dict[str, List[List[str]]
     """
     from openpyxl.formula.tokenizer import Tokenizer
 
-    coord_re = re.compile(r"^\$?[A-Za-z]+\$?[0-9]+$")
     cycles_by_sheet: Dict[str, List[List[str]]] = {}
 
     for ws in wb.worksheets:
@@ -42,10 +60,13 @@ def detect_cyclic_references(wb: openpyxl.Workbook) -> Dict[str, List[List[str]]
                         for t in tok.items:
                             if t.subtype == "RANGE":
                                 clean = t.value.replace("$", "").upper()
-                                if coord_re.match(clean):
+                                if _COORD_REGEX.match(clean):
                                     graph[src].append(clean)
                     except Exception:
                         pass
+
+        if not graph:
+            continue
 
         visited: Dict[str, int] = {}  # 0=unvisited, 1=visiting, 2=visited
         cycles: List[List[str]] = []
@@ -152,8 +173,6 @@ class CalculatorStamper:
                     active_ws.append(row if isinstance(row, list) else [row])
 
         # 2. Iterate keys and process sheets or coordinates
-        coord_regex = re.compile(r"^\$?[A-Za-z]+\$?[0-9]+$")
-
         for key, val in data.items():
             if key == "append_rows":
                 continue
@@ -163,7 +182,7 @@ class CalculatorStamper:
                 ws = wb[key]
                 for cell_ref, cell_val in val.items():
                     try:
-                        ws[cell_ref] = cell_val
+                        _fast_set_cell_value(ws, cell_ref, cell_val)
                     except Exception as e:
                         logger.warning("Failed injecting value into %s cell %s: %s", ws.title, cell_ref, e)
                 continue
@@ -175,15 +194,15 @@ class CalculatorStamper:
                 if sheet_part in wb.sheetnames:
                     ws = wb[sheet_part]
                     try:
-                        ws[cell_ref] = val
+                        _fast_set_cell_value(ws, cell_ref, val)
                     except Exception as e:
                         logger.warning("Failed injecting value into %s cell %s: %s", sheet_part, cell_ref, e)
                 continue
 
             # Direct cell coordinate on active sheet: "A1"
-            if coord_regex.match(key):
+            if _COORD_REGEX.match(key):
                 try:
-                    active_ws[key] = val
+                    _fast_set_cell_value(active_ws, key, val)
                 except Exception as e:
                     logger.warning("Failed injecting value into active sheet cell %s: %s", key, e)
                 continue
@@ -194,17 +213,20 @@ class CalculatorStamper:
             if isinstance(v, (str, int, float, bool))
         }
         if scalar_replacements:
+            tag_pairs = [
+                (f"{{{{ {var_k} }}}}", str(var_v)) for var_k, var_v in scalar_replacements.items()
+            ] + [
+                (f"{{{{{var_k}}}}}", str(var_v)) for var_k, var_v in scalar_replacements.items()
+            ]
             for ws in wb.worksheets:
                 for row in ws.iter_rows():
                     for cell in row:
-                        if isinstance(cell.value, str) and "{{" in cell.value:
-                            for var_k, var_v in scalar_replacements.items():
-                                tag1 = f"{{{{ {var_k} }}}}"
-                                tag2 = f"{{{{{var_k}}}}}"
-                                if tag1 in cell.value:
-                                    cell.value = cell.value.replace(tag1, str(var_v))
-                                if tag2 in cell.value:
-                                    cell.value = cell.value.replace(tag2, str(var_v))
+                        val = cell.value
+                        if isinstance(val, str) and "{{" in val:
+                            for tag, rep in tag_pairs:
+                                if tag in val:
+                                    val = val.replace(tag, rep)
+                            cell.value = val
 
 
 def calculate_spreadsheet(

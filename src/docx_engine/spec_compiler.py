@@ -680,7 +680,7 @@ class SpecCompiler:
             for c_idx, val in enumerate(row):
                 if c_idx < cols:
                     cell = row_cells[c_idx]
-                    p = cell.paragraphs[0]
+                    p = cell.paragraphs[0] if cell.paragraphs else cell.add_paragraph()
                     p.paragraph_format.space_before = Pt(2)
                     p.paragraph_format.space_after = Pt(2)
                     p.paragraph_format.line_spacing = 1.15
@@ -874,7 +874,16 @@ class SpecCompiler:
 
             # 5. Bullet & Numbered Lists
             if stripped.startswith(("- ", "* ", "• ")):
-                p = self.doc.add_paragraph(style="List Bullet")
+                raw_indent = len(line) - len(line.lstrip())
+                indent_level = min(raw_indent // 2, 8)
+                style_name = "List Bullet"
+                if indent_level == 1 and "List Bullet 2" in self.doc.styles:
+                    style_name = "List Bullet 2"
+                elif indent_level >= 2 and "List Bullet 3" in self.doc.styles:
+                    style_name = "List Bullet 3"
+                p = self.doc.add_paragraph(style=style_name)
+                if indent_level > 0:
+                    p.paragraph_format.left_indent = Inches(min(0.25 * indent_level, 2.0))
                 p.paragraph_format.space_before = Pt(1)
                 p.paragraph_format.space_after = Pt(2)
                 p.paragraph_format.line_spacing = 1.15
@@ -884,8 +893,17 @@ class SpecCompiler:
 
             num_m = _NUM_LIST_RE.match(stripped)
             if num_m:
+                raw_indent = len(line) - len(line.lstrip())
+                indent_level = min(raw_indent // 2, 8)
+                style_name = "List Number"
+                if indent_level == 1 and "List Number 2" in self.doc.styles:
+                    style_name = "List Number 2"
+                elif indent_level >= 2 and "List Number 3" in self.doc.styles:
+                    style_name = "List Number 3"
                 _, num_text = num_m.groups()
-                p = self.doc.add_paragraph(style="List Number")
+                p = self.doc.add_paragraph(style=style_name)
+                if indent_level > 0:
+                    p.paragraph_format.left_indent = Inches(min(0.25 * indent_level, 2.0))
                 p.paragraph_format.space_before = Pt(1)
                 p.paragraph_format.space_after = Pt(2)
                 p.paragraph_format.line_spacing = 1.15
