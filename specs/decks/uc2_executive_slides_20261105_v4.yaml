@@ -1,0 +1,241 @@
+deck_type: pitch_deck
+theme: snowblue
+metadata:
+  project_name: "Morula IVF AI Data Cloud - UC2 Executive Pitch Pack V4"
+  client_name: "Morula IVF Indonesia"
+  vendor_name: "PT Mitra Integrasi Informatika"
+  product: "Snowflake AI Data Cloud"
+  date_str: "November 2026"
+  confidentiality: "Morula IVF Indonesia & Metrodata Consulting  |  Confidential & Proprietary"
+
+slides:
+  # Slide 01: Master Cover Slide
+  - archetype: cover
+    tracker: "MORULA IVF AI DATA CLOUD | UC2 EXECUTIVE STRATEGIC FEASIBILITY"
+    title: "From Predictive Dream to Operational Reality"
+    subtitle: "UC2 Treatment Journey Integrity Engine & Cortex Pre-Consultation Copilot"
+    client: "Morula IVF Indonesia"
+    vendor: "PT Mitra Integrasi Informatika"
+    product: "Snowflake AI Data Cloud"
+    date_str: "November 2026"
+    client_logo_path: "assets/logos/morula_ivf.png"
+    product_logo_path: "assets/images/logos/snowflake_official.png"
+    client_sublabel: "Pak Anton (Head of IT/DE) & Morula Clinical Leadership (Sp.OG-KFER)"
+    vendor_sublabel: "Marcell Jeremy Wiradinata (@mjwSolver) & Metrodata Snowflake Practice"
+
+  # Slide 02: The Clinical Vision — End-to-End Pregnancy Prediction (Split-Hero)
+  - archetype: split_hero
+    tracker: "SLIDE 01 | THE CLINICAL VISION"
+    title: "Predictive AI for IVF: The Clinical Pregnancy Success Engine"
+    subtitle: "Targeting pre-treatment success likelihood to personalize patient stimulation and eliminate multi-cycle dropouts."
+    hero_stat: ">=78%"
+    hero_stat_label: "Target Clinical Accuracy"
+    hero_stat_subtext: "AUC-ROC >= 0.82 with <2s inference latency embedded in Magic EMR."
+    blocks:
+      - title: "The Clinical Promise & Strategic Value"
+        metric_badge: "CLINICAL VALUE"
+        category_tag: "DIMENSION 01"
+        description: "Empowers Sp.OG doctors to set realistic cycle expectations during initial intake, personalize medication protocols, and reduce patient emotional dropouts across high-risk demographic cohorts."
+      - title: "The Intended Full-Funnel Treatment Chain"
+        metric_badge: "ML HYPOTHESIS"
+        category_tag: "DIMENSION 02"
+        description: "Assumes continuous progression from Day 1 Maternal Baseline (AMH, AFC, FSH) through Day 3-5 Embryology Lab (Oocytes, 2PN, Blastocysts) to Day 14+ Final Outcome (Serum Beta-hCG, Clinical Gestational Sac)."
+      - title: "The Architectural Decision Gate"
+        metric_badge: "FEASIBILITY GATE"
+        category_tag: "DIMENSION 03"
+        description: "Model feasibility strictly requires unbroken relational foreign keys linking patient intake to final birth outcomes; any relational fracture renders full-funnel supervised learning mathematically unviable."
+
+  # Slide 03: The Reality Check — The Cross-Cycle Cryo Severance (Audited Table)
+  - archetype: table
+    tracker: "SLIDE 02 | THE DATA SEVERANCE"
+    title: "The Data Reality: Full-Funnel ML Severed at Cryopreservation"
+    subtitle: "90–95% of Morula cycles are Freeze-All; cross-cycle relational links are completely unmapped in EMR."
+    footnote: "*) Empirical audit executed on Snowflake database TEST across 38,580 FET procedures and 27,659 outcome records."
+    takeaway:
+      badge: "CRITICAL STRATEGIC TAKEAWAY"
+      accent_key: "danger"
+      title: "Longitudinal ML is mathematically severed until straw-level tracking is resolved."
+      description: "Over 90% of Morula IVF cycles freeze all embryos; without straw foreign keys linking thawed embryos to retrieval cycles, training predictive models on raw EMR joins causes 760x Cartesian explosion and misleading clinical metrics."
+    columns:
+      - header: "No."
+        width: 0.50
+        align: "CENTER"
+        is_index: true
+      - header: "Audited Dimension"
+        width: 2.70
+        align: "LEFT"
+      - header: "Total Volume"
+        width: 1.40
+        align: "CENTER"
+      - header: "Snowflake Audit Finding"
+        width: 2.30
+        align: "CENTER"
+        is_status: true
+      - header: "Operational & Machine Learning Consequence"
+        width: 4.833
+        align: "LEFT"
+    rows:
+      - ["01", "Frozen Embryo Transfers (FACT_FET)", "38,580 Rows", "100.0% OPU_DATE NULL", "Zero foreign keys link thawed embryo back to stimulation cycle."]
+      - ["02", "Straw Physical Attribution (FACT_FET)", "38,580 Rows", "100.0% OOCYTE_NO NULL", "Thaws omit which retrieved egg became the transferred embryo."]
+      - ["03", "Sentinel Placeholder Dates (FACT_FET)", "25,005 Rows", "64.8% CRITICAL FRACTURE", "Dates set to '1901-01-01'; cannot compute treatment intervals."]
+      - ["04", "Day 14 Pregnancy Outcome Records", "18,586 Rows", "67.2% MISSING RESULT", "Outcomes created on transfer day; never updated with Beta-hCG."]
+      - ["05", "Multi-Cycle Cartesian Multiplications", "36,080 Cycles", "760x ROW MULTIPLICATION", "Ad-hoc OPU-to-FET join inflates counts 42x to 760x on patients."]
+
+  # Slide 04: The Lab Pivot — Shrinking Scope to Blastocyst Yield (Clean 3-Card Architecture)
+  - archetype: card_grid
+    tracker: "SLIDE 03 | THE LAB PIVOT"
+    title: "Scoping Down to the Incubator: Blastocyst Yield & Its Empirical Limits"
+    subtitle: "Confining ML to intra-cycle lab culture eliminates severance but exposes qualitative grading deficits."
+    columns: 3
+    items:
+      - title: "1. The Scope Boundary"
+        subtitle: "Confining prediction strictly to intra-cycle culture"
+        icon: "shield"
+        badge: "FEASIBLE SCOPE"
+        accent_key: "primary"
+        bullets:
+          - "Single-Cycle Boundary: Connects ovarian stimulation directly to Day 5 blastocyst formation within one unsevered cycle."
+          - "Zero Cryo Contamination: Completely bypasses frozen embryo inventory matching and cross-year thaw delays."
+          - "Clean Relational Lineage: Bypasses 38.5K unmapped FET records; isolates laboratory biology from transfer entry gaps."
+          - "Deterministic Target: Predicts discrete blastocyst count from egg retrieval yield with verified relational integrity."
+      - title: "2. Relational Integrity"
+        subtitle: "100.0% deterministic relational linkage"
+        icon: "database"
+        badge: "100% INTEGRITY"
+        accent_key: "success"
+        bullets:
+          - "Flawless Relational Join: 328,435 out of 328,435 embryo rows cleanly link to retrieval cycles on (CYCLE_ID, GROUP_ID)."
+          - "Zero Orphan Records: 100% referential integrity across all 17 Morula IVF clinic branches."
+          - "Golden Patient Identity: 99.96% patient resolution achieved across multi-clinic treatment visits."
+          - "Verified Lab Tracking: Incubator culture records maintain consistent lineage from Day 1 fertilization to Day 5."
+      - title: "3. The Label Dilemma"
+        subtitle: "Target variable lacks standardized Gardner coding"
+        icon: "alert-triangle"
+        badge: "CRITICAL DEFICIT"
+        accent_key: "danger"
+        bullets:
+          - "Unstructured Lab Scores: 52.3% of embryo scores are BLANK/Arrested; 47.7% are free-text clinician notes."
+          - "Informal Descriptions: Uses informal terms ('Good', 'Moderat', 'Poor') with zero international Gardner codes (4AA, 3BB)."
+          - "Dual-Source Divergence: Manual lab logbooks (M_) disagree with electronic EMR records (S_) across clinics."
+          - "Cortex NLP Prerequisite: Snowflake Cortex AI NLP is required to standardize raw text before ML training is viable."
+
+  # Slide 05: Operational Transformation — Cortex Pre-Consultation Copilot (Browser Mockup Container)
+  - archetype: browser_mockup
+    tracker: "SLIDE 04 | THE OPERATIONAL PIVOT"
+    title: "The Operational Solution: Snowflake Cortex Pre-Consultation Copilot"
+    subtitle: "Empowering Sp.OG doctors with instant clinical synthesis directly inside Magic EMR before patient consultations."
+    screenshot_path: "assets/images/mockups/magic_emr_cortex_copilot.png"
+    url: "https://emr.morulaivf.co.id/magic-emr/cortex-copilot"
+    telemetry_badges:
+      - "SNOWFLAKE CORTEX AI"
+      - "SUB-SECOND RETRIEVAL (<2s)"
+      - "ZERO-PII EMR IFRAME"
+    takeaways_title: "CORE ARCHITECTURAL PILLARS"
+    takeaways:
+      - title: "Sub-Second Clinical Synthesis"
+        body: "Aggregates ultrasound follicle scans, hormonal blood panels, and past cycle outcomes across multi-clinic visits into a unified executive dossier in <2 seconds."
+        tag: "LATENCY REDUCTION"
+        tag_color: "accent"
+      - title: "Snowflake Cortex RAG Architecture"
+        body: "Employs Cortex Search and Mistral-Large over governed clinical tables with zero-copy Iceberg federation—zero external data transfer or LLM vendor training."
+        tag: "ENTERPRISE SECURITY"
+        tag_color: "secondary"
+      - title: "Magic EMR Seamless Integration"
+        body: "Embedded as a secure contextual sidebar within Magic EMR; provides cited clinical references while preserving mandatory doctor review and sign-off."
+        tag: "CLINICAL ADOPTION"
+        tag_color: "primary"
+
+  # Slide 06: Phased Implementation Roadmap (Process Chevron Flow)
+  - archetype: chevron_process
+    tracker: "SLIDE 05 | EXECUTION ROADMAP"
+    title: "Three-Phase Strategic Roadmap: From Data Foundation to True Predictive AI"
+    subtitle: "Sequential phase gates de-risk delivery, establishing governed clinical pipelines before training production models."
+    steps:
+      - phase_number: "PHASE 01"
+        title: "Integrity Engine & Pilot"
+        duration_badge: "Q4 2026 (ACTIVE NOW)"
+        status: "IN PROGRESS"
+        accent_key: "primary"
+        deliverables:
+          - "Deploy Nightly Mart Task: Scheduled execution of FACT_PATIENT_JOURNEY_AUDIT on Snowflake (~$0.13/mo)."
+          - "Launch Cortex Copilot: Embedded pre-consultation sidebar inside Magic EMR for Sp.OG doctors."
+          - "Verified Baseline Cohort: Audit 1,470 intact, un-fractured patient journeys across BIC Menteng."
+          - "Cryo Tank Conservation: Deliver intra-lab straw conservation math with 100% physical inventory balance."
+      - phase_number: "PHASE 02"
+        title: "Clinic Gap Closure"
+        duration_badge: "Q1 2027 (BRANCHES & DE)"
+        status: "PLANNED"
+        accent_key: "accent"
+        deliverables:
+          - "Distribute Gap Radars: Weekly data quality punch lists to operational managers across 17 branches."
+          - "Close Outcome Records: Clinic nurses systematically log 18,586 missing Day 14 Beta-hCG test results."
+          - "Standardize Gardner Coding: Deploy Snowflake Cortex NLP to parse and structure free-form lab morphology notes."
+          - "Straw-Level Barcoding: IT integrates physical straw foreign keys into electronic freeze-thaw workflows."
+      - phase_number: "PHASE 03"
+        title: "True Predictive AI"
+        duration_badge: "Q2 2027 (DATA SCIENCE)"
+        status: "PLANNED"
+        accent_key: "secondary"
+        deliverables:
+          - "Pristine Training Cohort: Filter modeling population to 100% verified, unbroken patient journeys."
+          - "Snowpark XGBoost Models: Train clinical success prediction algorithms on verified clinical labels."
+          - "Medical Council Review: Validate Clinical Pregnancy Success Engine against Sp.OG-KFER panel."
+          - "Production Decision Support: Deliver personalized stimulation protocol recommendations in Magic EMR."
+
+  # Slide 07: Decision Gate & Strategic Investment Framework (Audited Matrix Table)
+  - archetype: table
+    tracker: "SLIDE 06 | THE STRATEGIC DECISION"
+    title: "Executive Decision Matrix: Comparing Strategic AI Investment Paths"
+    subtitle: "Evaluating clinical target, data readiness, clinician adoption, and ROI across three investment alternatives."
+    footnote: "*) Recommendation backed by Metrodata Snowflake Practice empirical feasibility audit on Morula IVF production schemas."
+    takeaway:
+      badge: "EXECUTIVE RECOMMENDATION"
+      accent_key: "accent"
+      title: "Prioritize Alternative B (Cortex Copilot) for immediate, high-adoption clinical value."
+      description: "Deploying Cortex Pre-Consultation Copilot delivers immediate doctor productivity gains in weeks 1–8 while establishing clean data governance; pursuing Alternative A in parallel once straw-level tracking standards are operationalized."
+    columns:
+      - header: "Strategic Decision Dimension"
+        width: 2.333
+        align: "LEFT"
+      - header: "Alternative A: Blastocyst Yield ML"
+        width: 3.00
+        align: "LEFT"
+      - header: "Alternative B: Cortex Pre-Consultation Copilot"
+        width: 3.60
+        align: "LEFT"
+        is_highlight: true
+      - header: "Alternative C: Status Quo"
+        width: 2.80
+        align: "LEFT"
+    rows:
+      - ["Clinical Target & Scope", "Predict Day 5 Blastocyst count per stimulation cycle.", "Instant patient synthesis & risk summary for Sp.OGs.", "Manual chart review across siloed clinic EMRs."]
+      - ["Data Readiness & Integrity", "FEASIBLE: 0% cryo severance; requires morphology NLP.", "IMMEDIATE: Operates on existing EHR visits & lab tables.", "UNRESOLVED: 760x Cartesian explosion in FET joins."]
+      - ["Clinician Adoption & UX", "LOW: Primarily benefits embryologists in lab culture.", "HIGH: Saves Sp.OG doctors 10–15 min per consultation.", "NONE: Ongoing doctor administrative friction."]
+      - ["Implementation Timeline", "8–12 Weeks (Feature engineering & tuning).", "4–6 Weeks (Snowflake Cortex Search & EMR iframe).", "N/A (Zero capability advancement)."]
+      - ["Strategic Recommendation", "SECONDARY: Deploy post-straw tracking standardization.", "PRIMARY RECOMMENDATION: Immediate executive priority.", "NOT RECOMMENDED: Leaves operational pain unsolved."]
+
+  # Slide 08: Executive Action Plan & Project Governance (Thank You & Next Steps)
+  - archetype: thank_you
+    tracker: "ALIGNMENT & NEXT STEPS | MORULA IVF AI DATA CLOUD"
+    title: "Partnering for Transformative Reproductive AI"
+    subtitle: "Delivering clinical impact today while engineering the pristine foundation for tomorrow's predictive models."
+    next_steps:
+      - milestone: "1. Executive Sign-Off (Week 1)"
+        detail: "Formalize UC2 scope pivot with Pak Anton and Morula clinical leadership."
+        owner: "Morula & Metrodata"
+      - milestone: "2. Security & RBAC Review (Week 2)"
+        detail: "Review Snowflake Horizon data governance and zero-copy EMR iframe integration."
+        owner: "Morula IT Security"
+      - milestone: "3. Phase 1 Sprint Kickoff (Week 3)"
+        detail: "Deploy Snowflake Bronze ingestion and begin Cortex Search prototype on BIC data."
+        owner: "Engineering Team"
+      - milestone: "4. Clinical Pilot Alignment (Week 4)"
+        detail: "Convene Sp.OG advisory working group for Magic EMR copilot UX feedback."
+        owner: "Clinical Advisory"
+    contacts:
+      - name: "Marcell Jeremy Wiradinata"
+        title: "Lead AI & Data Architect (@mjwSolver)"
+        email: "marcell.wiradinata@metrodata.co.id"
+      - name: "Metrodata Snowflake Practice"
+        title: "Enterprise Data Cloud Solutions"
+        email: "snowflake.practice@metrodata.co.id"

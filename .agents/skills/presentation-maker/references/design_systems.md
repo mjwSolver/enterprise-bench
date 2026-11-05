@@ -47,3 +47,40 @@ A consulting-grade presentation balances high legibility, strict alignment, and 
 - Secondary Elements: `#2563EB` (Royal Blue)
 - Accent Highlight: `#059669` (Emerald)
 - Card Border / Dividers: `#CBD5E1`
+
+---
+
+## 4. Modern Executive Visual Hygiene & Anti-Pattern Registry
+
+### Anti-Pattern 1: The "Top-Stripe" Header Crutch
+- **Defect:** Crowning every card, column, or table container with a saturated horizontal color bar across the top edge. This turns a single-item *focus banner* (like a "RECOMMENDED" callout) into an overused, boxy corporate template from 2012.
+- **Modern Upgrade:** 
+  - Demote top stripes to **single-item intentional focus highlights only** (e.g., highlighting 1 column out of 3, or a single critical bottleneck).
+  - Standard cards use **borderless surfaces** or **subtle hairline borders** (`0.75pt`, `#E2E8F0`) on pure white or muted surfaces (`#F8FAFC`).
+  - Let whitespace and typography define the header hierarchy.
+
+### Anti-Pattern 2: The "Box-in-a-Box" Container Cage
+- **Defect:** Placing a card on the slide, and nesting smaller bordered boxes inside it (e.g., boxing a KPI number in a gray rectangle within a column card). Creates competing visual borders, clutter, and cognitive friction.
+- **Modern Upgrade (Open-Air Floating Metrics):**
+  - Delete nested container boxes.
+  - Let metrics float freely with **dramatic typographic scale contrast**: 26–32pt bold numbers paired with 9–10pt muted sublabels.
+  - Separate narrative blocks with subtle horizontal hairline dividers (`0.5–0.75pt`, `#E2E8F0`) rather than nested cards.
+
+### Anti-Pattern 3: The Solid Header Block in Tables
+- **Defect:** Painting a thick, dark primary color fill across the entire table header row with white text.
+- **Modern Upgrade (The Single-Line Table Rule):**
+  - Ditch solid dark header blocks.
+  - Header row uses a transparent or soft-tinted surface (`#F1F5F9`) with dark slate bold text (`#0F172A`).
+  - Place a **single crisp 1pt horizontal hairline rule** directly beneath the header row.
+  - Table rows use borderless cells with faint alternating background tint (`#F8FAFC`) and 0.5pt row dividers. Zero vertical gridlines.
+
+---
+
+## 5. AI Agent Priming Directives for High-End Slide Generation
+
+To generate executive-grade presentations, an AI agent must be primed with four operational invariants:
+
+1. **One Slide, One Core Idea (Pyramid Principle):** Action headlines must state an analytical conclusion (`Finding + Driver + Consequence`). Never use passive category labels ("Q3 Pipeline Performance").
+2. **Container Hierarchy Ceiling (Max 1 Level):** Never draw a bordered container inside another bordered card. If an element is inside a card, it floats in negative space.
+3. **The 90/10 Color Discipline:** 90% neutral slate/white/charcoal tones; 10% purposeful semantic color (Red = defect, Amber = boundary, Blue = flow, Green = target). Never use color decoratively.
+4. **DrawingML Hanging Indentation & Bold Lead-Ins:** All bullet items must use hanging indents with bold analytical lead-ins (e.g. `• **Root Cause:** Description...`) parsed into native bold runs, never emitting raw markdown asterisks.

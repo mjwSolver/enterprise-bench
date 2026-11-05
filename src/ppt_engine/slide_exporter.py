@@ -483,7 +483,7 @@ class PurePythonSlideRenderer:
                             def __init__(self, run, clean_txt):
                                 self.text = clean_txt
                                 self.font = run.font
-                        first_clean = p.runs[0].text.lstrip("•\t ").strip()
+                        first_clean = p.runs[0].text.lstrip("•\t ")
                         render_runs = [_RunProxy(p.runs[0], first_clean)] + list(p.runs[1:])
                 cur_y = self._render_multi_run_paragraph(
                     draw=draw,
@@ -572,7 +572,7 @@ class PurePythonSlideRenderer:
 
             words = r_text.split(" ")
             for i, w in enumerate(words):
-                suffix = " " if i < len(words) - 1 else ""
+                suffix = " " if (i < len(words) - 1 or r_text.endswith(" ")) else ""
                 tokens.append((w + suffix, r_font, r_rgb))
 
         cur_x = x

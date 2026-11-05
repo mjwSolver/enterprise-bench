@@ -454,6 +454,16 @@ class PitchDeckBuilder:
                     h_metric = h.get("metric_highlight") or h.get("metric") or ""
                     h_label = h.get("metric_label") or h.get("subtext") or ""
                     h_inits = h.get("initiatives") or h.get("bullets") or []
+                    acc_k = h.get("accent_key", "accent")
+                    def_bg = "badge_blue_fill"
+                    def_tx = "badge_blue_text"
+                    if acc_k == "danger":
+                        def_bg, def_tx = "badge_red_fill", "badge_red_text"
+                    elif acc_k == "warning":
+                        def_bg, def_tx = "badge_amber_fill", "badge_amber_text"
+                    elif acc_k == "success":
+                        def_bg, def_tx = "badge_green_fill", "badge_green_text"
+
                     horizons.append(HorizonColumnData(
                         horizon_tag=h_tag,
                         title=h_title,
@@ -461,10 +471,10 @@ class PitchDeckBuilder:
                         metric_highlight=h_metric,
                         metric_label=h_label,
                         initiatives=h_inits,
-                        accent_key=h.get("accent_key", "accent"),
+                        accent_key=acc_k,
                         status_tag=h.get("status_tag") or h.get("status", "IN EXECUTION"),
-                        status_bg_key=h.get("status_bg_key", "badge_blue_fill"),
-                        status_text_key=h.get("status_text_key", "badge_blue_text"),
+                        status_bg_key=h.get("status_bg_key", def_bg),
+                        status_text_key=h.get("status_text_key", def_tx),
                         icon=h.get("icon"),
                         icon_path=h.get("icon_path"),
                     ))
@@ -647,6 +657,7 @@ class PitchDeckBuilder:
                         align=str(c.get("align", "LEFT")).upper(),
                         is_status=bool(c.get("is_status", False)),
                         is_index=bool(c.get("is_index", False)),
+                        is_highlight=bool(c.get("is_highlight", False)),
                     ))
             rows = cfg.get("rows") or []
             build_table_slide(

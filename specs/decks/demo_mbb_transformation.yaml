@@ -1,0 +1,104 @@
+deck_type: pitch_deck
+theme: snowblue
+metadata:
+  project_name: "Enterprise Presentation Intelligence — Native MBB Transformation Demo"
+  client_name: "Enterprise Architecture Review Board"
+  vendor_name: "Enterprise Workbench (bench ppt)"
+  product: "Native MBB Engine Standard"
+  date_str: "November 2026"
+  confidentiality: "Enterprise Architecture & Modernization Practice  |  Demonstration Spec"
+
+slides:
+  # Slide 01: Cover
+  - archetype: cover
+    tracker: "ENTERPRISE WORKBENCH | NATIVE MBB SYSTEM DEMO"
+    title: "Native MBB Deck Architecture & Page Logic"
+    subtitle: "Eliminating Passive Generic Slides via Top-Down SCQA Narratives and Deterministic Layout Routing"
+    client: "Enterprise Architecture Review Board"
+    vendor: "Enterprise Workbench (@mjwSolver)"
+    product: "Native MBB Slide Engine"
+    date_str: "November 2026"
+    client_sublabel: "Strategic Technology Steering Committee"
+    vendor_sublabel: "Consulting Slide Engineering & Architecture Practice"
+
+  # Slide 02: Before vs After Transformation Matrix (Gap Analysis Archetype)
+  - archetype: gap_analysis
+    tracker: "SYSTEM EVALUATION | BEFORE VS AFTER PARADIGM"
+    title: "System Paradigm Shift: Passive AI Deck vs Native MBB Engineering"
+    subtitle: "Transitioning from generic category-label bullets to quantitative governing insights and deterministic layout routing."
+    left_title: "BEFORE: Naive / Generic LLM Generation"
+    left_subtitle: "Passive category headers, unquantified bullets, zero layout routing"
+    left_items:
+      - "**Passive Category Title:** Uses generic topic labels (e.g., 'Data Pipeline Challenges') with zero analytical conclusion or strategic direction."
+      - "**Unanchored Bullets:** Dumps disconnected bullet points without MECE grouping, root cause attribution, or quantified impact metrics."
+      - "**Arbitrary Styling:** Uniform generic blue boxes and decorative gradients with zero diagnostic signaling for defects vs target states."
+      - "**Missing Footnote Rigor:** Unsubstantiated claims without telemetry source citations or sample size accountability."
+    right_title: "AFTER: Native MBB Hub-and-Spoke System"
+    right_subtitle: "Pyramid Principle, SCQA spine, Action Headlines, and deterministic layouts"
+    right_items:
+      - "**Governing Action Headline:** Complete sentence syntax expressing [Finding] + [Mechanical Driver] + [Operational Consequence]."
+      - "**SCQA Storyline Gating:** Strict Situation -> Complication -> Core Question -> Resolution sequence before slide compilation."
+      - "**Deterministic Archetype Routing:** Direct topology mapping to split_hero, gap_analysis, bcg_3_horizon, or dense runbooks."
+      - "**Diagnostic Semantic Tokens:** Deterministic color signaling (Red defect #DC2626, Amber boundary #D97706, Green target #16A34A)."
+
+  # Slide 03: The Concrete Case — Nightly ETL SLA Breach (Split-Hero Archetype)
+  - archetype: split_hero
+    tracker: "CASE DEMO | OPERATIONAL ROOT-CAUSE ANALYSIS"
+    title: "Nightly Hive ETL Exceeds 6-Hour SLA by 185 Minutes Due to Cartesian Joins; Migrating to Snowflake Restores 45-Minute Window"
+    subtitle: "Telemetry audit across 142 batch jobs reveals 78% cluster queue blockage at month-end; decoupled virtual warehouses isolate resource contention."
+    hero_stat: "+185m"
+    hero_stat_label: "Average Month-End SLA Breach"
+    hero_stat_subtext: "142 batch pipelines block branch reporting; resolved via decoupled virtual warehouses."
+    blocks:
+      - title: "The Operational Bottleneck (Complication)"
+        metric_badge: "P1 DEFECT"
+        category_tag: "DIMENSION 01"
+        description: "Unindexed stage joins across legacy Hive tables trigger massive data shuffles, exhausting YARN memory pools and causing cascade job failures across all 12 operational branches."
+      - title: "The Architectural Root Cause (Finding)"
+        metric_badge: "RESOURCE LOCK"
+        category_tag: "DIMENSION 02"
+        description: "Shared monolithic Hadoop cluster couples storage and compute; heavy ad-hoc analyst queries directly starve production ETL threads during critical month-end closing cycles."
+      - title: "The Decoupled Resolution (Action)"
+        metric_badge: "TARGET STATE"
+        category_tag: "DIMENSION 03"
+        description: "Migrating transformation layers to isolated Snowflake Large virtual warehouses guarantees deterministic 45-minute runtime SLAs with zero queue contention and auto-suspend efficiency."
+
+  # Slide 04: The Phased Roadmap (BCG 3-Horizon Archetype)
+  - archetype: bcg_3_horizon
+    tracker: "STRATEGIC ROADMAP | PHASED MODERNIZATION"
+    title: "Three-Horizon Modernization Strategy Isolates Compute Bottlenecks Before Full Lakehouse Cutover"
+    subtitle: "Sequenced execution ensures immediate batch SLA relief in 90 days while preparing enterprise-wide semantic governance."
+    horizons:
+      - horizon_tag: "HORIZON 01 | 0-3 MONTHS"
+        title: "Immediate SLA Stabilization"
+        strategic_focus: "Offloading critical month-end batch ETL"
+        metric_highlight: "-75% Runtime"
+        metric_label: "SLA batch truncation"
+        status_tag: "ACTIVE"
+        accent_key: "danger"
+        icon: "zap"
+        initiatives:
+          - "**Targeted Hive Offload:** Migrate top 15 critical month-end aggregation jobs directly to Snowflake virtual warehouses."
+          - "**Zero Pipeline Disruption:** Read legacy parquet tables in-place via external stages with zero upfront DDL redesign."
+      - horizon_tag: "HORIZON 02 | 3-9 MONTHS"
+        title: "Platform Modernization"
+        strategic_focus: "Full data pipeline & warehouse cutover"
+        metric_highlight: "142 Pipelines"
+        metric_label: "Production pipelines migrated"
+        status_tag: "COMMITTED"
+        accent_key: "warning"
+        icon: "layers"
+        initiatives:
+          - "**Automated DDL Transformation:** Transpile legacy HiveQL scripts into native ANSI SQL models using dbt and Snowflake."
+          - "**Decommission Legacy Nodes:** Retire 32 on-premises Hadoop worker nodes, recapturing $480k in annual hardware maintenance."
+      - horizon_tag: "HORIZON 03 | 9-18 MONTHS"
+        title: "Autonomous Analytics"
+        strategic_focus: "Self-service semantic models & Cortex AI"
+        metric_highlight: "<2s Queries"
+        metric_label: "Executive dashboard latency"
+        status_tag: "PLANNED"
+        accent_key: "success"
+        icon: "trending-up"
+        initiatives:
+          - "**Executive Semantic Layer:** Deploy centralized metric views and Streamlit data applications for self-service branch reporting."
+          - "**Cortex AI Copilot:** Empower business analysts to execute natural-language queries across historical financial ledgers."

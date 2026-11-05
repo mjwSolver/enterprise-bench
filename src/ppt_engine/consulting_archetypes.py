@@ -506,23 +506,26 @@ def build_bcg_3_horizon_slide(
         cx = start_x + i * (card_w + card_gap)
         accent_rgb = theme.get_rgb(h_data.accent_key)
 
-        # 1. Main Background Card & 2. Top Accent Stripe (Strict Geometry Rule: NEVER rounded corners at top)
-        add_card_with_top_stripe(
+        # 1. Clean Surface Container (Zero Top Stripe — eliminating banner crutch)
+        # Modern executive aesthetic: Pure surface with subtle hairline border and generous negative space.
+        add_card(
             slide,
             theme,
             cx,
             row_y,
             card_w,
             card_h,
-            accent_rgb=accent_rgb,
             bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+            border_width_pt=0.75,
+            force_rectangle=True,
         )
 
-        # 3. Status Badge Pill
-        status_w = Inches(1.22)
-        status_h = Inches(0.24)
-        status_x = cx + card_w - status_w - Inches(0.18)
-        status_y = row_y + Inches(0.14)
+        # 2. Status Badge Pill (Understated, clean placement)
+        status_w = Inches(1.10)
+        status_h = Inches(0.22)
+        status_x = cx + card_w - status_w - Inches(0.20)
+        status_y = row_y + Inches(0.18)
 
         status_pill = slide.shapes.add_shape(
             MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE,
@@ -543,76 +546,49 @@ def build_bcg_3_horizon_slide(
         p_st = st_tf.paragraphs[0]
         p_st.text = h_data.status_tag
         p_st.font.name = theme.font_family_header
-        p_st.font.size = Pt(8.0)
+        p_st.font.size = Pt(7.5)
         p_st.font.bold = True
         p_st.alignment = PP_ALIGN.CENTER
         p_st.font.color.rgb = theme.get_rgb(h_data.status_text_key)
 
-        # 4. Column Header: Horizon Tag & Title
-        icon_to_use = h_data.icon or h_data.icon_path
-        icon_offset_x = Inches(0.0)
-        if icon_to_use:
-            try:
-                p = Path(str(icon_to_use))
-                if p.exists() and p.suffix.lower() == ".png" and "_" not in p.stem:
-                    icon_pic_path = p
-                else:
-                    stem = p.stem
-                    clean_id = stem.split("_")[0] if "_" in stem else stem
-                    icon_pic_path = get_brand_icon(clean_id, brand_color=accent_rgb, theme=theme)
-                if icon_pic_path and Path(icon_pic_path).exists():
-                    slide.shapes.add_picture(
-                        str(icon_pic_path),
-                        cx + Inches(0.18),
-                        row_y + Inches(0.14),
-                        width=Inches(0.34),
-                        height=Inches(0.34),
-                    )
-                    icon_offset_x = Inches(0.40)
-            except Exception as e:
-                logger.warning(f"Failed to render horizon icon '{icon_to_use}': {e}")
-
-        # Tag line (sits between icon and status pill, single line guaranteed)
-        tag_w = card_w - status_w - Inches(0.26) - icon_offset_x
-        tag_tb = slide.shapes.add_textbox(cx + Inches(0.18) + icon_offset_x, row_y + Inches(0.14), tag_w, Inches(0.26))
+        # 3. Horizon Eyebrow Tag
+        tag_w = card_w - status_w - Inches(0.44)
+        tag_tb = slide.shapes.add_textbox(cx + Inches(0.20), row_y + Inches(0.18), tag_w, Inches(0.22))
         tag_tf = tag_tb.text_frame
         tag_tf.word_wrap = True
         tag_tf.margin_left = tag_tf.margin_right = tag_tf.margin_top = tag_tf.margin_bottom = 0
         p_tag = tag_tf.paragraphs[0]
-        p_tag.text = h_data.horizon_tag
+        p_tag.text = h_data.horizon_tag.upper()
         p_tag.font.name = theme.font_family_header
-        p_tag.font.size = Pt(9.0)
+        p_tag.font.size = Pt(8.5)
         p_tag.font.bold = True
         p_tag.font.color.rgb = accent_rgb
 
-        # Title line (spans full card width below tag row)
-        title_tb = slide.shapes.add_textbox(cx + Inches(0.18), row_y + Inches(0.48), card_w - Inches(0.36), Inches(0.48))
+        # 4. Column Header: Title & Strategic Focus
+        title_tb = slide.shapes.add_textbox(cx + Inches(0.20), row_y + Inches(0.48), card_w - Inches(0.40), Inches(0.78))
         title_tf = title_tb.text_frame
         title_tf.word_wrap = True
         title_tf.margin_left = title_tf.margin_right = title_tf.margin_top = title_tf.margin_bottom = 0
         p_title = title_tf.paragraphs[0]
         p_title.text = h_data.title
         p_title.font.name = theme.font_family_header
-        p_title.font.size = Pt(thresholds.get("card_title_pt", 13.5))
+        p_title.font.size = Pt(thresholds.get("card_title_pt", 14.5))
         p_title.font.bold = True
         p_title.font.color.rgb = theme.get_rgb("primary")
 
-        # 5. Metric Highlight Callout Container
-        metric_box_y = row_y + Inches(1.02)
-        metric_box_h = Inches(0.92)
-        m_card = add_card(
-            slide,
-            theme,
-            cx + Inches(0.18),
-            metric_box_y,
-            card_w - Inches(0.36),
-            metric_box_h,
-            bg_color=theme.get_rgb("surface_muted"),
-            border_color=theme.get_rgb("border"),
-            border_width_pt=0.75,
-        )
+        if h_data.strategic_focus:
+            p_f = title_tf.add_paragraph()
+            p_f.text = h_data.strategic_focus
+            p_f.font.name = theme.font_family
+            p_f.font.size = Pt(thresholds.get("caption_pt", 9.5))
+            p_f.font.color.rgb = theme.get_rgb("secondary")
+            p_f.space_before = Pt(3)
 
-        m_tb = slide.shapes.add_textbox(cx + Inches(0.28), metric_box_y + Inches(0.08), card_w - Inches(0.56), metric_box_h - Inches(0.16))
+        # 5. Open-Air Floating Hero Metric (Zero Nested Box!)
+        # Replaces the dated "box-in-a-box" card with clean typographic scale contrast
+        metric_top_y = row_y + Inches(1.36)
+        metric_h = Inches(0.82)
+        m_tb = slide.shapes.add_textbox(cx + Inches(0.20), metric_top_y, card_w - Inches(0.40), metric_h)
         m_tf = m_tb.text_frame
         m_tf.word_wrap = True
         m_tf.margin_left = m_tf.margin_right = m_tf.margin_top = m_tf.margin_bottom = 0
@@ -620,11 +596,11 @@ def build_bcg_3_horizon_slide(
         p_mval = m_tf.paragraphs[0]
         p_mval.text = h_data.metric_highlight
         p_mval.font.name = theme.font_family_header
-        base_metric_pt = thresholds.get("metric_large_pt", 22.0)
-        if len(h_data.metric_highlight) > 12:
-            base_metric_pt = 15.5
-        elif len(h_data.metric_highlight) > 8:
+        base_metric_pt = 26.0
+        if len(h_data.metric_highlight) > 14:
             base_metric_pt = 18.0
+        elif len(h_data.metric_highlight) > 9:
+            base_metric_pt = 21.0
         p_mval.font.size = Pt(base_metric_pt)
         p_mval.font.bold = True
         p_mval.font.color.rgb = accent_rgb
@@ -632,48 +608,50 @@ def build_bcg_3_horizon_slide(
         p_mlbl = m_tf.add_paragraph()
         p_mlbl.text = h_data.metric_label
         p_mlbl.font.name = theme.font_family
-        p_mlbl.font.size = Pt(9.5)
+        p_mlbl.font.size = Pt(9.0)
         p_mlbl.font.color.rgb = theme.get_rgb("secondary")
         p_mlbl.space_before = Pt(2)
 
-        # 6. Unified Strategic Focus & Deliverables Text Frame (Zero Coordinate Collision)
-        # Sequential paragraphs inside the same frame guarantees zero overlap between narrative and bullets.
-        content_top = metric_box_y + metric_box_h + Inches(0.12)
-        content_h = card_h - (content_top - row_y) - Inches(0.12)
+        # 6. Subtle Editorial Hairline Divider
+        divider_y = metric_top_y + metric_h + Inches(0.04)
+        div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.20), divider_y, card_w - Inches(0.40), Pt(0.75))
+        div.shadow.inherit = False
+        div.fill.solid()
+        div.fill.fore_color.rgb = theme.get_rgb("border")
+        div.line.fill.background()
+
+        # 7. Strategic Deliverables Container with Hanging Indent & Bold Lead-in Parsing
+        content_top = divider_y + Inches(0.12)
+        content_h = card_h - (content_top - row_y) - Inches(0.14)
         content_tb = slide.shapes.add_textbox(
-            cx + Inches(0.18),
+            cx + Inches(0.20),
             content_top,
-            card_w - Inches(0.36),
+            card_w - Inches(0.40),
             content_h,
         )
         content_tf = content_tb.text_frame
         content_tf.word_wrap = True
         content_tf.margin_left = content_tf.margin_right = content_tf.margin_top = content_tf.margin_bottom = 0
 
-        # Strategic Focus narrative
-        p_f = content_tf.paragraphs[0]
-        p_f.text = h_data.strategic_focus
-        p_f.font.name = theme.font_family
-        p_f.font.size = Pt(thresholds.get("body_pt", 11.0))
-        p_f.font.color.rgb = theme.get_rgb("secondary")
-
-        # Deliverables Section Header (flows naturally below narrative)
-        p_ih = content_tf.add_paragraph()
-        p_ih.text = "KEY STRATEGIC DELIVERABLES:"
+        # Deliverables Section Header
+        p_ih = content_tf.paragraphs[0]
+        p_ih.text = "KEY STRATEGIC DELIVERABLES"
         p_ih.font.name = theme.font_family_header
-        p_ih.font.size = Pt(thresholds.get("caption_pt", 9.5))
+        p_ih.font.size = Pt(8.5)
         p_ih.font.bold = True
         p_ih.font.color.rgb = theme.get_rgb("muted")
-        p_ih.space_before = Pt(8)
-        p_ih.space_after = Pt(4)
+        p_ih.space_after = Pt(6)
 
         for init_item in h_data.initiatives:
-            p_bullet = content_tf.add_paragraph()
-            p_bullet.text = f"• {init_item}"
-            p_bullet.font.name = theme.font_family
-            p_bullet.font.size = Pt(thresholds.get("bullet_pt", 10.5))
-            p_bullet.font.color.rgb = theme.get_rgb("primary")
-            p_bullet.space_after = Pt(2.5)
+            _add_bullet_paragraph(
+                content_tf,
+                text=init_item,
+                font_name=theme.font_family,
+                font_size_pt=thresholds.get("bullet_pt", 10.0),
+                font_color=theme.get_rgb("secondary"),
+                lead_color=theme.get_rgb("primary"),
+                space_before_pt=4.0,
+            )
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
@@ -4248,8 +4226,9 @@ def _add_bullet_paragraph(
     font_color: Optional[RGBColor] = None,
     space_before_pt: float = 4.0,
     bullet_char: str = "•",
+    lead_color: Optional[RGBColor] = None,
 ) -> Any:
-    """Appends a bullet paragraph with DrawingML hanging indent (marL/indent)."""
+    """Appends a bullet paragraph with DrawingML hanging indent (marL/indent). Parses **bold** and Lead: text."""
     from pptx.oxml.xmlchemy import OxmlElement
 
     p = tf.add_paragraph()
@@ -4258,11 +4237,6 @@ def _add_bullet_paragraph(
     clean_font = font_name.split(",")[0].strip().strip('"\'') if font_name else "Calibri"
     if not clean_font:
         clean_font = "Calibri"
-    p.text = clean_text
-    p.font.name = clean_font
-    p.font.size = Pt(font_size_pt)
-    if font_color:
-        p.font.color.rgb = font_color
     p.space_before = Pt(space_before_pt)
 
     # DrawingML Hanging Indent: marL="288000" (0.20 in), indent="-288000"
@@ -4289,6 +4263,43 @@ def _add_bullet_paragraph(
     else:
         for el in elems:
             pPr.append(el)
+
+    lead_rgb = lead_color or RGBColor(15, 23, 42)
+    body_rgb = font_color or RGBColor(71, 85, 105)
+
+    if "**" in clean_text:
+        parts = clean_text.split("**")
+        for idx, part in enumerate(parts):
+            if not part:
+                continue
+            is_bold = (idx % 2 == 1)
+            run = p.add_run()
+            run.text = part
+            run.font.name = clean_font
+            run.font.size = Pt(font_size_pt)
+            run.font.bold = is_bold
+            run.font.color.rgb = lead_rgb if is_bold else body_rgb
+    elif ":" in clean_text and len(clean_text.split(":", 1)[0]) <= 40 and not clean_text.startswith("http"):
+        lead, desc = clean_text.split(":", 1)
+        r_lead = p.add_run()
+        r_lead.text = f"{lead.strip()}: "
+        r_lead.font.name = clean_font
+        r_lead.font.size = Pt(font_size_pt)
+        r_lead.font.bold = True
+        r_lead.font.color.rgb = lead_rgb
+
+        r_desc = p.add_run()
+        r_desc.text = desc.strip()
+        r_desc.font.name = clean_font
+        r_desc.font.size = Pt(font_size_pt)
+        r_desc.font.bold = False
+        r_desc.font.color.rgb = body_rgb
+    else:
+        run = p.add_run()
+        run.text = clean_text
+        run.font.name = clean_font
+        run.font.size = Pt(font_size_pt)
+        run.font.color.rgb = body_rgb
 
     return p
 
@@ -5248,6 +5259,7 @@ class TableColumnDef:
     align: str = "LEFT"  # "LEFT", "CENTER", "RIGHT"
     is_status: bool = False
     is_index: bool = False
+    is_highlight: bool = False
 
 
 def build_table_slide(
@@ -5285,16 +5297,31 @@ def build_table_slide(
     scale_w = (total_w.inches / col_widths_sum) if col_widths_sum > 0 else 1.0
     scaled_widths = [Inches(c.width * scale_w) for c in columns]
 
-    # Header Band
+    # Header Band (Single-Line Rule: Muted surface with dark bold slate text, eliminating the solid dark banner block)
     hdr_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, header_y, total_w, header_h)
     hdr_card.shadow.inherit = False
     hdr_card.fill.solid()
-    hdr_card.fill.fore_color.rgb = theme.get_rgb("primary")
+    hdr_card.fill.fore_color.rgb = theme.get_rgb("surface_muted")
     hdr_card.line.fill.background()
+
+    # Clean hairline divider under header row
+    hdr_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, header_y + header_h, total_w, Pt(1.0))
+    hdr_div.shadow.inherit = False
+    hdr_div.fill.solid()
+    hdr_div.fill.fore_color.rgb = theme.get_rgb("border")
+    hdr_div.line.fill.background()
 
     cur_x = start_x
     for c_idx, col in enumerate(columns):
         cw = scaled_widths[c_idx]
+        is_highlighted = getattr(col, "is_highlight", False)
+        if is_highlighted:
+            hdr_hl = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cur_x, header_y, cw, header_h)
+            hdr_hl.shadow.inherit = False
+            hdr_hl.fill.solid()
+            hdr_hl.fill.fore_color.rgb = theme.get_rgb("accent")
+            hdr_hl.line.fill.background()
+
         tb = slide.shapes.add_textbox(cur_x + Inches(0.08), header_y + Inches(0.06), cw - Inches(0.16), header_h - Inches(0.12))
         tf = tb.text_frame
         tf.word_wrap = True
@@ -5308,25 +5335,22 @@ def build_table_slide(
         else:
             p.alignment = PP_ALIGN.LEFT
         p.font.name = theme.font_family_header
-        p.font.size = Pt(9.5)
+        p.font.size = Pt(9.0)
         p.font.bold = True
-        p.font.color.rgb = RGBColor(255, 255, 255)
+        p.font.color.rgb = RGBColor(255, 255, 255) if is_highlighted else theme.get_rgb("primary")
         cur_x += cw
 
     # Rows
     num_rows = len(rows)
     avail_row_h = Inches(4.70) if not footnote else Inches(4.45)
-    row_gap = Inches(0.04) if num_rows > 8 else (Inches(0.05) if num_rows > 5 else Inches(0.07))
+    row_gap = Inches(0.04) if num_rows > 8 else (Inches(0.05) if num_rows > 5 else Inches(0.06))
     if takeaway:
-        if footnote:
-            avail_table_h = Inches(2.95) if num_rows <= 5 else Inches(2.65)
-            row_h = min(Inches(0.54), max(Inches(0.24), (avail_table_h - (num_rows - 1) * row_gap) / num_rows))
-        else:
-            avail_table_h = Inches(3.05) if num_rows <= 5 else Inches(3.10)
-            row_h = min(Inches(0.56), max(Inches(0.28), (avail_table_h - (num_rows - 1) * row_gap) / num_rows))
+        takeaway_h = Inches(1.15)
+        avail_table_h = Inches(3.20) if footnote else Inches(3.35)
+        row_h = min(Inches(0.60), max(Inches(0.28), (avail_table_h - (num_rows - 1) * row_gap) / num_rows))
     else:
-        max_h = Inches(0.62) if num_rows <= 5 else Inches(0.48)
-        row_h = min(max_h, max(Inches(0.28), (avail_row_h - (num_rows - 1) * row_gap) / num_rows))
+        max_h = Inches(0.65) if num_rows <= 5 else Inches(0.50)
+        row_h = min(max_h, max(Inches(0.30), (avail_row_h - (num_rows - 1) * row_gap) / num_rows))
 
     row_start_y = header_y + header_h + Inches(0.08)
 
@@ -5336,36 +5360,53 @@ def build_table_slide(
         "MUTUAL", "DAILY", "WEEKLY", "AS NEEDED", "OPEN", "RESOLVED"
     }
 
-    font_size_pt = 9.0 if num_rows > 9 else (9.0 if (takeaway and num_rows >= 5) else (9.5 if num_rows > 6 else 10.0))
+    font_size_pt = 9.0 if num_rows > 8 else (10.0 if num_rows > 5 else 10.5)
 
     for r_idx, row in enumerate(rows):
         cur_ry = row_start_y + r_idx * (row_h + row_gap)
         is_alt = (r_idx % 2 != 0)
-        bg_color = theme.get_rgb("surface_muted") if is_alt else theme.get_rgb("surface")
 
-        add_card(
-            slide,
-            theme,
-            start_x,
-            cur_ry,
-            total_w,
-            row_h,
-            bg_color=bg_color,
-            border_color=theme.get_rgb("border"),
-            force_rectangle=True,
-        )
+        # Modern Row Hygiene: Borderless rows with subtle alternating fill and hairline bottom divider
+        if is_alt:
+            row_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry, total_w, row_h)
+            row_bg.shadow.inherit = False
+            row_bg.fill.solid()
+            row_bg.fill.fore_color.rgb = theme.get_rgb("surface_muted")
+            row_bg.line.fill.background()
+
+        # Faint hairline divider under row (0.5pt)
+        row_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry + row_h, total_w, Pt(0.5))
+        row_div.shadow.inherit = False
+        row_div.fill.solid()
+        row_div.fill.fore_color.rgb = theme.get_rgb("border")
+        row_div.line.fill.background()
 
         cur_cx = start_x
         for c_idx, col in enumerate(columns):
             cw = scaled_widths[c_idx]
+            is_highlighted = getattr(col, "is_highlight", False)
+            if is_highlighted:
+                cell_card = slide.shapes.add_shape(
+                    MSO_SHAPE.RECTANGLE,
+                    cur_cx + Inches(0.01),
+                    cur_ry + Inches(0.01),
+                    cw - Inches(0.02),
+                    row_h - Inches(0.02),
+                )
+                cell_card.shadow.inherit = False
+                cell_card.fill.solid()
+                cell_card.fill.fore_color.rgb = RGBColor(240, 247, 255)
+                cell_card.line.color.rgb = theme.get_rgb("accent")
+                cell_card.line.width = Pt(1.5)
+
             cell_val = row[c_idx] if c_idx < len(row) else ""
             cell_str = str(cell_val).strip()
 
             is_status_col = col.is_status or (cell_str.upper() in status_keywords and len(cell_str) <= 20)
 
             if is_status_col and cell_str:
-                pill_w = min(cw - Inches(0.20), Inches(1.55))
-                pill_h = min(row_h - Inches(0.08), Inches(0.25))
+                pill_w = min(cw - Inches(0.16), max(Inches(1.60), cw * 0.90))
+                pill_h = min(row_h - Inches(0.12), Inches(0.28))
                 pill_x = cur_cx + (cw - pill_w) / 2
                 pill_y = cur_ry + (row_h - pill_h) / 2
                 _add_status_pill(
@@ -5376,13 +5417,17 @@ def build_table_slide(
                     width=pill_w,
                     height=pill_h,
                     status=cell_str,
-                    font_size_pt=max(7.0, font_size_pt - 1.5),
+                    font_size_pt=max(7.5, font_size_pt - 1.5),
                 )
             else:
-                tb = slide.shapes.add_textbox(cur_cx + Inches(0.08), cur_ry + Inches(0.04), cw - Inches(0.16), row_h - Inches(0.08))
+                tb = slide.shapes.add_textbox(cur_cx + Inches(0.08), cur_ry + Inches(0.02), cw - Inches(0.16), row_h - Inches(0.04))
                 tf = tb.text_frame
                 tf.word_wrap = True
-                tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+                tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+                tf.margin_left = Pt(6)
+                tf.margin_right = Pt(6)
+                tf.margin_top = Pt(2)
+                tf.margin_bottom = Pt(2)
                 p = tf.paragraphs[0]
                 p.text = cell_str
                 if col.align == "CENTER":
@@ -5392,39 +5437,56 @@ def build_table_slide(
                 else:
                     p.alignment = PP_ALIGN.LEFT
 
+                is_highlighted = getattr(col, "is_highlight", False)
+                dim_idx = 1 if (columns and columns[0].is_index) else 0
+
                 if col.is_index or (c_idx == 0 and cell_str.isdigit()):
                     p.font.name = theme.font_family_header
                     p.font.size = Pt(font_size_pt + 0.5)
                     p.font.bold = True
                     p.font.color.rgb = theme.get_rgb("accent")
+                elif is_highlighted:
+                    p.font.name = theme.font_family_header
+                    p.font.size = Pt(font_size_pt)
+                    p.font.bold = True
+                    p.font.color.rgb = theme.get_rgb("accent")
+                elif c_idx == dim_idx:
+                    p.font.name = theme.font_family_header
+                    p.font.size = Pt(font_size_pt)
+                    p.font.bold = True
+                    p.font.color.rgb = theme.get_rgb("primary")
                 else:
                     p.font.name = theme.font_family
                     p.font.size = Pt(font_size_pt)
-                    if c_idx == 1:
-                        p.font.bold = True
-                        p.font.color.rgb = theme.get_rgb("primary")
-                    else:
-                        p.font.color.rgb = theme.get_rgb("secondary")
+                    p.font.color.rgb = theme.get_rgb("secondary")
 
             cur_cx += cw
 
     if takeaway and isinstance(takeaway, dict):
-        takeaway_top = row_start_y + num_rows * (row_h + row_gap) + Inches(0.14)
-        takeaway_h = Inches(1.35)
+        takeaway_top = row_start_y + num_rows * (row_h + row_gap) + Inches(0.10)
+        takeaway_h = Inches(1.15)
         acc_key = takeaway.get("accent_key", "accent")
         acc_rgb = theme.get_rgb(acc_key)
-        add_card_with_top_stripe(
+
+        # Modern Executive Takeaway Card: Clean surface with left indicator accent bar
+        add_card(
             slide,
             theme,
             start_x,
             takeaway_top,
             total_w,
             takeaway_h,
-            accent_rgb=acc_rgb,
             bg_color=theme.get_rgb("surface"),
             border_color=theme.get_rgb("border"),
-            stripe_height_in=0.05,
+            border_width_pt=0.75,
+            force_rectangle=True,
         )
+        # Vertical focus accent stripe on left (4pt width)
+        left_stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, takeaway_top, Pt(4.0), takeaway_h)
+        left_stripe.shadow.inherit = False
+        left_stripe.fill.solid()
+        left_stripe.fill.fore_color.rgb = acc_rgb
+        left_stripe.line.fill.background()
 
         badge_txt = takeaway.get("badge", "STRATEGIC TAKEAWAY")
         pill_w = Inches(2.35)
@@ -5433,7 +5495,7 @@ def build_table_slide(
             slide=slide,
             theme=theme,
             left=start_x + Inches(0.18),
-            top=takeaway_top + Inches(0.12),
+            top=takeaway_top + Inches(0.10),
             width=pill_w,
             height=pill_h,
             status=badge_txt,
@@ -5441,7 +5503,7 @@ def build_table_slide(
             override_color_key=acc_key,
         )
 
-        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.20), takeaway_top + Inches(0.42), total_w - Inches(0.50), takeaway_h - Inches(0.48))
+        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.20), takeaway_top + Inches(0.38), total_w - Inches(0.50), takeaway_h - Inches(0.42))
         tf_tk = tb_tk.text_frame
         tf_tk.word_wrap = True
         tf_tk.margin_left = tf_tk.margin_right = tf_tk.margin_top = tf_tk.margin_bottom = 0
@@ -5449,7 +5511,7 @@ def build_table_slide(
         p_tkt = tf_tk.paragraphs[0]
         p_tkt.text = takeaway.get("title", "")
         p_tkt.font.name = theme.font_family_header
-        p_tkt.font.size = Pt(11.5)
+        p_tkt.font.size = Pt(11.0)
         p_tkt.font.bold = True
         p_tkt.font.color.rgb = theme.get_rgb("primary")
 
@@ -5458,6 +5520,8 @@ def build_table_slide(
             p_tkd.text = takeaway.get("description")
             p_tkd.font.name = theme.font_family
             p_tkd.font.size = Pt(9.5)
+            p_tkd.font.color.rgb = theme.get_rgb("secondary")
+            p_tkd.space_before = Pt(3)
             p_tkd.font.color.rgb = theme.get_rgb("secondary")
             p_tkd.space_before = Pt(3)
 

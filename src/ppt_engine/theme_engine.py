@@ -160,7 +160,7 @@ class Theme:
         s = status.strip().upper()
         if any(k in s for k in ["ON TRACK", "EXCEEDED", "PASSED", "COMPLETE", "SUCCESS", "OPTIMAL"]):
             return ("badge_green_fill", "badge_green_text")
-        elif any(k in s for k in ["AT RISK", "DELAY", "BLOCK", "FAIL", "CRITICAL", "BOTTLENECK", "HIGH"]):
+        elif any(k in s for k in ["AT RISK", "DELAY", "BLOCK", "FAIL", "CRITICAL", "BOTTLENECK", "HIGH", "NULL", "MISSING", "FRACTURE", "SEVER", "DEFICIT", "CARTESIAN", "EXPLOSION", "MULTIPLICATION"]):
             return ("badge_red_fill", "badge_red_text")
         elif any(k in s for k in ["AMBER", "WARNING", "RESCHEDULE", "OCCURRED", "MEDIUM", "BERGESER"]):
             if "badge_amber_fill" in self.palette:
