@@ -4,7 +4,7 @@ description: "Snow Blue: crisp frost #F0FDF4 / #F0F9FF, cobalt #0284C7, cyan acc
 palette:
   background: "#F0F9FF"
   surface: "#FFFFFF"
-  surface_muted: "#F0FDF4"
+  surface_muted: "#E0F2FE"
   border: "#BAE6FD"
   border_accent: "#38BDF8"
   primary: "#0F172A"
@@ -26,6 +26,10 @@ palette:
   badge_amber_text: "#B45309"
   badge_red_fill: "#FEE2E2"
   badge_red_text: "#B91C1C"
+  badge_slate_fill: "#F1F5F9"
+  badge_slate_text: "#334155"
+  badge_muted_fill: "#F8FAFC"
+  badge_muted_text: "#64748B"
 
 geometry:
   corner_radius: 8

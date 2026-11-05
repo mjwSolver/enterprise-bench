@@ -133,8 +133,17 @@ def _set_connector_arrowhead(connector: Any, arrow_type: str = "triangle", at_ta
 def _set_round_join(shape: Any) -> None:
     """Applies rounded line joins so polyline elbows bend cleanly."""
     try:
-        ln_elem = shape._element.spPr.ln
-        ln_elem.append(OxmlElement("a:round"))
+        spPr = shape._element.spPr
+        ln_elem = spPr.get_or_add_ln()
+        for child in list(ln_elem):
+            if child.tag.endswith(("round", "bevel", "miter")):
+                ln_elem.remove(child)
+        insert_idx = len(ln_elem)
+        for i, child in enumerate(ln_elem):
+            if child.tag.endswith(("headEnd", "tailEnd")):
+                insert_idx = i
+                break
+        ln_elem.insert(insert_idx, OxmlElement("a:round"))
     except Exception as e:
         logger.debug("Could not set round join: %s", e)
 

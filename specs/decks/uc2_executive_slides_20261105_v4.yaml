@@ -80,26 +80,26 @@ slides:
       - ["04", "Day 14 Pregnancy Outcome Records", "18,586 Rows", "67.2% Unclosed Outcomes", "Outcomes created on transfer day; never updated with Beta-hCG."]
       - ["05", "Multi-Cycle Cartesian Multiplications", "36,080 Cycles", "760x Row Multiplication", "Ad-hoc OPU-to-FET join inflates counts 42x to 760x on patients."]
 
-  # Slide 04: The Lab Pivot — Shrinking Scope to Blastocyst Yield (Clean Stat & Action Cards)
+  # Slide 04: The Lab Pivot — Shrinking Scope to Blastocyst Yield (Horizontal Swimlane Architecture)
   - archetype: card_grid
     tracker: "SLIDE 03 | THE LAB PIVOT"
     title: "Scoping Down to the Incubator: Blastocyst Yield & Its Empirical Limits"
     subtitle: "Confining ML to intra-cycle lab culture eliminates severance but exposes qualitative grading deficits."
-    columns: 3
+    columns: 1
     items:
       - title: "1. The Scope Boundary"
         subtitle: "Confining prediction strictly to incubator culture"
         metric: "0% Cryo Severance"
         metric_label: "Intra-Cycle Relational Linkage"
-        accent_key: "primary"
+        accent_key: "accent"
         bullets:
           - "Intra-Cycle Boundary: Connects ovarian stimulation directly to Day 5 blastocyst formation within one unsevered cycle."
-          - "Zero Cryo Risk: Completely bypasses frozen embryo inventory matching and cross-year thaw delays."
+          - "Zero Cryo Gaps: Completely bypasses frozen embryo inventory matching and cross-year thaw delays."
       - title: "2. Relational Integrity"
         subtitle: "100.0% verified table join integrity"
         metric: "328,435 Rows"
         metric_label: "100.0% Deterministic Lab Joins"
-        accent_key: "accent"
+        accent_key: "success"
         bullets:
           - "Flawless Table Joins: 328,435 of 328,435 embryo records cleanly link to retrieval cycles on (CYCLE_ID, GROUP_ID)."
           - "Zero Orphan Records: 100% referential integrity across all 17 Morula IVF clinic branches."
@@ -107,10 +107,10 @@ slides:
         subtitle: "Target variable lacks international coding"
         metric: "52.3% Unstructured"
         metric_label: "Qualitative Lab Grading Notes"
-        accent_key: "danger"
+        accent_key: "warning"
         bullets:
           - "Non-Standard Notes: 52.3% blank or arrested; 47.7% informal text ('Good', 'Moderat') with zero Gardner codes (4AA, 3BB)."
-          - "Cortex NLP Prerequisite: Snowflake Cortex AI NLP is required to standardize raw text before ML training is viable."
+          - "Cortex NLP Required: Snowflake Cortex AI NLP is required to standardize raw text before ML training is viable."
 
   # Slide 05: Operational Transformation — Cortex Pre-Consultation Copilot (Browser Mockup Container)
   - archetype: browser_mockup

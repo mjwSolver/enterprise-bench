@@ -457,9 +457,15 @@ class PitchDeckBuilder:
                     h_label = h.get("metric_label") or h.get("subtext") or ""
                     h_inits = h.get("initiatives") or h.get("bullets") or []
                     acc_k = h.get("accent_key", "accent")
-                    def_bg = "badge_blue_fill"
-                    def_tx = "badge_blue_text"
-                    if acc_k == "danger":
+                    s_tag = h.get("status_tag") or h.get("status", "IN EXECUTION")
+                    auto_bg, auto_tx = self.theme.resolve_status_badge_keys(s_tag)
+                    def_bg, def_tx = auto_bg, auto_tx
+
+                    if acc_k == "secondary" and def_bg == "badge_blue_fill":
+                        def_bg, def_tx = "badge_slate_fill", "badge_slate_text"
+                    elif acc_k == "muted" and def_bg == "badge_blue_fill":
+                        def_bg, def_tx = "badge_muted_fill", "badge_muted_text"
+                    elif acc_k == "danger":
                         def_bg, def_tx = "badge_red_fill", "badge_red_text"
                     elif acc_k == "warning":
                         def_bg, def_tx = "badge_amber_fill", "badge_amber_text"
@@ -474,7 +480,7 @@ class PitchDeckBuilder:
                         metric_label=h_label,
                         initiatives=h_inits,
                         accent_key=acc_k,
-                        status_tag=h.get("status_tag") or h.get("status", "IN EXECUTION"),
+                        status_tag=s_tag,
                         status_bg_key=h.get("status_bg_key", def_bg),
                         status_text_key=h.get("status_text_key", def_tx),
                         icon=h.get("icon"),

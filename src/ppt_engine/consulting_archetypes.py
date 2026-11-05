@@ -4574,6 +4574,119 @@ def build_card_grid_slide(
     cols = max(1, min(columns, len(items)))
     rows = max(1, (len(items) + cols - 1) // cols)
 
+    if cols == 1:
+        gap_y = Inches(0.18)
+        card_h = (total_h - (gap_y * (rows - 1))) / rows
+        for idx, itm in enumerate(items):
+            cy = content_top + idx * (card_h + gap_y)
+            cx = content_left
+            accent_rgb = theme.get_rgb(itm.accent_key)
+
+            # Card container
+            add_card(
+                slide,
+                theme,
+                cx,
+                cy,
+                total_w,
+                card_h,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+                border_width_pt=1.0,
+                force_rectangle=True,
+            )
+            # Left focus indicator bar
+            left_stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, cy, Pt(4.5), card_h)
+            left_stripe.shadow.inherit = False
+            left_stripe.fill.solid()
+            left_stripe.fill.fore_color.rgb = accent_rgb
+            left_stripe.line.fill.background()
+
+            # Left column: Title & Subtitle (w = 3.30")
+            tb_title = slide.shapes.add_textbox(cx + Inches(0.25), cy + Inches(0.10), Inches(3.30), card_h - Inches(0.20))
+            tf_title = tb_title.text_frame
+            tf_title.word_wrap = True
+            tf_title.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_title.margin_left = tf_title.margin_right = tf_title.margin_top = tf_title.margin_bottom = 0
+
+            p_t = tf_title.paragraphs[0]
+            p_t.text = itm.title
+            p_t.font.name = theme.font_family_header
+            p_t.font.size = Pt(13.0)
+            p_t.font.bold = True
+            p_t.font.color.rgb = theme.get_rgb("primary")
+
+            if itm.subtitle:
+                p_s = tf_title.add_paragraph()
+                p_s.text = itm.subtitle
+                p_s.font.name = theme.font_family
+                p_s.font.size = Pt(9.5)
+                p_s.font.color.rgb = theme.get_rgb("secondary")
+                p_s.space_before = Pt(4)
+
+            # Center column: Metric Callout Box (w = 2.65", h = 1.05")
+            met_box_x = cx + Inches(3.75)
+            met_box_w = Inches(2.65)
+            met_box_h = Inches(1.05)
+            met_box_y = cy + (card_h - met_box_h) / 2
+
+            met_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, met_box_x, met_box_y, met_box_w, met_box_h)
+            met_card.shadow.inherit = False
+            met_card.fill.solid()
+            met_card.fill.fore_color.rgb = theme.get_rgb("surface_muted")
+            met_card.line.color.rgb = theme.get_rgb("border")
+            met_card.line.width = Pt(0.75)
+
+            met_stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, met_box_x, met_box_y, Pt(3.0), met_box_h)
+            met_stripe.shadow.inherit = False
+            met_stripe.fill.solid()
+            met_stripe.fill.fore_color.rgb = accent_rgb
+            met_stripe.line.fill.background()
+
+            met_tb = slide.shapes.add_textbox(met_box_x + Inches(0.14), met_box_y + Inches(0.06), met_box_w - Inches(0.20), met_box_h - Inches(0.12))
+            met_tf = met_tb.text_frame
+            met_tf.word_wrap = True
+            met_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            met_tf.margin_left = met_tf.margin_right = met_tf.margin_top = met_tf.margin_bottom = 0
+
+            p_met = met_tf.paragraphs[0]
+            p_met.text = itm.metric or ""
+            p_met.font.name = theme.font_family_header
+            p_met.font.size = Pt(17.0)
+            p_met.font.bold = True
+            p_met.font.color.rgb = accent_rgb
+
+            if itm.metric_label:
+                p_ml = met_tf.add_paragraph()
+                p_ml.text = itm.metric_label.upper()
+                p_ml.font.name = theme.font_family_header
+                p_ml.font.size = Pt(8.0)
+                p_ml.font.bold = True
+                p_ml.font.color.rgb = theme.get_rgb("secondary")
+                p_ml.space_before = Pt(2)
+
+            # Right column: Bullets (w = 4.93")
+            bullets_x = cx + Inches(6.60)
+            bullets_w = total_w - Inches(6.80)
+            tb_b = slide.shapes.add_textbox(bullets_x, cy + Inches(0.10), bullets_w, card_h - Inches(0.20))
+            tf_b = tb_b.text_frame
+            tf_b.word_wrap = True
+            tf_b.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
+
+            for b_idx, b in enumerate(itm.bullets):
+                _add_bullet_paragraph(
+                    tf_b,
+                    b,
+                    theme.font_family,
+                    font_size_pt=10.0,
+                    font_color=theme.get_rgb("secondary"),
+                    space_before_pt=4.0 if b_idx > 0 else 0.0,
+                )
+
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
+
     gap_x = Inches(0.24)
     gap_y = Inches(0.22)
     card_w = (total_w - (gap_x * (cols - 1))) / cols

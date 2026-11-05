@@ -100,6 +100,10 @@ _PALETTE_KEY_ALIASES: Dict[str, List[str]] = {
     "badge_amber_text": ["badge_warning_text"],
     "badge_red_fill": ["badge_error_fill"],
     "badge_red_text": ["badge_error_text"],
+    "badge_slate_fill": ["badge_neutral_fill", "badge_gray_fill", "badge_secondary_fill"],
+    "badge_slate_text": ["badge_neutral_text", "badge_gray_text", "badge_secondary_text"],
+    "badge_muted_fill": ["badge_subtle_fill", "badge_light_fill"],
+    "badge_muted_text": ["badge_subtle_text", "badge_light_text"],
 }
 
 
@@ -142,6 +146,16 @@ class Theme:
             if val.startswith("#"):
                 return val.upper()
 
+        # Default fallbacks for slate/muted badges if not defined in older palettes
+        if key in ("badge_slate_fill", "badge_neutral_fill", "badge_gray_fill"):
+            return "#F1F5F9"
+        if key in ("badge_slate_text", "badge_neutral_text", "badge_gray_text"):
+            return "#334155"
+        if key in ("badge_muted_fill", "badge_subtle_fill"):
+            return "#F8FAFC"
+        if key in ("badge_muted_text", "badge_subtle_text"):
+            return "#64748B"
+
         return default.upper()
 
     def get_rgb(self, key: str, default: str = "#000000") -> RGBColor:
@@ -154,7 +168,9 @@ class Theme:
         Deterministically resolve status badge fill and text theme keys from a status label:
         - ON TRACK, EXCEEDED, PASSED, COMPLETE, SUCCESS, OPTIMAL -> badge_green_fill, badge_green_text
         - AT RISK, DELAYED, BLOCKED, FAILED, CRITICAL, BOTTLENECK -> badge_red_fill, badge_red_text
-        - IN PROGRESS, REVIEW, PENDING, PLANNED, ANALYSIS -> badge_blue_fill, badge_blue_text
+        - COMMITTED, SCALE, EXPAND, STAGED, STAGE -> badge_slate_fill, badge_slate_text
+        - PLANNED, FUTURE, HORIZON 3, VISION -> badge_muted_fill, badge_muted_text
+        - IN PROGRESS, REVIEW, PENDING, ANALYSIS, ACTIVE -> badge_blue_fill, badge_blue_text
         - Default -> badge_blue_fill, badge_blue_text
         """
         s = status.strip().upper()
@@ -166,7 +182,11 @@ class Theme:
             if "badge_amber_fill" in self.palette:
                 return ("badge_amber_fill", "badge_amber_text")
             return ("badge_red_fill", "badge_red_text")
-        elif any(k in s for k in ["PROGRESS", "REVIEW", "PENDING", "PLANNED", "ANALYSIS", "OPEN"]):
+        elif any(k in s for k in ["COMMITTED", "SCALE", "EXPAND", "STAGED", "STAGE"]):
+            return ("badge_slate_fill", "badge_slate_text")
+        elif any(k in s for k in ["PLANNED", "FUTURE", "VISION", "HORIZON 3", "EXPLORATORY"]):
+            return ("badge_muted_fill", "badge_muted_text")
+        elif any(k in s for k in ["PROGRESS", "REVIEW", "PENDING", "ANALYSIS", "OPEN", "ACTIVE", "IN EXECUTION"]):
             return ("badge_blue_fill", "badge_blue_text")
         return ("badge_blue_fill", "badge_blue_text")
 
@@ -376,7 +396,7 @@ class ThemeEngine:
                 palette={
                     "background": "#F0F9FF",
                     "surface": "#FFFFFF",
-                    "surface_muted": "#F0FDF4",
+                    "surface_muted": "#E0F2FE",
                     "border": "#BAE6FD",
                     "border_accent": "#38BDF8",
                     "primary": "#0F172A",
