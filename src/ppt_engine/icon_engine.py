@@ -10,6 +10,7 @@ import re
 import sys
 import json
 import logging
+import hashlib
 from pathlib import Path
 from typing import Optional, Union, Tuple, List, Dict, Any
 from io import BytesIO
@@ -24,6 +25,10 @@ if sys.platform == "darwin":
     for p in brew_paths:
         if os.path.exists(p) and p not in current_dyld:
             os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = f"{p}:{current_dyld}".strip(":")
+
+# Thread-safe in-memory cache for rendered icon PIL images
+_RENDERED_ICON_CACHE: dict[tuple[str, int, int, Any, int], Image.Image] = {}
+_MAX_RENDERED_ICONS = 128
 
 # Optional SVG rasterizers with priority: resvg-py -> cairosvg -> svglib
 _HAS_RESVG = False
@@ -319,6 +324,21 @@ def render_svg_to_png(
     width = size if isinstance(size, int) else size[0]
     height = size if isinstance(size, int) else size[1]
 
+    cache_key = (
+        hashlib.sha256(svg_str.encode("utf-8")).hexdigest(),
+        width,
+        height,
+        badge_bg,
+        badge_radius,
+    )
+    if cache_key in _RENDERED_ICON_CACHE:
+        cached_img = _RENDERED_ICON_CACHE[cache_key].copy()
+        if output_path:
+            out_p = Path(output_path)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            cached_img.save(str(out_p), format="PNG")
+        return cached_img
+
     img: Optional[Image.Image] = None
 
     # Priority 1: resvg-py (Native Rust engine, crisp vector rasterization)
@@ -374,7 +394,12 @@ def render_svg_to_png(
         badge_img.paste(scaled_icon, offset, mask=scaled_icon)
         img = badge_img
 
-    if output_path:
+    if img is not None:
+        if len(_RENDERED_ICON_CACHE) >= _MAX_RENDERED_ICONS:
+            _RENDERED_ICON_CACHE.pop(next(iter(_RENDERED_ICON_CACHE)))
+        _RENDERED_ICON_CACHE[cache_key] = img.copy()
+
+    if output_path and img is not None:
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
         img.save(str(out_p), format="PNG")
@@ -552,11 +577,16 @@ class IconEngine:
         svg = self.fetch_svg(identifier, color=color, theme=theme)
 
         # Default destination path if not supplied
+        color_suffix = f"_{normalize_color(color, theme=theme).lstrip('#')}" if color else ""
+        badge_suffix = f"_b{normalize_color(badge_bg).lstrip('#')}_r{badge_radius}" if badge_bg else ""
         if output_path is None:
-            color_suffix = f"_{normalize_color(color, theme=theme).lstrip('#')}" if color else ""
-            out_file = self.cache_dir / prefix / f"{name}{color_suffix}.png"
+            out_file = self.cache_dir / prefix / f"{name}{color_suffix}{badge_suffix}.png"
+            if out_file.exists() and out_file.stat().st_size > 0:
+                return out_file
         else:
             out_file = Path(output_path)
+            if out_file.exists() and out_file.stat().st_size > 0 and not save_svg:
+                return out_file
 
         out_file.parent.mkdir(parents=True, exist_ok=True)
 

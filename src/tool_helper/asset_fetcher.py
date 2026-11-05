@@ -9,6 +9,7 @@ official brand domains. Prevents synthetic/mock asset hallucination.
 from __future__ import annotations
 
 import base64
+import hashlib
 import io
 import json
 import logging
@@ -35,49 +36,62 @@ USER_AGENT = (
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
+# Thread-safe in-memory LRU rasterization cache (keyed by SHA-256 and scale)
+_SVG_RASTER_CACHE: dict[tuple[str, float], bytes] = {}
+_MAX_RASTER_CACHE_ITEMS = 256
+
 
 def rasterize_svg_bytes(raw_bytes: bytes, scale: float = 2.0) -> Optional[bytes]:
-    """Rasterizes raw SVG bytes into PNG bytes using rsvg-convert or cairosvg."""
-    rsvg_bin = shutil.which("rsvg-convert") or ("/opt/homebrew/bin/rsvg-convert" if os.path.exists("/opt/homebrew/bin/rsvg-convert") else None)
-    if rsvg_bin:
-        tmp_s_name = None
-        tmp_p_name = None
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp_s:
-                tmp_s.write(raw_bytes)
-                tmp_s_name = Path(tmp_s.name)
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_p:
-                tmp_p_name = Path(tmp_p.name)
-            cmd = [rsvg_bin, "-z", str(scale), str(tmp_s_name), "-o", str(tmp_p_name)]
-            res = subprocess.run(cmd, capture_output=True, timeout=10)
-            if res.returncode == 0 and tmp_p_name.exists() and tmp_p_name.stat().st_size > 0:
-                return tmp_p_name.read_bytes()
-        except Exception as e:
-            logger.debug(f"rsvg-convert failed: {e}")
-        finally:
-            if tmp_s_name and tmp_s_name.exists():
-                tmp_s_name.unlink(missing_ok=True)
-            if tmp_p_name and tmp_p_name.exists():
-                tmp_p_name.unlink(missing_ok=True)
+    """Rasterizes raw SVG bytes into PNG bytes using cairosvg (in-memory) or rsvg-convert, with LRU SHA-256 caching."""
+    if not raw_bytes:
+        return None
 
+    cache_key = (hashlib.sha256(raw_bytes).hexdigest(), scale)
+    if cache_key in _SVG_RASTER_CACHE:
+        return _SVG_RASTER_CACHE[cache_key]
+
+    png_bytes: Optional[bytes] = None
+
+    # Priority 1: Fast in-memory cairosvg rendering (zero disk I/O, zero subprocess)
     try:
-        import ctypes.util
-        orig_find = ctypes.util.find_library
-
-        def custom_find(name: str):
-            if name in ("cairo", "cairo-2", "libcairo-2", "cairo.2", "libcairo"):
-                for cp in ["/opt/homebrew/lib/libcairo.2.dylib", "/opt/homebrew/lib/libcairo.dylib"]:
-                    if os.path.exists(cp):
-                        return cp
-            return orig_find(name)
-
-        ctypes.util.find_library = custom_find
+        from src.ppt_engine.diagram_engine import _setup_cairo_library
+        _setup_cairo_library()
         import cairosvg
-        return cairosvg.svg2png(bytestring=raw_bytes, scale=scale)
+        png_bytes = cairosvg.svg2png(bytestring=raw_bytes, scale=scale)
     except Exception as e:
-        logger.debug(f"cairosvg failed: {e}")
+        logger.debug(f"cairosvg in-memory rasterization failed: {e}")
 
-    return None
+    # Priority 2: Headless rsvg-convert subprocess fallback
+    if not png_bytes:
+        rsvg_bin = shutil.which("rsvg-convert") or ("/opt/homebrew/bin/rsvg-convert" if os.path.exists("/opt/homebrew/bin/rsvg-convert") else None)
+        if rsvg_bin:
+            tmp_s_name = None
+            tmp_p_name = None
+            try:
+                with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp_s:
+                    tmp_s.write(raw_bytes)
+                    tmp_s_name = Path(tmp_s.name)
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_p:
+                    tmp_p_name = Path(tmp_p.name)
+                cmd = [rsvg_bin, "-z", str(scale), str(tmp_s_name), "-o", str(tmp_p_name)]
+                res = subprocess.run(cmd, capture_output=True, timeout=10)
+                if res.returncode == 0 and tmp_p_name.exists() and tmp_p_name.stat().st_size > 0:
+                    png_bytes = tmp_p_name.read_bytes()
+            except Exception as e:
+                logger.debug(f"rsvg-convert failed: {e}")
+            finally:
+                if tmp_s_name and tmp_s_name.exists():
+                    tmp_s_name.unlink(missing_ok=True)
+                if tmp_p_name and tmp_p_name.exists():
+                    tmp_p_name.unlink(missing_ok=True)
+
+    if png_bytes:
+        if len(_SVG_RASTER_CACHE) >= _MAX_RASTER_CACHE_ITEMS:
+            # Bound memory by popping oldest entry
+            _SVG_RASTER_CACHE.pop(next(iter(_SVG_RASTER_CACHE)))
+        _SVG_RASTER_CACHE[cache_key] = png_bytes
+
+    return png_bytes
 
 
 class AssetFetcher:

@@ -607,18 +607,23 @@ def build_bcg_3_horizon_slide(
         p_title.font.bold = True
         p_title.font.color.rgb = theme.get_rgb("primary")
 
-        if h_data.strategic_focus:
+        has_focus = bool(h_data.strategic_focus and h_data.strategic_focus.strip())
+        if has_focus:
             p_f = title_tf.add_paragraph()
             p_f.text = h_data.strategic_focus
             p_f.font.name = theme.font_family
             p_f.font.size = Pt(thresholds.get("caption_pt", 9.5))
             p_f.font.color.rgb = theme.get_rgb("secondary")
             p_f.space_before = Pt(3)
+            metric_top_y = row_y + (Inches(1.04) if takeaway else Inches(1.20))
+            divider_y = row_y + (Inches(1.92) if takeaway else Inches(2.16))
+        else:
+            metric_top_y = row_y + (Inches(0.86) if takeaway else Inches(1.02))
+            divider_y = row_y + (Inches(1.76) if takeaway else Inches(2.00))
 
         # ---------------------------------------------------------------------
         # 4. Open-Air Floating Hero Metric (Typographic Scale Contrast)
         # ---------------------------------------------------------------------
-        metric_top_y = row_y + (Inches(1.04) if takeaway else Inches(1.20))
         metric_h = Inches(0.72)
         m_tb = slide.shapes.add_textbox(cx + pad_x, metric_top_y, content_w, metric_h)
         m_tf = m_tb.text_frame
@@ -647,7 +652,6 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         # 5. Subtle Editorial Hairline Divider
         # ---------------------------------------------------------------------
-        divider_y = row_y + (Inches(1.92) if takeaway else Inches(2.16))
         div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + pad_x, divider_y, content_w, Pt(0.75))
         div.shadow.inherit = False
         div.fill.solid()
@@ -1803,28 +1807,14 @@ def build_cover_slide(
     vendor_x = Inches(10.90)
     vendor_w = Inches(1.633)
 
-    # 5a. Client Slot (Custom image if provided; elegant typographic wordmark by default)
+    # 5a. Client Slot (Custom image if provided; omitted when no asset to avoid duplicating PREPARED FOR text)
     if resolved_client_logo:
         _add_contained_image(slide, resolved_client_logo, client_x, slot_y, client_w, slot_h)
-    else:
-        c_box = slide.shapes.add_textbox(client_x, slot_y + Inches(0.05), client_w, slot_h - Inches(0.10))
-        c_tf = c_box.text_frame
-        c_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        c_tf.margin_left = c_tf.margin_right = c_tf.margin_top = c_tf.margin_bottom = 0
-        p_cb = c_tf.paragraphs[0]
-        p_cb.text = (client or "ENTERPRISE CLIENT").upper()
-        p_cb.font.name = theme.font_family_header
-        p_cb.font.size = Pt(8.5)
-        p_cb.font.bold = True
-        p_cb.alignment = PP_ALIGN.CENTER
-        p_cb.font.color.rgb = theme.get_rgb("primary")
-
-    # Separator 1: Client | Product
-    sep1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, sep1_x, slot_y + Inches(0.08), Inches(0.015), slot_h - Inches(0.16))
-    sep1.shadow.inherit = False
-    sep1.fill.solid()
-    sep1.fill.fore_color.rgb = theme.get_rgb("border")
-    sep1.line.fill.background()
+        sep1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, sep1_x, slot_y + Inches(0.08), Inches(0.015), slot_h - Inches(0.16))
+        sep1.shadow.inherit = False
+        sep1.fill.solid()
+        sep1.fill.fore_color.rgb = theme.get_rgb("border")
+        sep1.line.fill.background()
 
     # 5b. Product Slot (Official Brand Logo e.g. Snowflake)
     if resolved_product_logo:
@@ -2861,15 +2851,19 @@ def build_gap_analysis_slide(
         list_tf_l.word_wrap = True
         list_tf_l.margin_left = list_tf_l.margin_right = list_tf_l.margin_top = list_tf_l.margin_bottom = 0
 
+        n_items_l = len(left_items)
+        bullet_pt_l = 11.0 if n_items_l <= 2 else thresholds.get("bullet_pt", 10.0)
+        bullet_gap_l = 22.0 if n_items_l <= 2 else (14.0 if n_items_l == 3 else 10.5)
+
         for b_idx, item in enumerate(left_items):
             _add_bullet_paragraph(
                 list_tf_l,
                 text=item,
                 font_name=theme.font_family,
-                font_size_pt=thresholds.get("bullet_pt", 10.0),
+                font_size_pt=bullet_pt_l,
                 font_color=theme.get_rgb("secondary"),
                 lead_color=theme.get_rgb("primary"),
-                space_before_pt=10.5 if b_idx > 0 else 2.0,
+                space_before_pt=bullet_gap_l if b_idx > 0 else 4.0,
             )
 
         # 2. Center Directional Transition Arrow with Subtle Neutral Disc Frame
@@ -2952,15 +2946,19 @@ def build_gap_analysis_slide(
         list_tf_r.word_wrap = True
         list_tf_r.margin_left = list_tf_r.margin_right = list_tf_r.margin_top = list_tf_r.margin_bottom = 0
 
+        n_items_r = len(right_items)
+        bullet_pt_r = 11.0 if n_items_r <= 2 else thresholds.get("bullet_pt", 10.0)
+        bullet_gap_r = 22.0 if n_items_r <= 2 else (14.0 if n_items_r == 3 else 10.5)
+
         for b_idx, item in enumerate(right_items):
             _add_bullet_paragraph(
                 list_tf_r,
                 text=item,
                 font_name=theme.font_family,
-                font_size_pt=thresholds.get("bullet_pt", 10.0),
+                font_size_pt=bullet_pt_r,
                 font_color=theme.get_rgb("secondary"),
                 lead_color=theme.get_rgb("primary"),
-                space_before_pt=10.5 if b_idx > 0 else 2.0,
+                space_before_pt=bullet_gap_r if b_idx > 0 else 4.0,
             )
 
         # 4. Single Executive Synthesis Bar at Bottom (The ONLY focal banner)

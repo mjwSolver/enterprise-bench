@@ -38,6 +38,9 @@ Classify incoming requests into one execution lane:
   - **Calibrated 3-Tier Severity (Zero "Red Wave"):** Avoid uniform red panic states and flat monotone tables. Scale severity: Neutral Slate for unmapped keys/metadata $\to$ Amber for operational warnings $\to$ Crimson Red strictly for fatal technical blockers.
   - **Max 2 Punchy Bullets (Anti-Academic Invariant):** Eliminate dense "research paper" text columns. Limit cards to 2 bullets maximum, each starting with bold lead phrases and $\ge 10.5\text{ pt}$ typography with generous vertical breathing room.
   - **Pristine Color Hygiene:** Clean ice-blue (`#F0F9FF`/`#E0F2FE`) and crisp white surfaces; strictly eliminate muddy mint-green/yellowish tinges (`#F0FDF4`).
+  - **Zero Echo Chambers (The Anti-Paraphrase Invariant):** Takeaway bars must NEVER repeat or paraphrase the action headline or subtitle. The headline asserts the *Finding*; the takeaway bar strictly delivers the *Decision Lever / Capital Equation / So-What*. If no distinct forward-looking decision exists, omit the takeaway bar entirely.
+  - **Zero Meta-Labeling:** Never use structural framework labels as slide copy (`DIMENSION 01`, `PHASE A`, `(Complication)`, `(Finding)`). Titles and row headers must state the active technical fact or operational reality directly.
+  - **Zero Card Subtitle Echoes:** Never add a card subtitle that merely previews or summarizes the bullet points sitting directly underneath it.
   - **Centered-Block Alignment:** Container bullet lists are centered as a block (`block_cx == container.cx`) with left-aligned internal text lines.
   - **Zero Unsolicited Sub-Captions:** Never invent boilerplate captions/subtitles (e.g. "Architecture Working Group"). If not provided by user, leave empty.
 - **Semantic Colors:** Red (`#DC2626` bottleneck/defect), Amber (`#D97706` boundary/wait), Blue (`#0284C7` active flow), Green (`#16A34A` target state).

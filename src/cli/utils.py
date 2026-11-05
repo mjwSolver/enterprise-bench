@@ -61,6 +61,9 @@ def close_target_presentation(path: Path | str) -> bool:
         return False
 
     target = Path(path)
+    if not target.exists():
+        return False
+
     target_name = target.name
 
     # Check if Microsoft PowerPoint is running before executing AppleScript to avoid auto-launching it
