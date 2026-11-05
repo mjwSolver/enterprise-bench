@@ -599,7 +599,7 @@ def build_bcg_3_horizon_slide(
 
         # 5. Metric Highlight Callout Container
         metric_box_y = row_y + Inches(1.02)
-        metric_box_h = Inches(0.82)
+        metric_box_h = Inches(0.92)
         m_card = add_card(
             slide,
             theme,
@@ -632,7 +632,7 @@ def build_bcg_3_horizon_slide(
         p_mlbl = m_tf.add_paragraph()
         p_mlbl.text = h_data.metric_label
         p_mlbl.font.name = theme.font_family
-        p_mlbl.font.size = Pt(thresholds.get("caption_pt", 10.5))
+        p_mlbl.font.size = Pt(9.5)
         p_mlbl.font.color.rgb = theme.get_rgb("secondary")
         p_mlbl.space_before = Pt(2)
 
@@ -5316,10 +5316,14 @@ def build_table_slide(
     # Rows
     num_rows = len(rows)
     avail_row_h = Inches(4.70) if not footnote else Inches(4.45)
-    row_gap = Inches(0.05) if num_rows > 8 else Inches(0.07)
+    row_gap = Inches(0.04) if num_rows > 8 else (Inches(0.05) if num_rows > 5 else Inches(0.07))
     if takeaway:
-        avail_table_h = Inches(2.70) if num_rows <= 5 else Inches(3.10)
-        row_h = min(Inches(0.50), max(Inches(0.30), (avail_table_h - (num_rows - 1) * row_gap) / num_rows))
+        if footnote:
+            avail_table_h = Inches(2.95) if num_rows <= 5 else Inches(2.65)
+            row_h = min(Inches(0.54), max(Inches(0.24), (avail_table_h - (num_rows - 1) * row_gap) / num_rows))
+        else:
+            avail_table_h = Inches(3.05) if num_rows <= 5 else Inches(3.10)
+            row_h = min(Inches(0.56), max(Inches(0.28), (avail_table_h - (num_rows - 1) * row_gap) / num_rows))
     else:
         max_h = Inches(0.62) if num_rows <= 5 else Inches(0.48)
         row_h = min(max_h, max(Inches(0.28), (avail_row_h - (num_rows - 1) * row_gap) / num_rows))
@@ -5332,7 +5336,7 @@ def build_table_slide(
         "MUTUAL", "DAILY", "WEEKLY", "AS NEEDED", "OPEN", "RESOLVED"
     }
 
-    font_size_pt = 9.0 if num_rows > 9 else (9.5 if num_rows > 6 else 10.5)
+    font_size_pt = 9.0 if num_rows > 9 else (9.0 if (takeaway and num_rows >= 5) else (9.5 if num_rows > 6 else 10.0))
 
     for r_idx, row in enumerate(rows):
         cur_ry = row_start_y + r_idx * (row_h + row_gap)

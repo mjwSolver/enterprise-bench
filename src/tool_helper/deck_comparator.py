@@ -42,6 +42,11 @@ class DeckComparator:
                         empty_boxes += 1
                 if shape.has_table:
                     tables += 1
+                    for row in shape.table.rows:
+                        for cell in row.cells:
+                            cell_text = cell.text.strip()
+                            if cell_text:
+                                total_words += len(cell_text.split())
                 if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                     images += 1
 
