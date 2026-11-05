@@ -2632,51 +2632,40 @@ def build_split_hero_slide(
     for b_idx, block in enumerate(blocks):
         b_y = content_y + b_idx * block_h
 
-        # Narrative Content Text Box
-        b_tb = slide.shapes.add_textbox(right_x, b_y + Inches(0.12), right_w, block_h - Inches(0.24))
-        b_tf = b_tb.text_frame
-        b_tf.word_wrap = True
-        b_tf.margin_left = b_tf.margin_right = b_tf.margin_top = b_tf.margin_bottom = 0
+        # ---------------------------------------------------------------------
+        # Decoupled Title & Status Pill Layout (Zero Spatial Collision)
+        # ---------------------------------------------------------------------
+        has_badge = bool(block.metric_badge)
+        pill_w = Inches(1.8) if has_badge else Inches(0)
+        pill_h = Inches(0.34)
+        pill_gap = Inches(0.20) if has_badge else Inches(0)
 
-        # Row Header: Category Tag
-        p_head = b_tf.paragraphs[0]
-        if block.category_tag:
-            p_head.text = block.category_tag.upper()
-            p_head.font.name = theme.font_family_header
-            p_head.font.size = Pt(9.0)
-            p_head.font.bold = True
-            p_head.font.color.rgb = theme.get_rgb("accent")
+        title_w = right_w - pill_w - pill_gap if has_badge else right_w
+        title_h = Inches(0.48)
 
-        # Title Paragraph + Right Metric Badge
-        p_title = b_tf.add_paragraph() if block.category_tag else p_head
+        # Title Text Box (Strictly bounded to left of pill)
+        title_tb = slide.shapes.add_textbox(right_x, b_y + Inches(0.08), title_w, title_h)
+        title_tf = title_tb.text_frame
+        title_tf.word_wrap = True
+        title_tf.margin_left = title_tf.margin_right = title_tf.margin_top = title_tf.margin_bottom = 0
+
+        p_title = title_tf.paragraphs[0]
         p_title.text = block.title
         p_title.font.name = theme.font_family_header
-        p_title.font.size = Pt(14.0)
+        p_title.font.size = Pt(13.5)
         p_title.font.bold = True
         p_title.font.color.rgb = theme.get_rgb("primary")
-        if block.category_tag:
-            p_title.space_before = Pt(2)
-
-        # Description Body
-        p_desc = b_tf.add_paragraph()
-        p_desc.text = block.description
-        p_desc.font.name = theme.font_family
-        p_desc.font.size = Pt(11.0)
-        p_desc.font.color.rgb = theme.get_rgb("secondary")
-        p_desc.space_before = Pt(6)
 
         # Metric Pill on the far right (Dynamic 3-Tier Semantic Severity)
-        if block.metric_badge:
-            pill_w = Inches(1.8)
-            pill_h = Inches(0.38)
+        if has_badge and block.metric_badge:
             pill_x = right_x + right_w - pill_w
-            pill_y = b_y + Inches(0.12)
+            pill_y = b_y + Inches(0.08)
             pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, pill_x, pill_y, pill_w, pill_h)
             pill.shadow.inherit = False
             pill.fill.solid()
 
             # Dynamic 3-Tier Semantic Severity Mapping
-            b_text = (block.metric_badge or "").upper()
+            b_text = block.metric_badge.upper()
             variant = getattr(block, "badge_variant", None) or ""
 
             if variant == "danger" or any(k in b_text for k in ("DEFECT", "P1", "BLOCKER", "CRITICAL", "ERROR", "BREACH")):
@@ -2710,6 +2699,20 @@ def build_split_hero_slide(
             p_pill.font.bold = True
             p_pill.alignment = PP_ALIGN.CENTER
             p_pill.font.color.rgb = text_color
+
+        # Description Body (Placed strictly below header row across full width)
+        desc_y = b_y + Inches(0.62)
+        desc_h = block_h - (desc_y - b_y) - Inches(0.12)
+        desc_tb = slide.shapes.add_textbox(right_x, desc_y, right_w, desc_h)
+        desc_tf = desc_tb.text_frame
+        desc_tf.word_wrap = True
+        desc_tf.margin_left = desc_tf.margin_right = desc_tf.margin_top = desc_tf.margin_bottom = 0
+
+        p_desc = desc_tf.paragraphs[0]
+        p_desc.text = block.description
+        p_desc.font.name = theme.font_family
+        p_desc.font.size = Pt(10.5)
+        p_desc.font.color.rgb = theme.get_rgb("secondary")
 
         # Hairline Divider between blocks (skip after final block)
         if b_idx < n_blocks - 1:
@@ -4600,7 +4603,11 @@ def _add_bullet_paragraph(
     from pptx.oxml.xmlchemy import OxmlElement
 
     p = tf.add_paragraph()
-    clean_text = text.lstrip("•\t -*").strip()
+    clean_text = text.strip()
+    if clean_text.startswith(("•", "-", "–")):
+        clean_text = clean_text.lstrip("•-–\t ").strip()
+    elif clean_text.startswith("* ") or clean_text.startswith("*\t"):
+        clean_text = clean_text[2:].strip()
     # Strip CSS fallback lists if present (e.g. "Calibri, Helvetica, Arial...")
     clean_font = font_name.split(",")[0].strip().strip('"\'') if font_name else "Calibri"
     if not clean_font:
@@ -5114,9 +5121,10 @@ def build_card_grid_slide(
             if itm.subtitle:
                 p_sub = tf.add_paragraph()
                 p_sub.text = itm.subtitle
-                p_sub.font.name = theme.font_family
+                p_sub.font.name = theme.font_family_header
                 p_sub.font.size = Pt(9.5 if rows == 1 else 8.0)
-                p_sub.font.color.rgb = theme.get_rgb("secondary")
+                p_sub.font.bold = True
+                p_sub.font.color.rgb = accent_rgb
                 p_sub.space_before = Pt(3)
 
             met_box_y = tb_y + title_h + (Inches(0.12) if rows == 1 else Inches(0.06))
@@ -5980,12 +5988,13 @@ def build_table_slide(
                     font_size_pt=max(8.0, font_size_pt - 1.5),
                 )
             else:
-                tb = slide.shapes.add_textbox(cur_cx + Inches(0.08), cur_ry + Inches(0.02), cw - Inches(0.16), row_h - Inches(0.04))
+                is_idx_col = col.is_index or (c_idx == 0 and cell_str.isdigit())
+                tb = slide.shapes.add_textbox(cur_cx + (Inches(0.02) if is_idx_col else Inches(0.08)), cur_ry + Inches(0.02), cw - (Inches(0.04) if is_idx_col else Inches(0.16)), row_h - Inches(0.04))
                 tf = tb.text_frame
                 tf.word_wrap = True
                 tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-                tf.margin_left = Pt(6)
-                tf.margin_right = Pt(6)
+                tf.margin_left = Pt(1) if is_idx_col else Pt(6)
+                tf.margin_right = Pt(1) if is_idx_col else Pt(6)
                 tf.margin_top = Pt(2)
                 tf.margin_bottom = Pt(2)
                 p = tf.paragraphs[0]
@@ -6000,7 +6009,7 @@ def build_table_slide(
                 is_highlighted = getattr(col, "is_highlight", False)
                 dim_idx = 1 if (columns and columns[0].is_index) else 0
 
-                if col.is_index or (c_idx == 0 and cell_str.isdigit()):
+                if is_idx_col:
                     p.font.name = theme.font_family_header
                     p.font.size = Pt(font_size_pt + 0.5)
                     p.font.bold = True

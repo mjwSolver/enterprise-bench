@@ -45,8 +45,8 @@ slides:
   # Slide 03: The 8-Table Roster (Audited Data Landscape)
   - archetype: table
     tracker: "SLIDE 02 | THE CLINICAL DATA ROSTER"
-    title: "The Clinical Data Landscape: Snowflake TEST Schemas & Tables"
-    subtitle: "Empirically audited table roster across patient dimensions, surgical events, embryology facts, and outcomes."
+    title: "The Clinical Data Landscape: Snowflake Schemas & Tables"
+    subtitle: "Empirically audited against Snowflake TEST (staging); scheduled for PROD promotion upon data reconciliation."
     footnote: "*) Audited against Snowflake database TEST across staging schemas DM_JOURNEY, FACT_MNQ, FACT_SCIENTIFIC, and MARTS_CLINICAL."
     takeaway:
       badge: "DATA ARCHITECTURE LEDGER"
@@ -55,30 +55,30 @@ slides:
       description: "Dimensions (DM_PATIENT) anchor patient identities, while surgical and lab facts record discrete clinical interventions that must be reconciled deterministically."
     columns:
       - header: "No."
-        width: 0.45
+        width: 0.60
         align: "CENTER"
         is_index: true
-      - header: "Snowflake Table (TEST DB)"
-        width: 3.90
+      - header: "Snowflake Table (TEST Staging -> PROD Target)"
+        width: 3.80
         align: "LEFT"
       - header: "Clinical Stage / Role"
-        width: 1.95
+        width: 2.00
         align: "LEFT"
       - header: "Key Columns & Join Grain"
-        width: 3.80
+        width: 3.70
         align: "LEFT"
       - header: "Audited Rows"
         width: 1.633
         align: "CENTER"
         is_status: true
     rows:
-      - ["01", "DM_JOURNEY.DM_PATIENT", "Master Identity Anchor", "MR_NUMBER, GROUP_ID -> GOLDEN_ID", "226,839 Rows"]
-      - ["02", "FACT_MNQ.FACT_OPU", "Stage 1: Surgery & OPU", "CYCLE_ID, GROUP_ID, MEDICAL_RECORD_ID", "38,384 Rows"]
-      - ["03", "FACT_SCIENTIFIC.FACT_EMBRYO", "Stage 2: Embryology Lab", "CYCLE_ID, GROUP_ID, OOCYTE_NUMBER", "328,435 Rows"]
-      - ["04", "FACT_MNQ.FACT_FET", "Stage 3A: Frozen Transfer", "CYCLE_ID, GROUP_ID, DATE_FET", "38,580 Rows"]
-      - ["05", "FACT_MNQ.FACT_ET", "Stage 3B: Fresh Transfer", "CYCLE_ID, GROUP_ID, OOCYTE_NUMBER", "18,586 Rows"]
-      - ["06", "FACT_MNQ.FACT_PREGNANCY_OUTCOME", "Stage 4: Pregnancy Outcome", "CYCLE_ID, GROUP_ID, OUTCOME_DATE", "27,659 Rows"]
-      - ["07", "MARTS_CLINICAL. FACT_PATIENT_JOURNEY_AUDIT", "Gold Analytical Mart", "PATIENT_GOLDEN_RECORD_ID (1 row/pt)", "163,923 Rows"]
+      - ["1", "DM_JOURNEY.DM_PATIENT", "Master Identity Anchor", "MR_NUMBER, GROUP_ID -> GOLDEN_ID", "226,839 Rows"]
+      - ["2", "FACT_MNQ.FACT_OPU", "Stage 1: Surgery & OPU", "CYCLE_ID, GROUP_ID, MEDICAL_RECORD_ID", "38,384 Rows"]
+      - ["3", "FACT_SCIENTIFIC.FACT_EMBRYO", "Stage 2: Embryology Lab", "CYCLE_ID, GROUP_ID, OOCYTE_NUMBER", "328,435 Rows"]
+      - ["4", "FACT_MNQ.FACT_FET", "Stage 3A: Frozen Transfer", "CYCLE_ID, GROUP_ID, DATE_FET", "38,580 Rows"]
+      - ["5", "FACT_MNQ.FACT_ET", "Stage 3B: Fresh Transfer", "CYCLE_ID, GROUP_ID, OOCYTE_NUMBER", "18,586 Rows"]
+      - ["6", "FACT_MNQ.FACT_PREGNANCY_OUTCOME", "Stage 4: Pregnancy Outcome", "CYCLE_ID, GROUP_ID, OUTCOME_DATE", "27,659 Rows"]
+      - ["7", "MARTS_CLINICAL. FACT_PATIENT_JOURNEY_AUDIT", "Gold Analytical Mart", "PATIENT_GOLDEN_RECORD_ID (1 row/pt)", "163,923 Rows"]
 
   # Slide 04: The Data Reality (Card Grid: 2 Columns)
   - archetype: card_grid
@@ -87,22 +87,22 @@ slides:
     subtitle: "Patient identity integration is actively advancing, while cross-cycle treatment links require clinical workflow reconciliation."
     columns: 2
     items:
-      - title: "1. Patient 360 Master Data (Active Sync)"
-        subtitle: "Active reconciliation across regional clinics into Golden Records"
+      - title: "1. Patient 360 Master Data"
+        subtitle: "ACTIVE INTEGRATION: 226.8K Regional Clinic Profiles Under Active MDM Reconciliation"
         metric: "226.8K"
         metric_label: "REGIONAL PROFILES IN ACTIVE SYNC"
         accent_key: "primary"
         bullets:
-          - "**Master Data Management:** DE is actively reconciling regional clinic MR numbers under shared PATIENT_GOLDEN_RECORD_ID profiles."
-          - "**Active Refinements:** Current tuning focuses on multi-branch visit histories and eliminating duplicate surgical cycle drops."
-      - title: "2. Cross-Cycle Treatment Lineage (In Progress)"
-        subtitle: "Asynchronous clinical events across surgical, lab, and transfer tables"
+          - "**DE is actively reconciling clinic MR numbers** under shared PATIENT_GOLDEN_RECORD_ID profiles across branches."
+          - "**Active pipeline tuning resolves multi-branch histories** to eliminate accidental surgical cycle drops."
+      - title: "2. Cross-Cycle Treatment Lineage"
+        subtitle: "OPERATIONAL GAP: Asynchronous Freeze-All Cycles Disconnect Surgical & Outcome Lineage"
         metric: "4 Stages"
-        metric_label: "RELATIONAL LINKAGE GAP (IN PROGRESS)"
+        metric_label: "SEVERED LINEAGE (PREDICTIVE ML BLOCKED)"
         accent_key: "accent"
         bullets:
-          - "**Cryo Severance Reality:** 90–95% of treatments are Freeze-All; thawed embryos currently lack foreign keys linking to retrieval cycles."
-          - "**Follow-Up Lab Tracking:** 67.2% of transfer records have unclosed Day-14 outcomes, requiring ongoing verification with clinic IT."
+          - "**90–95% of Freeze-All cycles lack foreign keys** linking thawed embryos back to their surgical retrieval procedures."
+          - "**67.2% of transfer records have unclosed Day-14 outcomes**, leaving predictive models without ground-truth labels."
 
   # Slide 05: Root Cause Analysis (Card Grid: 3 Columns)
   - archetype: card_grid
