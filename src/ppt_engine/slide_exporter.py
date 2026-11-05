@@ -655,10 +655,13 @@ class PurePythonSlideRenderer:
                     test_line = f"{cur_line} {word}".strip() if cur_line else word
 
                 try:
-                    bbox = font.getbbox(test_line)
-                    text_w = (bbox[2] - bbox[0]) * 0.915
+                    text_w = font.getlength(test_line)
                 except Exception:
-                    text_w = len(test_line) * 8 * 0.915
+                    try:
+                        bbox = font.getbbox(test_line)
+                        text_w = float(bbox[2] - bbox[0])
+                    except Exception:
+                        text_w = len(test_line) * 8.0
 
                 if text_w <= max_width_px or (cur_line in ("", bullet_prefix)):
                     cur_line = test_line

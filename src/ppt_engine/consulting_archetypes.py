@@ -4612,7 +4612,7 @@ def build_card_grid_slide(
         p_title = tf.paragraphs[0]
         p_title.text = itm.title
         p_title.font.name = theme.font_family_header
-        p_title.font.size = Pt(10.0 if rows <= 2 else 9.0)
+        p_title.font.size = Pt(13.5 if rows == 1 else (10.0 if rows <= 2 else 9.0))
         p_title.font.bold = True
         p_title.font.color.rgb = theme.get_rgb("primary")
 
@@ -4620,18 +4620,20 @@ def build_card_grid_slide(
             p_sub = tf.add_paragraph()
             p_sub.text = itm.subtitle
             p_sub.font.name = theme.font_family
-            p_sub.font.size = Pt(8.0)
+            p_sub.font.size = Pt(10.0 if rows == 1 else 8.0)
             p_sub.font.color.rgb = theme.get_rgb("secondary")
-            p_sub.space_before = Pt(2)
+            p_sub.space_before = Pt(4 if rows == 1 else 2)
 
+        bullet_font_sz = 10.5 if rows == 1 else (7.8 if rows <= 2 else 7.2)
+        bullet_space_before = 7.0 if rows == 1 else 2.5
         for b in itm.bullets:
             _add_bullet_paragraph(
                 tf,
                 b,
                 theme.font_family,
-                font_size_pt=7.8 if rows <= 2 else 7.2,
+                font_size_pt=bullet_font_sz,
                 font_color=theme.get_rgb("secondary"),
-                space_before_pt=2.5,
+                space_before_pt=bullet_space_before,
             )
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
@@ -5435,7 +5437,7 @@ def build_table_slide(
             override_color_key=acc_key,
         )
 
-        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.18), takeaway_top + Inches(0.42), total_w - Inches(0.36), takeaway_h - Inches(0.48))
+        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.20), takeaway_top + Inches(0.42), total_w - Inches(0.50), takeaway_h - Inches(0.48))
         tf_tk = tb_tk.text_frame
         tf_tk.word_wrap = True
         tf_tk.margin_left = tf_tk.margin_right = tf_tk.margin_top = tf_tk.margin_bottom = 0
