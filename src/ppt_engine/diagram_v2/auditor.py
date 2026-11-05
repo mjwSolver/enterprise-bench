@@ -47,7 +47,7 @@ from src.ppt_engine.diagram_v2.models import (
     CANONICAL_TYPOGRAPHIC_SCALE,
     resolve_node_fonts,
 )
-from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
+from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point, SpatialIndex
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +167,9 @@ class Tier1GeometricLinter:
             effective_h = max(declared_box.h, estimated_content_h)
             self.node_boxes[n.id] = Box(declared_box.x, declared_box.y, declared_box.w, effective_h)
 
+        # Spatial acceleration index for O(N log N) node collision and obstacle queries
+        self.node_spatial_index = SpatialIndex(list(self.node_boxes.items()))
+
         for i, b in enumerate(spec.badges):
             bid = b.id or f"badge_{i}"
             self.badge_boxes[bid] = self.norm.to_pixels(b.x, b.y, b.w, b.h)
@@ -271,44 +274,44 @@ class Tier1GeometricLinter:
         """
         Detects physical intersection or insufficient gutter between entity cards.
         Enforces strict clearance halo standard (at least 14pt / 18px horizontal & vertical gutter).
+        Employs pure-Python 1D sweep-and-prune spatial indexing for O(N log N) scaling.
         """
         issues: List[AuditIssue] = []
-        items = list(self.node_boxes.items())
+        candidate_pairs = self.node_spatial_index.find_proximal_pairs(x_threshold=17.5, y_threshold=17.5)
 
-        for i, (id1, b1) in enumerate(items):
-            for id2, b2 in items[i + 1:]:
-                ox = max(0.0, min(b1.x2, b2.x2) - max(b1.x, b2.x))
-                oy = max(0.0, min(b1.y2, b2.y2) - max(b1.y, b2.y))
+        for _, id1, b1, _, id2, b2 in candidate_pairs:
+            ox = max(0.0, min(b1.x2, b2.x2) - max(b1.x, b2.x))
+            oy = max(0.0, min(b1.y2, b2.y2) - max(b1.y, b2.y))
 
-                if ox > 1.0 and oy > 1.0:
+            if ox > 1.0 and oy > 1.0:
+                issues.append(AuditIssue(
+                    severity="CRITICAL",
+                    category="NODE_COLLISION",
+                    element_id=f"{id1}_vs_{id2}",
+                    description=f"Nodes '{id1}' and '{id2}' physically overlap by {ox:.1f}px x {oy:.1f}px.",
+                    suggested_fix=f"Adjust coordinates to maintain at least 18px (0.20in / 14pt) separation between '{id1}' and '{id2}'.",
+                    coords=(min(b1.x, b2.x), min(b1.y, b2.y), max(b1.x2, b2.x2) - min(b1.x, b2.x), max(b1.y2, b2.y2) - min(b1.y, b2.y)),
+                ))
+            else:
+                # Check if nodes are in close proximity in the same row/column
+                dx = max(0.0, max(b1.x, b2.x) - min(b1.x2, b2.x2))
+                dy = max(0.0, max(b1.y, b2.y) - min(b1.y2, b2.y2))
+                if ox > 10.0 and 0.0 <= dy < 17.5:
                     issues.append(AuditIssue(
-                        severity="CRITICAL",
-                        category="NODE_COLLISION",
+                        severity="WARNING",
+                        category="INSUFFICIENT_NODE_GUTTER",
                         element_id=f"{id1}_vs_{id2}",
-                        description=f"Nodes '{id1}' and '{id2}' physically overlap by {ox:.1f}px x {oy:.1f}px.",
-                        suggested_fix=f"Adjust coordinates to maintain at least 18px (0.20in / 14pt) separation between '{id1}' and '{id2}'.",
-                        coords=(min(b1.x, b2.x), min(b1.y, b2.y), max(b1.x2, b2.x2) - min(b1.x, b2.x), max(b1.y2, b2.y2) - min(b1.y, b2.y)),
+                        description=f"Nodes '{id1}' and '{id2}' are separated vertically by only {dy:.1f}px (violates clearance halo standard: minimum 18px / 14pt gutter required).",
+                        suggested_fix="Increase vertical spacing between cards to at least 18px (0.20in / 14pt).",
                     ))
-                else:
-                    # Check if nodes are in close proximity in the same row/column
-                    dx = max(0.0, max(b1.x, b2.x) - min(b1.x2, b2.x2))
-                    dy = max(0.0, max(b1.y, b2.y) - min(b1.y2, b2.y2))
-                    if ox > 10.0 and 0.0 <= dy < 17.5:
-                        issues.append(AuditIssue(
-                            severity="WARNING",
-                            category="INSUFFICIENT_NODE_GUTTER",
-                            element_id=f"{id1}_vs_{id2}",
-                            description=f"Nodes '{id1}' and '{id2}' are separated vertically by only {dy:.1f}px (violates clearance halo standard: minimum 18px / 14pt gutter required).",
-                            suggested_fix="Increase vertical spacing between cards to at least 18px (0.20in / 14pt).",
-                        ))
-                    elif oy > 10.0 and 0.0 <= dx < 17.5:
-                        issues.append(AuditIssue(
-                            severity="WARNING",
-                            category="INSUFFICIENT_NODE_GUTTER",
-                            element_id=f"{id1}_vs_{id2}",
-                            description=f"Nodes '{id1}' and '{id2}' are separated horizontally by only {dx:.1f}px (violates clearance halo standard: minimum 18px / 14pt gutter required).",
-                            suggested_fix="Increase horizontal spacing between cards to at least 18px (0.20in / 14pt).",
-                        ))
+                elif oy > 10.0 and 0.0 <= dx < 17.5:
+                    issues.append(AuditIssue(
+                        severity="WARNING",
+                        category="INSUFFICIENT_NODE_GUTTER",
+                        element_id=f"{id1}_vs_{id2}",
+                        description=f"Nodes '{id1}' and '{id2}' are separated horizontally by only {dx:.1f}px (violates clearance halo standard: minimum 18px / 14pt gutter required).",
+                        suggested_fix="Increase horizontal spacing between cards to at least 18px (0.20in / 14pt).",
+                    ))
 
         return issues
 
@@ -734,17 +737,33 @@ class Tier1GeometricLinter:
         for b_id, b_box in self.badge_boxes.items():
             elements.append((b_id, b_box, "badge"))
 
+        elem_spatial_index = SpatialIndex([(eid, ebox) for eid, ebox, _ in elements])
+        elem_type_map = {eid: etype for eid, _, etype in elements}
+
         for c in self.spec.containers:
             c_box = self.container_boxes[c.id]
-            for elem_id, e_box, elem_type in elements:
+            c_x_min = c_box.x - threshold
+            c_x_max = c_box.x2 + threshold
+            c_y_min = c_box.y - threshold
+            c_y_max = c_box.y2 + threshold
+
+            candidate_elements = elem_spatial_index.query_range(
+                x_min=c_x_min,
+                x_max=c_x_max,
+                y_min=c_y_min,
+                y_max=c_y_max,
+            )
+
+            for elem_id, e_box in candidate_elements:
+                elem_type = elem_type_map[elem_id]
                 # If node/badge is completely inside container, skip
                 if (c_box.x + threshold < e_box.x and e_box.x2 < c_box.x2 - threshold and
                     c_box.y + threshold < e_box.y and e_box.y2 < c_box.y2 - threshold):
                     continue
 
                 # If node/badge is completely outside container, skip
-                if (e_box.x2 < c_box.x - threshold or e_box.x > c_box.x2 + threshold or
-                    e_box.y2 < c_box.y - threshold or e_box.y > c_box.y2 + threshold):
+                if (e_box.x2 < c_x_min or e_box.x > c_x_max or
+                    e_box.y2 < c_y_min or e_box.y > c_y_max):
                     continue
 
                 # Check vertical left edge (x = c_box.x)
@@ -1128,7 +1147,8 @@ class Tier1GeometricLinter:
                 continue
 
             for p1, p2 in zip(pts, pts[1:]):
-                for nid, nbox in self.node_boxes.items():
+                candidate_nodes = self.node_spatial_index.query_segment(p1, p2, margin=4.0)
+                for nid, nbox in candidate_nodes:
                     if nid == f.source or nid == f.target:
                         continue  # Connected endpoints are expected
 

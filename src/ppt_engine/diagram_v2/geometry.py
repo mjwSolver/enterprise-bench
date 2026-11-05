@@ -170,6 +170,132 @@ class Box:
         """Tests line segment intersection via Liang-Barsky parametric clipping."""
         return line_segment_intersects_box(p1, p2, self, margin=margin, min_overlap=min_overlap)
 
+    def overlap_x(self, other: Box) -> float:
+        """Computes 1D overlap along X axis (0.0 if disjoint)."""
+        return max(0.0, min(self.x2, other.x2) - max(self.x, other.x))
+
+    def overlap_y(self, other: Box) -> float:
+        """Computes 1D overlap along Y axis (0.0 if disjoint)."""
+        return max(0.0, min(self.y2, other.y2) - max(self.y, other.y))
+
+    def distance_x(self, other: Box) -> float:
+        """Computes separation distance along X axis (0.0 if overlapping)."""
+        return max(0.0, max(self.x, other.x) - min(self.x2, other.x2))
+
+    def distance_y(self, other: Box) -> float:
+        """Computes separation distance along Y axis (0.0 if overlapping)."""
+        return max(0.0, max(self.y, other.y) - min(self.y2, other.y2))
+
+
+class SpatialIndex:
+    """
+    Pure-Python 1D sweep-and-prune spatial index for accelerating geometric collision,
+    clearance, and obstacle penetration queries in Diagram Engine V2.
+
+    Maintains items sorted along the primary horizontal (X) axis with O(N log N)
+    indexing and near O(N) candidate retrieval without native C library dependencies.
+    """
+
+    def __init__(self, items: Sequence[Tuple[str, Box]]) -> None:
+        self.items: List[Tuple[str, Box]] = list(items)
+        # Store (original_index, (id, box)) sorted by box.x
+        self._sorted_by_x: List[Tuple[int, Tuple[str, Box]]] = sorted(
+            enumerate(self.items),
+            key=lambda it: it[1][1].x,
+        )
+
+    def find_proximal_pairs(
+        self,
+        x_threshold: float = 17.5,
+        y_threshold: Optional[float] = None,
+    ) -> List[Tuple[int, str, Box, int, str, Box]]:
+        """
+        1D sweep-and-prune interval test along X-axis with early breaking and Y-clearance pruning.
+        Returns candidate pairs ordered deterministically by original declaration order (idx1 < idx2).
+        """
+        if y_threshold is None:
+            y_threshold = x_threshold
+
+        candidates: List[Tuple[int, str, Box, int, str, Box]] = []
+        n = len(self._sorted_by_x)
+
+        for i in range(n):
+            orig_i, (id1, b1) = self._sorted_by_x[i]
+            b1_x2_thresh = b1.x2 + x_threshold
+            b1_y = b1.y
+            b1_y2 = b1.y2
+
+            for j in range(i + 1, n):
+                orig_j, (id2, b2) = self._sorted_by_x[j]
+                # Sweep-and-prune cutoff: all subsequent boxes have b2.x >= current b2.x
+                if b2.x >= b1_x2_thresh:
+                    break
+
+                # Prune if vertical clearance exceeds y_threshold
+                if (b2.y - b1_y2 >= y_threshold) or (b1_y - b2.y2 >= y_threshold):
+                    continue
+
+                # Preserve canonical declaration order
+                if orig_i < orig_j:
+                    candidates.append((orig_i, id1, b1, orig_j, id2, b2))
+                else:
+                    candidates.append((orig_j, id2, b2, orig_i, id1, b1))
+
+        # Deterministic sorting matching original pairwise iteration order
+        candidates.sort(key=lambda c: (c[0], c[3]))
+        return candidates
+
+    def query_segment(
+        self,
+        p1: Point,
+        p2: Point,
+        margin: float = 0.0,
+    ) -> List[Tuple[str, Box]]:
+        """
+        Queries boxes whose bounding box overlaps segment (p1->p2) with margin.
+        Prunes all boxes once box.x + margin exceeds segment max X.
+        """
+        seg_min_x = min(p1[0], p2[0])
+        seg_max_x = max(p1[0], p2[0])
+        seg_min_y = min(p1[1], p2[1])
+        seg_max_y = max(p1[1], p2[1])
+
+        results: List[Tuple[str, Box]] = []
+        for orig_i, (nid, nbox) in self._sorted_by_x:
+            if nbox.x + margin > seg_max_x:
+                break
+            if nbox.x2 - margin < seg_min_x:
+                continue
+            if nbox.y + margin > seg_max_y or nbox.y2 - margin < seg_min_y:
+                continue
+            results.append((nid, nbox))
+
+        return results
+
+    def query_range(
+        self,
+        x_min: float,
+        x_max: float,
+        y_min: Optional[float] = None,
+        y_max: Optional[float] = None,
+    ) -> List[Tuple[str, Box]]:
+        """
+        Queries boxes overlapping [x_min, x_max] with optional Y filtering.
+        Prunes all boxes once box.x exceeds x_max.
+        """
+        results: List[Tuple[str, Box]] = []
+        for orig_i, (nid, nbox) in self._sorted_by_x:
+            if nbox.x > x_max:
+                break
+            if nbox.x2 < x_min:
+                continue
+            if y_min is not None and nbox.y2 < y_min:
+                continue
+            if y_max is not None and nbox.y > y_max:
+                continue
+            results.append((nid, nbox))
+        return results
+
 
 class GeometryNormalizer:
     """

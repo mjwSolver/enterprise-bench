@@ -14,14 +14,14 @@ from src.core.pii.models import PiiCategory, PiiConfidence, PiiMatch, TextNode
 
 # Default enterprise organization & role dictionary for seeded templates
 DEFAULT_ORGANIZATION_RULES: List[Tuple[str, str]] = [
-    (r"\bPT\.?[\s\u00a0]+Toyota[\s\u00a0]+Ts?h?usho[\s\u00a0]+Indonesia\b", "{{ client_company }}"),
-    (r"\bToyota[\s\u00a0]+Ts?h?usho[\s\u00a0]+Indonesia\b", "{{ client_company }}"),
-    (r"\bToyota[\s\u00a0]+(Ts?h?usho|Susho)\b", "{{ client_short_name }}"),
+    (r"\bPT\.?[\s\u00a0]{1,10}Toyota[\s\u00a0]{1,10}Ts?h?usho[\s\u00a0]{1,10}Indonesia\b", "{{ client_company }}"),
+    (r"\bToyota[\s\u00a0]{1,10}Ts?h?usho[\s\u00a0]{1,10}Indonesia\b", "{{ client_company }}"),
+    (r"\bToyota[\s\u00a0]{1,10}(Ts?h?usho|Susho)\b", "{{ client_short_name }}"),
     (r"\b(Toyota|Tsusho|Tshuso)\b", "{{ client_short_name }}"),
     (r"(?<![A-Za-z0-9])TTLC(?![A-Za-z0-9])", "{{ client_abbr }}"),
     (r"(?<![A-Za-z0-9])TTI(?![A-Za-z0-9])", "{{ client_abbr }}"),
-    (r"\bPT\.?[\s\u00a0]+Mitra[\s\u00a0]+Integrasi[\s\u00a0]+Informatika\b", "{{ vendor_company }}"),
-    (r"\bMitra[\s\u00a0]+Integrasi[\s\u00a0]+Informatika\b", "{{ vendor_company }}"),
+    (r"\bPT\.?[\s\u00a0]{1,10}Mitra[\s\u00a0]{1,10}Integrasi[\s\u00a0]{1,10}Informatika\b", "{{ vendor_company }}"),
+    (r"\bMitra[\s\u00a0]{1,10}Integrasi[\s\u00a0]{1,10}Informatika\b", "{{ vendor_company }}"),
     (r"\bMetrodata\b", "{{ vendor_group }}"),
     (r"\bMII\b", "{{ vendor_abbr }}"),
     (r"\bSnowflake\b", "{{ tech_partner }}"),
@@ -29,20 +29,20 @@ DEFAULT_ORGANIZATION_RULES: List[Tuple[str, str]] = [
 
 # Known person names present in seeded templates (for dictionary-based matching)
 DEFAULT_KNOWN_PERSONS: List[Tuple[str, str]] = [
-    (r"\bTadahiko[\s\u00a0]+Onaka\b", "{{ client_exec_name }}"),
+    (r"\bTadahiko[\s\u00a0]{1,10}Onaka\b", "{{ client_exec_name }}"),
     (r"\bMulyanah\b", "{{ client_pm_name }}"),
-    (r"\bFredric[\s\u00a0]+Retanubun\b", "{{ client_lead_name }}"),
-    (r"\bAndri[\s\u00a0]+Agusman\b", "{{ client_engineer_1 }}"),
-    (r"\bAgung[\s\u00a0]+Rachman\b", "{{ client_engineer_2 }}"),
-    (r"\bAnisah[\s\u00a0]+Pratiwi\b", "{{ client_engineer_3 }}"),
-    (r"\bDebby[\s\u00a0]+Lutfi[\s\u00a0]+Adria?nto\b", "{{ client_analyst_1 }}"),
-    (r"\bAndri[\s\u00a0]+Setiawan\b", "{{ client_analyst_2 }}"),
-    (r"\bAgus[\s\u00a0]+Pramono\b", "{{ vendor_pm_name }}"),
-    (r"\bArif[\s\u00a0]+Nanda[\s\u00a0]+Hermawan\b", "{{ client_exec_name }}"),
-    (r"\bAdam[\s\u00a0]+Wijaya\b", "{{ vendor_lead_name }}"),
-    (r"\bVicko[\s\u00a0]+Bhayyu\b", "{{ vendor_consultant_name }}"),
-    (r"\bLaura[\s\u00a0]+Veneskey\b", "{{ vendor_author_name }}"),
-    (r"\bGolden[\s\u00a0]+Ray[\s\u00a0]+Setiawan\b", "{{ vendor_contributor_name }}"),
+    (r"\bFredric[\s\u00a0]{1,10}Retanubun\b", "{{ client_lead_name }}"),
+    (r"\bAndri[\s\u00a0]{1,10}Agusman\b", "{{ client_engineer_1 }}"),
+    (r"\bAgung[\s\u00a0]{1,10}Rachman\b", "{{ client_engineer_2 }}"),
+    (r"\bAnisah[\s\u00a0]{1,10}Pratiwi\b", "{{ client_engineer_3 }}"),
+    (r"\bDebby[\s\u00a0]{1,10}Lutfi[\s\u00a0]{1,10}Adria?nto\b", "{{ client_analyst_1 }}"),
+    (r"\bAndri[\s\u00a0]{1,10}Setiawan\b", "{{ client_analyst_2 }}"),
+    (r"\bAgus[\s\u00a0]{1,10}Pramono\b", "{{ vendor_pm_name }}"),
+    (r"\bArif[\s\u00a0]{1,10}Nanda[\s\u00a0]{1,10}Hermawan\b", "{{ client_exec_name }}"),
+    (r"\bAdam[\s\u00a0]{1,10}Wijaya\b", "{{ vendor_lead_name }}"),
+    (r"\bVicko[\s\u00a0]{1,10}Bhayyu\b", "{{ vendor_consultant_name }}"),
+    (r"\bLaura[\s\u00a0]{1,10}Veneskey\b", "{{ vendor_author_name }}"),
+    (r"\bGolden[\s\u00a0]{1,10}Ray[\s\u00a0]{1,10}Setiawan\b", "{{ vendor_contributor_name }}"),
 ]
 
 

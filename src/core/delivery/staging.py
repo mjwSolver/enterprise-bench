@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import mimetypes
+import shutil
 import uuid
 import zipfile
 from datetime import datetime, timezone
@@ -41,6 +42,57 @@ def _compute_sha256(file_path: Path) -> str:
         return hasher.hexdigest()
 
 
+def safe_extract_archive(
+    archive_path: Union[str, Path],
+    target_dir: Union[str, Path],
+) -> List[Path]:
+    """
+    Safely extracts a zip archive guarding against Zip Slip / path traversal attacks.
+    
+    Verifies that all archive member destinations resolve strictly inside target_dir.
+    Raises DeliveryError if an archive contains path traversal or absolute references.
+    """
+    archive_p = Path(archive_path).resolve()
+    target_d = Path(target_dir).resolve()
+
+    if not archive_p.exists() or not archive_p.is_file():
+        raise DeliveryError(f"Archive file not found: '{archive_p}'")
+    if not zipfile.is_zipfile(archive_p):
+        raise DeliveryError(f"File is not a valid zip archive: '{archive_p}'")
+
+    target_d.mkdir(parents=True, exist_ok=True)
+    extracted_files: List[Path] = []
+
+    with zipfile.ZipFile(archive_p, "r") as zf:
+        for member in zf.infolist():
+            member_p = Path(member.filename)
+            if (
+                member_p.is_absolute()
+                or ".." in member_p.parts
+                or member.filename.startswith(("/", "\\"))
+                or (len(member.filename) > 1 and member.filename[1] == ":")
+            ):
+                raise DeliveryError(
+                    f"Zip Slip / Path traversal attack detected in member '{member.filename}'"
+                )
+
+            dest_path = (target_d / member_p).resolve()
+            if not dest_path.is_relative_to(target_d):
+                raise DeliveryError(
+                    f"Zip Slip / Path traversal escape detected: '{dest_path}' outside '{target_d}'"
+                )
+
+            if member.is_dir():
+                dest_path.mkdir(parents=True, exist_ok=True)
+            else:
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(member) as src, open(dest_path, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                extracted_files.append(dest_path)
+
+    return extracted_files
+
+
 class StagingPipeline:
     """
     Automates preflight validation and delivery manifest generation.
@@ -53,6 +105,14 @@ class StagingPipeline:
     ) -> None:
         self.lock_mgr = lock_manager or LockManager()
         self.overlay_mgr = overlay_manager or OverlayManager()
+
+    def extract_archive(
+        self,
+        archive_path: Union[str, Path],
+        target_dir: Union[str, Path],
+    ) -> List[Path]:
+        """Safely extracts deliverables from an archive with Zip Slip protection."""
+        return safe_extract_archive(archive_path, target_dir)
 
     def run_preflight(
         self,
@@ -179,6 +239,19 @@ class StagingPipeline:
                             bad_member = zf.testzip()
                             if bad_member is not None:
                                 corrupted_archives.append(f"{f.name} (corrupt member: {bad_member})")
+                            else:
+                                for member in zf.infolist():
+                                    member_p = Path(member.filename)
+                                    if (
+                                        member_p.is_absolute()
+                                        or ".." in member_p.parts
+                                        or member.filename.startswith(("/", "\\"))
+                                        or (len(member.filename) > 1 and member.filename[1] == ":")
+                                    ):
+                                        corrupted_archives.append(
+                                            f"{f.name} (unsafe archive entry / path traversal: {member.filename})"
+                                        )
+                                        break
                     except Exception as zerr:
                         corrupted_archives.append(f"{f.name} ({zerr})")
 

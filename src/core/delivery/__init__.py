@@ -31,7 +31,7 @@ from src.core.delivery.models import (
     SyncStatus,
 )
 from src.core.delivery.overlays import OverlayManager
-from src.core.delivery.staging import StagingPipeline
+from src.core.delivery.staging import StagingPipeline, safe_extract_archive
 from src.core.delivery.sync import (
     RemoteSyncEngine,
     discover_google_drive_mounts,
@@ -43,6 +43,7 @@ __all__ = [
     "LockManager",
     "OverlayManager",
     "StagingPipeline",
+    "safe_extract_archive",
     "RemoteSyncEngine",
     "discover_google_drive_mounts",
     "resolve_target_drive_root",

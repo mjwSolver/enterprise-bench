@@ -64,6 +64,28 @@ _CODE_FENCE_RE = re.compile(r"^(`{3,})(.*)$")
 # OpenXML XML Helper Functions
 # ============================================================================
 
+_QN_W_TCBORDERS = qn("w:tcBorders")
+_INSERT_BEFORE_TCBORDERS = ("w:shd", "w:noWrap", "w:tcMar", "w:textDirection", "w:tcFitText", "w:vAlign")
+_TC_BORDERS_CACHE: Dict[Tuple[Any, ...], Any] = {}
+
+_FLD_CHAR_BEGIN = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="begin"/>')
+_INSTR_TEXT = parse_xml(f'<w:instrText {nsdecls("w")} xml:space="preserve"> PAGE </w:instrText>')
+_FLD_CHAR_SEP = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="separate"/>')
+_FLD_CHAR_END = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="end"/>')
+
+_STATUS_BADGES: Dict[str, Dict[str, Any]] = {
+    "PASSED": {"bg": "DCFCE7", "color": RGBColor(21, 128, 61)},   # Green
+    "PASS": {"bg": "DCFCE7", "color": RGBColor(21, 128, 61)},
+    "APPROVED": {"bg": "DCFCE7", "color": RGBColor(21, 128, 61)},
+    "FAILED": {"bg": "FEE2E2", "color": RGBColor(185, 28, 28)},   # Red
+    "FAIL": {"bg": "FEE2E2", "color": RGBColor(185, 28, 28)},
+    "REJECTED": {"bg": "FEE2E2", "color": RGBColor(185, 28, 28)},
+    "PENDING": {"bg": "FEF3C7", "color": RGBColor(180, 83, 9)},   # Amber
+    "IN PROGRESS": {"bg": "FEF3C7", "color": RGBColor(180, 83, 9)},
+    "BLOCKED": {"bg": "F3E8FF", "color": RGBColor(107, 33, 168)},  # Purple
+}
+
+
 def _set_cell_borders(
     cell: _Cell,
     top: Optional[Dict[str, Any]] = None,
@@ -73,43 +95,48 @@ def _set_cell_borders(
 ) -> None:
     """Apply custom OpenXML borders to a table cell."""
     tcPr = cell._tc.get_or_add_tcPr()
-    existing_borders = tcPr.find(qn("w:tcBorders"))
+    existing_borders = tcPr.find(_QN_W_TCBORDERS)
     if existing_borders is not None:
         tcPr.remove(existing_borders)
-    tcBorders = parse_xml(f'<w:tcBorders {nsdecls("w")}/>')
 
-    borders = [("top", top), ("bottom", bottom), ("left", left), ("right", right)]
-    for edge_name, edge_cfg in borders:
-        if edge_cfg is None:
-            tag = f'<w:{edge_name} {nsdecls("w")} w:val="none"/>'
-        elif edge_cfg == "nil":
-            tag = f'<w:{edge_name} {nsdecls("w")} w:val="nil"/>'
-        elif isinstance(edge_cfg, dict):
-            val = edge_cfg.get("val", "single")
-            sz = edge_cfg.get("sz", 4)
-            space = edge_cfg.get("space", 0)
-            color = edge_cfg.get("color", "auto")
-            tag = f'<w:{edge_name} {nsdecls("w")} w:val="{val}" w:sz="{sz}" w:space="{space}" w:color="{color}"/>'
-        else:
-            continue
-        tcBorders.append(parse_xml(tag))
+    def _freeze_cfg(cfg: Any) -> Any:
+        if isinstance(cfg, dict):
+            return tuple(sorted(cfg.items()))
+        return cfg
+
+    cache_key = (_freeze_cfg(top), _freeze_cfg(bottom), _freeze_cfg(left), _freeze_cfg(right))
+    tcBorders = _TC_BORDERS_CACHE.get(cache_key)
+    if tcBorders is None:
+        tcBorders = parse_xml(f'<w:tcBorders {nsdecls("w")}/>')
+        borders = [("top", top), ("bottom", bottom), ("left", left), ("right", right)]
+        for edge_name, edge_cfg in borders:
+            if edge_cfg is None:
+                tag = f'<w:{edge_name} {nsdecls("w")} w:val="none"/>'
+            elif edge_cfg == "nil":
+                tag = f'<w:{edge_name} {nsdecls("w")} w:val="nil"/>'
+            elif isinstance(edge_cfg, dict):
+                val = edge_cfg.get("val", "single")
+                sz = edge_cfg.get("sz", 4)
+                space = edge_cfg.get("space", 0)
+                color = edge_cfg.get("color", "auto")
+                tag = f'<w:{edge_name} {nsdecls("w")} w:val="{val}" w:sz="{sz}" w:space="{space}" w:color="{color}"/>'
+            else:
+                continue
+            tcBorders.append(parse_xml(tag))
+        _TC_BORDERS_CACHE[cache_key] = tcBorders
 
     tcPr.insert_element_before(
-        tcBorders,
-        "w:shd", "w:noWrap", "w:tcMar", "w:textDirection", "w:tcFitText", "w:vAlign",
+        tcBorders.__copy__(),
+        *_INSERT_BEFORE_TCBORDERS,
     )
 
 
 def _add_page_number_to_run(run) -> None:
     """Inject a dynamic PAGE field code into a Word run."""
-    fldChar1 = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="begin"/>')
-    instrText = parse_xml(f'<w:instrText {nsdecls("w")} xml:space="preserve"> PAGE </w:instrText>')
-    fldChar2 = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="separate"/>')
-    fldChar3 = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="end"/>')
-    run._r.append(fldChar1)
-    run._r.append(instrText)
-    run._r.append(fldChar2)
-    run._r.append(fldChar3)
+    run._r.append(_FLD_CHAR_BEGIN.__copy__())
+    run._r.append(_INSTR_TEXT.__copy__())
+    run._r.append(_FLD_CHAR_SEP.__copy__())
+    run._r.append(_FLD_CHAR_END.__copy__())
 
 
 # ============================================================================

@@ -24,6 +24,46 @@ from typing import List, Optional, Union
 import lxml.etree as etree
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+CT_NS = "http://schemas.openxmlformats.org/package/2006/content-types"
+
+
+def _get_safe_parser() -> etree.XMLParser:
+    """Returns a hardened XML parser that blocks XXE, entity expansion, and network fetching."""
+    return etree.XMLParser(
+        resolve_entities=False,
+        no_network=True,
+        dtd_validation=False,
+        load_dtd=False,
+    )
+
+
+def _unwrap_element(elem: etree._Element) -> None:
+    """Unwraps an XML element by promoting all children to its parent in place, preserving text."""
+    parent = elem.getparent()
+    if parent is None:
+        return
+    idx = parent.index(elem)
+    if elem.text:
+        if idx > 0:
+            prev = parent[idx - 1]
+            prev.tail = (prev.tail or "") + elem.text
+        else:
+            parent.text = (parent.text or "") + elem.text
+    for child in list(elem):
+        parent.insert(idx, child)
+        idx += 1
+    if elem.tail:
+        if len(elem) > 0:
+            last_child = elem[-1]
+            last_child.tail = (last_child.tail or "") + elem.tail
+        elif idx > 0:
+            prev = parent[idx - 1]
+            prev.tail = (prev.tail or "") + elem.tail
+        else:
+            parent.text = (parent.text or "") + elem.tail
+    parent.remove(elem)
 
 
 @dataclass
@@ -33,6 +73,8 @@ class PurgeReport:
     comments_removed: int = 0
     highlights_removed: int = 0
     revisions_removed: int = 0
+    macros_removed: int = 0
+    external_rels_removed: int = 0
     success: bool = True
     error_message: Optional[str] = None
     errors: List[str] = field(default_factory=list)
@@ -96,10 +138,14 @@ def purge_docx_elements(
     purge_comments: bool = True,
     purge_highlights: bool = True,
     accept_revisions: bool = True,
+    purge_macros: bool = True,
+    purge_external_rels: bool = True,
 ) -> PurgeReport:
     """
-    Safely purges review comments, text highlights, and tracked changes from a .docx file.
-    Leaves package relationships, [Content_Types].xml, and namespace declarations 100% untouched.
+    Safely purges review comments, text highlights, tracked changes, VBA macros,
+    and external relationships from a .docx / .docm file.
+    Guards against Zip Slip / path traversal and XML External Entity (XXE) attacks.
+    Leaves package relationships and namespace declarations schema-valid and intact.
     """
     src_p = Path(input_path)
     dst_p = Path(output_path) if output_path else src_p
@@ -116,19 +162,118 @@ def purge_docx_elements(
     os.close(tmp_fd)
     tmp_path = Path(tmp_path_str)
 
+    parser = _get_safe_parser()
+
     try:
         with (
             zipfile.ZipFile(src_p, "r") as zin,
             zipfile.ZipFile(tmp_path, "w", compression=zipfile.ZIP_DEFLATED) as zout,
         ):
+            # Guard against Zip Slip / Path Traversal
+            for item in zin.infolist():
+                member_p = Path(item.filename)
+                if (
+                    member_p.is_absolute()
+                    or ".." in member_p.parts
+                    or item.filename.startswith(("/", "\\"))
+                    or (len(item.filename) > 1 and item.filename[1] == ":")
+                ):
+                    raise ValueError(
+                        f"Zip Slip / Path traversal attempt detected in archive entry: {item.filename}"
+                    )
+
+            # Pre-scan .rels to discover external and macro relationship IDs
+            removed_external_rids: set[str] = set()
+            removed_macro_rids: set[str] = set()
+            if purge_external_rels or purge_macros:
+                for item in zin.infolist():
+                    if item.filename.endswith(".rels"):
+                        try:
+                            rel_root = etree.fromstring(zin.read(item.filename), parser=parser)
+                            for rel in rel_root:
+                                rel_id = rel.get("Id")
+                                target_mode = rel.get("TargetMode", "")
+                                rel_type = rel.get("Type", "")
+                                rel_target = rel.get("Target", "")
+                                if purge_external_rels and target_mode.lower() == "external":
+                                    if rel_id:
+                                        removed_external_rids.add(rel_id)
+                                if purge_macros and ("vba" in rel_type.lower() or "vbaproject" in rel_target.lower()):
+                                    if rel_id:
+                                        removed_macro_rids.add(rel_id)
+                        except Exception:
+                            pass
+
             for item in zin.infolist():
                 filename = item.filename
                 data = zin.read(filename)
 
-                # 1. Clear comments XMLs while preserving root containers & namespaces
-                if purge_comments and filename.endswith(_COMMENT_XML_SUFFIXES):
+                # Macro purging: completely strip macro binary parts
+                if purge_macros and (
+                    filename.lower().endswith("vbaproject.bin")
+                    or filename == "word/vbaProject.bin"
+                    or filename == "word/vbaData.xml"
+                    or filename.startswith("word/vba")
+                ):
+                    report.macros_removed += 1
+                    continue
+
+                # Content Types: strip macro content types and overrides
+                if purge_macros and filename == "[Content_Types].xml":
                     try:
-                        root = etree.fromstring(data)
+                        ct_root = etree.fromstring(data, parser=parser)
+                        ct_modified = False
+                        for child in list(ct_root):
+                            part_name = child.get("PartName", "").lower()
+                            content_type = child.get("ContentType", "").lower()
+                            ext = child.get("Extension", "").lower()
+                            if "vbaproject" in part_name or "vbadata" in part_name or "/word/vba" in part_name:
+                                ct_root.remove(child)
+                                ct_modified = True
+                            elif part_name == "/word/document.xml" and "macroenabled" in content_type:
+                                child.set(
+                                    "ContentType",
+                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+                                )
+                                ct_modified = True
+                            elif "vbaproject" in content_type or (ext == "bin" and "vba" in content_type):
+                                ct_root.remove(child)
+                                ct_modified = True
+                        if ct_modified:
+                            data = etree.tostring(
+                                ct_root, xml_declaration=True, encoding="utf-8", standalone=True
+                            )
+                    except Exception as err:
+                        report.errors.append(f"Failed processing {filename}: {err}")
+
+                # Relationships: strip external relationships and macro relationships
+                elif (purge_external_rels or purge_macros) and filename.endswith(".rels"):
+                    try:
+                        rel_root = etree.fromstring(data, parser=parser)
+                        rels_modified = False
+                        for rel in list(rel_root):
+                            target_mode = rel.get("TargetMode", "")
+                            rel_type = rel.get("Type", "")
+                            rel_target = rel.get("Target", "")
+                            if purge_external_rels and target_mode.lower() == "external":
+                                rel_root.remove(rel)
+                                report.external_rels_removed += 1
+                                rels_modified = True
+                            elif purge_macros and ("vba" in rel_type.lower() or "vbaproject" in rel_target.lower()):
+                                rel_root.remove(rel)
+                                report.macros_removed += 1
+                                rels_modified = True
+                        if rels_modified:
+                            data = etree.tostring(
+                                rel_root, xml_declaration=True, encoding="utf-8", standalone=True
+                            )
+                    except Exception as err:
+                        report.errors.append(f"Failed processing {filename}: {err}")
+
+                # 1. Clear comments XMLs while preserving root containers & namespaces
+                elif purge_comments and filename.endswith(_COMMENT_XML_SUFFIXES):
+                    try:
+                        root = etree.fromstring(data, parser=parser)
                         child_count = len(root)
                         if child_count > 0:
                             report.comments_removed += child_count
@@ -143,7 +288,7 @@ def purge_docx_elements(
                 # 2. Clear people.xml (reviewer and contributor identity list)
                 elif purge_comments and filename == "word/people.xml":
                     try:
-                        root = etree.fromstring(data)
+                        root = etree.fromstring(data, parser=parser)
                         if len(root) > 0:
                             for child in list(root):
                                 root.remove(child)
@@ -156,7 +301,7 @@ def purge_docx_elements(
                 # 3. Settings.xml: remove trackRevisions flag
                 elif accept_revisions and filename == "word/settings.xml":
                     try:
-                        root = etree.fromstring(data)
+                        root = etree.fromstring(data, parser=parser)
                         if root.find(f".//{{{W_NS}}}trackRevisions") is not None:
                             etree.strip_elements(root, f"{{{W_NS}}}trackRevisions", with_tail=False)
                             data = etree.tostring(
@@ -168,8 +313,16 @@ def purge_docx_elements(
                 # 4. WordprocessingML content/style parts (document, headers, footers, notes, styles, numbering)
                 elif _is_wordprocessingml_content_part(filename):
                     try:
-                        root = etree.fromstring(data)
+                        root = etree.fromstring(data, parser=parser)
                         xml_modified = False
+
+                        # If external rels were removed, unwrap referencing <w:hyperlink> elements to preserve text safely
+                        if purge_external_rels and removed_external_rids:
+                            for hl in list(root.findall(f".//{{{W_NS}}}hyperlink")):
+                                r_id = hl.get(f"{{{R_NS}}}id") or hl.get("r:id")
+                                if r_id and r_id in removed_external_rids:
+                                    _unwrap_element(hl)
+                                    xml_modified = True
 
                         # Revisions: remove deletions, format change markers, and unwrap insertions
                         if accept_revisions:
@@ -278,8 +431,10 @@ def purge_directory_elements(
     purge_comments: bool = True,
     purge_highlights: bool = True,
     accept_revisions: bool = True,
+    purge_macros: bool = True,
+    purge_external_rels: bool = True,
 ) -> List[PurgeReport]:
-    """Recursively purge comments, highlights, and revisions from all .docx files in a directory."""
+    """Recursively purge comments, highlights, revisions, macros, and external rels from all .docx files in a directory."""
     d = Path(directory_path)
     reports: List[PurgeReport] = []
     if not d.exists():
@@ -293,6 +448,8 @@ def purge_directory_elements(
             purge_comments=purge_comments,
             purge_highlights=purge_highlights,
             accept_revisions=accept_revisions,
+            purge_macros=purge_macros,
+            purge_external_rels=purge_external_rels,
         )
         reports.append(rep)
 

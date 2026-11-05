@@ -90,6 +90,14 @@ def _check_text_for_jinja(
     for match in _JINJA_TAG_RE.findall(txt):
         report.add_issue("ERROR", "UNRENDERED_BLOCK", tag_msg_fmt.format(match=match), location)
 
+    # Detect unclosed or malformed Jinja delimiters
+    residual = _JINJA_VAR_RE.sub("", txt)
+    residual = _JINJA_TAG_RE.sub("", residual)
+    if "{{" in residual:
+        report.add_issue("ERROR", "MALFORMED_TAG", "Malformed or unclosed Jinja variable tag '{{' found", location)
+    if "{%" in residual:
+        report.add_issue("ERROR", "MALFORMED_TAG", "Malformed or unclosed Jinja block tag '{%' found", location)
+
 
 def _lint_tables(
     tables: Any,
@@ -103,7 +111,13 @@ def _lint_tables(
 
     for t_idx, table in enumerate(tables):
         table_loc = f"{location_prefix}Table {t_idx + 1}"
+        if not table.rows:
+            report.add_issue("WARNING", "EMPTY_TABLE", "Table has no rows (degenerate table)", table_loc)
+            continue
         for r_idx, row in enumerate(table.rows):
+            if not row.cells:
+                report.add_issue("WARNING", "EMPTY_ROW", f"Row {r_idx + 1} has no cells (degenerate row)", table_loc)
+                continue
             for c_idx, cell in enumerate(row.cells):
                 tc_id = id(cell._tc)
                 if tc_id in seen_cells:

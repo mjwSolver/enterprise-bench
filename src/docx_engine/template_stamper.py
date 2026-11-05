@@ -144,6 +144,8 @@ class TemplateStamper:
             # Render with Jinja2 engine
             self.doc.render(ctx)
             self._rendered = True
+        except Exception as e:
+            raise ValueError(f"Jinja template rendering failed for '{self.template_path.name}': {e}") from e
         finally:
             for tmp_lp in temp_logo_files:
                 if tmp_lp.exists():

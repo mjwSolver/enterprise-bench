@@ -138,9 +138,12 @@ class DocumentInspector:
         tables_info: List[TableInfo] = []
         for t_idx, table in enumerate(self.doc.tables, start=1):
             rows = len(table.rows)
-            cols = len(table.columns) if rows > 0 else 0
+            try:
+                cols = len(table.columns) if rows > 0 else 0
+            except Exception:
+                cols = max((len(r.cells) for r in table.rows), default=0)
             headers: List[str] = []
-            if rows > 0:
+            if rows > 0 and len(table.rows[0].cells) > 0:
                 for cell in table.rows[0].cells:
                     headers.append(cell.text.strip())
 

@@ -19,6 +19,59 @@ from src.core.config import OUTPUT_DIR, get_template_path, validate_clean_path
 logger = logging.getLogger(__name__)
 
 
+def detect_cyclic_references(wb: openpyxl.Workbook) -> Dict[str, List[List[str]]]:
+    """
+    Detect circular formula dependencies within worksheets of an Excel workbook.
+    Returns a dictionary mapping worksheet title to lists of cyclic cell paths.
+    """
+    from openpyxl.formula.tokenizer import Tokenizer
+
+    coord_re = re.compile(r"^\$?[A-Za-z]+\$?[0-9]+$")
+    cycles_by_sheet: Dict[str, List[List[str]]] = {}
+
+    for ws in wb.worksheets:
+        graph: Dict[str, List[str]] = {}
+        for row in ws.iter_rows():
+            for cell in row:
+                val = cell.value
+                if isinstance(val, str) and val.startswith("="):
+                    src = cell.coordinate
+                    graph[src] = []
+                    try:
+                        tok = Tokenizer(val)
+                        for t in tok.items:
+                            if t.subtype == "RANGE":
+                                clean = t.value.replace("$", "").upper()
+                                if coord_re.match(clean):
+                                    graph[src].append(clean)
+                    except Exception:
+                        pass
+
+        visited: Dict[str, int] = {}  # 0=unvisited, 1=visiting, 2=visited
+        cycles: List[List[str]] = []
+
+        def dfs(node: str, path: List[str]) -> None:
+            visited[node] = 1
+            path.append(node)
+            for neighbor in graph.get(node, []):
+                if neighbor not in visited or visited[neighbor] == 0:
+                    dfs(neighbor, path)
+                elif visited[neighbor] == 1:
+                    cycle_start = path.index(neighbor)
+                    cycles.append(path[cycle_start:] + [neighbor])
+            path.pop()
+            visited[node] = 2
+
+        for node in list(graph.keys()):
+            if node not in visited:
+                dfs(node, [])
+
+        if cycles:
+            cycles_by_sheet[ws.title] = cycles
+
+    return cycles_by_sheet
+
+
 class CalculatorStamper:
     """
     Handles data population and calculation injection for enterprise Excel templates.

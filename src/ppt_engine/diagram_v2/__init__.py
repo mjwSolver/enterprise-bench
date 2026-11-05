@@ -23,7 +23,7 @@ from src.ppt_engine.diagram_v2.models import (
     CANONICAL_TYPOGRAPHIC_SCALE,
     resolve_node_fonts,
 )
-from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
+from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point, SpatialIndex
 from src.ppt_engine.diagram_v2.drawio_compiler import DrawIOCompiler
 from src.ppt_engine.diagram_v2.svg_compiler import SVGCompiler
 from src.ppt_engine.diagram_v2.pptx_compiler import PPTXCompiler
@@ -104,6 +104,7 @@ __all__ = [
     "GeometryNormalizer",
     "Box",
     "Point",
+    "SpatialIndex",
     "DrawIOCompiler",
     "SVGCompiler",
     "PPTXCompiler",
