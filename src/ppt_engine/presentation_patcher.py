@@ -264,29 +264,56 @@ class PresentationPatcher:
             else list(enumerate(self.prs.slides, start=1))
         )
 
-        with open(new_img, "rb") as f:
-            new_blob = f.read()
+        actual_img_path = str(new_img)
+        temp_png = None
+        if new_img.suffix.lower() == ".svg":
+            from src.tool_helper.asset_fetcher import rasterize_svg_bytes
+            svg_bytes = new_img.read_bytes()
+            png_bytes = rasterize_svg_bytes(svg_bytes)
+            if png_bytes:
+                import tempfile
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_f:
+                    tmp_f.write(png_bytes)
+                    temp_png = Path(tmp_f.name)
+                    actual_img_path = str(temp_png)
 
-        for s_idx, slide in target_slides:
-            shape = self._find_shape(slide.shapes, target_str, is_id)
-            if shape and hasattr(shape, "shape_type") and shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+        try:
+            with open(actual_img_path, "rb") as f:
+                new_blob = f.read()
+
+            for s_idx, slide in target_slides:
+                shape = self._find_shape(slide.shapes, target_str, is_id)
+                if shape and hasattr(shape, "shape_type") and shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                    try:
+                        # Update image part blob in-place via slide relationships
+                        blips = shape._element.xpath(".//a:blip")
+                        if blips:
+                            r_id = blips[0].get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed")
+                            if r_id and r_id in slide.part.rels:
+                                img_part = slide.part.related_part(r_id)
+                                img_part._blob = new_blob
+                                if hasattr(shape, "image"):
+                                    shape.image._blob = new_blob
+                                self.impacted_slides.add(s_idx)
+                                self.operations.append(f"Replaced image in shape '{target}' on Slide {s_idx}")
+                                return True
+                    except Exception as e:
+                        logger.warning(f"Failed direct blob replacement: {e}. Falling back to shape replacement.")
+
+                    from src.ppt_engine.image_engine import replace_slide_picture_shape
+                    success = replace_slide_picture_shape(slide, shape, actual_img_path, preserve_aspect_ratio=False)
+                    if success:
+                        self.impacted_slides.add(s_idx)
+                        self.operations.append(f"Substituted picture shape '{target}' on Slide {s_idx}")
+                        return True
+
+            return False
+        finally:
+            if temp_png and temp_png.exists():
                 try:
-                    # Update image part blob in-place
-                    shape.image.part._blob = new_blob
-                    self.impacted_slides.add(s_idx)
-                    self.operations.append(f"Replaced image in shape '{target}' on Slide {s_idx}")
-                    return True
-                except Exception as e:
-                    logger.warning(f"Failed direct blob replacement: {e}. Falling back to shape replacement.")
-                    left, top, width, height = shape.left, shape.top, shape.width, shape.height
-                    sp_elem = shape._element
-                    sp_elem.getparent().remove(sp_elem)
-                    slide.shapes.add_picture(str(new_img), left, top, width, height)
-                    self.impacted_slides.add(s_idx)
-                    self.operations.append(f"Substituted picture shape '{target}' on Slide {s_idx}")
-                    return True
-
-        return False
+                    temp_png.unlink()
+                except Exception:
+                    pass
 
     def _find_shape(self, shapes: Any, target_str: str, is_id: bool) -> Optional[Any]:
         for shape in shapes:

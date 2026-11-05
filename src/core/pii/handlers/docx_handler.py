@@ -61,9 +61,15 @@ class DocxHandler(BaseFormatHandler):
                 )
 
         # 2. Body Tables (handles nested tables recursively)
+        seen_extract_cells = set()
+
         def _extract_table(tbl, prefix: str):
             for r_idx, row in enumerate(tbl.rows):
                 for c_idx, cell in enumerate(row.cells):
+                    tc_id = id(cell._tc)
+                    if tc_id in seen_extract_cells:
+                        continue
+                    seen_extract_cells.add(tc_id)
                     loc = f"{prefix} > Row {r_idx + 1} Col {c_idx + 1}"
                     for p_idx, p in enumerate(cell.paragraphs):
                         t = p.text.strip()
@@ -191,10 +197,16 @@ class DocxHandler(BaseFormatHandler):
             repl_count += _clean_paragraph(p, f"Body > Paragraph {idx + 1}")
 
         # 2. Clean tables
+        seen_clean_cells = set()
+
         def _clean_table(tbl, prefix: str):
             nonlocal repl_count
             for r_idx, row in enumerate(tbl.rows):
                 for c_idx, cell in enumerate(row.cells):
+                    tc_id = id(cell._tc)
+                    if tc_id in seen_clean_cells:
+                        continue
+                    seen_clean_cells.add(tc_id)
                     loc = f"{prefix} > Row {r_idx + 1} Col {c_idx + 1}"
                     for p_idx, p in enumerate(cell.paragraphs):
                         repl_count += _clean_paragraph(p, f"{loc} > Para {p_idx + 1}")

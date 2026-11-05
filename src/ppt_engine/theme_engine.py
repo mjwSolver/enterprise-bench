@@ -21,14 +21,19 @@ from pptx.oxml.xmlchemy import OxmlElement
 # Helper: convert hex string to pptx RGBColor
 def hex_to_rgb(hex_code: str) -> RGBColor:
     """Convert a hex color string (e.g. '#2563EB' or '2563EB') to pptx RGBColor."""
+    if not hex_code or not isinstance(hex_code, str):
+        raise ValueError(f"Invalid hex color string: '{hex_code}' (expected non-empty str)")
     clean_hex = hex_code.strip().lstrip("#")
     if len(clean_hex) == 3:
         clean_hex = "".join(c * 2 for c in clean_hex)
     if len(clean_hex) != 6:
         raise ValueError(f"Invalid hex color string: '{hex_code}'")
-    r = int(clean_hex[0:2], 16)
-    g = int(clean_hex[2:4], 16)
-    b = int(clean_hex[4:6], 16)
+    try:
+        r = int(clean_hex[0:2], 16)
+        g = int(clean_hex[2:4], 16)
+        b = int(clean_hex[4:6], 16)
+    except ValueError as e:
+        raise ValueError(f"Invalid hex color string: '{hex_code}'") from e
     return RGBColor(r, g, b)
 
 
@@ -126,25 +131,31 @@ class Theme:
     # -------------------------------------------------------------------------
     def get_hex(self, key: str, default: str = "#000000") -> str:
         """Get uppercase hex color string for the given palette or diagram key."""
-        if key in self.palette:
-            return self.palette[key].upper()
+        val = self.palette.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip().upper()
 
         # Check aliases
         if key in _PALETTE_KEY_ALIASES:
             for alias in _PALETTE_KEY_ALIASES[key]:
-                if alias in self.palette:
-                    return self.palette[alias].upper()
+                alias_val = self.palette.get(alias)
+                if isinstance(alias_val, str) and alias_val.strip():
+                    return alias_val.strip().upper()
         else:
             # Check if key is an alias for a canonical key
             for canonical, aliases in _PALETTE_KEY_ALIASES.items():
-                if key in aliases and canonical in self.palette:
-                    return self.palette[canonical].upper()
+                if key in aliases:
+                    canon_val = self.palette.get(canonical)
+                    if isinstance(canon_val, str) and canon_val.strip():
+                        return canon_val.strip().upper()
 
         # Check diagram dict
         if key in self.diagram:
-            val = str(self.diagram[key])
-            if val.startswith("#"):
-                return val.upper()
+            diagram_val = self.diagram[key]
+            if isinstance(diagram_val, str):
+                diag_str = diagram_val.strip()
+                if diag_str.startswith("#"):
+                    return diag_str.upper()
 
         # Default fallbacks for slate/muted badges if not defined in older palettes
         if key in ("badge_slate_fill", "badge_neutral_fill", "badge_gray_fill"):
@@ -156,7 +167,9 @@ class Theme:
         if key in ("badge_muted_text", "badge_subtle_text"):
             return "#64748B"
 
-        return default.upper()
+        if isinstance(default, str) and default.strip():
+            return default.strip().upper()
+        return "#000000"
 
     def get_rgb(self, key: str, default: str = "#000000") -> RGBColor:
         """Get python-pptx RGBColor object for the given palette or diagram key."""
@@ -483,7 +496,7 @@ class ThemeEngine:
                 },
                 geometry={"corner_radius": 0, "enable_shadows": False, "card_border_width_pt": 1.0},
             )
-        else:
+        elif name in ("default", ""):
             return Theme(
                 name="default",
                 description="Clean Corporate: slate #1E293B, royal blue #2563EB, background #F8FAFC, surface #FFFFFF, border #E2E8F0, corner_radius 0, no shadows",
@@ -513,6 +526,8 @@ class ThemeEngine:
                 },
                 geometry={"corner_radius": 0, "enable_shadows": False, "card_border_width_pt": 1.0},
             )
+        else:
+            raise ValueError(f"Theme '{name}' not found. Available themes: {', '.join(sorted(self.list_available_themes()))}")
 
 
 # Global Engine Instance & Module-Level Conveniences

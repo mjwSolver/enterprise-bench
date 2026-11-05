@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from docxtpl import DocxTemplate, InlineImage
 from docx.shared import Inches, Mm
@@ -101,6 +101,7 @@ class TemplateStamper:
                     ctx.setdefault(key, f"[Diagram: {key}]")
 
         # Handle logo placeholders (e.g. client_logo, vendor_logo)
+        temp_logo_files: List[Path] = []
         for logo_key, fallback_label in (("client_logo", "[ CLIENT LOGO ]"), ("vendor_logo", "")):
             val = ctx.get(logo_key)
             if not val:
@@ -111,9 +112,27 @@ class TemplateStamper:
             if isinstance(val, (str, Path)):
                 img_path = Path(val)
                 suffix = img_path.suffix.lower()
-                if img_path.is_file() and suffix in _SUPPORTED_INLINE_IMAGE_EXTS:
+                target_img_path = img_path
+
+                if img_path.is_file() and suffix == ".svg":
+                    from src.tool_helper.asset_fetcher import rasterize_svg_bytes
                     try:
-                        ctx[logo_key] = InlineImage(self.doc, str(img_path), width=Inches(1.8))
+                        svg_bytes = img_path.read_bytes()
+                        png_bytes = rasterize_svg_bytes(svg_bytes)
+                        if png_bytes:
+                            import tempfile
+                            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_f:
+                                tmp_f.write(png_bytes)
+                                temp_p = Path(tmp_f.name)
+                                temp_logo_files.append(temp_p)
+                                target_img_path = temp_p
+                                suffix = ".png"
+                    except Exception as e:
+                        print(f"[Warning] Failed to rasterize SVG {logo_key}: {e}")
+
+                if target_img_path.is_file() and suffix in _SUPPORTED_INLINE_IMAGE_EXTS:
+                    try:
+                        ctx[logo_key] = InlineImage(self.doc, str(target_img_path), width=Inches(1.8))
                     except Exception as e:
                         print(f"[Warning] Failed to insert {logo_key} image: {e}")
                         ctx[logo_key] = fallback_label
@@ -121,9 +140,17 @@ class TemplateStamper:
                     # Missing or unsupported image path; prevent raw file path from rendering into text
                     ctx[logo_key] = fallback_label
 
-        # Render with Jinja2 engine
-        self.doc.render(ctx)
-        self._rendered = True
+        try:
+            # Render with Jinja2 engine
+            self.doc.render(ctx)
+            self._rendered = True
+        finally:
+            for tmp_lp in temp_logo_files:
+                if tmp_lp.exists():
+                    try:
+                        tmp_lp.unlink()
+                    except Exception:
+                        pass
 
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)

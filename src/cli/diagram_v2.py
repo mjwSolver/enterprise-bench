@@ -229,6 +229,17 @@ def audit_diagram_v2_cli(
                     all_issues.append((yf.name, iss))
             except Exception as e:
                 rprint(f"[yellow]⚠ Failed to load specification '{yf.name}':[/yellow] {e}")
+                from src.ppt_engine.diagram_v2.auditor import AuditIssue
+                all_issues.append((
+                    yf.name,
+                    AuditIssue(
+                        severity="CRITICAL",
+                        category="SPEC_LOAD_FAILURE",
+                        element_id=yf.name,
+                        description=f"Failed to parse or validate specification: {e}",
+                        suggested_fix="Fix YAML syntax or schema errors according to DiagramEngineV2 spec.",
+                    ),
+                ))
 
         # Run multi-slide bundle header verification across all loaded specs
         bundle_issues = validate_bundle_headers(loaded_specs)

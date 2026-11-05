@@ -19,12 +19,17 @@ from src.core.config import THEMES_DIR, get_theme_path
 
 def parse_hex(hex_code: str) -> Tuple[int, int, int]:
     """Parse hex string (#RRGGBB or RRGGBB) to (R, G, B) integer tuple."""
+    if not hex_code or not isinstance(hex_code, str):
+        raise ValueError(f"Invalid hex color string: '{hex_code}' (expected non-empty str)")
     clean = hex_code.strip().lstrip("#")
     if len(clean) == 3:
         clean = "".join(c * 2 for c in clean)
     if len(clean) != 6:
         raise ValueError(f"Invalid hex color string: '{hex_code}'")
-    return int(clean[0:2], 16), int(clean[2:4], 16), int(clean[4:6], 16)
+    try:
+        return int(clean[0:2], 16), int(clean[2:4], 16), int(clean[4:6], 16)
+    except ValueError as e:
+        raise ValueError(f"Invalid hex color string: '{hex_code}'") from e
 
 
 @dataclass
@@ -67,24 +72,24 @@ class EnterpriseTheme:
         with open(p, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
 
-        palette = data.get("palette", {})
-        typography = data.get("typography", {})
+        palette = data.get("palette") or {}
+        typography = data.get("typography") or {}
 
         return cls(
-            name=data.get("name", p.stem),
-            bg_color=palette.get("background", "#FFFFFF"),
-            surface_color=palette.get("surface", "#F8FAFC"),
-            text_primary=palette.get("primary", "#0F172A"),
-            text_secondary=palette.get("secondary", "#475569"),
-            text_muted=palette.get("muted", "#94A3B8"),
-            accent_primary=palette.get("accent", "#2563EB"),
-            accent_secondary=palette.get("accent_secondary", "#0284C7"),
-            success_color=palette.get("success", "#10B981"),
-            warning_color=palette.get("warning", "#F59E0B"),
-            danger_color=palette.get("danger", "#EF4444"),
-            border_color=palette.get("border", "#E2E8F0"),
-            font_header=typography.get("font_header", typography.get("font_family", "Calibri")),
-            font_body=typography.get("font_body", typography.get("font_family", "Calibri")),
+            name=data.get("name") or p.stem,
+            bg_color=palette.get("background") or "#FFFFFF",
+            surface_color=palette.get("surface") or "#F8FAFC",
+            text_primary=palette.get("primary") or "#0F172A",
+            text_secondary=palette.get("secondary") or "#475569",
+            text_muted=palette.get("muted") or "#94A3B8",
+            accent_primary=palette.get("accent") or "#2563EB",
+            accent_secondary=palette.get("accent_secondary") or "#0284C7",
+            success_color=palette.get("success") or "#10B981",
+            warning_color=palette.get("warning") or "#F59E0B",
+            danger_color=palette.get("danger") or "#EF4444",
+            border_color=palette.get("border") or "#E2E8F0",
+            font_header=typography.get("font_header") or typography.get("font_family") or "Calibri",
+            font_body=typography.get("font_body") or typography.get("font_family") or "Calibri",
             raw_data=data,
         )
 

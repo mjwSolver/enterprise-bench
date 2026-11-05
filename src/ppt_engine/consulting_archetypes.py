@@ -354,8 +354,9 @@ def add_slide_footer(
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    source: Optional[str] = None,
 ) -> None:
-    """Renders bottom divider line, confidentiality notice, and slide pagination."""
+    """Renders bottom divider line, confidentiality notice, source attribution, and slide pagination."""
     thresholds = theme.typography_thresholds
 
     # Divider line
@@ -371,12 +372,20 @@ def add_slide_footer(
     divider.fill.fore_color.rgb = theme.get_rgb("border")
     divider.line.fill.background()
 
-    # Notice text
-    tb_n = slide.shapes.add_textbox(Inches(0.8), Inches(7.12), Inches(8.0), Inches(0.25))
+    # Notice text (with optional source attribution prefix)
+    tb_n = slide.shapes.add_textbox(Inches(0.8), Inches(7.12), Inches(9.5), Inches(0.25))
     tf_n = tb_n.text_frame
     tf_n.margin_left = tf_n.margin_right = tf_n.margin_top = tf_n.margin_bottom = 0
     p_n = tf_n.paragraphs[0]
-    p_n.text = notice or "Enterprise Strategy Group  |  Confidential & Proprietary"
+
+    if source:
+        clean_src = source.strip()
+        if not clean_src.lower().startswith("source:"):
+            clean_src = f"Source: {clean_src}"
+        p_n.text = clean_src
+    else:
+        p_n.text = notice or "Enterprise Strategy Group  |  Confidential & Proprietary"
+
     p_n.font.name = theme.font_family
     p_n.font.size = Pt(thresholds.get("caption_pt", 8.5))
     p_n.font.color.rgb = theme.get_rgb("muted")
@@ -422,6 +431,8 @@ def build_bcg_3_horizon_slide(
     action_title: str = "Balanced Portfolio Allocation Fuels Core Modernization while Incubating Future Engines",
     subtitle: Optional[str] = "Phased sequencing balances near-term cash generation with disruptive 3-5 year platform bets.",
     horizons: Optional[List[HorizonColumnData]] = None,
+    takeaway: Optional[str] = None,
+    source: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
@@ -429,7 +440,7 @@ def build_bcg_3_horizon_slide(
     """
     Builds a BCG 3-Horizon Growth / Modernization Slide.
     Divides the content area into 3 structured horizon columns with metrics,
-    initiatives, and status badges.
+    initiatives, status badges, and an optional executive synthesis takeaway bar.
     """
     slide = add_slide_with_background(prs, theme)
     add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
@@ -502,7 +513,7 @@ def build_bcg_3_horizon_slide(
     row_y = Inches(2.22)
     card_w = Inches(3.72)
     card_gap = Inches(0.28)
-    card_h = Inches(4.58)
+    card_h = Inches(3.72) if takeaway else Inches(4.58)
 
     for i, h_data in enumerate(horizons[:3]):
         cx = start_x + i * (card_w + card_gap)
@@ -585,7 +596,7 @@ def build_bcg_3_horizon_slide(
         pad_x = Inches(0.28)
         content_w = card_w - Inches(0.56)
 
-        title_tb = slide.shapes.add_textbox(cx + pad_x, row_y + Inches(0.26), content_w, Inches(0.70))
+        title_tb = slide.shapes.add_textbox(cx + pad_x, row_y + Inches(0.22), content_w, Inches(0.68))
         title_tf = title_tb.text_frame
         title_tf.word_wrap = True
         title_tf.margin_left = title_tf.margin_right = title_tf.margin_top = title_tf.margin_bottom = 0
@@ -607,8 +618,8 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         # 4. Open-Air Floating Hero Metric (Typographic Scale Contrast)
         # ---------------------------------------------------------------------
-        metric_top_y = row_y + Inches(1.20)
-        metric_h = Inches(0.80)
+        metric_top_y = row_y + (Inches(1.04) if takeaway else Inches(1.20))
+        metric_h = Inches(0.72)
         m_tb = slide.shapes.add_textbox(cx + pad_x, metric_top_y, content_w, metric_h)
         m_tf = m_tb.text_frame
         m_tf.word_wrap = True
@@ -636,7 +647,7 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         # 5. Subtle Editorial Hairline Divider
         # ---------------------------------------------------------------------
-        divider_y = row_y + Inches(2.16)
+        divider_y = row_y + (Inches(1.92) if takeaway else Inches(2.16))
         div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + pad_x, divider_y, content_w, Pt(0.75))
         div.shadow.inherit = False
         div.fill.solid()
@@ -646,8 +657,8 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         # 6. Strategic Deliverables (Direct Bullet Flow, Dynamic Vertical Spacing)
         # ---------------------------------------------------------------------
-        content_top = divider_y + Inches(0.24)
-        content_h = card_h - (content_top - row_y) - Inches(0.20)
+        content_top = divider_y + (Inches(0.18) if takeaway else Inches(0.24))
+        content_h = card_h - (content_top - row_y) - Inches(0.14)
         content_tb = slide.shapes.add_textbox(
             cx + pad_x,
             content_top,
@@ -660,14 +671,14 @@ def build_bcg_3_horizon_slide(
 
         n_inits = len(h_data.initiatives)
         if n_inits <= 2:
-            bullet_size_pt = 11.0
-            bullet_space_before = 18.0
+            bullet_size_pt = 10.5 if takeaway else 11.0
+            bullet_space_before = 12.0 if takeaway else 18.0
         elif n_inits == 3:
-            bullet_size_pt = 10.5
-            bullet_space_before = 12.0
+            bullet_size_pt = 10.0 if takeaway else 10.5
+            bullet_space_before = 8.0 if takeaway else 12.0
         else:
-            bullet_size_pt = thresholds.get("bullet_pt", 10.0)
-            bullet_space_before = 7.0
+            bullet_size_pt = thresholds.get("bullet_pt", 9.5)
+            bullet_space_before = 6.0 if takeaway else 7.0
 
         for b_idx, init_item in enumerate(h_data.initiatives):
             _add_bullet_paragraph(
@@ -680,7 +691,62 @@ def build_bcg_3_horizon_slide(
                 space_before_pt=bullet_space_before if b_idx > 0 else 2.0,
             )
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    # -------------------------------------------------------------------------
+    # 7. Executive Takeaway Bar at Bottom (Harmonized Anchor)
+    # -------------------------------------------------------------------------
+    if takeaway:
+        syn_y = Inches(6.10)
+        syn_h = Inches(0.68)
+        syn_w = Inches(11.733)
+        col1_x = start_x
+
+        add_card(
+            slide,
+            theme,
+            col1_x,
+            syn_y,
+            syn_w,
+            syn_h,
+            force_rectangle=True,
+            bg_color=hex_to_rgb("#F8FAFC"),
+            border_color=hex_to_rgb("#BAE6FD"),
+            border_width_pt=0.75,
+        )
+
+        stripe_syn = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, syn_y, Inches(0.06), syn_h)
+        stripe_syn.shadow.inherit = False
+        stripe_syn.fill.solid()
+        stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
+        stripe_syn.line.fill.background()
+
+        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.22), syn_y + Inches(0.10), syn_w - Inches(0.36), syn_h - Inches(0.20))
+        syn_tf = syn_tb.text_frame
+        syn_tf.word_wrap = True
+        syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        syn_tf.margin_left = syn_tf.margin_right = syn_tf.margin_top = syn_tf.margin_bottom = 0
+        p_syn = syn_tf.paragraphs[0]
+
+        if ":" in takeaway:
+            t_lead, t_body = takeaway.split(":", 1)
+            r_tl = p_syn.add_run()
+            r_tl.text = f"{t_lead.strip()}: "
+            r_tl.font.name = theme.font_family_header
+            r_tl.font.size = Pt(10.5)
+            r_tl.font.bold = True
+            r_tl.font.color.rgb = theme.get_rgb("accent")
+
+            r_tb = p_syn.add_run()
+            r_tb.text = t_body.strip()
+            r_tb.font.name = theme.font_family
+            r_tb.font.size = Pt(10.5)
+            r_tb.font.color.rgb = theme.get_rgb("primary")
+        else:
+            p_syn.text = takeaway
+            p_syn.font.name = theme.font_family
+            p_syn.font.size = Pt(10.5)
+            p_syn.font.color.rgb = theme.get_rgb("primary")
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
     return slide
 
 
@@ -1676,12 +1742,12 @@ def build_cover_slide(
         p_sub.font.color.rgb = theme.get_rgb("secondary")
         p_sub.space_before = Pt(12)
 
-    # 4. Subtle structural baseline divider
+    # 4. Subtle structural baseline divider (flush with left margin grid)
     divider = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE,
-        Inches(1.15),
+        Inches(0.80),
         Inches(4.9),
-        Inches(11.383),
+        Inches(11.733),
         Inches(0.015),
     )
     divider.shadow.inherit = False
@@ -1737,26 +1803,21 @@ def build_cover_slide(
     vendor_x = Inches(10.90)
     vendor_w = Inches(1.633)
 
-    # 5a. Client Slot (Placeholder by default; custom image if provided)
+    # 5a. Client Slot (Custom image if provided; elegant typographic wordmark by default)
     if resolved_client_logo:
         _add_contained_image(slide, resolved_client_logo, client_x, slot_y, client_w, slot_h)
     else:
-        c_box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, client_x, slot_y + Inches(0.05), client_w, slot_h - Inches(0.10))
-        c_box.shadow.inherit = False
-        c_box.fill.solid()
-        c_box.fill.fore_color.rgb = theme.get_rgb("surface")
-        c_box.line.color.rgb = theme.get_rgb("border")
-        c_box.line.width = Pt(0.75)
+        c_box = slide.shapes.add_textbox(client_x, slot_y + Inches(0.05), client_w, slot_h - Inches(0.10))
         c_tf = c_box.text_frame
         c_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         c_tf.margin_left = c_tf.margin_right = c_tf.margin_top = c_tf.margin_bottom = 0
         p_cb = c_tf.paragraphs[0]
-        p_cb.text = "[ CLIENT LOGO ]"
+        p_cb.text = (client or "ENTERPRISE CLIENT").upper()
         p_cb.font.name = theme.font_family_header
         p_cb.font.size = Pt(8.5)
         p_cb.font.bold = True
         p_cb.alignment = PP_ALIGN.CENTER
-        p_cb.font.color.rgb = theme.get_rgb("muted")
+        p_cb.font.color.rgb = theme.get_rgb("primary")
 
     # Separator 1: Client | Product
     sep1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, sep1_x, slot_y + Inches(0.08), Inches(0.015), slot_h - Inches(0.16))
@@ -2436,6 +2497,7 @@ class SplitHeroBlock:
     description: str                        # e.g. "Automated CDC pipelines and Snowpipe streaming..."
     metric_badge: Optional[str] = None      # e.g. "+98% Latency Drop"
     category_tag: Optional[str] = None      # e.g. "STREAM 01"
+    badge_variant: Optional[str] = None     # e.g. "danger", "warning", "success", "accent"
 
 
 def build_split_hero_slide(
@@ -2448,6 +2510,7 @@ def build_split_hero_slide(
     hero_stat_label: str = "Annualized Business Value",
     hero_stat_subtext: Optional[str] = "Projected 3-year cumulative ROI with 4.2x payback across supply chain and analytics operations.",
     blocks: Optional[List[SplitHeroBlock]] = None,
+    source: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
@@ -2501,8 +2564,8 @@ def build_split_hero_slide(
         force_rectangle=True,
     )
 
-    # Inside Left Hero Card: Typographic Content
-    h_tb = slide.shapes.add_textbox(hero_x + Inches(0.28), content_y + Inches(0.32), hero_w - Inches(0.56), content_h - Inches(0.64))
+    # Inside Left Hero Card: Typographic Stat Frame
+    h_tb = slide.shapes.add_textbox(hero_x + Inches(0.28), content_y + Inches(0.32), hero_w - Inches(0.56), Inches(1.85))
     h_tf = h_tb.text_frame
     h_tf.word_wrap = True
     h_tf.margin_left = h_tf.margin_right = h_tf.margin_top = h_tf.margin_bottom = 0
@@ -2533,25 +2596,40 @@ def build_split_hero_slide(
     p_lbl.font.color.rgb = RGBColor(241, 245, 249)
     p_lbl.space_before = Pt(4)
 
-    # Hairline divider within hero card
-    p_sep = h_tf.add_paragraph()
-    p_sep.text = "—" * 28
-    p_sep.font.size = Pt(7.0)
-    p_sep.font.color.rgb = hex_to_rgb("#475569")
-    p_sep.space_before = Pt(16)
+    # Native DrawingML Hairline Divider inside hero card (replaces broken text em-dash divider)
+    hero_div_y = content_y + Inches(2.32)
+    h_div = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE,
+        hero_x + Inches(0.28),
+        hero_div_y,
+        hero_w - Inches(0.56),
+        Pt(0.75),
+    )
+    h_div.shadow.inherit = False
+    h_div.fill.solid()
+    h_div.fill.fore_color.rgb = hex_to_rgb("#334155")
+    h_div.line.fill.background()
 
-    # Subtext Narrative
+    # Subtext Narrative Frame
     if hero_stat_subtext:
-        p_sub = h_tf.add_paragraph()
+        sub_tb = slide.shapes.add_textbox(
+            hero_x + Inches(0.28),
+            hero_div_y + Inches(0.18),
+            hero_w - Inches(0.56),
+            content_h - (hero_div_y - content_y) - Inches(0.36),
+        )
+        sub_tf = sub_tb.text_frame
+        sub_tf.word_wrap = True
+        sub_tf.margin_left = sub_tf.margin_right = sub_tf.margin_top = sub_tf.margin_bottom = 0
+        p_sub = sub_tf.paragraphs[0]
         p_sub.text = hero_stat_subtext
         p_sub.font.name = theme.font_family
         p_sub.font.size = Pt(10.5)
         p_sub.font.color.rgb = hex_to_rgb("#CBD5E1")
-        p_sub.space_before = Pt(14)
 
     # 2. Right 2/3 Unbordered Narrative Detail Area
     if not blocks:
-        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
         return slide
 
     right_x = Inches(4.75)
@@ -2595,7 +2673,7 @@ def build_split_hero_slide(
         p_desc.font.color.rgb = theme.get_rgb("secondary")
         p_desc.space_before = Pt(6)
 
-        # Metric Pill on the far right (if present)
+        # Metric Pill on the far right (Dynamic 3-Tier Semantic Severity)
         if block.metric_badge:
             pill_w = Inches(1.8)
             pill_h = Inches(0.38)
@@ -2604,8 +2682,30 @@ def build_split_hero_slide(
             pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, pill_x, pill_y, pill_w, pill_h)
             pill.shadow.inherit = False
             pill.fill.solid()
-            pill.fill.fore_color.rgb = hex_to_rgb("#EFF6FF")
-            pill.line.color.rgb = theme.get_rgb("accent")
+
+            # Dynamic 3-Tier Semantic Severity Mapping
+            b_text = (block.metric_badge or "").upper()
+            variant = getattr(block, "badge_variant", None) or ""
+
+            if variant == "danger" or any(k in b_text for k in ("DEFECT", "P1", "BLOCKER", "CRITICAL", "ERROR", "BREACH")):
+                fill_color = theme.get_rgb("badge_red_fill")
+                border_color = theme.get_rgb("badge_red_text")
+                text_color = theme.get_rgb("badge_red_text")
+            elif variant == "warning" or any(k in b_text for k in ("LOCK", "WAIT", "BOTTLENECK", "WARNING", "DEBT", "RISK")):
+                fill_color = theme.get_rgb("badge_amber_fill")
+                border_color = theme.get_rgb("badge_amber_text")
+                text_color = theme.get_rgb("badge_amber_text")
+            elif variant == "success" or any(k in b_text for k in ("TARGET", "RESOLVED", "PARITY", "OPTIMAL", "SUCCESS")):
+                fill_color = theme.get_rgb("badge_green_fill")
+                border_color = theme.get_rgb("badge_green_text")
+                text_color = theme.get_rgb("badge_green_text")
+            else:
+                fill_color = theme.get_rgb("badge_blue_fill")
+                border_color = theme.get_rgb("accent")
+                text_color = theme.get_rgb("primary")
+
+            pill.fill.fore_color.rgb = fill_color
+            pill.line.color.rgb = border_color
             pill.line.width = Pt(1.0)
 
             pill_tf = pill.text_frame
@@ -2617,7 +2717,7 @@ def build_split_hero_slide(
             p_pill.font.size = Pt(9.5)
             p_pill.font.bold = True
             p_pill.alignment = PP_ALIGN.CENTER
-            p_pill.font.color.rgb = theme.get_rgb("primary")
+            p_pill.font.color.rgb = text_color
 
         # Hairline Divider between blocks (skip after final block)
         if b_idx < n_blocks - 1:
@@ -2633,7 +2733,7 @@ def build_split_hero_slide(
             div.fill.fore_color.rgb = theme.get_rgb("border")
             div.line.fill.background()
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
     return slide
 
 
@@ -2664,10 +2764,13 @@ def build_gap_analysis_slide(
     left_title: Optional[str] = None,
     left_subtitle: Optional[str] = None,
     left_items: Optional[List[str]] = None,
+    left_eyebrow: Optional[str] = None,
     right_title: Optional[str] = None,
     right_subtitle: Optional[str] = None,
     right_items: Optional[List[str]] = None,
+    right_eyebrow: Optional[str] = None,
     takeaway: Optional[str] = None,
+    source: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
@@ -2710,12 +2813,28 @@ def build_gap_analysis_slide(
             border_width_pt=0.75,
         )
 
-        tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(0.20), content_w, Inches(0.66))
+        resolved_left_raw = left_title or as_is_header
+        resolved_left_eyebrow = left_eyebrow or ("AS-IS BASELINE" if resolved_left_raw.upper().startswith("BEFORE:") else None)
+        resolved_left_title = resolved_left_raw.split(":", 1)[1].strip() if (resolved_left_eyebrow and ":" in resolved_left_raw) else resolved_left_raw
+
+        tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(0.14), content_w, Inches(0.78))
         tf_l = tb_l.text_frame
         tf_l.word_wrap = True
         tf_l.margin_left = tf_l.margin_right = tf_l.margin_top = tf_l.margin_bottom = 0
-        p_lt = tf_l.paragraphs[0]
-        p_lt.text = left_title or as_is_header
+
+        if resolved_left_eyebrow:
+            p_leye = tf_l.paragraphs[0]
+            p_leye.text = resolved_left_eyebrow.upper()
+            p_leye.font.name = theme.font_family_header
+            p_leye.font.size = Pt(8.5)
+            p_leye.font.bold = True
+            p_leye.font.color.rgb = theme.get_rgb("muted")
+            p_lt = tf_l.add_paragraph()
+            p_lt.space_before = Pt(2)
+        else:
+            p_lt = tf_l.paragraphs[0]
+
+        p_lt.text = resolved_left_title
         p_lt.font.name = theme.font_family_header
         p_lt.font.size = Pt(thresholds.get("card_title_pt", 14.0))
         p_lt.font.bold = True
@@ -2729,13 +2848,13 @@ def build_gap_analysis_slide(
             p_ls.font.color.rgb = theme.get_rgb("muted")
             p_ls.space_before = Pt(3)
 
-        div_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x + pad_x, card_y + Inches(0.90), content_w, Pt(0.75))
+        div_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x + pad_x, card_y + Inches(0.96), content_w, Pt(0.75))
         div_l.shadow.inherit = False
         div_l.fill.solid()
         div_l.fill.fore_color.rgb = hex_to_rgb("#E2E8F0")
         div_l.line.fill.background()
 
-        list_tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(1.06), content_w, card_h - Inches(1.18))
+        list_tb_l = slide.shapes.add_textbox(col1_x + pad_x, card_y + Inches(1.08), content_w, card_h - Inches(1.22))
         list_tf_l = list_tb_l.text_frame
         list_tf_l.word_wrap = True
         list_tf_l.margin_left = list_tf_l.margin_right = list_tf_l.margin_top = list_tf_l.margin_bottom = 0
@@ -2751,8 +2870,18 @@ def build_gap_analysis_slide(
                 space_before_pt=10.5 if b_idx > 0 else 2.0,
             )
 
-        # 2. Center Directional Transition Arrow (Native Vector Shape)
-        arr_dim = Inches(0.22)
+        # 2. Center Directional Transition Arrow with Subtle Neutral Disc Frame
+        disc_dim = Inches(0.40)
+        disc_x = center_x + (center_w - disc_dim) / 2
+        disc_y = card_y + (card_h - disc_dim) / 2
+        disc_shape = slide.shapes.add_shape(MSO_SHAPE.OVAL, disc_x, disc_y, disc_dim, disc_dim)
+        disc_shape.shadow.inherit = False
+        disc_shape.fill.solid()
+        disc_shape.fill.fore_color.rgb = hex_to_rgb("#F1F5F9")
+        disc_shape.line.color.rgb = hex_to_rgb("#CBD5E1")
+        disc_shape.line.width = Pt(0.75)
+
+        arr_dim = Inches(0.18)
         arr_x = center_x + (center_w - arr_dim) / 2
         arr_y = card_y + (card_h - arr_dim) / 2
         arr_shape = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, arr_x, arr_y, arr_dim, arr_dim)
@@ -2775,12 +2904,28 @@ def build_gap_analysis_slide(
             border_width_pt=1.0,
         )
 
-        tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(0.20), content_w, Inches(0.66))
+        resolved_right_raw = right_title or to_be_header
+        resolved_right_eyebrow = right_eyebrow or ("TARGET ARCHITECTURE" if resolved_right_raw.upper().startswith("AFTER:") else None)
+        resolved_right_title = resolved_right_raw.split(":", 1)[1].strip() if (resolved_right_eyebrow and ":" in resolved_right_raw) else resolved_right_raw
+
+        tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(0.14), content_w, Inches(0.78))
         tf_r = tb_r.text_frame
         tf_r.word_wrap = True
         tf_r.margin_left = tf_r.margin_right = tf_r.margin_top = tf_r.margin_bottom = 0
-        p_rt = tf_r.paragraphs[0]
-        p_rt.text = right_title or to_be_header
+
+        if resolved_right_eyebrow:
+            p_reye = tf_r.paragraphs[0]
+            p_reye.text = resolved_right_eyebrow.upper()
+            p_reye.font.name = theme.font_family_header
+            p_reye.font.size = Pt(8.5)
+            p_reye.font.bold = True
+            p_reye.font.color.rgb = theme.get_rgb("accent")
+            p_rt = tf_r.add_paragraph()
+            p_rt.space_before = Pt(2)
+        else:
+            p_rt = tf_r.paragraphs[0]
+
+        p_rt.text = resolved_right_title
         p_rt.font.name = theme.font_family_header
         p_rt.font.size = Pt(thresholds.get("card_title_pt", 14.0))
         p_rt.font.bold = True
@@ -2794,13 +2939,13 @@ def build_gap_analysis_slide(
             p_rs.font.color.rgb = theme.get_rgb("muted")
             p_rs.space_before = Pt(3)
 
-        div_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + pad_x, card_y + Inches(0.90), content_w, Pt(0.75))
+        div_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + pad_x, card_y + Inches(0.96), content_w, Pt(0.75))
         div_r.shadow.inherit = False
         div_r.fill.solid()
         div_r.fill.fore_color.rgb = hex_to_rgb("#BAE6FD")
         div_r.line.fill.background()
 
-        list_tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(1.06), content_w, card_h - Inches(1.18))
+        list_tb_r = slide.shapes.add_textbox(col2_x + pad_x, card_y + Inches(1.08), content_w, card_h - Inches(1.22))
         list_tf_r = list_tb_r.text_frame
         list_tf_r.word_wrap = True
         list_tf_r.margin_left = list_tf_r.margin_right = list_tf_r.margin_top = list_tf_r.margin_bottom = 0
@@ -2869,7 +3014,7 @@ def build_gap_analysis_slide(
             p_syn.font.size = Pt(10.5)
             p_syn.font.color.rgb = theme.get_rgb("primary")
 
-        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
         return slide
 
     # =========================================================================

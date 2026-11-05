@@ -609,33 +609,53 @@ def replace_slide_picture_shape(
     if not new_img_p.exists():
         raise FileNotFoundError(f"Replacement image not found: {new_image_path}")
 
-    # Embed image in slide relationships
-    _, rId = slide.part.get_or_add_image_part(str(new_img_p))
+    temp_png_path = None
+    actual_img_path = str(new_img_p)
+    if new_img_p.suffix.lower() == ".svg":
+        from src.tool_helper.asset_fetcher import rasterize_svg_bytes
+        svg_bytes = new_img_p.read_bytes()
+        png_bytes = rasterize_svg_bytes(svg_bytes)
+        if png_bytes:
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_f:
+                tmp_f.write(png_bytes)
+                temp_png_path = Path(tmp_f.name)
+                actual_img_path = str(temp_png_path)
 
-    # Update blip relationship embed
-    blips = shape._element.xpath(".//a:blip")
-    if not blips:
-        return False
+    try:
+        # Embed image in slide relationships
+        _, rId = slide.part.get_or_add_image_part(actual_img_path)
 
-    blips[0].set("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed", rId)
+        # Update blip relationship embed
+        blips = shape._element.xpath(".//a:blip")
+        if not blips:
+            return False
 
-    if preserve_aspect_ratio:
-        orig_w, orig_h = shape.width, shape.height
-        orig_left, orig_top = shape.left, shape.top
+        blips[0].set("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed", rId)
 
-        with Image.open(str(new_img_p)) as img:
-            img_w, img_h = img.size
+        if preserve_aspect_ratio:
+            orig_w, orig_h = shape.width, shape.height
+            orig_left, orig_top = shape.left, shape.top
 
-        scale = min(orig_w / img_w, orig_h / img_h)
-        new_w = int(img_w * scale)
-        new_h = int(img_h * scale)
+            with Image.open(actual_img_path) as img:
+                img_w, img_h = img.size
 
-        shape.left = orig_left + (orig_w - new_w) // 2
-        shape.top = orig_top + (orig_h - new_h) // 2
-        shape.width = new_w
-        shape.height = new_h
+            scale = min(orig_w / img_w, orig_h / img_h)
+            new_w = int(img_w * scale)
+            new_h = int(img_h * scale)
 
-    return True
+            shape.left = orig_left + (orig_w - new_w) // 2
+            shape.top = orig_top + (orig_h - new_h) // 2
+            shape.width = new_w
+            shape.height = new_h
+
+        return True
+    finally:
+        if temp_png_path and temp_png_path.exists():
+            try:
+                temp_png_path.unlink()
+            except Exception:
+                pass
 
 
 def substitute_presentation_images(

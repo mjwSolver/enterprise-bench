@@ -80,9 +80,9 @@ class PPTVisualLinter:
                 text = tf.text.strip()
                 para_count = len(tf.paragraphs)
                 
-                # Exclude pills (single short line) and unified headers
+                # Exclude pills (single short line) and slide header zone (y < 1.15")
                 is_pill = (w <= 1.8 and h <= 0.40 and para_count <= 1)
-                is_header = ("Current:" in text or "Proposed:" in text) and y < 1.0
+                is_header = y < 1.15
 
                 if not is_pill and not is_header and h < 3.0:
                     # Estimate text height based on font sizes and line count
@@ -118,6 +118,49 @@ class PPTVisualLinter:
                                 bbox=(x, y, w, h),
                             )
                         )
+
+        # Check Header-to-Content Clearance (detects wrapped titles pushing into cards/rails)
+        header_shapes = [
+            s for s in slide.shapes
+            if s.has_text_frame and s.top.inches < 1.10 and s.width.inches >= 8.0
+        ]
+        content_shapes = [
+            s for s in slide.shapes
+            if s.top.inches >= 1.40 and s.width.inches >= 2.0
+        ]
+        if header_shapes and content_shapes:
+            max_header_bottom = 0.0
+            for hs in header_shapes:
+                htf = hs.text_frame
+                h_top = hs.top.inches
+                h_w = hs.width.inches
+                est_h_total = 0.0
+                for hp in htf.paragraphs:
+                    fs = hp.font.size.pt if hp.font.size else 14.0
+                    cpl = max(15, int(h_w * 13))
+                    lines = max(1, (len(hp.text) + cpl - 1) // cpl)
+                    sp_before = hp.space_before.pt / 72.0 if hp.space_before else 0.0
+                    est_h_total += (fs * 1.30 * lines) / 72.0 + sp_before
+                max_header_bottom = max(max_header_bottom, h_top + est_h_total)
+
+            min_content_top = min(cs.top.inches for cs in content_shapes)
+            clearance = min_content_top - max_header_bottom
+            if clearance < 0.18:
+                issues.append(
+                    VisualIssue(
+                        slide_index=slide_idx,
+                        issue_type="HEADER_COLLISION",
+                        shape_name="Slide Header vs Content Area",
+                        severity="CRITICAL" if clearance < 0.05 else "WARNING",
+                        description=(
+                            f"Header text envelope extends to y={max_header_bottom:.2f}\" while "
+                            f"top content element begins at y={min_content_top:.2f}\" "
+                            f"(clearance: {clearance:.2f}\", minimum safe clearance: 0.20\")."
+                        ),
+                        suggested_fix="Move content down or reduce subtitle padding in add_slide_header.",
+                        bbox=(0.8, max_header_bottom, 11.73, clearance),
+                    )
+                )
 
         # Check label pill collisions with boundary edges
         for pill in pills:

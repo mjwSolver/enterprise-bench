@@ -65,9 +65,14 @@ def generate_ppt(
         build_bcg_3_horizon_slide,
         build_balanced_scorecard_slide,
     )
-    from src.ppt_engine.theme_engine import get_theme
+    from src.ppt_engine.theme_engine import get_theme, list_available_themes
 
-    active_theme = get_theme(theme)
+    try:
+        active_theme = get_theme(theme)
+    except (ValueError, FileNotFoundError) as e:
+        avail = list_available_themes()
+        rprint(f"[red]Error:[/red] Theme '{theme}' not recognized. Available themes: {', '.join(sorted(avail))}")
+        raise typer.Exit(code=1)
     out_path = Path(output) if output else OUTPUT_DIR / f"{theme}_deck" / "presentation.pptx"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -197,6 +202,15 @@ def build_ppt_deck(
     deck_type = config_data.get("deck_type", "weekly_progress")
     out_path = Path(output) if output else OUTPUT_DIR / "presentations" / f"{config_path.stem}.pptx"
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Pre-flight spec audit for declarative executive pitch decks
+    if deck_type in ("pitch_deck", "presales_pitch_deck", "declarative"):
+        from src.ppt_engine.spec_linter import lint_presentation_spec
+        report = lint_presentation_spec(config_path, strict=False)
+        if not report.passed:
+            report.render()
+            rprint("[red]Error:[/red] Spec failed executive slidecraft linting. Halting presentation compilation.")
+            raise typer.Exit(code=1)
 
     engagement_ctx = None
     if context_file:

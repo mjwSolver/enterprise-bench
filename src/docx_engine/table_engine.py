@@ -20,13 +20,15 @@ from docx.table import Table, _Cell, _Row
 from src.core.theme import parse_hex
 
 
-def set_cell_background(cell: _Cell, hex_color: str) -> None:
-    """Set background color of a table cell via OpenXML shading."""
-    clean_hex = hex_color.strip().lstrip("#").upper()
+def set_cell_background(cell: _Cell, hex_color: Optional[str]) -> None:
+    """Set background color of a table cell via OpenXML shading. If hex_color is None or empty, clears shading."""
     tcPr = cell._tc.get_or_add_tcPr()
     existing_shd = tcPr.find(qn("w:shd"))
     if existing_shd is not None:
         tcPr.remove(existing_shd)
+    if not hex_color or not isinstance(hex_color, str) or not hex_color.strip():
+        return
+    clean_hex = hex_color.strip().lstrip("#").upper()
     shd_xml = f'<w:shd {nsdecls("w")} w:fill="{clean_hex}"/>'
     tcPr.insert_element_before(
         parse_xml(shd_xml),
