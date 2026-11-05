@@ -31,8 +31,11 @@ _PASSIVE_CATEGORY_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Markdown bold anchor pattern: **Lead-in:** or **Lead-in** -
+# Markdown bold anchor patterns:
+# 1. Lead-in anchor: **Lead-in:** or **Lead-in** -
 _BOLD_LEAD_IN_RE = re.compile(r"^\*\*[^*]+\*\*[:\s\-]")
+# 2. Inverted keyword bold: text containing **2-3 bold keywords** anywhere
+_BOLD_INLINE_RE = re.compile(r"\*\*[^*]+\*\*")
 
 
 @dataclass
@@ -293,14 +296,16 @@ def lint_presentation_spec(
                 b_str = str(bullet).strip()
                 if not b_str:
                     continue
-                if not _BOLD_LEAD_IN_RE.match(b_str):
+                has_lead_in = bool(_BOLD_LEAD_IN_RE.match(b_str))
+                has_inline_bold = bool(_BOLD_INLINE_RE.search(b_str))
+                if not (has_lead_in or has_inline_bold):
                     report.add_issue(
-                        rule_id="LINT003_LEAD_IN_BOLD",
+                        rule_id="LINT003_SCANNABLE_BOLD",
                         severity="WARNING",
                         slide_idx=idx,
                         archetype=arch,
-                        message=f"Bullet lacks bold lead-in anchor: '{b_str[:42]}...'",
-                        suggestion="Begin with '**Anchor Phrase:** Context text' to facilitate executive F-pattern scanning.",
+                        message=f"Bullet lacks scannable bold text: '{b_str[:42]}...'",
+                        suggestion="Begin with '**Anchor:** text' or embed '**2-3 bold keywords**' to facilitate executive F-pattern scanning.",
                     )
                 if len(b_str) > 175:
                     report.add_issue(

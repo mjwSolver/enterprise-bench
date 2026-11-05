@@ -497,17 +497,65 @@ def build_bcg_3_horizon_slide(
 
     # Layout Coordinates
     start_x = Inches(0.8)
-    row_y = Inches(1.72)
+    timeline_y = Inches(1.58)
+    timeline_h = Inches(0.32)
+    row_y = Inches(2.00)
     card_w = Inches(3.72)
     card_gap = Inches(0.28)
-    card_h = Inches(5.15)
+    card_h = Inches(4.88)
 
     for i, h_data in enumerate(horizons[:3]):
         cx = start_x + i * (card_w + card_gap)
         accent_rgb = theme.get_rgb(h_data.accent_key)
 
-        # 1. Clean Surface Container (Zero Top Stripe — eliminating banner crutch)
-        # Modern executive aesthetic: Pure surface with subtle hairline border and generous negative space.
+        # ---------------------------------------------------------------------
+        # 1. Horizontal Timeline Stepper Rail (Unmistakable Temporal Flow)
+        # ---------------------------------------------------------------------
+        step_pill = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE,
+            cx,
+            timeline_y,
+            card_w,
+            timeline_h,
+        )
+        step_pill.shadow.inherit = False
+        step_pill.fill.solid()
+        step_pill.fill.fore_color.rgb = theme.get_rgb(h_data.status_bg_key)
+        step_pill.line.color.rgb = theme.get_rgb(h_data.status_text_key)
+        step_pill.line.width = Pt(0.75)
+
+        s_tf = step_pill.text_frame
+        s_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        s_tf.margin_left = Inches(0.14)
+        s_tf.margin_right = Inches(0.14)
+        s_tf.margin_top = s_tf.margin_bottom = 0
+        p_step = s_tf.paragraphs[0]
+        p_step.text = f"{h_data.horizon_tag.upper()}  •  {h_data.status_tag}"
+        p_step.font.name = theme.font_family_header
+        p_step.font.size = Pt(8.5)
+        p_step.font.bold = True
+        p_step.font.color.rgb = theme.get_rgb(h_data.status_text_key)
+        p_step.alignment = PP_ALIGN.CENTER
+
+        # Directional Timeline Connector Arrow between columns
+        if i < 2:
+            arrow_x = cx + card_w + Inches(0.04)
+            arrow_w = card_gap - Inches(0.08)
+            arrow_tb = slide.shapes.add_textbox(arrow_x, timeline_y, arrow_w, timeline_h)
+            a_tf = arrow_tb.text_frame
+            a_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            a_tf.margin_left = a_tf.margin_right = a_tf.margin_top = a_tf.margin_bottom = 0
+            p_arr = a_tf.paragraphs[0]
+            p_arr.text = "►"
+            p_arr.font.name = "Arial"
+            p_arr.font.size = Pt(9.5)
+            p_arr.font.bold = True
+            p_arr.alignment = PP_ALIGN.CENTER
+            p_arr.font.color.rgb = theme.get_rgb("muted")
+
+        # ---------------------------------------------------------------------
+        # 2. Clean Surface Container (Zero Top Stripe, Generous Whitespace)
+        # ---------------------------------------------------------------------
         add_card(
             slide,
             theme,
@@ -521,51 +569,10 @@ def build_bcg_3_horizon_slide(
             force_rectangle=True,
         )
 
-        # 2. Status Badge Pill (Understated, clean placement)
-        status_w = Inches(1.10)
-        status_h = Inches(0.22)
-        status_x = cx + card_w - status_w - Inches(0.20)
-        status_y = row_y + Inches(0.18)
-
-        status_pill = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE,
-            status_x,
-            status_y,
-            status_w,
-            status_h,
-        )
-        status_pill.shadow.inherit = False
-        status_pill.fill.solid()
-        status_pill.fill.fore_color.rgb = theme.get_rgb(h_data.status_bg_key)
-        status_pill.line.color.rgb = theme.get_rgb(h_data.status_text_key)
-        status_pill.line.width = Pt(0.75)
-
-        st_tf = status_pill.text_frame
-        st_tf.word_wrap = False
-        st_tf.margin_left = st_tf.margin_right = st_tf.margin_top = st_tf.margin_bottom = 0
-        p_st = st_tf.paragraphs[0]
-        p_st.text = h_data.status_tag
-        p_st.font.name = theme.font_family_header
-        p_st.font.size = Pt(7.5)
-        p_st.font.bold = True
-        p_st.alignment = PP_ALIGN.CENTER
-        p_st.font.color.rgb = theme.get_rgb(h_data.status_text_key)
-
-        # 3. Horizon Eyebrow Tag
-        tag_w = card_w - status_w - Inches(0.44)
-        tag_tb = slide.shapes.add_textbox(cx + Inches(0.20), row_y + Inches(0.18), tag_w, Inches(0.22))
-        tag_tf = tag_tb.text_frame
-        tag_tf.word_wrap = True
-        tag_tf.margin_left = tag_tf.margin_right = tag_tf.margin_top = tag_tf.margin_bottom = 0
-        p_tag = tag_tf.paragraphs[0]
-        p_tag.text = h_data.horizon_tag.upper()
-        p_tag.font.name = theme.font_family_header
-        p_tag.font.size = Pt(8.5)
-        p_tag.font.bold = True
-        p_tag.font.color.rgb = accent_rgb
-
-        # 4. Column Header: Title & Strategic Focus
-        title_tb = slide.shapes.add_textbox(cx + Inches(0.20), row_y + Inches(0.48), card_w - Inches(0.40), Inches(0.78))
+        # ---------------------------------------------------------------------
+        # 3. Column Header: Title & Strategic Focus
+        # ---------------------------------------------------------------------
+        title_tb = slide.shapes.add_textbox(cx + Inches(0.24), row_y + Inches(0.22), card_w - Inches(0.48), Inches(0.74))
         title_tf = title_tb.text_frame
         title_tf.word_wrap = True
         title_tf.margin_left = title_tf.margin_right = title_tf.margin_top = title_tf.margin_bottom = 0
@@ -584,11 +591,12 @@ def build_bcg_3_horizon_slide(
             p_f.font.color.rgb = theme.get_rgb("secondary")
             p_f.space_before = Pt(3)
 
-        # 5. Open-Air Floating Hero Metric (Zero Nested Box!)
-        # Replaces the dated "box-in-a-box" card with clean typographic scale contrast
-        metric_top_y = row_y + Inches(1.36)
-        metric_h = Inches(0.82)
-        m_tb = slide.shapes.add_textbox(cx + Inches(0.20), metric_top_y, card_w - Inches(0.40), metric_h)
+        # ---------------------------------------------------------------------
+        # 4. Open-Air Floating Hero Metric (Typographic Scale Contrast)
+        # ---------------------------------------------------------------------
+        metric_top_y = row_y + Inches(1.10)
+        metric_h = Inches(0.78)
+        m_tb = slide.shapes.add_textbox(cx + Inches(0.24), metric_top_y, card_w - Inches(0.48), metric_h)
         m_tf = m_tb.text_frame
         m_tf.word_wrap = True
         m_tf.margin_left = m_tf.margin_right = m_tf.margin_top = m_tf.margin_bottom = 0
@@ -609,40 +617,35 @@ def build_bcg_3_horizon_slide(
         p_mlbl.text = h_data.metric_label
         p_mlbl.font.name = theme.font_family
         p_mlbl.font.size = Pt(9.0)
-        p_mlbl.font.color.rgb = theme.get_rgb("secondary")
+        p_mlbl.font.color.rgb = theme.get_rgb("muted")
         p_mlbl.space_before = Pt(2)
 
-        # 6. Subtle Editorial Hairline Divider
-        divider_y = metric_top_y + metric_h + Inches(0.04)
-        div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.20), divider_y, card_w - Inches(0.40), Pt(0.75))
+        # ---------------------------------------------------------------------
+        # 5. Subtle Editorial Hairline Divider
+        # ---------------------------------------------------------------------
+        divider_y = metric_top_y + metric_h + Inches(0.06)
+        div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.24), divider_y, card_w - Inches(0.48), Pt(0.75))
         div.shadow.inherit = False
         div.fill.solid()
         div.fill.fore_color.rgb = theme.get_rgb("border")
         div.line.fill.background()
 
-        # 7. Strategic Deliverables Container with Hanging Indent & Bold Lead-in Parsing
-        content_top = divider_y + Inches(0.12)
-        content_h = card_h - (content_top - row_y) - Inches(0.14)
+        # ---------------------------------------------------------------------
+        # 6. Strategic Deliverables (Direct Bullet Flow, Zero Boxy Sub-Headers)
+        # ---------------------------------------------------------------------
+        content_top = divider_y + Inches(0.18)
+        content_h = card_h - (content_top - row_y) - Inches(0.20)
         content_tb = slide.shapes.add_textbox(
-            cx + Inches(0.20),
+            cx + Inches(0.24),
             content_top,
-            card_w - Inches(0.40),
+            card_w - Inches(0.48),
             content_h,
         )
         content_tf = content_tb.text_frame
         content_tf.word_wrap = True
         content_tf.margin_left = content_tf.margin_right = content_tf.margin_top = content_tf.margin_bottom = 0
 
-        # Deliverables Section Header
-        p_ih = content_tf.paragraphs[0]
-        p_ih.text = "KEY STRATEGIC DELIVERABLES"
-        p_ih.font.name = theme.font_family_header
-        p_ih.font.size = Pt(8.5)
-        p_ih.font.bold = True
-        p_ih.font.color.rgb = theme.get_rgb("muted")
-        p_ih.space_after = Pt(6)
-
-        for init_item in h_data.initiatives:
+        for b_idx, init_item in enumerate(h_data.initiatives):
             _add_bullet_paragraph(
                 content_tf,
                 text=init_item,
@@ -650,7 +653,7 @@ def build_bcg_3_horizon_slide(
                 font_size_pt=thresholds.get("bullet_pt", 10.0),
                 font_color=theme.get_rgb("secondary"),
                 lead_color=theme.get_rgb("primary"),
-                space_before_pt=4.0,
+                space_before_pt=8.0 if b_idx > 0 else 2.0,
             )
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
@@ -2634,19 +2637,221 @@ def build_gap_analysis_slide(
     dimensions: Optional[List[GapDimensionData]] = None,
     as_is_header: str = "CURRENT STATE (AS-IS)",
     to_be_header: str = "TARGET ARCHITECTURE (TO-BE)",
+    left_title: Optional[str] = None,
+    left_subtitle: Optional[str] = None,
+    left_items: Optional[List[str]] = None,
+    right_title: Optional[str] = None,
+    right_subtitle: Optional[str] = None,
+    right_items: Optional[List[str]] = None,
+    takeaway: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
 ) -> Any:
     """
-    Renders a consulting Gap Analysis comparison slide:
-      - Left column: As-Is legacy deficit with warning status indicators.
-      - Center column: Directional transformation lever badge.
-      - Right column: To-Be target capabilities with positive delta badges.
+    Renders a consulting Gap Analysis / Comparative Transformation slide:
+      - 2-Column Mode (left_items & right_items): Before vs After comparative cards with directional connector.
+      - 3-Row Mode (dimensions): Dimension-by-dimension transition levers and target impacts.
+      - Single Executive Synthesis Bar at bottom for intentional, non-repetitive emphasis.
     """
     slide = add_slide_with_background(prs, theme)
     add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    thresholds = theme.typography_thresholds
 
+    # =========================================================================
+    # Mode A: 2-Column Comparative Matrix (Before vs After)
+    # =========================================================================
+    if left_items and right_items:
+        card_y = Inches(1.72)
+        card_h = Inches(4.30)
+        col_w = Inches(5.60)
+        col1_x = Inches(0.80)
+        col2_x = Inches(6.93)
+        center_x = Inches(6.40)
+        center_w = Inches(0.53)
+
+        # 1. Left Card: BEFORE (Clean Surface, subtle neutral border)
+        add_card(
+            slide,
+            theme,
+            col1_x,
+            card_y,
+            col_w,
+            card_h,
+            force_rectangle=True,
+            bg_color=theme.get_rgb("surface"),
+            border_color=hex_to_rgb("#CBD5E1"),
+            border_width_pt=0.75,
+        )
+
+        tb_l = slide.shapes.add_textbox(col1_x + Inches(0.24), card_y + Inches(0.20), col_w - Inches(0.48), Inches(0.68))
+        tf_l = tb_l.text_frame
+        tf_l.word_wrap = True
+        tf_l.margin_left = tf_l.margin_right = tf_l.margin_top = tf_l.margin_bottom = 0
+        p_lt = tf_l.paragraphs[0]
+        p_lt.text = left_title or as_is_header
+        p_lt.font.name = theme.font_family_header
+        p_lt.font.size = Pt(thresholds.get("card_title_pt", 14.0))
+        p_lt.font.bold = True
+        p_lt.font.color.rgb = theme.get_rgb("primary")
+
+        if left_subtitle:
+            p_ls = tf_l.add_paragraph()
+            p_ls.text = left_subtitle
+            p_ls.font.name = theme.font_family
+            p_ls.font.size = Pt(thresholds.get("caption_pt", 9.5))
+            p_ls.font.color.rgb = theme.get_rgb("muted")
+            p_ls.space_before = Pt(3)
+
+        div_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x + Inches(0.24), card_y + Inches(0.96), col_w - Inches(0.48), Pt(0.75))
+        div_l.shadow.inherit = False
+        div_l.fill.solid()
+        div_l.fill.fore_color.rgb = hex_to_rgb("#E2E8F0")
+        div_l.line.fill.background()
+
+        list_tb_l = slide.shapes.add_textbox(col1_x + Inches(0.24), card_y + Inches(1.10), col_w - Inches(0.48), card_h - Inches(1.25))
+        list_tf_l = list_tb_l.text_frame
+        list_tf_l.word_wrap = True
+        list_tf_l.margin_left = list_tf_l.margin_right = list_tf_l.margin_top = list_tf_l.margin_bottom = 0
+
+        for b_idx, item in enumerate(left_items):
+            _add_bullet_paragraph(
+                list_tf_l,
+                text=item,
+                font_name=theme.font_family,
+                font_size_pt=thresholds.get("bullet_pt", 10.0),
+                font_color=theme.get_rgb("secondary"),
+                lead_color=theme.get_rgb("primary"),
+                space_before_pt=8.0 if b_idx > 0 else 2.0,
+            )
+
+        # 2. Center Directional Transition Arrow
+        arr_tb = slide.shapes.add_textbox(center_x, card_y + Inches(1.80), center_w, Inches(0.60))
+        arr_tf = arr_tb.text_frame
+        arr_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        arr_tf.margin_left = arr_tf.margin_right = arr_tf.margin_top = arr_tf.margin_bottom = 0
+        p_arr = arr_tf.paragraphs[0]
+        p_arr.text = "►"
+        p_arr.font.name = "Arial"
+        p_arr.font.size = Pt(14.0)
+        p_arr.font.bold = True
+        p_arr.alignment = PP_ALIGN.CENTER
+        p_arr.font.color.rgb = theme.get_rgb("accent")
+
+        # 3. Right Card: AFTER (Clean Surface, subtle accent border)
+        add_card(
+            slide,
+            theme,
+            col2_x,
+            card_y,
+            col_w,
+            card_h,
+            force_rectangle=True,
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border_accent"),
+            border_width_pt=1.0,
+        )
+
+        tb_r = slide.shapes.add_textbox(col2_x + Inches(0.24), card_y + Inches(0.20), col_w - Inches(0.48), Inches(0.68))
+        tf_r = tb_r.text_frame
+        tf_r.word_wrap = True
+        tf_r.margin_left = tf_r.margin_right = tf_r.margin_top = tf_r.margin_bottom = 0
+        p_rt = tf_r.paragraphs[0]
+        p_rt.text = right_title or to_be_header
+        p_rt.font.name = theme.font_family_header
+        p_rt.font.size = Pt(thresholds.get("card_title_pt", 14.0))
+        p_rt.font.bold = True
+        p_rt.font.color.rgb = theme.get_rgb("accent")
+
+        if right_subtitle:
+            p_rs = tf_r.add_paragraph()
+            p_rs.text = right_subtitle
+            p_rs.font.name = theme.font_family
+            p_rs.font.size = Pt(thresholds.get("caption_pt", 9.5))
+            p_rs.font.color.rgb = theme.get_rgb("muted")
+            p_rs.space_before = Pt(3)
+
+        div_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + Inches(0.24), card_y + Inches(0.96), col_w - Inches(0.48), Pt(0.75))
+        div_r.shadow.inherit = False
+        div_r.fill.solid()
+        div_r.fill.fore_color.rgb = hex_to_rgb("#BAE6FD")
+        div_r.line.fill.background()
+
+        list_tb_r = slide.shapes.add_textbox(col2_x + Inches(0.24), card_y + Inches(1.10), col_w - Inches(0.48), card_h - Inches(1.25))
+        list_tf_r = list_tb_r.text_frame
+        list_tf_r.word_wrap = True
+        list_tf_r.margin_left = list_tf_r.margin_right = list_tf_r.margin_top = list_tf_r.margin_bottom = 0
+
+        for b_idx, item in enumerate(right_items):
+            _add_bullet_paragraph(
+                list_tf_r,
+                text=item,
+                font_name=theme.font_family,
+                font_size_pt=thresholds.get("bullet_pt", 10.0),
+                font_color=theme.get_rgb("secondary"),
+                lead_color=theme.get_rgb("primary"),
+                space_before_pt=8.0 if b_idx > 0 else 2.0,
+            )
+
+        # 4. Single Executive Synthesis Bar at Bottom (The ONLY focal banner)
+        takeaway_text = takeaway or "EXECUTIVE TAKEAWAY: Transitioning from unstructured bullets to native MBB slidecraft ensures board-level clarity and cuts synthesis cycles by 60%."
+        syn_y = Inches(6.16)
+        syn_h = Inches(0.74)
+        syn_w = Inches(11.73)
+
+        add_card(
+            slide,
+            theme,
+            col1_x,
+            syn_y,
+            syn_w,
+            syn_h,
+            force_rectangle=True,
+            bg_color=hex_to_rgb("#F8FAFC"),
+            border_color=hex_to_rgb("#BAE6FD"),
+            border_width_pt=0.75,
+        )
+
+        # Single intentional accent stripe on executive summary only
+        stripe_syn = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, syn_y, Inches(0.06), syn_h)
+        stripe_syn.shadow.inherit = False
+        stripe_syn.fill.solid()
+        stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
+        stripe_syn.line.fill.background()
+
+        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.18), syn_y + Inches(0.12), syn_w - Inches(0.30), syn_h - Inches(0.24))
+        syn_tf = syn_tb.text_frame
+        syn_tf.word_wrap = True
+        syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        syn_tf.margin_left = syn_tf.margin_right = syn_tf.margin_top = syn_tf.margin_bottom = 0
+        p_syn = syn_tf.paragraphs[0]
+
+        if ":" in takeaway_text:
+            t_lead, t_body = takeaway_text.split(":", 1)
+            r_tl = p_syn.add_run()
+            r_tl.text = f"{t_lead.strip()}: "
+            r_tl.font.name = theme.font_family_header
+            r_tl.font.size = Pt(10.5)
+            r_tl.font.bold = True
+            r_tl.font.color.rgb = theme.get_rgb("accent")
+
+            r_tb = p_syn.add_run()
+            r_tb.text = t_body.strip()
+            r_tb.font.name = theme.font_family
+            r_tb.font.size = Pt(10.5)
+            r_tb.font.color.rgb = theme.get_rgb("primary")
+        else:
+            p_syn.text = takeaway_text
+            p_syn.font.name = theme.font_family
+            p_syn.font.size = Pt(10.5)
+            p_syn.font.color.rgb = theme.get_rgb("primary")
+
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
+
+    # =========================================================================
+    # Mode B: 3-Row Dimension Table (Zero Red/Green Side Stripes!)
+    # =========================================================================
     if dimensions is None:
         dimensions = [
             GapDimensionData(
@@ -2685,14 +2890,13 @@ def build_gap_analysis_slide(
     col2_x = Inches(7.77)
     col2_w = Inches(4.75)
 
-    # 1. Column Headers
-    # As-Is Header (Muted slate fill)
+    # 1. Column Headers (Clean, subtle styling)
     h1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, header_y, col1_w, header_h)
     h1.shadow.inherit = False
     h1.fill.solid()
     h1.fill.fore_color.rgb = hex_to_rgb("#F1F5F9")
     h1.line.color.rgb = hex_to_rgb("#CBD5E1")
-    h1.line.width = Pt(1.0)
+    h1.line.width = Pt(0.75)
     h1_tf = h1.text_frame
     h1_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     h1_tf.margin_left = Inches(0.15)
@@ -2703,7 +2907,6 @@ def build_gap_analysis_slide(
     p_h1.font.bold = True
     p_h1.font.color.rgb = hex_to_rgb("#475569")
 
-    # Center Lever Header
     hc = slide.shapes.add_textbox(center_x, header_y, center_w, header_h)
     hc_tf = hc.text_frame
     hc_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -2716,13 +2919,12 @@ def build_gap_analysis_slide(
     p_hc.alignment = PP_ALIGN.CENTER
     p_hc.font.color.rgb = theme.get_rgb("muted")
 
-    # To-Be Header (Brand accent tint)
     h2 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x, header_y, col2_w, header_h)
     h2.shadow.inherit = False
     h2.fill.solid()
     h2.fill.fore_color.rgb = hex_to_rgb("#EFF6FF")
     h2.line.color.rgb = theme.get_rgb("accent")
-    h2.line.width = Pt(1.0)
+    h2.line.width = Pt(0.75)
     h2_tf = h2.text_frame
     h2_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     h2_tf.margin_left = Inches(0.15)
@@ -2733,11 +2935,6 @@ def build_gap_analysis_slide(
     p_h2.font.bold = True
     p_h2.font.color.rgb = theme.get_rgb("primary")
 
-    # 2. Content Rows
-    if not dimensions:
-        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
-        return slide
-
     n_dim = len(dimensions)
     content_y = Inches(2.32)
     available_h = Inches(4.60)
@@ -2747,8 +2944,8 @@ def build_gap_analysis_slide(
     for r_idx, dim in enumerate(dimensions):
         cur_y = content_y + r_idx * (row_h + gap_y)
 
-        # Left Card: As-Is Deficit Container
-        card_l = add_card(
+        # Left Card: As-Is Deficit Container (NO RED SIDE STRIPE!)
+        add_card(
             slide,
             theme,
             col1_x,
@@ -2758,57 +2955,47 @@ def build_gap_analysis_slide(
             force_rectangle=True,
             bg_color=RGBColor(255, 255, 255),
             border_color=hex_to_rgb("#CBD5E1"),
-            border_width_pt=1.0,
+            border_width_pt=0.75,
         )
-        # Left prominent accent stripe on As-Is card (Metrodata crimson red for deficits)
-        stripe_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, cur_y, Inches(0.08), row_h)
-        stripe_l.shadow.inherit = False
-        stripe_l.fill.solid()
-        stripe_l.fill.fore_color.rgb = hex_to_rgb("#DC2626")
-        stripe_l.line.fill.background()
 
-        # Left Card Unified Text Frame (Zero coordinate collision)
         tb_l = slide.shapes.add_textbox(col1_x + Inches(0.18), cur_y + Inches(0.08), col1_w - Inches(0.34), row_h - Inches(0.16))
         tf_l = tb_l.text_frame
         tf_l.word_wrap = True
         tf_l.margin_left = tf_l.margin_right = tf_l.margin_top = tf_l.margin_bottom = 0
 
-        # Paragraph 0: Deficit Badge Callout (or Dimension Title if no deficit tag)
         p_def = tf_l.paragraphs[0]
         if dim.deficit_tag:
-            p_def.text = f"[CRITICAL DEFICIT: {dim.deficit_tag.upper()}]"
+            p_def.text = f"[{dim.deficit_tag.upper()}]"
             p_def.font.name = theme.font_family_header
-            p_def.font.size = Pt(10.5)
+            p_def.font.size = Pt(9.5)
             p_def.font.bold = True
-            p_def.font.color.rgb = hex_to_rgb("#DC2626")  # Metrodata Crimson Red
+            p_def.font.color.rgb = theme.get_rgb("muted")
 
-        # Paragraph 1: Dimension Title
         p_dim = tf_l.add_paragraph() if dim.deficit_tag else p_def
         p_dim.text = dim.dimension
         p_dim.font.name = theme.font_family_header
-        p_dim.font.size = Pt(14.0)
+        p_dim.font.size = Pt(13.5)
         p_dim.font.bold = True
         p_dim.font.color.rgb = theme.get_rgb("primary")
         if dim.deficit_tag:
             p_dim.space_before = Pt(2)
 
-        # Paragraph 2: As-Is Narrative Description (Double-digit 11.5pt filling card volume)
         p_as = tf_l.add_paragraph()
         p_as.text = dim.as_is_state
         p_as.font.name = theme.font_family
-        p_as.font.size = Pt(11.5)
+        p_as.font.size = Pt(11.0)
         p_as.font.color.rgb = theme.get_rgb("secondary")
         p_as.space_before = Pt(4)
 
         # Center Transition Lever Badge
-        lever_h = Inches(0.62)
+        lever_h = Inches(0.56)
         lever_y = cur_y + (row_h - lever_h) / 2
         lever_badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, center_x, lever_y, center_w, lever_h)
         lever_badge.shadow.inherit = False
         lever_badge.fill.solid()
         lever_badge.fill.fore_color.rgb = hex_to_rgb("#EFF6FF")
         lever_badge.line.color.rgb = theme.get_rgb("accent")
-        lever_badge.line.width = Pt(1.25)
+        lever_badge.line.width = Pt(1.0)
 
         l_tf = lever_badge.text_frame
         l_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -2825,8 +3012,8 @@ def build_gap_analysis_slide(
         p_lv.alignment = PP_ALIGN.CENTER
         p_lv.font.color.rgb = theme.get_rgb("accent")
 
-        # Right Card: To-Be Target Capability
-        card_r = add_card(
+        # Right Card: To-Be Target Capability (NO GREEN SIDE STRIPE!)
+        add_card(
             slide,
             theme,
             col2_x,
@@ -2836,45 +3023,40 @@ def build_gap_analysis_slide(
             force_rectangle=True,
             bg_color=RGBColor(255, 255, 255),
             border_color=theme.get_rgb("border"),
-            border_width_pt=1.0,
+            border_width_pt=0.75,
         )
-        # Left prominent accent stripe on To-Be card (emerald green for quantitative targets)
-        stripe_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x, cur_y, Inches(0.08), row_h)
-        stripe_r.shadow.inherit = False
-        stripe_r.fill.solid()
-        stripe_r.fill.fore_color.rgb = hex_to_rgb("#059669")
-        stripe_r.line.fill.background()
 
         tb_r = slide.shapes.add_textbox(col2_x + Inches(0.18), cur_y + Inches(0.08), col2_w - Inches(0.34), row_h - Inches(0.16))
         tf_r = tb_r.text_frame
         tf_r.word_wrap = True
         tf_r.margin_left = tf_r.margin_right = tf_r.margin_top = tf_r.margin_bottom = 0
 
-        # Breakthrough Target Delta Headline (High-impact bold green single-line anchor)
         p_top_r = tf_r.paragraphs[0]
         if dim.impact_delta:
             r_eye = p_top_r.add_run()
             r_eye.text = "TARGET BENEFIT:  "
             r_eye.font.name = theme.font_family_header
-            r_eye.font.size = Pt(11.0)
+            r_eye.font.size = Pt(10.5)
             r_eye.font.bold = True
-            r_eye.font.color.rgb = hex_to_rgb("#047857")
+            r_eye.font.color.rgb = theme.get_rgb("muted")
 
             r_delta = p_top_r.add_run()
             r_delta.text = dim.impact_delta.upper()
             r_delta.font.name = theme.font_family_header
-            r_delta.font.size = Pt(14.0)
+            r_delta.font.size = Pt(13.5)
             r_delta.font.bold = True
-            r_delta.font.color.rgb = hex_to_rgb("#059669")
+            r_delta.font.color.rgb = theme.get_rgb("accent")
 
-        # Supporting Architecture Narrative
         p_to = tf_r.add_paragraph() if dim.impact_delta else p_top_r
         p_to.text = dim.to_be_state
         p_to.font.name = theme.font_family
-        p_to.font.size = Pt(11.5)
+        p_to.font.size = Pt(11.0)
         p_to.font.color.rgb = theme.get_rgb("primary")
         if dim.impact_delta:
-            p_to.space_before = Pt(5)
+            p_to.space_before = Pt(4)
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    return slide
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
@@ -4215,10 +4397,12 @@ def _add_status_pill(
     pill.shadow.inherit = False
     pill.fill.solid()
     pill.fill.fore_color.rgb = theme.get_rgb(bg_key)
-    pill.line.fill.background()
+    pill.line.color.rgb = theme.get_rgb(text_key)
+    pill.line.width = Pt(0.5)
 
     tf = pill.text_frame
     tf.word_wrap = False
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
     p = tf.paragraphs[0]
     p.text = status.upper()
@@ -4624,26 +4808,20 @@ def build_card_grid_slide(
                 p_s.font.color.rgb = theme.get_rgb("secondary")
                 p_s.space_before = Pt(4)
 
-            # Center column: Metric Callout Box (w = 2.65", h = 1.05")
+            # Center column: Metric Area directly on card canvas (no nested box, no stripe)
             met_box_x = cx + Inches(3.75)
-            met_box_w = Inches(2.65)
-            met_box_h = Inches(1.05)
-            met_box_y = cy + (card_h - met_box_h) / 2
+            met_box_w = Inches(2.50)
+            met_box_h = card_h - Inches(0.20)
+            met_box_y = cy + Inches(0.10)
 
-            met_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, met_box_x, met_box_y, met_box_w, met_box_h)
-            met_card.shadow.inherit = False
-            met_card.fill.solid()
-            met_card.fill.fore_color.rgb = theme.get_rgb("surface_muted")
-            met_card.line.color.rgb = theme.get_rgb("border")
-            met_card.line.width = Pt(0.75)
+            # Vertical divider before metric
+            div1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, met_box_x - Inches(0.15), cy + Inches(0.12), Pt(0.75), card_h - Inches(0.24))
+            div1.shadow.inherit = False
+            div1.fill.solid()
+            div1.fill.fore_color.rgb = theme.get_rgb("border")
+            div1.line.fill.background()
 
-            met_stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, met_box_x, met_box_y, Pt(3.0), met_box_h)
-            met_stripe.shadow.inherit = False
-            met_stripe.fill.solid()
-            met_stripe.fill.fore_color.rgb = accent_rgb
-            met_stripe.line.fill.background()
-
-            met_tb = slide.shapes.add_textbox(met_box_x + Inches(0.14), met_box_y + Inches(0.06), met_box_w - Inches(0.20), met_box_h - Inches(0.12))
+            met_tb = slide.shapes.add_textbox(met_box_x, met_box_y, met_box_w, met_box_h)
             met_tf = met_tb.text_frame
             met_tf.word_wrap = True
             met_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
@@ -4652,7 +4830,7 @@ def build_card_grid_slide(
             p_met = met_tf.paragraphs[0]
             p_met.text = itm.metric or ""
             p_met.font.name = theme.font_family_header
-            p_met.font.size = Pt(17.0)
+            p_met.font.size = Pt(26.0)
             p_met.font.bold = True
             p_met.font.color.rgb = accent_rgb
 
@@ -4660,10 +4838,17 @@ def build_card_grid_slide(
                 p_ml = met_tf.add_paragraph()
                 p_ml.text = itm.metric_label.upper()
                 p_ml.font.name = theme.font_family_header
-                p_ml.font.size = Pt(8.0)
+                p_ml.font.size = Pt(8.5)
                 p_ml.font.bold = True
                 p_ml.font.color.rgb = theme.get_rgb("secondary")
-                p_ml.space_before = Pt(2)
+                p_ml.space_before = Pt(3)
+
+            # Vertical divider before bullets
+            div2 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(6.40), cy + Inches(0.12), Pt(0.75), card_h - Inches(0.24))
+            div2.shadow.inherit = False
+            div2.fill.solid()
+            div2.fill.fore_color.rgb = theme.get_rgb("border")
+            div2.line.fill.background()
 
             # Right column: Bullets (w = 4.93")
             bullets_x = cx + Inches(6.60)
@@ -4762,33 +4947,20 @@ def build_card_grid_slide(
                 p_sub.font.color.rgb = theme.get_rgb("secondary")
                 p_sub.space_before = Pt(3)
 
-            met_box_y = tb_y + title_h + Inches(0.08)
-            met_box_h = Inches(0.85)
-            met_box_w = card_w - Inches(0.32)
+            met_box_y = tb_y + title_h + (Inches(0.12) if rows == 1 else Inches(0.06))
+            met_box_h = Inches(0.95) if rows == 1 else Inches(0.70)
+            met_box_w = card_w - Inches(0.36)
 
-            met_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.16), met_box_y, met_box_w, met_box_h)
-            met_card.shadow.inherit = False
-            met_card.fill.solid()
-            met_card.fill.fore_color.rgb = theme.get_rgb("surface_muted")
-            met_card.line.color.rgb = theme.get_rgb("border")
-            met_card.line.width = Pt(0.75)
-
-            stripe_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.16), met_box_y, Pt(3.5), met_box_h)
-            stripe_bar.shadow.inherit = False
-            stripe_bar.fill.solid()
-            stripe_bar.fill.fore_color.rgb = accent_rgb
-            stripe_bar.line.fill.background()
-
-            met_tb = slide.shapes.add_textbox(cx + Inches(0.28), met_box_y + Inches(0.06), met_box_w - Inches(0.24), met_box_h - Inches(0.12))
+            # High-Impact Hero Stat (Rendered DIRECTLY on card canvas — zero nested boxes or inner stripes)
+            met_tb = slide.shapes.add_textbox(cx + Inches(0.18), met_box_y, met_box_w, met_box_h)
             met_tf = met_tb.text_frame
             met_tf.word_wrap = True
-            met_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
             met_tf.margin_left = met_tf.margin_right = met_tf.margin_top = met_tf.margin_bottom = 0
 
             p_met = met_tf.paragraphs[0]
             p_met.text = itm.metric
             p_met.font.name = theme.font_family_header
-            p_met.font.size = Pt(18.0)
+            p_met.font.size = Pt(34.0 if rows == 1 else (20.0 if rows <= 2 else 16.0))
             p_met.font.bold = True
             p_met.font.color.rgb = accent_rgb
 
@@ -4796,19 +4968,27 @@ def build_card_grid_slide(
                 p_ml = met_tf.add_paragraph()
                 p_ml.text = itm.metric_label.upper()
                 p_ml.font.name = theme.font_family_header
-                p_ml.font.size = Pt(8.0)
+                p_ml.font.size = Pt(9.0 if rows == 1 else 7.5)
                 p_ml.font.bold = True
                 p_ml.font.color.rgb = theme.get_rgb("secondary")
-                p_ml.space_before = Pt(2)
+                p_ml.space_before = Pt(3)
 
-            bullets_start_y = met_box_y + met_box_h + Inches(0.16)
+            # Hairline Divider under Hero Metric
+            met_div_y = met_box_y + met_box_h + (Inches(0.08) if rows == 1 else Inches(0.04))
+            met_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.18), met_div_y, met_box_w, Pt(0.75))
+            met_div.shadow.inherit = False
+            met_div.fill.solid()
+            met_div.fill.fore_color.rgb = theme.get_rgb("border")
+            met_div.line.fill.background()
+
+            bullets_start_y = met_div_y + (Inches(0.14) if rows == 1 else Inches(0.08))
             avail_bullets_h = (cy + card_h - Inches(0.16)) - bullets_start_y
-            tb_b = slide.shapes.add_textbox(cx + Inches(0.16), bullets_start_y, card_w - Inches(0.32), avail_bullets_h)
+            tb_b = slide.shapes.add_textbox(cx + Inches(0.18), bullets_start_y, met_box_w, avail_bullets_h)
             tf_b = tb_b.text_frame
             tf_b.word_wrap = True
             tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
 
-            bullet_font_sz = 10.5 if rows == 1 else (7.8 if rows <= 2 else 7.2)
+            bullet_font_sz = 11.0 if rows == 1 else (8.0 if rows <= 2 else 7.2)
             bullet_space_before = 8.0 if rows == 1 else 2.5
             for b in itm.bullets:
                 _add_bullet_paragraph(
@@ -5552,16 +5732,16 @@ def build_table_slide(
     # Rows
     num_rows = len(rows)
     avail_row_h = Inches(4.70) if not footnote else Inches(4.45)
-    row_gap = Inches(0.04) if num_rows > 8 else (Inches(0.05) if num_rows > 5 else Inches(0.06))
+    row_gap = Inches(0.0)  # Continuous table rows — zero double-line gap artifact
     if takeaway:
-        takeaway_h = Inches(1.15)
-        avail_table_h = Inches(3.20) if footnote else Inches(3.35)
-        row_h = min(Inches(0.60), max(Inches(0.28), (avail_table_h - (num_rows - 1) * row_gap) / num_rows))
+        takeaway_h = Inches(1.45)
+        avail_table_h = Inches(2.70) if footnote else Inches(2.85)
+        row_h = min(Inches(0.56), max(Inches(0.32), avail_table_h / num_rows))
     else:
         max_h = Inches(0.65) if num_rows <= 5 else Inches(0.50)
-        row_h = min(max_h, max(Inches(0.30), (avail_row_h - (num_rows - 1) * row_gap) / num_rows))
+        row_h = min(max_h, max(Inches(0.30), avail_row_h / num_rows))
 
-    row_start_y = header_y + header_h + Inches(0.08)
+    row_start_y = header_y + header_h
 
     status_keywords = {
         "COMPLETE", "COMPLETED", "IN PROGRESS", "ON TRACK", "RESCHEDULED", "PLANNED",
@@ -5572,7 +5752,7 @@ def build_table_slide(
     font_size_pt = 9.0 if num_rows > 8 else (10.0 if num_rows > 5 else 10.5)
 
     for r_idx, row in enumerate(rows):
-        cur_ry = row_start_y + r_idx * (row_h + row_gap)
+        cur_ry = row_start_y + r_idx * row_h
         is_alt = (r_idx % 2 != 0)
 
         # Modern Row Hygiene: Borderless rows with subtle alternating fill and hairline bottom divider
@@ -5597,16 +5777,15 @@ def build_table_slide(
             if is_highlighted:
                 cell_card = slide.shapes.add_shape(
                     MSO_SHAPE.RECTANGLE,
-                    cur_cx + Inches(0.01),
-                    cur_ry + Inches(0.01),
-                    cw - Inches(0.02),
-                    row_h - Inches(0.02),
+                    cur_cx,
+                    cur_ry,
+                    cw,
+                    row_h,
                 )
                 cell_card.shadow.inherit = False
                 cell_card.fill.solid()
-                cell_card.fill.fore_color.rgb = RGBColor(241, 245, 249)
-                cell_card.line.color.rgb = hex_to_rgb("#1E3A8A")
-                cell_card.line.width = Pt(1.5)
+                cell_card.fill.fore_color.rgb = RGBColor(238, 246, 255)
+                cell_card.line.fill.background()
 
             cell_val = row[c_idx] if c_idx < len(row) else ""
             cell_str = str(cell_val).strip()
@@ -5614,10 +5793,20 @@ def build_table_slide(
             is_status_col = col.is_status or (cell_str.upper() in status_keywords and len(cell_str) <= 20)
 
             if is_status_col and cell_str:
-                pill_w = min(cw - Inches(0.16), max(Inches(1.60), cw * 0.90))
-                pill_h = min(row_h - Inches(0.12), Inches(0.28))
+                pill_w = min(cw - Inches(0.16), max(Inches(1.80), cw * 0.92))
+                pill_h = min(row_h - Inches(0.14), Inches(0.30))
                 pill_x = cur_cx + (cw - pill_w) / 2
                 pill_y = cur_ry + (row_h - pill_h) / 2
+                _add_status_pill(
+                    slide=slide,
+                    theme=theme,
+                    left=pill_x,
+                    top=pill_y,
+                    width=pill_w,
+                    height=pill_h,
+                    status=cell_str,
+                    font_size_pt=max(8.0, font_size_pt - 1.5),
+                )
                 _add_status_pill(
                     slide=slide,
                     theme=theme,
@@ -5672,8 +5861,8 @@ def build_table_slide(
             cur_cx += cw
 
     if takeaway and isinstance(takeaway, dict):
-        takeaway_top = row_start_y + num_rows * (row_h + row_gap) + Inches(0.10)
-        takeaway_h = Inches(1.15)
+        takeaway_top = row_start_y + num_rows * row_h + Inches(0.14)
+        takeaway_h = Inches(1.45)
         acc_key = takeaway.get("accent_key", "accent")
         acc_rgb = theme.get_rgb(acc_key)
 
@@ -5687,32 +5876,32 @@ def build_table_slide(
             takeaway_h,
             bg_color=theme.get_rgb("surface"),
             border_color=theme.get_rgb("border"),
-            border_width_pt=0.75,
+            border_width_pt=1.0,
             force_rectangle=True,
         )
-        # Vertical focus accent stripe on left (4pt width)
-        left_stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, takeaway_top, Pt(4.0), takeaway_h)
+        # Vertical focus accent stripe on left (4.5pt width)
+        left_stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, takeaway_top, Pt(4.5), takeaway_h)
         left_stripe.shadow.inherit = False
         left_stripe.fill.solid()
         left_stripe.fill.fore_color.rgb = acc_rgb
         left_stripe.line.fill.background()
 
         badge_txt = takeaway.get("badge", "STRATEGIC TAKEAWAY")
-        pill_w = Inches(2.35)
-        pill_h = Inches(0.24)
+        pill_w = Inches(2.40)
+        pill_h = Inches(0.26)
         _add_status_pill(
             slide=slide,
             theme=theme,
-            left=start_x + Inches(0.18),
-            top=takeaway_top + Inches(0.10),
+            left=start_x + Inches(0.20),
+            top=takeaway_top + Inches(0.12),
             width=pill_w,
             height=pill_h,
             status=badge_txt,
-            font_size_pt=8.0,
+            font_size_pt=8.5,
             override_color_key=acc_key,
         )
 
-        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.20), takeaway_top + Inches(0.36), total_w - Inches(0.40), takeaway_h - Inches(0.38))
+        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.20), takeaway_top + Inches(0.44), total_w - Inches(0.40), takeaway_h - Inches(0.50))
         tf_tk = tb_tk.text_frame
         tf_tk.word_wrap = True
         tf_tk.margin_left = tf_tk.margin_right = tf_tk.margin_top = tf_tk.margin_bottom = 0
@@ -5720,7 +5909,7 @@ def build_table_slide(
         p_tkt = tf_tk.paragraphs[0]
         p_tkt.text = takeaway.get("title", "")
         p_tkt.font.name = theme.font_family_header
-        p_tkt.font.size = Pt(13.0)
+        p_tkt.font.size = Pt(13.5)
         p_tkt.font.bold = True
         p_tkt.font.color.rgb = theme.get_rgb("primary")
 
@@ -5728,12 +5917,12 @@ def build_table_slide(
             p_tkd = tf_tk.add_paragraph()
             p_tkd.text = takeaway.get("description")
             p_tkd.font.name = theme.font_family
-            p_tkd.font.size = Pt(11.0)
+            p_tkd.font.size = Pt(11.5)
             p_tkd.font.color.rgb = theme.get_rgb("secondary")
-            p_tkd.space_before = Pt(4)
+            p_tkd.space_before = Pt(5)
 
     if footnote:
-        foot_y = Inches(6.78)
+        foot_y = Inches(6.75)
         tb_fn = slide.shapes.add_textbox(start_x, foot_y, total_w, Inches(0.22))
         tf_fn = tb_fn.text_frame
         tf_fn.word_wrap = False
@@ -5818,6 +6007,23 @@ def build_thank_you_slide(
     p_s.space_before = Pt(10)
 
     # 3. Content Area: Structured Split Layout if next_steps provided
+    if next_steps:
+        if isinstance(next_steps, list):
+            formatted_items = []
+            for item in next_steps:
+                if isinstance(item, dict):
+                    m = item.get("milestone", item.get("title", ""))
+                    d = item.get("detail", item.get("description", ""))
+                    formatted_items.append(f"**{m}:** {d}" if d else m)
+                else:
+                    formatted_items.append(str(item))
+            next_steps = {
+                "title": "IMMEDIATE GOVERNANCE & ACTION PLAN",
+                "badge": "NEXT HORIZONS",
+                "items": formatted_items,
+                "accent_key": "accent",
+            }
+
     if next_steps and isinstance(next_steps, dict):
         col_gap = Inches(0.25)
         left_w = Inches(5.80)
@@ -5914,7 +6120,7 @@ def build_thank_you_slide(
                 cp1.font.color.rgb = theme.get_rgb("primary")
 
                 cp2 = ctf.add_paragraph()
-                cp2.text = c.get("role", "")
+                cp2.text = c.get("role", c.get("title", ""))
                 cp2.font.name = theme.font_family
                 cp2.font.size = Pt(9.5)
                 cp2.font.color.rgb = theme.get_rgb("accent")
@@ -5965,7 +6171,7 @@ def build_thank_you_slide(
             cp1.font.color.rgb = theme.get_rgb("primary")
 
             cp2 = ctf.add_paragraph()
-            cp2.text = c.get("role", "")
+            cp2.text = c.get("role", c.get("title", ""))
             cp2.font.name = theme.font_family
             cp2.font.size = Pt(11.0)
             cp2.font.color.rgb = theme.get_rgb("accent")

@@ -28,9 +28,9 @@ slides:
     tracker: "SLIDE 01 | THE CLINICAL VISION"
     title: "Predictive AI for IVF: The Clinical Pregnancy Success Engine"
     subtitle: "Targeting pre-treatment success likelihood to personalize patient stimulation and eliminate multi-cycle dropouts."
-    hero_stat: ">=78%"
+    hero_stat: "≥ 78%"
     hero_stat_label: "Target Clinical Accuracy"
-    hero_stat_subtext: "AUC-ROC >= 0.82 with <2s inference latency embedded in Magic EMR."
+    hero_stat_subtext: "AUC-ROC ≥ 0.82 with <2s inference latency embedded in Magic EMR."
     blocks:
       - title: "The Clinical Promise & Strategic Value"
         metric_badge: "CLINICAL VALUE"
@@ -52,10 +52,10 @@ slides:
     subtitle: "90–95% of Morula cycles are Freeze-All; cross-cycle relational links are completely unmapped in EMR."
     footnote: "*) Empirical audit executed on Snowflake database TEST across 38,580 FET procedures and 27,659 outcome records."
     takeaway:
-      badge: "EXECUTIVE AUDIT CONCLUSION"
-      accent_key: "primary"
-      title: "Predictive machine learning cannot be trained on raw EMR joins."
-      description: "Because over 90% of cycles freeze all embryos and lack straw-level identifiers, joining raw tables multiplies patient rows up to 760x. Supervised modeling must be confined to intra-cycle lab data until straw tracking standards are deployed."
+      badge: "EXECUTIVE AUDIT VERDICT"
+      accent_key: "accent"
+      title: "Primary Blocker: 760x Row Explosion Prevents Cross-Cycle Modeling"
+      description: "With 90–95% Freeze-All cycles lacking straw IDs, cross-table joins explode patient counts 760x. Supervised ML must remain strictly confined to intra-cycle incubator data until physical barcode tracking is implemented."
     columns:
       - header: "No."
         width: 0.50
@@ -69,7 +69,8 @@ slides:
         align: "CENTER"
       - header: "Snowflake Audit Metric"
         width: 2.30
-        align: "LEFT"
+        align: "CENTER"
+        is_status: true
       - header: "Operational & Machine Learning Consequence"
         width: 4.833
         align: "LEFT"
@@ -78,39 +79,42 @@ slides:
       - ["02", "Straw Physical Attribution (FACT_FET)", "38,580 Rows", "100.0% Unattributed Straws", "Thaws omit which retrieved egg became the transferred embryo."]
       - ["03", "Sentinel Placeholder Dates (FACT_FET)", "25,005 Rows", "64.8% Sentinel Dates", "Dates set to '1901-01-01'; cannot compute treatment intervals."]
       - ["04", "Day 14 Pregnancy Outcome Records", "18,586 Rows", "67.2% Unclosed Outcomes", "Outcomes created on transfer day; never updated with Beta-hCG."]
-      - ["05", "Multi-Cycle Cartesian Multiplications", "36,080 Cycles", "760x Row Multiplication", "Ad-hoc OPU-to-FET join inflates counts 42x to 760x on patients."]
+      - ["05", "Multi-Cycle Cartesian Multiplications", "36,080 Cycles", "760x Cartesian Blocker", "Ad-hoc OPU-to-FET join inflates counts 42x to 760x on patients."]
 
-  # Slide 04: The Lab Pivot — Shrinking Scope to Blastocyst Yield (Horizontal Swimlane Architecture)
+  # Slide 04: The Lab Pivot — Shrinking Scope to Blastocyst Yield (Open 3-Column Architecture)
   - archetype: card_grid
     tracker: "SLIDE 03 | THE LAB PIVOT"
     title: "Scoping Down to the Incubator: Blastocyst Yield & Its Empirical Limits"
-    subtitle: "Confining ML to intra-cycle lab culture eliminates severance but exposes qualitative grading deficits."
-    columns: 1
+    subtitle: "Confining ML strictly to intra-cycle lab culture eliminates severance but uncovers qualitative grading deficits."
+    columns: 3
     items:
       - title: "1. The Scope Boundary"
-        subtitle: "Confining prediction strictly to incubator culture"
-        metric: "0% Cryo Severance"
-        metric_label: "Intra-Cycle Relational Linkage"
+        subtitle: "Confining scope strictly to incubator culture"
+        metric: "0%"
+        metric_label: "CRYO SEVERANCE RISK"
+        badge: "PILLAR 01"
         accent_key: "accent"
         bullets:
-          - "Intra-Cycle Boundary: Connects ovarian stimulation directly to Day 5 blastocyst formation within one unsevered cycle."
-          - "Zero Cryo Gaps: Completely bypasses frozen embryo inventory matching and cross-year thaw delays."
+          - "**Intra-Cycle Scope:** Connects ovarian stimulation directly to Day 5 blastocyst formation within one unsevered cycle."
+          - "**Zero Cryo Severance:** Completely bypasses frozen embryo inventory matching and cross-year thaw delays."
       - title: "2. Relational Integrity"
-        subtitle: "100.0% verified table join integrity"
-        metric: "328,435 Rows"
-        metric_label: "100.0% Deterministic Lab Joins"
+        subtitle: "Deterministic embryo-to-cycle table joins"
+        metric: "100%"
+        metric_label: "TABLE JOIN INTEGRITY"
+        badge: "PILLAR 02"
         accent_key: "success"
         bullets:
-          - "Flawless Table Joins: 328,435 of 328,435 embryo records cleanly link to retrieval cycles on (CYCLE_ID, GROUP_ID)."
-          - "Zero Orphan Records: 100% referential integrity across all 17 Morula IVF clinic branches."
+          - "**Flawless Table Joins:** 328,435 of 328,435 embryo records cleanly link to retrieval cycles on (CYCLE_ID, GROUP_ID)."
+          - "**Zero Orphan Records:** 100% referential integrity verified across all 17 Morula IVF clinic branches."
       - title: "3. The Label Dilemma"
-        subtitle: "Target variable lacks international coding"
-        metric: "52.3% Unstructured"
-        metric_label: "Qualitative Lab Grading Notes"
+        subtitle: "Target variable lacks standardized coding"
+        metric: "52.3%"
+        metric_label: "UNSTRUCTURED LAB NOTES"
+        badge: "PILLAR 03"
         accent_key: "warning"
         bullets:
-          - "Non-Standard Notes: 52.3% blank or arrested; 47.7% informal text ('Good', 'Moderat') with zero Gardner codes (4AA, 3BB)."
-          - "Cortex NLP Required: Snowflake Cortex AI NLP is required to standardize raw text before ML training is viable."
+          - "**Non-Standard Notes:** 52.3% blank or arrested; 47.7% informal text ('Good', 'Moderat') with zero Gardner codes."
+          - "**Cortex AI Required:** Snowflake Cortex NLP is required to standardize raw text before ML training is viable."
 
   # Slide 05: Operational Transformation — Cortex Pre-Consultation Copilot (Browser Mockup Container)
   - archetype: browser_mockup

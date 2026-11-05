@@ -178,11 +178,11 @@ class Theme:
             return ("badge_green_fill", "badge_green_text")
         elif any(k in s for k in ["AT RISK", "DELAY", "BLOCK", "FAIL", "CRITICAL", "BOTTLENECK", "HIGH", "NULL", "MISSING", "FRACTURE", "SEVER", "DEFICIT", "CARTESIAN", "EXPLOSION", "MULTIPLICATION"]):
             return ("badge_red_fill", "badge_red_text")
-        elif any(k in s for k in ["AMBER", "WARNING", "RESCHEDULE", "OCCURRED", "MEDIUM", "BERGESER"]):
+        elif any(k in s for k in ["AMBER", "WARNING", "RESCHEDULE", "OCCURRED", "MEDIUM", "BERGESER", "SENTINEL", "UNCLOSED", "CAUTION", "ALERT"]):
             if "badge_amber_fill" in self.palette:
                 return ("badge_amber_fill", "badge_amber_text")
             return ("badge_red_fill", "badge_red_text")
-        elif any(k in s for k in ["COMMITTED", "SCALE", "EXPAND", "STAGED", "STAGE"]):
+        elif any(k in s for k in ["COMMITTED", "SCALE", "EXPAND", "STAGED", "STAGE", "UNMAPPED", "UNATTRIBUTED", "UNLINKED"]):
             return ("badge_slate_fill", "badge_slate_text")
         elif any(k in s for k in ["PLANNED", "FUTURE", "VISION", "HORIZON 3", "EXPLORATORY"]):
             return ("badge_muted_fill", "badge_muted_text")
