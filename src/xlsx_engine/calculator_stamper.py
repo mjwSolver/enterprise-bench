@@ -49,10 +49,9 @@ def detect_cyclic_references(wb: openpyxl.Workbook) -> Dict[str, List[List[str]]
 
     for ws in wb.worksheets:
         graph: Dict[str, List[str]] = {}
-        for row in ws.iter_rows():
-            for cell in row:
-                val = cell.value
-                if isinstance(val, str) and val.startswith("="):
+        for cell in ws._cells.values():
+            val = cell.value
+            if isinstance(val, str) and val.startswith("="):
                     src = cell.coordinate
                     graph[src] = []
                     try:
@@ -219,14 +218,13 @@ class CalculatorStamper:
                 (f"{{{{{var_k}}}}}", str(var_v)) for var_k, var_v in scalar_replacements.items()
             ]
             for ws in wb.worksheets:
-                for row in ws.iter_rows():
-                    for cell in row:
-                        val = cell.value
-                        if isinstance(val, str) and "{{" in val:
-                            for tag, rep in tag_pairs:
-                                if tag in val:
-                                    val = val.replace(tag, rep)
-                            cell.value = val
+                for cell in ws._cells.values():
+                    val = cell.value
+                    if isinstance(val, str) and "{{" in val:
+                        for tag, rep in tag_pairs:
+                            if tag in val:
+                                val = val.replace(tag, rep)
+                        cell.value = val
 
 
 def calculate_spreadsheet(

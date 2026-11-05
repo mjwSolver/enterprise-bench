@@ -72,6 +72,7 @@ _FLD_CHAR_BEGIN = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="begin"/>'
 _INSTR_TEXT = parse_xml(f'<w:instrText {nsdecls("w")} xml:space="preserve"> PAGE </w:instrText>')
 _FLD_CHAR_SEP = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="separate"/>')
 _FLD_CHAR_END = parse_xml(f'<w:fldChar {nsdecls("w")} w:fldCharType="end"/>')
+_CELL_SPACING_ELEM = parse_xml(f'<w:spacing {nsdecls("w")} w:before="40" w:after="40" w:line="276" w:lineRule="auto"/>')
 
 _STATUS_BADGES: Dict[str, Dict[str, Any]] = {
     "PASSED": {"bg": "DCFCE7", "color": RGBColor(21, 128, 61)},   # Green
@@ -681,9 +682,7 @@ class SpecCompiler:
                 if c_idx < cols:
                     cell = row_cells[c_idx]
                     p = cell.paragraphs[0] if cell.paragraphs else cell.add_paragraph()
-                    p.paragraph_format.space_before = Pt(2)
-                    p.paragraph_format.space_after = Pt(2)
-                    p.paragraph_format.line_spacing = 1.15
+                    p._p.get_or_add_pPr().append(_CELL_SPACING_ELEM.__copy__())
                     clean_val = val.strip()
                     self._format_inline_text(p, clean_val)
 

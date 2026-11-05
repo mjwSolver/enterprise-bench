@@ -170,6 +170,42 @@ def _resolve_milestone_period(m: Dict[str, Any], periods: List[str]) -> Optional
 # Core Engine: SCurveGenerator
 # ============================================================================
 
+class OpenpyxlStylePool:
+    """Pools composite openpyxl styles to prevent redundant style lookups and registrations."""
+
+    def __init__(self, ws: openpyxl.worksheet.worksheet.Worksheet):
+        self.ws = ws
+        self._cache: Dict[Tuple[Any, ...], Any] = {}
+
+    def get_style_id(
+        self,
+        font: Optional[Font] = None,
+        alignment: Optional[Alignment] = None,
+        border: Optional[Border] = None,
+        fill: Optional[PatternFill] = None,
+        number_format: Optional[str] = None,
+    ) -> Any:
+        key = (font, alignment, border, fill, number_format)
+        sid = self._cache.get(key)
+        if sid is None:
+            from openpyxl.cell import Cell
+
+            dummy = Cell(self.ws)
+            if font is not None:
+                dummy.font = font
+            if alignment is not None:
+                dummy.alignment = alignment
+            if border is not None:
+                dummy.border = border
+            if fill is not None:
+                dummy.fill = fill
+            if number_format is not None:
+                dummy.number_format = number_format
+            sid = dummy._style
+            self._cache[key] = sid
+        return sid
+
+
 class SCurveGenerator:
     """
     Automated S-Curve Progress Engine.
@@ -496,6 +532,7 @@ class SCurveGenerator:
         if ws.views and ws.views.sheetView:
             ws.views.sheetView[0].showGridLines = True
 
+        pool = OpenpyxlStylePool(ws)
         thin_side = Side(border_style="thin", color=self.COLOR_BORDER)
         card_border = Border(top=thin_side, left=thin_side, right=thin_side, bottom=thin_side)
         label_font = Font(name="Calibri", size=8, bold=True, color="64748B")
@@ -549,26 +586,30 @@ class SCurveGenerator:
             ws.merge_cells(start_row=2, start_column=c1, end_row=2, end_column=c2)
             ws.merge_cells(start_row=3, start_column=c1, end_row=3, end_column=c2)
 
-            top_cell = ws.cell(row=2, column=c1, value=card["label"])
-            top_cell.font = label_font
-            top_cell.alignment = center_align
-
-            val_cell = ws.cell(row=3, column=c1, value=card["val"])
-            val_cell.font = Font(name="Calibri", size=13, bold=True, color=card["color"])
-            val_cell.alignment = center_align
-
             card_fill_hex = card.get("fill")
             fill_obj = (
                 PatternFill(start_color=card_fill_hex, end_color=card_fill_hex, fill_type="solid")
                 if card_fill_hex
                 else default_fill
             )
+            val_font = Font(name="Calibri", size=13, bold=True, color=card["color"])
+
+            top_sid = pool.get_style_id(font=label_font, alignment=center_align, border=card_border, fill=fill_obj)
+            val_sid = pool.get_style_id(font=val_font, alignment=center_align, border=card_border, fill=fill_obj)
+            blank_sid = pool.get_style_id(border=card_border, fill=fill_obj)
+
+            top_cell = ws.cell(row=2, column=c1, value=card["label"])
+            top_cell._style = top_sid
+
+            val_cell = ws.cell(row=3, column=c1, value=card["val"])
+            val_cell._style = val_sid
 
             for r in range(2, 4):
                 for c in range(c1, c2 + 1):
+                    if (r == 2 and c == c1) or (r == 3 and c == c1):
+                        continue
                     cell = ws.cell(row=r, column=c)
-                    cell.border = card_border
-                    cell.fill = fill_obj
+                    cell._style = blank_sid
 
     def _render_table(
         self,
@@ -578,6 +619,8 @@ class SCurveGenerator:
         start_col: int = 2,
     ) -> Dict[str, Any]:
         """Render S-curve coordinate data with formatting, headers, and status fills."""
+        pool = OpenpyxlStylePool(ws)
+
         headers = [
             "Period",
             "Planned Cum. %",
@@ -593,7 +636,6 @@ class SCurveGenerator:
         thin_side = Side(border_style="thin", color=self.COLOR_BORDER)
         cell_border = Border(top=thin_side, left=thin_side, right=thin_side, bottom=thin_side)
 
-        # Pre-allocated cell fonts, alignments, and health styles to avoid per-row allocations
         font_bold_10 = Font(name="Calibri", size=10, bold=True)
         font_reg_10 = Font(name="Calibri", size=10, bold=False)
         font_ms_italic = Font(name="Calibri", size=9, italic=True)
@@ -604,12 +646,20 @@ class SCurveGenerator:
         align_right = Alignment(horizontal="right", vertical="center")
         align_left = Alignment(horizontal="left", vertical="center")
 
-        health_style_cache: Dict[str, Tuple[Font, PatternFill]] = {}
+        sid_header = pool.get_style_id(font=header_font, fill=header_fill, alignment=align_header, border=cell_border)
+        sid_period = pool.get_style_id(font=font_bold_10, alignment=align_center, border=cell_border)
+        sid_plan = pool.get_style_id(font=font_reg_10, number_format="0.0%", alignment=align_right, border=cell_border)
+        sid_act_pres = pool.get_style_id(font=font_bold_10, number_format="0.0%", alignment=align_right, border=cell_border)
+        sid_act_abs = pool.get_style_id(font=font_reg_10, alignment=align_right, border=cell_border)
+        sid_var = pool.get_style_id(font=font_reg_10, number_format="+0.0%;-0.0%;0.0%", alignment=align_right, border=cell_border)
+        sid_ms_pres = pool.get_style_id(font=font_ms_italic, alignment=align_left, border=cell_border)
+        sid_ms_abs = pool.get_style_id(font=font_ms_reg, alignment=align_left, border=cell_border)
+
+        health_sids: Dict[str, Any] = {}
         for h_key, h_cfg in self.HEALTH_COLORS.items():
-            health_style_cache[h_key] = (
-                Font(name="Calibri", size=9, bold=True, color=h_cfg["text"]),
-                PatternFill(start_color=h_cfg["fill"], end_color=h_cfg["fill"], fill_type="solid"),
-            )
+            h_font = Font(name="Calibri", size=9, bold=True, color=h_cfg["text"])
+            h_fill = PatternFill(start_color=h_cfg["fill"], end_color=h_cfg["fill"], fill_type="solid")
+            health_sids[h_key] = pool.get_style_id(font=h_font, fill=h_fill, alignment=align_center, border=cell_border)
 
         plan_col_let = get_column_letter(start_col + 1)
         act_col_let = get_column_letter(start_col + 2)
@@ -617,10 +667,7 @@ class SCurveGenerator:
         # 1. Write headers
         for col_idx, h_text in enumerate(headers, start=start_col):
             c = ws.cell(row=start_row, column=col_idx, value=h_text)
-            c.font = header_font
-            c.fill = header_fill
-            c.alignment = align_header
-            c.border = cell_border
+            c._style = sid_header
 
         ws.row_dimensions[start_row].height = 26
 
@@ -631,58 +678,37 @@ class SCurveGenerator:
 
             # Period (Col B)
             c_per = ws.cell(row=curr_r, column=start_col, value=pt.period)
-            c_per.font = font_bold_10
-            c_per.alignment = align_center
-            c_per.border = cell_border
+            c_per._style = sid_period
 
             # Planned Cum % (Col C)
             c_plan = ws.cell(row=curr_r, column=start_col + 1, value=pt.planned_pct)
-            c_plan.font = font_reg_10
-            c_plan.number_format = "0.0%"
-            c_plan.alignment = align_right
-            c_plan.border = cell_border
+            c_plan._style = sid_plan
 
             # Actual Cum % (Col D) — store None when absent so ISBLANK is TRUE and LineChart gaps cleanly
             has_act = pt.actual_pct is not None
             c_act = ws.cell(row=curr_r, column=start_col + 2, value=pt.actual_pct if has_act else None)
-            c_act.font = font_bold_10 if has_act else font_reg_10
-            if has_act:
-                c_act.number_format = "0.0%"
-            c_act.alignment = align_right
-            c_act.border = cell_border
+            c_act._style = sid_act_pres if has_act else sid_act_abs
 
             # Schedule Variance (Col E)
             var_formula = f'=IF(OR(ISBLANK({act_col_let}{curr_r}),{act_col_let}{curr_r}=""),"",{act_col_let}{curr_r}-{plan_col_let}{curr_r})'
             c_var = ws.cell(row=curr_r, column=start_col + 3, value=var_formula)
-            c_var.font = font_reg_10
-            c_var.number_format = "+0.0%;-0.0%;0.0%"
-            c_var.alignment = align_right
-            c_var.border = cell_border
+            c_var._style = sid_var
 
             # Variance % (Col F)
             vp_formula = f'=IF(OR(ISBLANK({act_col_let}{curr_r}),{act_col_let}{curr_r}=""),"",IF({plan_col_let}{curr_r}>0,({act_col_let}{curr_r}-{plan_col_let}{curr_r})/{plan_col_let}{curr_r},0))'
             c_vp = ws.cell(row=curr_r, column=start_col + 4, value=vp_formula)
-            c_vp.font = font_reg_10
-            c_vp.number_format = "+0.0%;-0.0%;0.0%"
-            c_vp.alignment = align_right
-            c_vp.border = cell_border
+            c_vp._style = sid_var
 
             # Health Status (Col G)
             c_health = ws.cell(row=curr_r, column=start_col + 5, value=(pt.health or "PLANNED").replace("_", " "))
             norm_h = (pt.health or "PLANNED").strip().upper()
-            if norm_h not in health_style_cache:
+            if norm_h not in health_sids:
                 norm_h = norm_h.replace(" ", "_")
-            h_font, h_fill = health_style_cache.get(norm_h, health_style_cache["PLANNED"])
-            c_health.font = h_font
-            c_health.fill = h_fill
-            c_health.alignment = align_center
-            c_health.border = cell_border
+            c_health._style = health_sids.get(norm_h, health_sids["PLANNED"])
 
             # Milestone (Col H)
             c_ms = ws.cell(row=curr_r, column=start_col + 6, value=pt.milestone or "")
-            c_ms.font = font_ms_italic if pt.milestone else font_ms_reg
-            c_ms.alignment = align_left
-            c_ms.border = cell_border
+            c_ms._style = sid_ms_pres if pt.milestone else sid_ms_abs
 
             curr_r += 1
 
