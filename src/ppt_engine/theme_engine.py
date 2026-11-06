@@ -157,6 +157,16 @@ class Theme:
                 if diag_str.startswith("#"):
                     return diag_str.upper()
 
+        # Semantic color key aliases
+        if key in ("emerald", "green"):
+            return self.get_hex("success", default="#10B981")
+        if key in ("amber", "orange"):
+            return self.get_hex("warning", default="#F59E0B")
+        if key in ("red", "crimson"):
+            return self.get_hex("danger", default="#DC2626")
+        if key in ("blue", "metrodata_blue"):
+            return self.get_hex("accent", default="#0284C7")
+
         # Default fallbacks for slate/muted badges if not defined in older palettes
         if key in ("badge_slate_fill", "badge_neutral_fill", "badge_gray_fill"):
             return "#F1F5F9"

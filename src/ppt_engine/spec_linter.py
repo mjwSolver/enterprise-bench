@@ -9,6 +9,7 @@ Codifies executive slidecraft ground truths into machine-enforced rules:
 - LINT004: Anti-Banner Top Stripe (eliminates legacy decorative stripes on cards)
 - LINT005: Clean Surface Hierarchy (anti-nested-box containers)
 - LINT006: Design Contract Enforcement (modular layout & diagnostic rules: executive_csuite, technical_architecture, strategic_tradeoff)
+- LINT007: Raw Markdown Syntax Guardrail (detects unparsed markdown asterisks, backticks, links, headers in presentation copy)
 """
 
 from __future__ import annotations
@@ -37,6 +38,15 @@ _PASSIVE_CATEGORY_RE = re.compile(
 _BOLD_LEAD_IN_RE = re.compile(r"^\*\*[^*]+\*\*[:\s\-]")
 # 2. Inverted keyword bold: text containing **2-3 bold keywords** anywhere
 _BOLD_INLINE_RE = re.compile(r"\*\*[^*]+\*\*")
+
+# Raw markdown syntax detection patterns (LINT007)
+_MD_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+_MD_CODE_RE = re.compile(r"`([^`]+)`")
+_MD_HEADER_RE = re.compile(r"(?:^|\n)\s*#{1,6}\s+\S+")
+_MD_STRIKE_RE = re.compile(r"~~([^~]+)~~")
+_MD_LIST_BULLET_RE = re.compile(r"(?:^|\n)\s*[-*+]\s+\S+")
+_MD_BOLD_RE = re.compile(r"\*\*[^*]+\*\*|__[^_]+__")
+_MD_LEADING_BULLET_RE = re.compile(r"^\s*[-*+•–]\s+")
 
 
 @dataclass
@@ -475,6 +485,235 @@ def _lint_technical_architecture_contract(
                     )
 
 
+def _lint_markdown_syntax(
+    slide: Dict[str, Any],
+    slide_idx: int,
+    archetype: str,
+    report: SpecLintReport,
+) -> None:
+    """
+    Rule LINT007: Inline Markdown Syntax & DrawingML Compilation Guardrail
+    Validates that inline typography (bold, italic, underline, monospace code spans)
+    is syntactically balanced, closed, and compiles cleanly into DrawingML runs,
+    while blocking unrenderable block markdown (headers, raw links, redundant bullet glyphs).
+    """
+    def _validate_text_spans(field_label: str, val: Any, is_bullet: bool = False) -> None:
+        if not isinstance(val, str) or not val.strip():
+            return
+        txt = val.strip()
+
+        # 1. Delimiter Balance & Syntax Closure (Zero Unclosed Formatting)
+        if txt.count("**") % 2 != 0:
+            report.add_issue(
+                rule_id="LINT007_UNCLOSED_FORMATTING",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Unclosed markdown bold markers '**' detected in {field_label}: '{txt[:45]}...'.",
+                suggestion="Ensure all bold tags are balanced (e.g. '**Lead-in:** body text').",
+            )
+
+        if txt.count("__") % 2 != 0:
+            report.add_issue(
+                rule_id="LINT007_UNCLOSED_FORMATTING",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Unclosed markdown underline markers '__' detected in {field_label}: '{txt[:45]}...'.",
+                suggestion="Ensure all underline tags are balanced (e.g. '__underlined text__').",
+            )
+
+        if txt.count("`") % 2 != 0:
+            report.add_issue(
+                rule_id="LINT007_UNCLOSED_FORMATTING",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Unclosed code backtick '`' detected in {field_label}: '{txt[:45]}...'.",
+                suggestion="Ensure all monospace spans have opening and closing backticks (e.g. '`code`').",
+            )
+
+        if txt.count("<u>") != txt.count("</u>"):
+            report.add_issue(
+                rule_id="LINT007_UNCLOSED_FORMATTING",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Unbalanced '<u>' underline tags detected in {field_label}.",
+                suggestion="Ensure all <u> tags have matching </u> closures.",
+            )
+
+        # Single asterisk italic check (excluding *** and **)
+        clean_for_italics = txt.replace("***", "").replace("**", "")
+        if clean_for_italics.count("*") % 2 != 0:
+            report.add_issue(
+                rule_id="LINT007_UNCLOSED_FORMATTING",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Unclosed markdown italic marker '*' detected in {field_label}: '{txt[:45]}...'.",
+                suggestion="Ensure all single asterisk italic spans are closed (e.g. '*italic text*').",
+            )
+
+        # 2. Incompatible Block Markdown (Zero Unrenderable Punctuation)
+        m_link = _MD_LINK_RE.search(txt)
+        if m_link:
+            report.add_issue(
+                rule_id="LINT007_UNRENDERABLE_MARKDOWN",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Raw markdown link syntax detected in {field_label}: '{m_link.group(0)}'.",
+                suggestion="PowerPoint shapes do not render markdown link syntax. Use plain display text.",
+            )
+
+        m_hdr = _MD_HEADER_RE.search(txt)
+        if m_hdr:
+            report.add_issue(
+                rule_id="LINT007_UNRENDERABLE_MARKDOWN",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Raw markdown header '#' detected in {field_label}: '{m_hdr.group(0).strip()}'.",
+                suggestion="Remove markdown header hashes. Presentation typography ramp defines visual hierarchy.",
+            )
+
+        m_st = _MD_STRIKE_RE.search(txt)
+        if m_st:
+            report.add_issue(
+                rule_id="LINT007_UNRENDERABLE_MARKDOWN",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Raw markdown strikethrough detected in {field_label}: '{m_st.group(0)}'.",
+                suggestion="Remove markdown tildes '~~'.",
+            )
+
+        if is_bullet:
+            m_lead = _MD_LEADING_BULLET_RE.match(txt)
+            if m_lead:
+                report.add_issue(
+                    rule_id="LINT007_REDUNDANT_BULLET_GLYPH",
+                    severity="ERROR",
+                    slide_idx=slide_idx,
+                    archetype=archetype,
+                    message=f"Redundant leading bullet marker ('{m_lead.group(0).strip()}') in {field_label}.",
+                    suggestion="PowerPoint automatically generates native vector bullets. Omit manual leading dashes, asterisks, or bullets.",
+                )
+
+        # 3. Emphasis Density Guardrail (Executive Scannability)
+        if len(txt) > 85:
+            bold_matches = _MD_BOLD_RE.findall(txt)
+            bold_chars = sum(len(m) for m in bold_matches)
+            if bold_chars / len(txt) > 0.85:
+                report.add_issue(
+                    rule_id="LINT007_EXCESSIVE_EMPHASIS",
+                    severity="WARNING",
+                    slide_idx=slide_idx,
+                    archetype=archetype,
+                    message=f"Over 85% of text in {field_label} is bolded ({bold_chars}/{len(txt)} chars).",
+                    suggestion="Reserve bolding for lead-in anchors (first 2-4 words) or key metrics to preserve executive scannability.",
+                )
+
+    # 1. Non-bullet scalar fields on the slide
+    scalar_fields = [
+        ("title", slide.get("title")),
+        ("action_title", slide.get("action_title")),
+        ("subtitle", slide.get("subtitle")),
+        ("context", slide.get("context")),
+        ("tracker", slide.get("tracker")),
+        ("takeaway", slide.get("takeaway")),
+        ("so_what", slide.get("so_what")),
+        ("decision_lever", slide.get("decision_lever")),
+        ("source", slide.get("source")),
+        ("footnote", slide.get("footnote")),
+        ("notice", slide.get("notice")),
+        ("hero_stat", slide.get("hero_stat")),
+        ("hero_stat_label", slide.get("hero_stat_label")),
+        ("hero_stat_subtext", slide.get("hero_stat_subtext")),
+        ("left_eyebrow", slide.get("left_eyebrow")),
+        ("left_title", slide.get("left_title")),
+        ("left_subtitle", slide.get("left_subtitle")),
+        ("right_eyebrow", slide.get("right_eyebrow")),
+        ("right_title", slide.get("right_title")),
+        ("right_subtitle", slide.get("right_subtitle")),
+        ("center_label", slide.get("center_label")),
+        ("center_title", slide.get("center_title")),
+        ("center_subtitle", slide.get("center_subtitle")),
+        ("badge", slide.get("badge")),
+        ("metric_badge", slide.get("metric_badge")),
+        ("category_tag", slide.get("category_tag")),
+        ("eyebrow", slide.get("eyebrow")),
+    ]
+
+    for field_name, f_val in scalar_fields:
+        _validate_text_spans(f"'{field_name}'", f_val, is_bullet=False)
+
+    # 2. Check nested container items (blocks, cards, steps, horizons, columns, metrics, stats)
+    for container_key in ("blocks", "cards", "steps", "horizons", "columns", "items", "metrics", "stats"):
+        containers = slide.get(container_key)
+        if isinstance(containers, list):
+            for c_idx, container in enumerate(containers, start=1):
+                if isinstance(container, dict):
+                    c_label = container.get("title") or container.get("label") or f"{container_key}[{c_idx}]"
+                    for prop in (
+                        "title", "label", "name", "header", "eyebrow", "badge",
+                        "metric_badge", "category_tag", "category", "timeframe",
+                        "phase", "description", "subtext", "caption", "value",
+                        "stat", "stat_label"
+                    ):
+                        val = container.get(prop)
+                        if isinstance(val, str):
+                            _validate_text_spans(f"{container_key} '{c_label}' -> {prop}", val, is_bullet=False)
+
+    # 3. Check table headers & cells
+    table_data = slide.get("table")
+    if isinstance(table_data, dict):
+        headers = table_data.get("headers")
+        if isinstance(headers, list):
+            for h_idx, h_text in enumerate(headers, start=1):
+                if isinstance(h_text, str):
+                    _validate_text_spans(f"table header #{h_idx}", h_text, is_bullet=False)
+        rows = table_data.get("rows")
+        if isinstance(rows, list):
+            for r_idx, row in enumerate(rows, start=1):
+                if isinstance(row, list):
+                    for cell_idx, cell in enumerate(row, start=1):
+                        if isinstance(cell, str):
+                            _validate_text_spans(f"table row {r_idx} cell {cell_idx}", cell, is_bullet=False)
+
+    # 4. Bullet & List items
+    bullet_items: List[Tuple[str, str]] = []
+    for b_key in ("bullets", "initiatives", "left_items", "right_items"):
+        val = slide.get(b_key)
+        if isinstance(val, list):
+            for itm in val:
+                if isinstance(itm, str):
+                    bullet_items.append((f"'{b_key}' item", itm))
+
+    for c_key in ("blocks", "cards", "steps", "horizons", "columns"):
+        containers = slide.get(c_key)
+        if isinstance(containers, list):
+            for c_idx, container in enumerate(containers, start=1):
+                if isinstance(container, dict):
+                    c_label = container.get("title") or f"{c_key}[{c_idx}]"
+                    for sub_b in ("bullets", "initiatives", "items"):
+                        sub_val = container.get(sub_b)
+                        if isinstance(sub_val, list):
+                            for itm in sub_val:
+                                if isinstance(itm, str):
+                                    bullet_items.append((f"{c_key} '{c_label}' -> {sub_b}", itm))
+
+    items_field = slide.get("items")
+    if isinstance(items_field, list):
+        for itm in items_field:
+            if isinstance(itm, str):
+                bullet_items.append(("item", itm))
+
+    for field_label, bullet in bullet_items:
+        _validate_text_spans(field_label, bullet, is_bullet=True)
+
+
 def lint_presentation_spec(
     spec_path: Union[str, Path],
     strict: bool = False,
@@ -744,6 +983,11 @@ def lint_presentation_spec(
                     _lint_strategic_tradeoff_contract(slide, idx, arch, title, report)
                 elif contract_id == "technical_architecture":
                     _lint_technical_architecture_contract(slide, idx, arch, title, report)
+
+        # ---------------------------------------------------------------------
+        # Rule LINT007: Raw Markdown Syntax Guardrail
+        # ---------------------------------------------------------------------
+        _lint_markdown_syntax(slide, idx, arch, report)
 
     if strict and report.warning_count > 0:
         report.passed = False

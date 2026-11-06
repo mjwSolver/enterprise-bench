@@ -19,6 +19,11 @@ from .theme_engine import (
     list_available_themes,
     strip_shape_shadows,
 )
+from .text_formatting import (
+    append_formatted_runs,
+    set_formatted_text,
+    parse_inline_markdown,
+)
 from .consulting_archetypes import (
     ConsultingDeckBuilder,
     HorizonColumnData,
