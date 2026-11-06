@@ -21,18 +21,21 @@ class DeckComparator:
         self.prs_after = Presentation(str(after_path)) if after_path.exists() else None
 
     def audit_slide_metrics(self, prs: Presentation) -> List[Dict[str, Any]]:
-        def _iter_all_shapes(shapes):
+        def _iter_leaf_shapes(shapes):
             for shape in shapes:
                 if shape.shape_type == MSO_SHAPE_TYPE.GROUP or hasattr(shape, "shapes"):
                     try:
-                        yield from _iter_all_shapes(shape.shapes)
+                        child_shapes = list(shape.shapes)
+                        if child_shapes:
+                            yield from _iter_leaf_shapes(child_shapes)
+                            continue
                     except Exception:
                         pass
                 yield shape
 
         metrics = []
         for idx, slide in enumerate(prs.slides, start=1):
-            all_shapes = list(_iter_all_shapes(slide.shapes))
+            all_shapes = list(_iter_leaf_shapes(slide.shapes))
             total_shapes = len(all_shapes)
             text_boxes = 0
             tables = 0
@@ -52,14 +55,21 @@ class DeckComparator:
                         empty_boxes += 1
                 if shape.has_table:
                     tables += 1
+                    seen_tcs: set[int] = set()
                     for row in shape.table.rows:
                         for cell in row.cells:
+                            tc_id = id(cell._tc)
+                            if tc_id in seen_tcs:
+                                continue
+                            seen_tcs.add(tc_id)
                             cell_text = cell.text.strip()
                             if cell_text:
                                 total_words += len(cell_text.split())
                 if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                     images += 1
 
+            # Compute slide vertical span and coverage using top-level shape coordinates
+            for shape in slide.shapes:
                 try:
                     top_in = shape.top.inches
                     h_in = shape.height.inches

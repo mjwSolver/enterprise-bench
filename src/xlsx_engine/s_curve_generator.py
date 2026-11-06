@@ -36,6 +36,11 @@ class SCurvePoint:
     health: str = "PLANNED"
     milestone: Optional[str] = None
 
+    def __post_init__(self) -> None:
+        for val in (self.planned_pct, self.actual_pct, self.variance, self.variance_pct):
+            if val is not None and (math.isnan(val) or math.isinf(val)):
+                raise ValueError(f"SCurvePoint contains non-finite float value: {val}")
+
 
 @dataclass
 class VarianceAnalysis:
@@ -79,6 +84,8 @@ def calculate_sigmoid_curve(
 
     f(x) = (g(x) - g(0)) / (g(1) - g(0)), where g(x) = 1 / (1 + exp(-k * (x - x0)))
     """
+    if math.isnan(k) or math.isinf(k) or math.isnan(x0) or math.isinf(x0):
+        raise ValueError(f"Invalid non-finite float parameters for sigmoid curve: k={k}, x0={x0}")
     if num_periods <= 0:
         return []
     if num_periods == 1:

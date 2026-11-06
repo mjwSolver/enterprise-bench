@@ -179,10 +179,7 @@ class SpecCompiler:
         base_dir: Optional[Union[str, Path]] = None,
     ) -> None:
         if isinstance(theme, str):
-            try:
-                self.theme = EnterpriseTheme.from_yaml(theme)
-            except Exception:
-                self.theme = EnterpriseTheme(name="metrodata", accent_primary="#1E3A8A", accent_secondary="#0284C7")
+            self.theme = EnterpriseTheme.from_yaml(theme)
         else:
             self.theme = theme
 

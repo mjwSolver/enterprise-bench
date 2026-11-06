@@ -615,12 +615,13 @@ def replace_slide_picture_shape(
         from src.tool_helper.asset_fetcher import rasterize_svg_bytes
         svg_bytes = new_img_p.read_bytes()
         png_bytes = rasterize_svg_bytes(svg_bytes)
-        if png_bytes:
-            import tempfile
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_f:
-                tmp_f.write(png_bytes)
-                temp_png_path = Path(tmp_f.name)
-                actual_img_path = str(temp_png_path)
+        if not png_bytes:
+            raise ValueError(f"Failed to rasterize SVG image '{new_image_path}' to PNG")
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_f:
+            tmp_f.write(png_bytes)
+            temp_png_path = Path(tmp_f.name)
+            actual_img_path = str(temp_png_path)
 
     try:
         # Embed image in slide relationships

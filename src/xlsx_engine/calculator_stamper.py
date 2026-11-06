@@ -14,13 +14,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import openpyxl
-from openpyxl.utils.cell import coordinate_to_tuple
+from openpyxl.utils.cell import coordinate_to_tuple, get_column_letter, range_boundaries
 
 from src.core.config import OUTPUT_DIR, get_template_path, validate_clean_path
 
 logger = logging.getLogger(__name__)
 
-_COORD_REGEX = re.compile(r"^\$?[A-Za-z]+\$?[0-9]+$")
+_COORD_REGEX = re.compile(r"^[A-Za-z]+[0-9]+$")
 
 
 @lru_cache(maxsize=8192)
@@ -40,54 +40,85 @@ def _fast_set_cell_value(ws: openpyxl.worksheet.worksheet.Worksheet, cell_ref: s
 
 def detect_cyclic_references(wb: openpyxl.Workbook) -> Dict[str, List[List[str]]]:
     """
-    Detect circular formula dependencies within worksheets of an Excel workbook.
+    Detect circular formula dependencies within and across worksheets of an Excel workbook.
+    Expands range tokens (e.g., A1:A10) and tracks cross-worksheet dependencies.
     Returns a dictionary mapping worksheet title to lists of cyclic cell paths.
     """
     from openpyxl.formula.tokenizer import Tokenizer
 
-    cycles_by_sheet: Dict[str, List[List[str]]] = {}
+    graph: Dict[str, List[str]] = {}
 
     for ws in wb.worksheets:
-        graph: Dict[str, List[str]] = {}
+        sheet_name = ws.title
         for cell in ws._cells.values():
             val = cell.value
             if isinstance(val, str) and val.startswith("="):
-                    src = cell.coordinate
-                    graph[src] = []
-                    try:
-                        tok = Tokenizer(val)
-                        for t in tok.items:
-                            if t.subtype == "RANGE":
-                                clean = t.value.replace("$", "").upper()
-                                if _COORD_REGEX.match(clean):
-                                    graph[src].append(clean)
-                    except Exception:
-                        pass
+                src = f"{sheet_name}!{cell.coordinate}"
+                graph[src] = []
+                try:
+                    tok = Tokenizer(val)
+                    for t in tok.items:
+                        if t.subtype == "RANGE":
+                            raw = t.value.replace("$", "").strip()
+                            if "!" in raw:
+                                target_sheet_raw, coord_part = raw.split("!", 1)
+                                target_sheet = target_sheet_raw.strip("'\"")
+                            else:
+                                target_sheet = sheet_name
+                                coord_part = raw
 
-        if not graph:
-            continue
+                            coord_clean = coord_part.upper()
+                            if ":" in coord_clean:
+                                try:
+                                    min_col, min_row, max_col, max_row = range_boundaries(coord_clean)
+                                    if min_col and min_row and max_col and max_row:
+                                        col_count = max_col - min_col + 1
+                                        row_count = max_row - min_row + 1
+                                        # Guard against unbounded whole-row/col range explosions
+                                        if col_count * row_count <= 1000:
+                                            for c in range(min_col, max_col + 1):
+                                                col_let = get_column_letter(c)
+                                                for r in range(min_row, max_row + 1):
+                                                    graph[src].append(f"{target_sheet}!{col_let}{r}")
+                                except Exception:
+                                    pass
+                            elif _COORD_REGEX.match(coord_clean):
+                                graph[src].append(f"{target_sheet}!{coord_clean}")
+                except Exception:
+                    pass
 
-        visited: Dict[str, int] = {}  # 0=unvisited, 1=visiting, 2=visited
-        cycles: List[List[str]] = []
+    if not graph:
+        return {}
 
-        def dfs(node: str, path: List[str]) -> None:
-            visited[node] = 1
-            path.append(node)
-            for neighbor in graph.get(node, []):
-                if neighbor not in visited or visited[neighbor] == 0:
-                    dfs(neighbor, path)
-                elif visited[neighbor] == 1:
-                    cycle_start = path.index(neighbor)
-                    cycles.append(path[cycle_start:] + [neighbor])
-            path.pop()
-            visited[node] = 2
+    visited: Dict[str, int] = {}  # 0=unvisited, 1=visiting, 2=visited
+    cycles_by_sheet: Dict[str, List[List[str]]] = {}
 
-        for node in list(graph.keys()):
-            if node not in visited:
-                dfs(node, [])
+    def dfs(node: str, path: List[str]) -> None:
+        visited[node] = 1
+        path.append(node)
+        for neighbor in graph.get(node, []):
+            if neighbor not in visited or visited[neighbor] == 0:
+                dfs(neighbor, path)
+            elif visited[neighbor] == 1:
+                cycle_start = path.index(neighbor)
+                raw_cycle = path[cycle_start:] + [neighbor]
+                # Format nodes: if cycle is entirely on one sheet, strip sheet prefix for clean reporting
+                sheet_of_start = raw_cycle[0].split("!", 1)[0]
+                same_sheet = all(n.startswith(f"{sheet_of_start}!") for n in raw_cycle)
+                if same_sheet:
+                    formatted_cycle = [n.split("!", 1)[1] for n in raw_cycle]
+                else:
+                    formatted_cycle = raw_cycle
 
-        if cycles:
-            cycles_by_sheet[ws.title] = cycles
+                if sheet_of_start not in cycles_by_sheet:
+                    cycles_by_sheet[sheet_of_start] = []
+                cycles_by_sheet[sheet_of_start].append(formatted_cycle)
+        path.pop()
+        visited[node] = 2
+
+    for node in list(graph.keys()):
+        if node not in visited:
+            dfs(node, [])
 
     return cycles_by_sheet
 
@@ -135,6 +166,7 @@ class CalculatorStamper:
         wb = openpyxl.load_workbook(str(self.template_path), data_only=False)
 
         if data:
+            self._validate_data(data)
             self._apply_data(wb, data)
 
         # Pre-flight check for cyclic formula references
@@ -155,6 +187,20 @@ class CalculatorStamper:
         wb.close()
 
         return output_p
+
+    @staticmethod
+    def _validate_data(data: Any) -> None:
+        """Recursively ensure no NaN or Infinite float values exist in the input payload."""
+        if isinstance(data, dict):
+            for v in data.values():
+                CalculatorStamper._validate_data(v)
+        elif isinstance(data, (list, tuple, set)):
+            for item in data:
+                CalculatorStamper._validate_data(item)
+        elif isinstance(data, float):
+            import math
+            if math.isnan(data) or math.isinf(data):
+                raise ValueError(f"Invalid non-finite float value detected in calculator data: {data}")
 
     def _apply_data(self, wb: openpyxl.Workbook, data: Dict[str, Any]) -> None:
         active_ws = wb.active

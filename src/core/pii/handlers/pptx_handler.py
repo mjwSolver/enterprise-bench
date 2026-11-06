@@ -65,8 +65,13 @@ class PptxHandler(BaseFormatHandler):
             # Check table
             if shape.has_table:
                 tbl = shape.table
+                seen_tcs: Set[int] = set()
                 for r_idx, row in enumerate(tbl.rows):
                     for c_idx, cell in enumerate(row.cells):
+                        tc_id = id(cell._tc)
+                        if tc_id in seen_tcs:
+                            continue
+                        seen_tcs.add(tc_id)
                         cell_loc = f"{prefix} > Table Row {r_idx + 1} Col {c_idx + 1}"
                         for p_idx, p in enumerate(cell.text_frame.paragraphs):
                             t = p.text.strip()
@@ -188,8 +193,13 @@ class PptxHandler(BaseFormatHandler):
                     repl_count += _clean_paragraph(p, f"{prefix} > Para {p_idx + 1}")
 
             if shape.has_table:
+                seen_tcs: Set[int] = set()
                 for r_idx, row in enumerate(shape.table.rows):
                     for c_idx, cell in enumerate(row.cells):
+                        tc_id = id(cell._tc)
+                        if tc_id in seen_tcs:
+                            continue
+                        seen_tcs.add(tc_id)
                         for p_idx, p in enumerate(cell.text_frame.paragraphs):
                             repl_count += _clean_paragraph(p, f"{prefix} > Table R{r_idx + 1}C{c_idx + 1} > Para {p_idx + 1}")
 

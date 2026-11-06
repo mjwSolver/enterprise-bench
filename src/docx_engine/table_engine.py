@@ -29,6 +29,7 @@ _QN_W_TBLBORDERS = qn("w:tblBorders")
 # Reusable insertion target sequences
 _INSERT_BEFORE_SHD = ("w:noWrap", "w:tcMar", "w:textDirection", "w:tcFitText", "w:vAlign")
 _INSERT_BEFORE_TCMAR = ("w:textDirection", "w:tcFitText", "w:vAlign")
+_INSERT_BEFORE_TBLBORDERS = ("w:shd", "w:tblLayout", "w:tblCellMar", "w:tblLook", "w:tblCaption", "w:tblDescription")
 
 # Pre-compiled static XML element templates
 _CANT_SPLIT_ELEM = parse_xml(f'<w:cantSplit {nsdecls("w")}/>')
@@ -40,11 +41,19 @@ _TCMAR_CACHE: Dict[Tuple[int, int, int, int], Any] = {}
 _TBL_BORDERS_CACHE: Dict[Tuple[str, str], Any] = {}
 
 
+def _normalize_hex(hex_str: Optional[str]) -> Optional[str]:
+    """Validate and normalize a 3-digit or 6-digit hex color to 6 uppercase hex characters."""
+    if not hex_str or not isinstance(hex_str, str) or not hex_str.strip():
+        return None
+    r, g, b = parse_hex(hex_str)
+    return f"{r:02X}{g:02X}{b:02X}"
+
+
 def _get_shd_element(clean_hex: str) -> Any:
     """Retrieve or compile a cached w:shd element fragment."""
     elem = _SHD_CACHE.get(clean_hex)
     if elem is None:
-        elem = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{clean_hex}"/>')
+        elem = parse_xml(f'<w:shd {nsdecls("w")} w:val="clear" w:color="auto" w:fill="{clean_hex}"/>')
         _SHD_CACHE[clean_hex] = elem
     return elem.__copy__()
 
@@ -94,11 +103,12 @@ def set_cell_background(cell: _Cell, hex_color: Optional[str]) -> None:
         tcPr.remove(existing_shd)
     if not hex_color or not isinstance(hex_color, str) or not hex_color.strip():
         return
-    clean_hex = hex_color.strip().lstrip("#").upper()
-    tcPr.insert_element_before(
-        _get_shd_element(clean_hex),
-        *_INSERT_BEFORE_SHD,
-    )
+    clean_hex = _normalize_hex(hex_color)
+    if clean_hex:
+        tcPr.insert_element_before(
+            _get_shd_element(clean_hex),
+            *_INSERT_BEFORE_SHD,
+        )
 
 
 def set_cell_margins(
@@ -131,13 +141,14 @@ def prevent_row_split(row: _Row) -> None:
 
 
 def set_table_borders(table: Table, border_color: str = "#CBD5E1", sz: str = "4") -> None:
-    """Apply consistent subtle borders to a table via w:tblBorders."""
-    clean_hex = border_color.strip().lstrip("#").upper()
+    """Apply consistent subtle borders to a table via w:tblBorders conforming to ECMA-376 order."""
+    clean_hex = _normalize_hex(border_color) or "CBD5E1"
     tblPr = table._tbl.tblPr
     existing_borders = tblPr.find(_QN_W_TBLBORDERS)
     if existing_borders is not None:
         tblPr.remove(existing_borders)
-    tblPr.append(_get_tbl_borders_element(clean_hex, sz))
+    elem = _get_tbl_borders_element(clean_hex, sz)
+    tblPr.insert_element_before(elem, *_INSERT_BEFORE_TBLBORDERS)
 
 
 def style_table(
@@ -154,15 +165,16 @@ def style_table(
     if border_color:
         set_table_borders(table, border_color)
 
-    clean_header = header_bg.strip().lstrip("#").upper() if header_bg else None
-    clean_even = zebra_even_bg.strip().lstrip("#").upper() if zebra_even_bg else None
-    clean_odd = zebra_odd_bg.strip().lstrip("#").upper() if zebra_odd_bg else None
+    clean_header = _normalize_hex(header_bg) if header_bg else None
+    clean_even = _normalize_hex(zebra_even_bg) if zebra_even_bg else None
+    clean_odd = _normalize_hex(zebra_odd_bg) if zebra_odd_bg else None
 
     # Pre-obtain cloned XML templates
     tcmar_header = _get_tcmar_element(140, 140, 160, 160)
     tcmar_body = _get_tcmar_element(100, 100, 140, 140)
 
-    # Ensure rows don't split awkwardly across page breaks
+    # Ensure rows don't split awkwardly across page breaks and deduplicate merged cells
+    seen_tcs: set[int] = set()
     table_rows = table.rows
     for i, row in enumerate(table_rows):
         prevent_row_split(row)
@@ -171,6 +183,8 @@ def style_table(
         if i == 0:
             make_row_header(row)
             for cell in row_cells:
+                tc_id = id(cell._tc)
+                seen_tcs.add(tc_id)
                 tcPr = cell._tc.get_or_add_tcPr()
                 ex_shd = tcPr.find(_QN_W_SHD)
                 if ex_shd is not None:
@@ -191,6 +205,10 @@ def style_table(
             bg = clean_even if i % 2 == 0 else clean_odd
             shd_proto = _get_shd_element(bg) if bg else None
             for cell in row_cells:
+                tc_id = id(cell._tc)
+                if tc_id in seen_tcs:
+                    continue
+                seen_tcs.add(tc_id)
                 tcPr = cell._tc.get_or_add_tcPr()
                 ex_shd = tcPr.find(_QN_W_SHD)
                 if ex_shd is not None:

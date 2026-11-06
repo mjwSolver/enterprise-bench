@@ -270,44 +270,44 @@ class PresentationPatcher:
             from src.tool_helper.asset_fetcher import rasterize_svg_bytes
             svg_bytes = new_img.read_bytes()
             png_bytes = rasterize_svg_bytes(svg_bytes)
-            if png_bytes:
-                import tempfile
-                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_f:
-                    tmp_f.write(png_bytes)
-                    temp_png = Path(tmp_f.name)
-                    actual_img_path = str(temp_png)
+            if not png_bytes:
+                raise ValueError(f"Failed to rasterize SVG image '{new_img}' to PNG")
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_f:
+                tmp_f.write(png_bytes)
+                temp_png = Path(tmp_f.name)
+                actual_img_path = str(temp_png)
 
+        replaced_count = 0
         try:
-            with open(actual_img_path, "rb") as f:
-                new_blob = f.read()
-
             for s_idx, slide in target_slides:
                 shape = self._find_shape(slide.shapes, target_str, is_id)
                 if shape and hasattr(shape, "shape_type") and shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                     try:
-                        # Update image part blob in-place via slide relationships
+                        # Allocate or retrieve proper ImagePart preserving package isolation and MIME type
+                        _, rId = slide.part.get_or_add_image_part(actual_img_path)
                         blips = shape._element.xpath(".//a:blip")
                         if blips:
-                            r_id = blips[0].get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed")
-                            if r_id and r_id in slide.part.rels:
-                                img_part = slide.part.related_part(r_id)
-                                img_part._blob = new_blob
-                                if hasattr(shape, "image"):
-                                    shape.image._blob = new_blob
-                                self.impacted_slides.add(s_idx)
-                                self.operations.append(f"Replaced image in shape '{target}' on Slide {s_idx}")
+                            blips[0].set("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed", rId)
+                            self.impacted_slides.add(s_idx)
+                            self.operations.append(f"Replaced image in shape '{target}' on Slide {s_idx}")
+                            replaced_count += 1
+                            if slide_index is not None:
                                 return True
+                            continue
                     except Exception as e:
-                        logger.warning(f"Failed direct blob replacement: {e}. Falling back to shape replacement.")
+                        logger.warning(f"Failed relationship image replacement: {e}. Falling back to shape replacement.")
 
                     from src.ppt_engine.image_engine import replace_slide_picture_shape
                     success = replace_slide_picture_shape(slide, shape, actual_img_path, preserve_aspect_ratio=False)
                     if success:
                         self.impacted_slides.add(s_idx)
                         self.operations.append(f"Substituted picture shape '{target}' on Slide {s_idx}")
-                        return True
+                        replaced_count += 1
+                        if slide_index is not None:
+                            return True
 
-            return False
+            return replaced_count > 0
         finally:
             if temp_png and temp_png.exists():
                 try:

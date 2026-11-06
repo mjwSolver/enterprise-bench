@@ -18,8 +18,9 @@ from typing import Any, Dict, List, Optional, Union
 from docx import Document
 
 
-_JINJA_VAR_RE = re.compile(r"\{\{.*?\}\}", re.DOTALL)
-_JINJA_TAG_RE = re.compile(r"\{%.*?%\}", re.DOTALL)
+_JINJA_VAR_RE = re.compile(r"\{\{[^{}]*\}\}")
+_JINJA_TAG_RE = re.compile(r"\{%[^{}%]*%\}")
+_JINJA_COMMENT_RE = re.compile(r"\{#[^{}#]*#\}")
 _MONOSPACE_FONTS = frozenset(("Consolas", "Courier New", "Courier", "Monaco", "Menlo"))
 _W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 _MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -83,20 +84,31 @@ def _check_text_for_jinja(
     tag_msg_fmt: str = "Unrendered Jinja tag found: '{match}'",
 ) -> None:
     """Scan a text string for unrendered Jinja variable and block tags."""
-    if not txt or ("{{" not in txt and "{%" not in txt):
+    if not txt or not any(marker in txt for marker in ("{{", "{%", "}}", "%}", "{#", "#}")):
         return
     for match in _JINJA_VAR_RE.findall(txt):
         report.add_issue("ERROR", "UNRENDERED_TAG", var_msg_fmt.format(match=match), location)
     for match in _JINJA_TAG_RE.findall(txt):
         report.add_issue("ERROR", "UNRENDERED_BLOCK", tag_msg_fmt.format(match=match), location)
+    for match in _JINJA_COMMENT_RE.findall(txt):
+        report.add_issue("ERROR", "UNRENDERED_COMMENT", f"Unrendered Jinja comment found: '{match}'", location)
 
-    # Detect unclosed or malformed Jinja delimiters
+    # Detect unclosed or orphaned Jinja delimiters
     residual = _JINJA_VAR_RE.sub("", txt)
     residual = _JINJA_TAG_RE.sub("", residual)
+    residual = _JINJA_COMMENT_RE.sub("", residual)
     if "{{" in residual:
         report.add_issue("ERROR", "MALFORMED_TAG", "Malformed or unclosed Jinja variable tag '{{' found", location)
     if "{%" in residual:
         report.add_issue("ERROR", "MALFORMED_TAG", "Malformed or unclosed Jinja block tag '{%' found", location)
+    if "{#" in residual:
+        report.add_issue("ERROR", "MALFORMED_TAG", "Malformed or unclosed Jinja comment tag '{#' found", location)
+    if "}}" in residual:
+        report.add_issue("ERROR", "MALFORMED_TAG", "Malformed or orphaned Jinja closing delimiter '}}' found", location)
+    if "%}" in residual:
+        report.add_issue("ERROR", "MALFORMED_TAG", "Malformed or orphaned Jinja closing delimiter '%}' found", location)
+    if "#}" in residual:
+        report.add_issue("ERROR", "MALFORMED_TAG", "Malformed or orphaned Jinja closing delimiter '#}' found", location)
 
 
 def _lint_tables(
