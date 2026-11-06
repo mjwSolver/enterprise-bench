@@ -8,6 +8,7 @@ Codifies executive slidecraft ground truths into machine-enforced rules:
 - LINT003: Executive Bullet Scannability (Bold lead-in anchors for F-pattern reading)
 - LINT004: Anti-Banner Top Stripe (eliminates legacy decorative stripes on cards)
 - LINT005: Clean Surface Hierarchy (anti-nested-box containers)
+- LINT006: Design Contract Enforcement (modular layout & diagnostic rules: executive_csuite, technical_architecture, strategic_tradeoff)
 """
 
 from __future__ import annotations
@@ -130,6 +131,350 @@ class SpecLintReport:
         c.print(f"\n[dim]Audit Summary:[/dim] {status_line}")
 
 
+VALID_DESIGN_CONTRACTS = {
+    "executive_csuite",
+    "technical_architecture",
+    "strategic_tradeoff",
+}
+
+_CONTRACT_ALIASES = {
+    "executive_csuite": "executive_csuite",
+    "executive-csuite": "executive_csuite",
+    "executive": "executive_csuite",
+    "csuite": "executive_csuite",
+    "technical_architecture": "technical_architecture",
+    "technical-architecture": "technical_architecture",
+    "architecture": "technical_architecture",
+    "tech_arch": "technical_architecture",
+    "strategic_tradeoff": "strategic_tradeoff",
+    "strategic-tradeoff": "strategic_tradeoff",
+    "tradeoff": "strategic_tradeoff",
+    "trade-off": "strategic_tradeoff",
+}
+
+
+def _normalize_contract(name: Any) -> Optional[str]:
+    if not isinstance(name, str):
+        return None
+    cleaned = name.strip().lower().replace(" ", "_")
+    return _CONTRACT_ALIASES.get(cleaned)
+
+
+def _lint_executive_csuite_contract(
+    slide: Dict[str, Any],
+    slide_idx: int,
+    archetype: str,
+    title: str,
+    report: SpecLintReport,
+) -> None:
+    # 1. Max 2 bullets per container
+    for key in ("bullets", "initiatives", "left_items", "right_items"):
+        blist = slide.get(key)
+        if isinstance(blist, list) and len(blist) > 2:
+            report.add_issue(
+                rule_id="LINT006_DESIGN_CONTRACT",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Executive C-Suite contract limits containers to max 2 bullets (found {len(blist)} in '{key}').",
+                suggestion="Executive C-Suite slides enforce max_bullets_per_container: 2. Trim narrative into <= 2 high-impact items with bold lead-ins.",
+            )
+
+    items_val = slide.get("items")
+    if isinstance(items_val, list) and items_val and all(isinstance(x, str) for x in items_val):
+        if len(items_val) > 2:
+            report.add_issue(
+                rule_id="LINT006_DESIGN_CONTRACT",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Executive C-Suite contract limits containers to max 2 bullets (found {len(items_val)} in 'items').",
+                suggestion="Executive C-Suite slides enforce max_bullets_per_container: 2. Trim narrative into <= 2 high-impact items with bold lead-ins.",
+            )
+
+    for nested_key in ("items", "blocks", "columns", "horizons", "cards", "steps"):
+        c_list = slide.get(nested_key)
+        if isinstance(c_list, list):
+            for c_idx, container in enumerate(c_list, start=1):
+                if isinstance(container, dict):
+                    c_title = container.get("title") or container.get("label") or f"{nested_key} #{c_idx}"
+                    for b_key in ("bullets", "initiatives", "items"):
+                        b_sub = container.get(b_key)
+                        if isinstance(b_sub, list) and len(b_sub) > 2 and all(isinstance(x, str) for x in b_sub):
+                            report.add_issue(
+                                rule_id="LINT006_DESIGN_CONTRACT",
+                                severity="ERROR",
+                                slide_idx=slide_idx,
+                                archetype=archetype,
+                                message=f"Executive C-Suite contract limits containers to max 2 bullets (found {len(b_sub)} in '{c_title}').",
+                                suggestion="Executive C-Suite slides enforce max_bullets_per_container: 2. Trim container narrative into <= 2 high-impact items with bold lead-ins.",
+                            )
+
+    # 2. Hero Stat / KPI presence
+    has_hero_stat = False
+    for kpi_key in ("hero_stat", "hero_metric", "stat", "kpi", "metric", "metric_highlight"):
+        if slide.get(kpi_key):
+            has_hero_stat = True
+            break
+
+    if not has_hero_stat:
+        if archetype in ("split_hero", "hero_metric", "kpi_grid", "metric_grid", "balanced_scorecard"):
+            has_hero_stat = True
+
+    if not has_hero_stat:
+        for nested_key in ("items", "blocks", "horizons", "columns", "cards"):
+            c_list = slide.get(nested_key)
+            if isinstance(c_list, list):
+                for container in c_list:
+                    if isinstance(container, dict):
+                        if any(container.get(k) for k in ("hero_stat", "stat", "kpi", "metric", "metric_highlight", "metric_badge", "value")):
+                            has_hero_stat = True
+                            break
+            if has_hero_stat:
+                break
+
+    if not has_hero_stat:
+        report.add_issue(
+            rule_id="LINT006_DESIGN_CONTRACT",
+            severity="ERROR",
+            slide_idx=slide_idx,
+            archetype=archetype,
+            message="Executive C-Suite contract requires a dominant Hero Stat / KPI focal anchor.",
+            suggestion="Executive C-Suite slides must feature a dominant focal anchor (hero_stat >= 36 pt, e.g., '+28%' or '$4.2M') with descriptor.",
+        )
+
+    # 3. Takeaway anti-echo check
+    takeaway = slide.get("takeaway")
+    if isinstance(takeaway, str) and takeaway.strip() and title:
+        t_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", title.lower()))
+        tk_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", takeaway.lower()))
+        filtered_tk_words = {w for w in tk_words if w not in {"decision", "lever", "capital", "takeaway", "impact"}}
+        if t_words and filtered_tk_words:
+            overlap = len(t_words.intersection(filtered_tk_words)) / max(len(t_words), len(filtered_tk_words))
+            if overlap >= 0.75:
+                report.add_issue(
+                    rule_id="LINT006_DESIGN_CONTRACT",
+                    severity="ERROR",
+                    slide_idx=slide_idx,
+                    archetype=archetype,
+                    message="Executive C-Suite contract violation: Takeaway bar echoes the action headline.",
+                    suggestion="The headline asserts the Finding; the takeaway bar strictly delivers the Decision Lever / Capital Equation / So-What.",
+                )
+
+
+def _lint_strategic_tradeoff_contract(
+    slide: Dict[str, Any],
+    slide_idx: int,
+    archetype: str,
+    title: str,
+    report: SpecLintReport,
+) -> None:
+    # 1. Reject 50/50 symmetric splits
+    split_val = slide.get("split_ratio")
+    if split_val is not None:
+        is_symmetric = False
+        if isinstance(split_val, str):
+            s_clean = split_val.strip().replace(" ", "").replace("%", "")
+            parts = re.split(r"[/:\-]", s_clean)
+            if len(parts) == 2:
+                try:
+                    is_symmetric = float(parts[0]) == float(parts[1])
+                except ValueError:
+                    pass
+            elif s_clean in ("1:1", "1/1", "0.5/0.5", "50/50"):
+                is_symmetric = True
+        elif isinstance(split_val, (list, tuple)) and len(split_val) == 2:
+            try:
+                is_symmetric = float(split_val[0]) == float(split_val[1])
+            except (ValueError, TypeError):
+                pass
+        elif isinstance(split_val, (int, float)):
+            is_symmetric = (float(split_val) == 0.5)
+
+        if is_symmetric:
+            report.add_issue(
+                rule_id="LINT006_DESIGN_CONTRACT",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Strategic Trade-Off contract violation: Symmetric 50/50 split rejected ('{split_val}').",
+                suggestion="Enforce asymmetric layout routing: use an asymmetric split (e.g. 40/60 or 35/65) to visually prioritize the recommended path.",
+            )
+
+    if slide.get("left_width") and slide.get("right_width"):
+        try:
+            lw = float(str(slide["left_width"]).replace("in", "").replace('"', '').strip())
+            rw = float(str(slide["right_width"]).replace("in", "").replace('"', '').strip())
+            if abs(lw - rw) < 0.1:
+                report.add_issue(
+                    rule_id="LINT006_DESIGN_CONTRACT",
+                    severity="ERROR",
+                    slide_idx=slide_idx,
+                    archetype=archetype,
+                    message=f"Strategic Trade-Off contract violation: Equal column widths detected ({lw}'' vs {rw}'').",
+                    suggestion="Enforce asymmetric layout routing: split canvas 40/60 or 35/65.",
+                )
+        except ValueError:
+            pass
+
+    # 2. Ensure recommended option has accent/badge
+    has_recommendation = False
+    if any(slide.get(k) for k in ("recommended", "recommended_option", "recommended_index", "recommendation")):
+        has_recommendation = True
+
+    option_containers = []
+    for key in ("options", "items", "blocks", "columns"):
+        val = slide.get(key)
+        if isinstance(val, list) and len(val) >= 2 and all(isinstance(x, dict) for x in val):
+            option_containers = val
+            break
+
+    if option_containers:
+        for opt in option_containers:
+            badge_text = " ".join([
+                str(opt.get("badge") or ""),
+                str(opt.get("metric_badge") or ""),
+                str(opt.get("status") or ""),
+                str(opt.get("status_tag") or ""),
+                str(opt.get("tag") or ""),
+                str(opt.get("title") or ""),
+            ]).upper()
+            if any(w in badge_text for w in ("RECOMMEND", "TARGET", "PREFERRED", "CHOSEN", "SELECTED")):
+                has_recommendation = True
+                break
+            if opt.get("recommended") or opt.get("is_recommended"):
+                has_recommendation = True
+                break
+            if str(opt.get("accent_key", "")).lower() in ("accent", "primary", "hero", "target", "recommended", "success"):
+                has_recommendation = True
+                break
+
+    if not has_recommendation and (slide.get("left_title") or slide.get("right_title") or slide.get("left_items") or slide.get("right_items")):
+        rt = str(slide.get("right_title") or "").upper()
+        rb = str(slide.get("right_badge") or "").upper()
+        if any(w in rt or w in rb for w in ("RECOMMEND", "TARGET", "AFTER", "PREFERRED", "TO-BE")):
+            has_recommendation = True
+
+    if not has_recommendation:
+        report.add_issue(
+            rule_id="LINT006_DESIGN_CONTRACT",
+            severity="ERROR",
+            slide_idx=slide_idx,
+            archetype=archetype,
+            message="Strategic Trade-Off contract violation: No option marked with 'RECOMMENDED' badge or primary accent.",
+            suggestion="Designate the target/recommended option with badge: 'RECOMMENDED' and accent_key: 'accent' to visually anchor the decision.",
+        )
+
+    # 3. Neutral comparison title check
+    if title:
+        neutral_match = re.match(
+            r"^(option|vendor|architecture|solution|tooling|scenario)?\s*(comparison|trade-?offs?|evaluation|analysis)$",
+            title.strip(),
+            re.IGNORECASE,
+        )
+        if neutral_match:
+            report.add_issue(
+                rule_id="LINT006_DESIGN_CONTRACT",
+                severity="ERROR",
+                slide_idx=slide_idx,
+                archetype=archetype,
+                message=f"Strategic Trade-Off contract violation: Neutral comparison title detected ('{title}').",
+                suggestion="Follow McKinsey Action Title standard: state the decisive selection outcome (e.g., 'Target Solution Outperforms Legacy Architecture on Latency and TCO').",
+            )
+
+
+def _lint_technical_architecture_contract(
+    slide: Dict[str, Any],
+    slide_idx: int,
+    archetype: str,
+    title: str,
+    report: SpecLintReport,
+) -> None:
+    # 1. Diagnostic Status Validation
+    arch_containers = []
+    for key in ("blocks", "items", "nodes", "steps", "containers"):
+        val = slide.get(key)
+        if isinstance(val, list):
+            for itm in val:
+                if isinstance(itm, dict):
+                    arch_containers.append(itm)
+
+    has_any_diagnostic_status = False
+    for c in arch_containers:
+        # Check explicit diagnostic_status field
+        if "diagnostic_status" in c:
+            d_val = str(c["diagnostic_status"]).strip().lower()
+            if d_val in (
+                "defect", "bottleneck", "error", "p1", "p2", "p3", "bug", "blocker",
+                "wait", "boundary", "staging", "lock", "resource lock", "warning",
+                "active", "flow", "compute", "processing", "core", "primary",
+                "target", "verified", "production", "target state", "success", "stable"
+            ):
+                has_any_diagnostic_status = True
+            else:
+                report.add_issue(
+                    rule_id="LINT006_DESIGN_CONTRACT",
+                    severity="ERROR",
+                    slide_idx=slide_idx,
+                    archetype=archetype,
+                    message=f"Technical Architecture contract violation: Unrecognized diagnostic_status '{c['diagnostic_status']}'.",
+                    suggestion="Must adhere to 4-tier standard: Defect (Red), Boundary/Wait (Amber), Active Flow (Blue), Target State (Green).",
+                )
+                has_any_diagnostic_status = True
+
+        # Check metric_badge / status_tag / status / badge
+        badge_str = " ".join([
+            str(c.get("metric_badge") or ""),
+            str(c.get("status_tag") or ""),
+            str(c.get("status") or ""),
+            str(c.get("badge") or ""),
+        ]).strip().lower()
+
+        accent = str(c.get("accent_key") or "").lower()
+
+        if badge_str:
+            if any(k in badge_str for k in (
+                "defect", "bottleneck", "error", "p1", "p2", "p3", "bug", "blocker", "critical",
+                "wait", "boundary", "staging", "lock", "warning", "amber", "queued", "pending", "gate",
+                "active", "flow", "compute", "processing", "stream", "ingest", "core",
+                "target", "verified", "production", "target state", "success", "stable"
+            )):
+                has_any_diagnostic_status = True
+            elif accent in ("danger", "warning", "info", "primary", "accent", "success", "red", "amber", "blue", "green"):
+                has_any_diagnostic_status = True
+
+        if accent in ("danger", "warning", "info", "primary", "accent", "success", "red", "amber", "blue", "green"):
+            has_any_diagnostic_status = True
+
+    if arch_containers and len(arch_containers) >= 2 and not has_any_diagnostic_status:
+        report.add_issue(
+            rule_id="LINT006_DESIGN_CONTRACT",
+            severity="WARNING",
+            slide_idx=slide_idx,
+            archetype=archetype,
+            message="Technical Architecture contract expects diagnostic status tracking ('defect', 'wait', 'active', 'target') on architectural components.",
+            suggestion="Assign 4-tier diagnostic statuses (e.g. metric_badge: 'P1 DEFECT', 'RESOURCE LOCK', or 'TARGET STATE') to convey system lifecycle state.",
+        )
+
+    # 2. Connectors source/destination integrity
+    connectors = slide.get("connectors") or slide.get("flows") or slide.get("edges")
+    if isinstance(connectors, list):
+        for c_idx, conn in enumerate(connectors, start=1):
+            if isinstance(conn, dict):
+                src = conn.get("from") or conn.get("source") or conn.get("src") or conn.get("from_node")
+                dst = conn.get("to") or conn.get("target") or conn.get("dst") or conn.get("to_node")
+                conn_id = conn.get("id") or f"connector #{c_idx}"
+                if not (src and dst):
+                    report.add_issue(
+                        rule_id="LINT006_DESIGN_CONTRACT",
+                        severity="ERROR",
+                        slide_idx=slide_idx,
+                        archetype=archetype,
+                        message=f"Technical Architecture contract violation: Connector '{conn_id}' missing explicit source or destination anchor.",
+                        suggestion="Every connector must specify both source ('from') and destination ('to') node anchors.",
+                    )
+
+
 def lint_presentation_spec(
     spec_path: Union[str, Path],
     strict: bool = False,
@@ -187,6 +532,24 @@ def lint_presentation_spec(
             suggestion="Define a list of slides under 'slides:'.",
         )
         return report
+
+    # -------------------------------------------------------------------------
+    # Deck-Level Design Contract Verification
+    # -------------------------------------------------------------------------
+    deck_contract_raw = data.get("design_contract")
+    if not deck_contract_raw and isinstance(data.get("metadata"), dict):
+        deck_contract_raw = data.get("metadata", {}).get("design_contract")
+
+    if deck_contract_raw:
+        if not _normalize_contract(deck_contract_raw):
+            report.add_issue(
+                rule_id="LINT006_DESIGN_CONTRACT",
+                severity="ERROR",
+                slide_idx=0,
+                archetype="deck",
+                message=f"Unrecognized deck-level design_contract: '{deck_contract_raw}'.",
+                suggestion=f"Supported contracts: {', '.join(sorted(VALID_DESIGN_CONTRACTS))}.",
+            )
 
     # -------------------------------------------------------------------------
     # Slide-by-Slide Verification
@@ -293,7 +656,9 @@ def lint_presentation_spec(
 
         for blist in bullet_lists:
             for b_idx, bullet in enumerate(blist, start=1):
-                b_str = str(bullet).strip()
+                if not isinstance(bullet, str):
+                    continue
+                b_str = bullet.strip()
                 if not b_str:
                     continue
                 has_lead_in = bool(_BOLD_LEAD_IN_RE.match(b_str))
@@ -329,6 +694,56 @@ def lint_presentation_spec(
                 message="Deprecated top accent stripe flag detected.",
                 suggestion="Eliminate top accent stripes. Use clean surface containers with subtle hairline borders.",
             )
+
+        # ---------------------------------------------------------------------
+        # Rule LINT006: Redundant Card Badging / Badge Crutch
+        # ---------------------------------------------------------------------
+        for item_idx, itm in enumerate(slide.get("items") or []):
+            if isinstance(itm, dict) and itm.get("badge"):
+                badge_val = str(itm.get("badge", "")).strip().upper()
+                has_widget = bool(itm.get("widget"))
+                is_crutch = has_widget or any(k in badge_val for k in ("PILLAR", "STEP", "STREAM", "CATEGORY", "AUDIT", "PIPELINE"))
+                if is_crutch:
+                    report.add_issue(
+                        rule_id="LINT006_CARD_BADGE_CRUTCH",
+                        severity="WARNING",
+                        slide_idx=idx,
+                        archetype=arch,
+                        message=f"Redundant badge '{itm.get('badge')}' on card {item_idx + 1}.",
+                        suggestion="Remove redundant card badges. Cards with internal widgets or numbered headers must not use decorative corner badge pills.",
+                    )
+
+        # ---------------------------------------------------------------------
+        # Rule LINT006: Design Contract Enforcement (Modular Ceilings)
+        # ---------------------------------------------------------------------
+        slide_contract_raw = slide.get("design_contract")
+        if slide_contract_raw is not None:
+            contract_id = _normalize_contract(slide_contract_raw)
+            if not contract_id:
+                report.add_issue(
+                    rule_id="LINT006_DESIGN_CONTRACT",
+                    severity="ERROR",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"Unrecognized slide-level design_contract: '{slide_contract_raw}'.",
+                    suggestion=f"Supported contracts: {', '.join(sorted(VALID_DESIGN_CONTRACTS))}.",
+                )
+            elif arch not in ("cover", "hero_cover", "chapter_divider", "thank_you"):
+                if contract_id == "executive_csuite":
+                    _lint_executive_csuite_contract(slide, idx, arch, title, report)
+                elif contract_id == "strategic_tradeoff":
+                    _lint_strategic_tradeoff_contract(slide, idx, arch, title, report)
+                elif contract_id == "technical_architecture":
+                    _lint_technical_architecture_contract(slide, idx, arch, title, report)
+        elif deck_contract_raw is not None:
+            contract_id = _normalize_contract(deck_contract_raw)
+            if contract_id and arch not in ("cover", "hero_cover", "chapter_divider", "thank_you"):
+                if contract_id == "executive_csuite":
+                    _lint_executive_csuite_contract(slide, idx, arch, title, report)
+                elif contract_id == "strategic_tradeoff":
+                    _lint_strategic_tradeoff_contract(slide, idx, arch, title, report)
+                elif contract_id == "technical_architecture":
+                    _lint_technical_architecture_contract(slide, idx, arch, title, report)
 
     if strict and report.warning_count > 0:
         report.passed = False

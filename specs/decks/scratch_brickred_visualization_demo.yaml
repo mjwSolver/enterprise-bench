@@ -1,0 +1,124 @@
+deck_type: pitch_deck
+theme: brickred
+metadata:
+  project_name: "Enterprise Clinical AI Governance — Real-Time Gate Telemetry"
+  client_name: "Morula IVF Architecture Review Board"
+  vendor_name: "Enterprise Workbench (@mjwSolver)"
+  product: "Snowflake Cortex & Streamlit Analytics Engine"
+  date_str: "November 2026"
+  confidentiality: "Enterprise Architecture Practice  |  Clinical AI Telemetry Gate Demo"
+
+slides:
+  - archetype: open_telemetry_flow
+    chart_style: "track_bars"
+    tracker: "CLINICAL AI GOVERNANCE | REAL-TIME TELEMETRY & GATE VERIFICATION"
+    title: "Dual-Engine Pipeline Telemetry Validates 99.4% Model Fidelity and Enforces Sub-Second Inference SLAs"
+    subtitle: "Real-time Snowflake Cortex inference audits confirm automated compliance gates across all 4 production reproductive medicine prediction models."
+    left_title: "Production Model Serving Console"
+    left_subtitle: "Snowflake Snowpark Container Services & Streamlit HUD"
+    mockup_config:
+      url: "https://snowflake.morulaivf.co.id/cortex/clinical-models/live"
+      theme_mode: "light"
+      telemetry_badges:
+        - "Snowflake Cortex"
+        - "Streamlit Serving"
+        - "Zero PII Leak"
+    right_title: "Automated Production Quality Gates"
+    right_subtitle: "Continuous Model Validation & Regulatory Threshold Tracking"
+    gate_matrix:
+      series:
+        - label: "EMBRYO_VIABILITY_SCORE"
+          value: 0.994
+          display_value: "99.4%"
+          subtext: "(42.8k calls)"
+          status: "PASS"
+          bar_color: "emerald"
+          status_color: "emerald"
+        - label: "IVF_CYCLE_ATTRITION"
+          value: 0.962
+          display_value: "96.2%"
+          subtext: "(18.4k calls)"
+          status: "PASS"
+          bar_color: "emerald"
+          status_color: "emerald"
+        - label: "CLINICAL_PROTOCOL_REC"
+          value: 0.887
+          display_value: "88.7%"
+          subtext: "(6.2k calls)"
+          status: "WARN"
+          bar_color: "amber"
+          status_color: "amber"
+        - label: "PATIENT_RESPONSE_ETL"
+          value: 0.741
+          display_value: "74.1%"
+          subtext: "(92.1k rows)"
+          status: "AUDIT"
+          bar_color: "slate"
+          status_color: "red"
+      thresholds:
+        - value: 0.85
+          label: "85% CLINICAL SLA"
+          color: "amber"
+          position: "top"
+        - value: 0.95
+          label: "95% REGULATORY GATE"
+          color: "emerald"
+          position: "bottom"
+    footnote: "Audit Window: 30-day rolling inference window across 12 Morula IVF clinic branches."
+
+  - archetype: open_telemetry_flow
+    chart_style: "wireline_constellation"
+    tracker: "CLINICAL AI GOVERNANCE | REAL-TIME TELEMETRY & GATE VERIFICATION"
+    title: "Continuous Wireline Constellation Audits Model Thresholds Across Validation Gates"
+    subtitle: "Precision wireline telemetry and circular orbit nodes capture sub-percentage checkpoint clearance across rolling clinical inference windows."
+    left_title: "Production Model Serving Console"
+    left_subtitle: "Snowflake Snowpark Container Services & Streamlit HUD"
+    mockup_config:
+      url: "https://snowflake.morulaivf.co.id/cortex/clinical-models/live"
+      theme_mode: "light"
+      telemetry_badges:
+        - "Snowflake Cortex"
+        - "Streamlit Serving"
+        - "Zero PII Leak"
+    right_title: "Automated Production Quality Gates"
+    right_subtitle: "Continuous Model Validation & Regulatory Threshold Tracking"
+    gate_matrix:
+      series:
+        - label: "EMBRYO_VIABILITY_SCORE"
+          value: 0.994
+          display_value: "99.4%"
+          subtext: "(42.8k calls)"
+          status: "PASS"
+          bar_color: "emerald"
+          status_color: "emerald"
+        - label: "IVF_CYCLE_ATTRITION"
+          value: 0.962
+          display_value: "96.2%"
+          subtext: "(18.4k calls)"
+          status: "PASS"
+          bar_color: "emerald"
+          status_color: "emerald"
+        - label: "CLINICAL_PROTOCOL_REC"
+          value: 0.887
+          display_value: "88.7%"
+          subtext: "(6.2k calls)"
+          status: "WARN"
+          bar_color: "amber"
+          status_color: "amber"
+        - label: "PATIENT_RESPONSE_ETL"
+          value: 0.741
+          display_value: "74.1%"
+          subtext: "(92.1k rows)"
+          status: "AUDIT"
+          bar_color: "slate"
+          status_color: "red"
+      thresholds:
+        - value: 0.85
+          label: "85% CLINICAL SLA"
+          color: "amber"
+          position: "top"
+        - value: 0.95
+          label: "95% REGULATORY GATE"
+          color: "emerald"
+          position: "bottom"
+    footnote: "Audit Window: 30-day rolling inference window across 12 Morula IVF clinic branches."

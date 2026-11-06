@@ -20,7 +20,7 @@ palette:
   # Status Badges
   badge_blue_fill: "#EFF6FF"
   badge_blue_text: "#1D4ED8"
-  badge_green_fill: "#F0FDF4"
+  badge_green_fill: "#ECFDF5"
   badge_green_text: "#15803D"
   badge_amber_fill: "#FEF3C7"
   badge_amber_text: "#B45309"

@@ -405,7 +405,7 @@ class ThemeEngine:
         if name == "snowblue":
             return Theme(
                 name="snowblue",
-                description="Snow Blue: crisp frost #F0FDF4 / #F0F9FF, cobalt #0284C7, cyan accent #06B6D4, surface #FFFFFF, border #BAE6FD, corner_radius 8, soft modern borders",
+                description="Snow Blue: crisp frost #E0F2FE / #F0F9FF, cobalt #0284C7, cyan accent #06B6D4, surface #FFFFFF, border #BAE6FD, corner_radius 8, soft modern borders",
                 palette={
                     "background": "#F0F9FF",
                     "surface": "#FFFFFF",
@@ -457,7 +457,7 @@ class ThemeEngine:
                     "danger": "#991B1B",
                     "badge_blue_fill": "#EFF6FF",
                     "badge_blue_text": "#1D4ED8",
-                    "badge_green_fill": "#F0FDF4",
+                    "badge_green_fill": "#ECFDF5",
                     "badge_green_text": "#15803D",
                     "badge_amber_fill": "#FEF3C7",
                     "badge_amber_text": "#B45309",
@@ -517,7 +517,7 @@ class ThemeEngine:
                     "danger": "#DC2626",
                     "badge_blue_fill": "#EFF6FF",
                     "badge_blue_text": "#1D4ED8",
-                    "badge_green_fill": "#F0FDF4",
+                    "badge_green_fill": "#ECFDF5",
                     "badge_green_text": "#15803D",
                     "badge_amber_fill": "#FEF3C7",
                     "badge_amber_text": "#B45309",

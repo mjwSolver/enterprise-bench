@@ -26,9 +26,22 @@ Classify incoming requests into one execution lane:
 ## 📐 Presentation & Diagram Architecture Standard
 
 - **Declarative Spec + Static Runner Invariant:** Content hierarchy, environment cards, badges, and copy reside in a declarative YAML specification (`specs/<topic>.yaml`), executed headlessly by a decoupled compiler. Never generate or patch monolithic layout scripts; all content revisions touch *only* the YAML spec ([case study](docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md)).
+- **Pluggable Design Contract Router:** Slide/diagram specs may declare `design_contract: <name>` to load specialized ceiling rules from `docs/specs/contracts/<name>.md` (e.g. `executive_csuite`, `technical_architecture`, `strategic_tradeoff`). When omitted, the Base Floor invariants below govern layout and geometry.
+- **Visualization Pattern Router:** For non-rectangular elements (wireline constellations, checkpoint gates, radial dials, chrome viewports), select approved patterns and cognitive trade-offs from [VISUALIZATION_CATALOG.md](docs/specs/VISUALIZATION_CATALOG.md).
 - **Sketch/Image Confirmation Gate:** When provided an image or sketch, output a structural graph contract (Containers, Nodes + semantic colors, Connectors) *before* writing code or compiling.
 - **Single-Slide Ceiling:** Visualization prompts are strictly capped at **exactly 1 slide** (or single standalone diagram). No unsolicited multi-slide pitch decks or flat raster screenshots—compile to native DrawingML vector shapes.
-- **Core Geometry & Visual Invariants:**
+- **Core Geometry & Visual Invariants (The Base Floor):**
+  - **Locked Typographic Ramp:**
+    - Slide Action Title: 20–22 pt, Bold, `#0F172A` (Slate 900).
+    - Slide Subtitle / Context: 11–12 pt, Regular, `#475569` (Slate 600).
+    - Card / Container Header: 13–14 pt, Bold, `#1E293B` (Slate 800).
+    - Category Eyebrow / Tracker: 8.5–9.5 pt, Bold Uppercase (`tracking = 0.05em`), `#64748B` (Slate 500).
+    - Body Bullet Lead-in: 10.5–11 pt, Bold `#0F172A`, followed by regular weight body.
+    - KPI Hero Number: 32–36 pt, Bold, semantic color.
+    - Footnote / Metadata: 8–8.5 pt, Regular, `#94A3B8` (Slate 400).
+  - **Single Focal Anchor Invariant:** Every slide must possess exactly ONE visual focal point that draws executive eye-tracking within 2 seconds (1 primary accent container `#F0F9FF` with `#0284C7` border among neutral `#FFFFFF` peers, or 1 enlarged 36 pt callout). Never style all cards with identical visual weight.
+  - **Decoupled KPI Micro-Formatting:** Metric callouts must strictly separate value from descriptor: Top line eyebrow (9 pt uppercase slate), Middle line naked numeric delta (`+28%`, `$4.2M`) at 32–36 pt Bold, Bottom line timeframe/descriptor (9–10 pt regular muted text) below a 0.75 pt hairline.
+  - **Asymmetric Layout Routing (Anti-Uniformity):** Never default to homogeneous 3-column vertical cards unless presenting 3 truly parallel peer items. For comparisons, split canvas 40/60 or 35/65; for metrics, use left Hero Anchor column ($w \approx 3.2''$) with right body container ($w \approx 8.4''$); for sequences, use horizontal step ribbons.
   - **Full-Width Canvas Header:** Action title and subtitle flow in a **single text box** ($w \ge 11.85''$, `space_before = Pt(10)` on subtitle).
   - **Sharp Rectangles:** Sharp rectangles (`MSO_SHAPE.RECTANGLE`) for cards and top accent stripes. Zero top stripes on rounded cards.
   - **Zero Drop Shadows:** Strip OpenXML drop shadows (`<a:outerShdw>`, `<a:effectLst/>`).

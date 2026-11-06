@@ -45,7 +45,12 @@ docs/
 │   ├── manual_identity_guide.md
 │   ├── master_deliverable_recreation_plan.md
 │   ├── openxml_purging_and_cleansing.md
-│   └── powerpoint_slide_geometry.md
+│   ├── powerpoint_slide_geometry.md
+│   ├── VISUALIZATION_CATALOG.md
+│   └── contracts/             # Modular Presentation Taste & Design Contracts
+│       ├── executive_csuite.md
+│       ├── technical_architecture.md
+│       └── strategic_tradeoff.md
 │
 └── backlog/               # Future sprint roadmaps, design proposals & backlogs
     ├── atomic_desktop_hot_reload.md
@@ -101,6 +106,7 @@ docs/
 * [**`master_deliverable_recreation_plan.md`**](specs/master_deliverable_recreation_plan.md): Master strategy for recreating the 38 real-world enterprise consulting templates across 5 delivery tiers.
 * [**`openxml_purging_and_cleansing.md`**](specs/openxml_purging_and_cleansing.md): Zero-corruption comment, highlight, tracked revision, and author profile stripping for `.docx`.
 * [**`powerpoint_slide_geometry.md`**](specs/powerpoint_slide_geometry.md): Deterministic container geometry, sharp top stripes, cover typographic metadata, split chapter dividers, diagram hierarchy, and the Centered-Block Container Alignment Standard (internally left-aligned centered lists).
+* [**`VISUALIZATION_CATALOG.md`**](specs/VISUALIZATION_CATALOG.md): Standardized catalog of rich DrawingML visualization patterns beyond text cards (mockup chrome, wireline constellations, multi-stage SLA gates, radial dials, bento grids, and Python library vector transformations).
 * [**`pptx_decompiler_and_yaml_reconciliation_engine.md`**](specs/pptx_decompiler_and_yaml_reconciliation_engine.md): Topic 11 architecture for bidirectional OpenXML shape name stamping, PPTX decompiler, AST reconciliation, and automated 4-way re-compilation.
 * [**`pptx_file_watcher_and_geometric_reconciliation.md`**](specs/pptx_file_watcher_and_geometric_reconciliation.md): Autonomous PPTX file watcher daemon, reverse geometric coordinate diffing & $0.05''$ grid snapping across containers/nodes/badges/bullet lists, 500ms sliding debounce, and origin suppression.
 * [**`in_flight_verification_and_corridor_geometry.md`**](specs/in_flight_verification_and_corridor_geometry.md): Minimum connector corridor span invariant ($L_{\text{segment}} \ge W_{\text{pill}} + 2 \times \text{Halo}$), Postel's Law constructor aliasing, deep PKZip central directory validation, and standardized subagent in-flight smoke pass.

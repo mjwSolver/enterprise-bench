@@ -1,0 +1,31 @@
+deck_type: pitch_deck
+theme: snowblue
+design_contract: strategic_tradeoff
+metadata:
+  project_name: "Strategic Architecture Evaluation — On-Prem CDC vs Snowflake Iceberg"
+  client_name: "Enterprise Architecture Review Board"
+  vendor_name: "Enterprise Workbench (@mjwSolver)"
+  product: "Snowflake Managed Open Iceberg"
+  date_str: "November 2026"
+  confidentiality: "Enterprise Architecture Practice  |  Strategic Trade-Off Briefing"
+
+slides:
+  - archetype: gap_analysis
+    design_contract: strategic_tradeoff
+    tracker: "DATA PLATFORM MODERNIZATION | STRATEGIC ARCHITECTURE TRADE-OFF"
+    title: "Snowflake Managed Iceberg Outperforms Self-Hosted Legacy CDC by Slashing Pipeline Latency to Sub-Minute and Eliminating Runaway Infrastructure Costs"
+    subtitle: "Eliminating Kafka broker management and manual Parquet compactions delivers 99.9% pipeline reliability while capturing $320K in annual license savings."
+    left_eyebrow: "AS-IS BASELINE ARCHITECTURE"
+    left_title: "Option A: Legacy Oracle LogMiner & Kafka CDC"
+    left_subtitle: "High-Friction Self-Hosted Ingestion Cluster"
+    left_items:
+      - "**Unbounded Operational Burden:** Demands 14 engineering mandays monthly to maintain Kafka quorums, tune JVM heaps, and script manual Parquet compaction."
+      - "**Prohibitive Infrastructure TCO:** Incurs $480K annually in database replication licenses and over-provisioned nodes with recurring month-end queue locks."
+    right_eyebrow: "RECOMMENDED TARGET STATE"
+    right_title: "Option B (Recommended): Snowflake Managed Open Iceberg"
+    right_subtitle: "Serverless Streaming Ingest & Automated Table Maintenance"
+    right_items:
+      - "**Autonomous Cloud Ingestion:** Native Snowpipe Streaming writes directly to Apache Iceberg with sub-minute latency, eliminating broker maintenance queues."
+      - "**Immediate Run-Rate Recapture:** Replaces dedicated nodes with elastic virtual warehouses, saving $320K/yr while ensuring automated SOC2 audit compliance."
+    takeaway: "DECISION LEVER: Reallocate $320K in legacy renewal capital to Q1 Iceberg migration, authorizing serverless streaming to unblock 142 downstream analytics models."
+    source: "Enterprise Modernization Practice Architecture Audit; Production Telemetry Q3 2026 (N=142 pipelines)"

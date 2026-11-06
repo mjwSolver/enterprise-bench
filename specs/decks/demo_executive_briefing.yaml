@@ -1,0 +1,30 @@
+deck_type: pitch_deck
+theme: snowblue
+design_contract: executive_csuite
+metadata:
+  project_name: "Executive Platform Migration Briefing — 24-Month ROI & Value Realization"
+  client_name: "Executive Steering Committee"
+  vendor_name: "Enterprise Workbench (@mjwSolver)"
+  product: "Snowflake Modern Cloud Migration"
+  date_str: "November 2026"
+  confidentiality: "Enterprise Architecture Practice  |  Board-Level Executive Briefing"
+
+slides:
+  - archetype: split_hero
+    design_contract: executive_csuite
+    tracker: "EXECUTIVE STEERING BRIEFING | PLATFORM MODERNIZATION ROI"
+    title: "Enterprise Data Cloud Migration Delivers $4.2M in Cumulative Net Savings by Decommissioning Legacy Infrastructure and Accelerating Analytics Velocity"
+    subtitle: "Strategic platform consolidation eliminates $1.8M in hardware renewals and recaptures 14 engineering mandays monthly to fund modern data governance."
+    hero_stat: "+$4.2M"
+    hero_stat_label: "24-Month Cumulative Net Savings"
+    hero_stat_subtext: "Payback model reflects 3.4x ROI through $1.8M compute retirement, $1.4M license avoidance, and $1.0M labor efficiency."
+    source: "Enterprise Modernization Practice Financial Model Q4 2026; Production Telemetry Audit (N=142 pipelines)"
+    blocks:
+      - title: "Infrastructure Rationalization & Compute Deprecation"
+        metric_badge: "+$1.8M RECOVERED"
+        badge_variant: "success"
+        description: "**Retiring 32 Monolithic Nodes:** Decommissioning on-prem clusters eliminates $1.8M in fixed hardware refresh cycles and third-party maintenance renewals."
+      - title: "Toolchain Consolidation & Engineering Capacity Recapture"
+        metric_badge: "+$2.4M VALUE"
+        badge_variant: "success"
+        description: "**Eliminating Point Solutions:** Unifying storage and governance avoids $1.4M in redundant software tools while freeing 14 engineering mandays monthly."

@@ -93,8 +93,8 @@ class PPTVisualLinter:
                     est_height = 0.0
                     for p in tf.paragraphs:
                         fs = p.font.size.pt if p.font.size else 11.0
-                        # Calculate wrapped lines based on width
-                        char_per_line = max(10, int(w * 16))
+                        # Calculate wrapped lines based on width and real proportional font size (avg glyph width ~ 0.55 * fs)
+                        char_per_line = max(4, int(w * 72.0 / (fs * 0.55)))
                         line_count = max(1, (len(p.text) + char_per_line - 1) // char_per_line)
                         est_height += (fs * 1.25 * line_count + 3.0) / 72.0
 

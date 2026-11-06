@@ -96,12 +96,16 @@ from src.ppt_engine.consulting_archetypes import (
     build_chapter_divider_slide,
     build_chevron_process_slide,
     build_cover_slide,
+    build_crisp_dm_gate_slide,
     build_equity_corporate_tree_slide,
     build_feature_matrix_slide,
     build_gap_analysis_slide,
+    build_gate_validation_slide,
     build_hero_cover_slide,
     build_iceberg_concept_slide,
     build_mckinsey_cascade_slide,
+    build_medallion_tiers_slide,
+    build_open_telemetry_flow_slide,
     build_split_hero_slide,
     build_table_slide,
     build_tech_logo_grid_slide,
@@ -319,6 +323,7 @@ class PitchDeckBuilder:
                         badge=itm.get("badge"),
                         metric=itm.get("metric"),
                         metric_label=itm.get("metric_label"),
+                        widget=itm.get("widget"),
                     ))
             build_card_grid_slide(
                 self.prs,
@@ -328,6 +333,7 @@ class PitchDeckBuilder:
                 subtitle=cfg.get("subtitle", "Integrated solution pillars supporting digital transformation from foundation cloud infrastructure to applied intelligence."),
                 items=items if items else None,
                 columns=int(cfg.get("columns", 4)),
+                takeaway=cfg.get("takeaway"),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
@@ -542,6 +548,72 @@ class PitchDeckBuilder:
                 notice=self.notice,
             )
 
+        elif arch in ("open_telemetry_flow", "pipeline_gate_matrix", "geometric_telemetry", "telemetry_pipeline_hud"):
+            build_open_telemetry_flow_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker", "CLINICAL AI GOVERNANCE | REAL-TIME TELEMETRY & GATE VERIFICATION"),
+                action_title=cfg.get("title", "Dual-Engine Pipeline Telemetry Validates 99.4% Model Fidelity and Enforces Sub-Second Inference SLAs"),
+                subtitle=cfg.get("subtitle", "Real-time Snowflake Cortex inference audits confirm automated compliance gates across all 4 production reproductive medicine prediction models."),
+                pipeline_steps=cfg.get("pipeline_steps"),
+                hero_metrics=cfg.get("hero_metrics"),
+                mockup_config=cfg.get("mockup_config") or cfg.get("widget"),
+                left_title=cfg.get("left_title", "Production Model Serving Console"),
+                left_subtitle=cfg.get("left_subtitle", "Snowflake Snowpark Container Services & Streamlit HUD"),
+                right_title=cfg.get("right_title", "Automated Production Quality Gates"),
+                right_subtitle=cfg.get("right_subtitle", "Continuous Model Validation & Regulatory Threshold Tracking"),
+                gate_matrix=cfg.get("gate_matrix") or cfg.get("threshold_bars") or cfg.get("chart_data"),
+                chart_style=cfg.get("chart_style", "track_bars"),
+                footnote=cfg.get("footnote", "Audit Window: 30-day rolling inference window across 12 Morula IVF clinic branches."),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+            )
+
+        elif arch in ("gate_validation", "threshold_bars", "coverage_gate_validation", "metric_gate_review"):
+            build_gate_validation_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker", "EMPIRICAL DATA RECONNAISSANCE & LIMITATIONS"),
+                action_title=cfg.get("title", "Historical Volume Is Viable for Baseline, but Heavily Concentrated"),
+                subtitle=cfg.get("subtitle", "11,950 labelled rows across 27 months with 21% no-show rate; billing and SOAP clear 90% join threshold."),
+                kpis=cfg.get("kpis"),
+                chart_data=cfg.get("chart_data") or cfg.get("threshold_bars"),
+                constraints_card=cfg.get("constraints_card") or cfg.get("constraints"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+            )
+
+        elif arch in ("crisp_dm_gate", "crisp_dm", "crisp_dm_lifecycle"):
+            build_crisp_dm_gate_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker", "CRISP-DM LIFECYCLE & UC-1 DATA PREPARATION"),
+                action_title=cfg.get("title", "Data Preparation Is the Active Gate Deciding Machine Learning Feasibility"),
+                subtitle=cfg.get("subtitle", "Phases 1 & 2 complete; Phase 3 holds the operational line before any model training begins."),
+                crisp_phases=cfg.get("crisp_phases"),
+                prep_cards=cfg.get("prep_cards"),
+                takeaway=cfg.get("takeaway"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+            )
+
+        elif arch in ("medallion_tiers", "data_tiers", "medallion_stack"):
+            build_medallion_tiers_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker", "MEDALLION DATA TIER ELIGIBILITY ROSTER"),
+                action_title=cfg.get("title", "Silver Tables Provide Clean Feature Coverage; Bronze Requires Written Reason"),
+                subtitle=cfg.get("subtitle", "Three stacked medallion tiers classify approved training sources, conditional audit replay, and barred marts."),
+                tiers=cfg.get("tiers"),
+                takeaway=cfg.get("takeaway"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+            )
+
         elif arch in ("chevron_process", "process_flow", "value_chain"):
             steps = []
             for s in (cfg.get("steps") or []):
@@ -563,6 +635,7 @@ class PitchDeckBuilder:
                 action_title=cfg.get("title", "Structured Four-Stage Delivery Framework Drives Predictable Implementation"),
                 subtitle=cfg.get("subtitle", "Sequential phase gates: Initiation, Cloud Development, Integration Testing, and Executive Handover."),
                 steps=steps if steps else None,
+                takeaway=cfg.get("takeaway"),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,

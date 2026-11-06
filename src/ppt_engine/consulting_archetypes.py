@@ -2265,6 +2265,7 @@ def build_chevron_process_slide(
     action_title: str = "Phased Execution Roadmap Delivers Accelerated Value Across Four Controlled Horizons",
     subtitle: Optional[str] = "Sequential progression transitions foundation infrastructure into production analytics.",
     steps: Optional[List[ProcessChevronStep]] = None,
+    takeaway: Optional[Union[str, Dict[str, Any]]] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
@@ -2338,7 +2339,7 @@ def build_chevron_process_slide(
     gap = Inches(0.12)
     step_w = (total_w - (n_steps - 1) * gap) / n_steps
     card_y = chevron_y + chevron_h + Inches(0.08)
-    card_h = Inches(4.06)
+    card_h = Inches(3.35) if takeaway else Inches(4.06)
 
     base_primary = theme.get_rgb("primary")
     light_tint = _interpolate_color(RGBColor(241, 245, 249), base_primary, 0.28)
@@ -2473,6 +2474,59 @@ def build_chevron_process_slide(
                 r_all.text = f"•  {deliv.strip()}"
                 r_all.font.bold = False
                 r_all.font.color.rgb = theme.get_rgb("secondary")
+
+    if takeaway:
+        syn_y = Inches(6.32)
+        syn_h = Inches(0.48)
+        syn_w = total_w
+        col1_x = start_x
+
+        add_card(
+            slide,
+            theme,
+            col1_x,
+            syn_y,
+            syn_w,
+            syn_h,
+            force_rectangle=True,
+            bg_color=hex_to_rgb("#F8FAFC"),
+            border_color=hex_to_rgb("#BAE6FD"),
+            border_width_pt=0.75,
+        )
+
+        stripe_syn = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, syn_y, Inches(0.06), syn_h)
+        stripe_syn.shadow.inherit = False
+        stripe_syn.fill.solid()
+        stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
+        stripe_syn.line.fill.background()
+
+        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.22), syn_y + Inches(0.06), syn_w - Inches(0.36), syn_h - Inches(0.12))
+        syn_tf = syn_tb.text_frame
+        syn_tf.word_wrap = True
+        syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        syn_tf.margin_left = syn_tf.margin_right = syn_tf.margin_top = syn_tf.margin_bottom = 0
+        p_syn = syn_tf.paragraphs[0]
+
+        takeaway_text = takeaway if isinstance(takeaway, str) else str(takeaway.get("text", ""))
+        if ":" in takeaway_text:
+            t_lead, t_body = takeaway_text.split(":", 1)
+            r_tl = p_syn.add_run()
+            r_tl.text = f"{t_lead.strip()}: "
+            r_tl.font.name = theme.font_family_header
+            r_tl.font.size = Pt(10.0)
+            r_tl.font.bold = True
+            r_tl.font.color.rgb = theme.get_rgb("accent")
+
+            r_tb = p_syn.add_run()
+            r_tb.text = t_body.strip()
+            r_tb.font.name = theme.font_family
+            r_tb.font.size = Pt(10.0)
+            r_tb.font.color.rgb = theme.get_rgb("primary")
+        else:
+            p_syn.text = takeaway_text
+            p_syn.font.name = theme.font_family
+            p_syn.font.size = Pt(10.0)
+            p_syn.font.color.rgb = theme.get_rgb("primary")
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
@@ -4603,7 +4657,7 @@ def _add_bullet_paragraph(
     from pptx.oxml.xmlchemy import OxmlElement
 
     p = tf.add_paragraph()
-    clean_text = text.strip()
+    clean_text = text.strip().replace("`", "")
     if clean_text.startswith(("•", "-", "–")):
         clean_text = clean_text.lstrip("•-–\t ").strip()
     elif clean_text.startswith("* ") or clean_text.startswith("*\t"):
@@ -4909,6 +4963,7 @@ def build_card_grid_slide(
     subtitle: Optional[str] = "Eight integrated core pillars deliver complete lifecycle support from strategic advisory to operational execution.",
     items: Optional[List[CardGridItem]] = None,
     columns: int = 4,
+    takeaway: Optional[Union[str, Dict[str, Any]]] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
@@ -4932,7 +4987,7 @@ def build_card_grid_slide(
     content_left = Inches(0.80)
     content_top = Inches(1.80)
     total_w = Inches(11.733)
-    total_h = Inches(5.00)
+    total_h = Inches(4.35) if takeaway else Inches(5.00)
 
     cols = max(1, min(columns, len(items)))
     rows = max(1, (len(items) + cols - 1) // cols)
@@ -5215,6 +5270,59 @@ def build_card_grid_slide(
                     font_color=theme.get_rgb("secondary"),
                     space_before_pt=bullet_space_before,
                 )
+
+    if takeaway:
+        syn_y = Inches(6.32)
+        syn_h = Inches(0.48)
+        syn_w = total_w
+        col1_x = content_left
+
+        add_card(
+            slide,
+            theme,
+            col1_x,
+            syn_y,
+            syn_w,
+            syn_h,
+            force_rectangle=True,
+            bg_color=hex_to_rgb("#F8FAFC"),
+            border_color=hex_to_rgb("#BAE6FD"),
+            border_width_pt=0.75,
+        )
+
+        stripe_syn = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, syn_y, Inches(0.06), syn_h)
+        stripe_syn.shadow.inherit = False
+        stripe_syn.fill.solid()
+        stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
+        stripe_syn.line.fill.background()
+
+        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.22), syn_y + Inches(0.06), syn_w - Inches(0.36), syn_h - Inches(0.12))
+        syn_tf = syn_tb.text_frame
+        syn_tf.word_wrap = True
+        syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        syn_tf.margin_left = syn_tf.margin_right = syn_tf.margin_top = syn_tf.margin_bottom = 0
+        p_syn = syn_tf.paragraphs[0]
+
+        takeaway_text = takeaway if isinstance(takeaway, str) else str(takeaway.get("text", ""))
+        if ":" in takeaway_text:
+            t_lead, t_body = takeaway_text.split(":", 1)
+            r_tl = p_syn.add_run()
+            r_tl.text = f"{t_lead.strip()}: "
+            r_tl.font.name = theme.font_family_header
+            r_tl.font.size = Pt(10.0)
+            r_tl.font.bold = True
+            r_tl.font.color.rgb = theme.get_rgb("accent")
+
+            r_tb = p_syn.add_run()
+            r_tb.text = t_body.strip()
+            r_tb.font.name = theme.font_family
+            r_tb.font.size = Pt(10.0)
+            r_tb.font.color.rgb = theme.get_rgb("primary")
+        else:
+            p_syn.text = takeaway_text
+            p_syn.font.name = theme.font_family
+            p_syn.font.size = Pt(10.0)
+            p_syn.font.color.rgb = theme.get_rgb("primary")
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
