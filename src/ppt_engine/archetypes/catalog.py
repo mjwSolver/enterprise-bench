@@ -189,6 +189,50 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
   takeaway: "Decision Lever: Prioritize Silver staging deployment to lock in FY27 savings."
 """,
     },
+    "composable_split": {
+        "family": "Grids",
+        "aliases": ["split_canvas", "composable", "multi_pane", "composite_layout"],
+        "purpose": "Composable multi-widget split canvas partitioning the slide into collision-free relative columns hosting modular widgets (hero KPI, card list, card grid, table, process steps) without raw DrawingML coordinates.",
+        "keys": [
+            "tracker (str): Category eyebrow tag",
+            "title (str): Action headline expressing analytical conclusion",
+            "subtitle (str): Contextual narrative subtitle",
+            "split (list|str, optional): Column widths/fractions (e.g. [35, 65], [25, 50, 25], default equal)",
+            "gap (float, optional): Gutter width between columns in inches (default: 0.35)",
+            "panes (list): Child widgets: [{widget: 'hero_kpi'|'card_list'|'table'|'process_steps'|'card_grid', ...}]",
+            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+        ],
+        "example_yaml": """- archetype: composable_split
+  tracker: "EXECUTIVE SYNTHESIS | VALUE ARCHITECTURE"
+  title: "Composable Split Architecture Enables Arbitrary Multi-Widget Layouts Without DrawingML Drift"
+  subtitle: "Canvas width divides dynamically into relative fractional columns hosting modular widgets."
+  split: [35, 65]
+  gap: 0.35
+  panes:
+    - widget: hero_kpi
+      stat: "+$4.2M"
+      stat_label: "24-Month Net Savings"
+      stat_subtext: "Payback model reflects 3.4x ROI across compute retirement and engineering capacity recapture."
+      eyebrow: "EXECUTIVE VALUE THESIS"
+      badge: "AUDITED"
+      badge_variant: "success"
+      card_style: "filled"
+    - widget: card_list
+      style: "cards"
+      items:
+        - title: "Infrastructure Rationalization & Compute Deprecation"
+          description: "**Retiring Monolithic Compute:** Decommissioning on-prem clusters eliminates fixed refresh cycles."
+          badge: "+$1.8M RECOVERED"
+          badge_variant: "success"
+        - title: "Toolchain Consolidation & Engineering Capacity"
+          description: "**Eliminating Point Solutions:** Unifying storage and governance avoids redundant software tools."
+          badge: "+$2.4M VALUE"
+          badge_variant: "success"
+  takeaway:
+    action: "ARCHITECTURAL EFFICIENCY"
+    text: "Decoupling regional partitioning from widget rendering solves custom diagram composition in 1 turn."
+""",
+    },
     "tech_logo_grid": {
         "family": "Grids",
         "aliases": ["product_portfolio", "tech_grid"],

@@ -202,13 +202,13 @@ def _lint_executive_csuite_contract(
                 suggestion="Executive C-Suite slides enforce max_bullets_per_container: 2. Trim narrative into <= 2 high-impact items with bold lead-ins.",
             )
 
-    for nested_key in ("items", "blocks", "columns", "horizons", "cards", "steps"):
+    for nested_key in ("items", "blocks", "columns", "horizons", "cards", "steps", "panes"):
         c_list = slide.get(nested_key)
         if isinstance(c_list, list):
             for c_idx, container in enumerate(c_list, start=1):
                 if isinstance(container, dict):
                     c_title = container.get("title") or container.get("label") or f"{nested_key} #{c_idx}"
-                    for b_key in ("bullets", "initiatives", "items"):
+                    for b_key in ("bullets", "initiatives", "items", "cards"):
                         b_sub = container.get(b_key)
                         if isinstance(b_sub, list) and len(b_sub) > 2 and all(isinstance(x, str) for x in b_sub):
                             report.add_issue(
@@ -232,7 +232,7 @@ def _lint_executive_csuite_contract(
             has_hero_stat = True
 
     if not has_hero_stat:
-        for nested_key in ("items", "blocks", "horizons", "columns", "cards"):
+        for nested_key in ("items", "blocks", "horizons", "columns", "cards", "panes"):
             c_list = slide.get(nested_key)
             if isinstance(c_list, list):
                 for container in c_list:
@@ -884,14 +884,18 @@ def lint_presentation_spec(
             if isinstance(slide.get(key), list):
                 bullet_lists.append(slide[key])
 
-        # Also check nested horizons / blocks
-        for nested_key in ("horizons", "blocks", "steps", "columns"):
+        # Also check nested horizons / blocks / panes
+        for nested_key in ("horizons", "blocks", "steps", "columns", "panes"):
             if isinstance(slide.get(nested_key), list):
                 for item in slide[nested_key]:
                     if isinstance(item, dict):
-                        for b_key in ("initiatives", "bullets", "items"):
+                        for b_key in ("initiatives", "bullets", "items", "cards"):
                             if isinstance(item.get(b_key), list):
-                                bullet_lists.append(item[b_key])
+                                for sub in item[b_key]:
+                                    if isinstance(sub, str):
+                                        bullet_lists.append([sub])
+                                    elif isinstance(sub, dict) and isinstance(sub.get("bullets"), list):
+                                        bullet_lists.append(sub["bullets"])
 
         for blist in bullet_lists:
             for b_idx, bullet in enumerate(blist, start=1):

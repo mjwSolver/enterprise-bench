@@ -26,7 +26,7 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 from .common import (
-    add_slide_with_background, add_slide_header, add_card, add_slide_footer,
+    add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe, add_slide_footer,
     _add_contained_image, _interpolate_color, _get_contrast_text_color, _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
 )
 

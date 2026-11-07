@@ -1,0 +1,195 @@
+deck_type: pitch_deck
+theme: snowblue
+design_contract: technical_architecture
+metadata:
+  project_name: "Vector B: Composable YAML Layout Showcase"
+  client_name: "Enterprise Architecture Steering Group"
+  vendor_name: "Enterprise Workbench (@mjwSolver)"
+  product: "Unified Presentation Engine V2"
+  date_str: "November 2026"
+  confidentiality: "Enterprise Architecture Practice  |  Technical Layout Verification"
+
+slides:
+  - archetype: cover
+    tracker: "VECTOR B SPECIFICATION | ARCHITECTURE BLUEPRINT"
+    title: "Composable Multi-Widget Presentation Architecture"
+    subtitle: "Eliminating DrawingML Coordinate Math Through Declarative Spatial Partitioning and Modular Widget Compilers"
+    client: "Enterprise Architecture Steering Group"
+    vendor: "Enterprise Workbench Practice"
+    product: "Unified Presentation Engine V2"
+    date_str: "November 2026"
+
+  # Slide 2: Asymmetric 35/65 Split (Hero KPI Anchor + Card List)
+  - archetype: composable_split
+    tracker: "PLATFORM ARCHITECTURE | ASYMMETRIC PARTITIONING"
+    title: "Dynamic Canvas Partitioning Eliminates Manual DrawingML Positioning While Preserving Sub-Millimeter Clearance"
+    subtitle: "Widescreen canvas automatically splits into relative columns, enforcing zero-collision geometry and 3-tier severity badges."
+    split: [35, 65]
+    gap: 0.35
+    panes:
+      - widget: hero_kpi
+        stat: "+99.4%"
+        stat_label: "Layout Precision Guarantee"
+        stat_subtext: "Dynamic bounding box derivation eliminates DrawingML coordinate guessing across multi-widget slides."
+        eyebrow: "CORE RELIABILITY METRIC"
+        badge: "VERIFIED"
+        badge_variant: "success"
+        card_style: "filled"
+      - widget: card_list
+        style: "cards"
+        items:
+          - title: "Unified Canvas Fraction Calculation"
+            description: "**Automated Bounding Boxes:** Widths divide into fractional allocations with calibrated gutters, preventing text clipping."
+            badge: "ZERO COLLISION"
+            badge_variant: "success"
+          - title: "Drop-in Modular Child Widgets"
+            description: "**Decoupled Rendering:** Modular compilers for cards, tables, KPIs, and flows execute within allocated regional boxes."
+            badge: "MODULAR"
+            badge_variant: "accent"
+          - title: "Calibrated 3-Tier Semantic Badging"
+            description: "**Visual Hierarchy:** Crimson red reserved for blockers, amber for operational warnings, and slate for metadata."
+            badge: "STANDARDIZED"
+            badge_variant: "accent"
+    takeaway:
+      action: "ADOPT COMPOSABLE"
+      text: "Authors compose asymmetric slides via clean declarative blocks with zero DrawingML coordinate drift."
+
+  # Slide 3: 50/50 Split (Card List + Data Table)
+  - archetype: composable_split
+    tracker: "DATA GOVERNANCE | DUAL CONTAINER SPLIT"
+    title: "Dual Pane Balanced Split Unifies Structured Governance Rules and Operational Observation Matrices"
+    subtitle: "Equal 50/50 column distribution pairs qualitative compliance directives with tabular operational telemetry."
+    split: [50, 50]
+    gap: 0.35
+    panes:
+      - widget: card_list
+        style: "cards"
+        items:
+          - title: "Stage-Gate Verification Contracts"
+            description: "**Zero-PII Enforcement:** Data masking and column-level tags validate all silver transformations before gold exposure."
+            badge: "LOCKED"
+            badge_variant: "success"
+          - title: "Automated CDC Ingestion Governance"
+            description: "**Sub-Hourly Freshness:** Dynamic table pipelines monitor streaming ingestion without manual SQL extraction."
+            badge: "OPTIMAL"
+            badge_variant: "accent"
+      - widget: table
+        headers: ["Modernization Tier", "Target SLA", "Active Status"]
+        column_widths: [45, 25, 30]
+        zebra: true
+        rows:
+          - ["Raw Ingestion Feeds", "< 15 min", "**Compliant** (Sub-hourly)"]
+          - ["Silver Semantic Models", "< 60 min", "**Optimal** (Automated dbt)"]
+          - ["Gold Analytical Marts", "Daily 06:00", "**Locked** (Audited)"]
+          - ["Regulatory Telemetry", "Continuous", "**Zero-Defect** (SOC2)"]
+    takeaway:
+      action: "GOVERNANCE PARITY"
+      text: "Unified tabular layouts validate stage-gate integrity alongside qualitative policy standards."
+
+  # Slide 4: 3-Column Split (Hero KPI + Card Stack + Process Steps)
+  - archetype: composable_split
+    tracker: "TRANSFORMATION LIFECYCLE | 3-COLUMN COMPOSITE"
+    title: "Three-Column Canvas Partitioning Sequences Migration Milestones from Financial Value to Technical Rollout"
+    subtitle: "Composable layout manager accommodates N-pane arrangements with automatic gutter subtraction and typographic scaling."
+    split: [28, 42, 30]
+    gap: 0.30
+    panes:
+      - widget: hero_kpi
+        stat: "$4.2M"
+        stat_label: "Annualized Net Cost Avoidance"
+        stat_subtext: "Cumulative 3-year savings realized by retiring monolithic hardware and consolidating analytics licenses."
+        eyebrow: "FINANCIAL THESIS"
+        badge: "AUDITED"
+        badge_variant: "success"
+        card_style: "filled"
+      - widget: card_list
+        style: "cards"
+        items:
+          - title: "Compute Infrastructure Retirement"
+            description: "**Retiring Monolithic Nodes:** Decommissioning on-premises clusters eliminates recurring hardware refresh contracts."
+            badge: "+$1.8M"
+            badge_variant: "success"
+          - title: "Engineering Capacity Recapture"
+            description: "**Reclaiming Engineering Time:** Centralized transformation tools eliminate 14 mandays of monthly manual maintenance."
+            badge: "+$2.4M"
+            badge_variant: "success"
+      - widget: process_steps
+        direction: "vertical"
+        steps:
+          - step_num: "01"
+            title: "Discovery & Inventory"
+            description: "**Auditing Assets:** Catalog all 142 data feeds and active stored procedures."
+            accent_key: "primary"
+          - step_num: "02"
+            title: "Lakehouse Staging"
+            description: "**Staging Dynamic Tables:** Validate zero-PII masking contracts and schemas."
+            accent_key: "accent"
+          - step_num: "03"
+            title: "Production Cutover"
+            description: "**Switching Endpoints:** Decommission legacy pipelines and reroute live queries."
+            accent_key: "success"
+    takeaway:
+      action: "ACCELERATE TRANSITION"
+      text: "Multi-widget composition delivers complete migration context in a single executive view."
+
+  # Slide 5: 40/60 Split (Hero KPI + 2x2 Card Grid)
+  - archetype: composable_split
+    tracker: "CORE CAPABILITIES | COMPOSITE MATRIX"
+    title: "Asymmetric Capability Grid Pairs Executive ROI Thesis with Modular Enterprise Service Pillars"
+    subtitle: "Pane containment enables nesting 2x2 capability card grids alongside primary telemetry callouts."
+    split: [35, 65]
+    gap: 0.35
+    panes:
+      - widget: hero_kpi
+        stat: "14 Mandays"
+        stat_label: "Monthly Capacity Recaptured"
+        stat_subtext: "Automated pipelines eliminate manual pipeline reconciliation, liberating data engineering teams."
+        eyebrow: "LABOR EFFICIENCY"
+        badge: "MEASURED"
+        badge_variant: "accent"
+        card_style: "surface"
+        accent_key: "accent"
+      - widget: card_grid
+        columns: 2
+        items:
+          - title: "Cloud Data Platform"
+            subtitle: "Decoupled compute and storage"
+            bullets:
+              - "**Auto-scaling compute:** Serverless query warehouses."
+              - "**Zero data silos:** Multi-cloud data sharing."
+            accent_key: "accent"
+          - title: "Automated Governance"
+            subtitle: "Horizon security framework"
+            bullets:
+              - "**Dynamic masking:** Column-level privacy enforcement."
+              - "**Continuous auditing:** Unified access logs."
+            accent_key: "danger"
+          - title: "Semantic Engineering"
+            subtitle: "Centralized transformation"
+            bullets:
+              - "**dbt orchestration:** Automated metric consistency."
+              - "**Lineage tracking:** Upstream-to-downstream visibility."
+            accent_key: "primary"
+          - title: "Predictive Analytics"
+            subtitle: "Machine learning velocity"
+            bullets:
+              - "**Cortex ML inference:** In-database scoring."
+              - "**Feature registry:** Reusable clinical features."
+            accent_key: "accent"
+    takeaway:
+      action: "CAPABILITY HARMONIZATION"
+      text: "Consolidating core pillars onto an elastic platform accelerates analytics delivery while reducing fixed labor costs."
+
+  - archetype: thank_you
+    tracker: "ENGAGEMENT CLOSING & NEXT STEPS"
+    title: "Collaborative Engineering Driving High-Yield Enterprise Transformation"
+    subtitle: "Enterprise Modernization Practice is prepared to initiate Phase 1 discovery and staging immediately."
+    client: "Enterprise Architecture Steering Group"
+    company: "Enterprise Workbench Practice (@mjwSolver)"
+    contacts:
+      - name: "Enterprise Architecture Lead"
+        title: "Practice Director & Principal Solution Architect"
+        email: "architect@enterprise-bench.local"
+    next_steps:
+      - "**Architecture Review:** Complete stage-gate compliance audit across data feeds."
+      - "**Pilot Sprint:** Deploy Phase 1 declarative pipeline templates."

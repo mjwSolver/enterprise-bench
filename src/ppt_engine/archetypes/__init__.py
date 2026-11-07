@@ -19,5 +19,6 @@ from .processes import *
 from .tables import *
 from .strategy import *
 from .architecture import *
+from .composable import *
 from .deck_builder import *
 from .catalog import ARCHETYPE_REGISTRY, get_archetype_info

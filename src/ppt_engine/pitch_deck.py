@@ -95,6 +95,7 @@ from src.ppt_engine.consulting_archetypes import (
     build_card_grid_slide,
     build_chapter_divider_slide,
     build_chevron_process_slide,
+    build_composable_split_slide,
     build_cover_slide,
     build_crisp_dm_gate_slide,
     build_equity_corporate_tree_slide,
@@ -424,6 +425,23 @@ class PitchDeckBuilder:
                 hero_stat_label=cfg.get("hero_stat_label", cfg.get("hero_title", "KPI Framework")),
                 hero_stat_subtext=cfg.get("hero_stat_subtext", cfg.get("hero_body")),
                 blocks=blocks if blocks else None,
+                source=cfg.get("source"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+            )
+
+        elif arch in ("composable_split", "split_canvas", "composable", "multi_pane", "composite_layout"):
+            build_composable_split_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker", "EXECUTIVE SYNTHESIS | VALUE ARCHITECTURE"),
+                action_title=cfg.get("title", cfg.get("action_title", "Composable Multi-Widget Layout Solves Asymmetric Presentation Needs Without Raw DrawingML Math")),
+                subtitle=cfg.get("subtitle", "Canvas partitioning into relative spatial columns eliminates trial-and-error coordinate hacking."),
+                split=cfg.get("split"),
+                panes=cfg.get("panes", cfg.get("columns", cfg.get("regions"))),
+                gap=float(cfg.get("gap", 0.35)),
+                takeaway=cfg.get("takeaway"),
                 source=cfg.get("source"),
                 current_idx=idx,
                 total_slides=total,

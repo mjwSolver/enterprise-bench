@@ -32,6 +32,7 @@ from .processes import *
 from .tables import *
 from .strategy import *
 from .architecture import *
+from .composable import *
 
 logger = logging.getLogger(__name__)
 
@@ -492,6 +493,35 @@ class ConsultingDeckBuilder:
             current_idx=idx,
             total_slides=idx,
             notice=notice,
+        )
+
+    def add_composable_split_slide(
+        self,
+        tracker: str = "EXECUTIVE SYNTHESIS | VALUE ARCHITECTURE",
+        action_title: str = "Composable Multi-Widget Layout Solves Asymmetric Presentation Needs Without Raw DrawingML Math",
+        subtitle: Optional[str] = "Canvas partitioning into relative spatial columns eliminates trial-and-error coordinate hacking.",
+        split: Optional[Union[List[Union[int, float]], str]] = None,
+        panes: Optional[List[Dict[str, Any]]] = None,
+        gap: float = 0.35,
+        takeaway: Optional[Union[str, Dict[str, Any]]] = None,
+        notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+        source: Optional[str] = None,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_composable_split_slide(
+            prs=self.prs,
+            theme=self.theme,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            split=split,
+            panes=panes,
+            gap=gap,
+            takeaway=takeaway,
+            current_idx=idx,
+            total_slides=idx,
+            notice=notice,
+            source=source,
         )
 
     def update_pagination(self) -> None:
