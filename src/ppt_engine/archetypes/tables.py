@@ -26,12 +26,13 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 from .common import (
-    add_slide_with_background, add_slide_header, add_card, add_slide_footer,
+    add_slide_with_background, add_slide_header, add_card, add_slide_footer, add_takeaway_bar,
     _interpolate_color, _add_status_pill, _add_bullet_paragraph,
 )
 
 logger = logging.getLogger(__name__)
 
+@dataclass
 class FeatureScorecardRow:
     """Represents an evaluation criterion row in a comparison matrix."""
     category: str
@@ -266,6 +267,7 @@ def build_feature_matrix_slide(
     return slide
 
 
+@dataclass
 class TableColumnDef:
     header: str
     width: float  # In inches
@@ -358,9 +360,9 @@ def build_table_slide(
     avail_row_h = Inches(4.70) if not footnote else Inches(4.45)
     row_gap = Inches(0.0)  # Continuous table rows — zero double-line gap artifact
     if takeaway:
-        takeaway_h = Inches(1.45)
-        avail_table_h = Inches(2.70) if footnote else Inches(2.85)
-        row_h = min(Inches(0.56), max(Inches(0.32), avail_table_h / num_rows))
+        is_two_row_tk = isinstance(takeaway, dict) and bool(takeaway.get("title") and takeaway.get("description"))
+        avail_table_h = (Inches(2.80) if footnote else Inches(3.00)) if is_two_row_tk else (Inches(3.75) if footnote else Inches(4.00))
+        row_h = min(Inches(0.56), max(Inches(0.30), avail_table_h / num_rows))
     else:
         max_h = Inches(0.65) if num_rows <= 5 else Inches(0.50)
         row_h = min(max_h, max(Inches(0.30), avail_row_h / num_rows))
@@ -475,86 +477,15 @@ def build_table_slide(
 
             cur_cx += cw
 
-    if takeaway and isinstance(takeaway, dict):
-        takeaway_top = row_start_y + num_rows * row_h + Inches(0.14)
-        takeaway_h = Inches(1.45)
-        acc_key = takeaway.get("accent_key", "accent")
-        acc_rgb = theme.get_rgb(acc_key)
-
-        # Modern Executive Takeaway Card: Clean surface with left indicator accent bar
-        add_card(
-            slide,
-            theme,
-            start_x,
-            takeaway_top,
-            total_w,
-            takeaway_h,
-            bg_color=theme.get_rgb("surface"),
-            border_color=theme.get_rgb("border"),
-            border_width_pt=1.0,
-            force_rectangle=True,
-        )
-        # Vertical focus accent stripe on left (4.5pt width)
-        left_stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, takeaway_top, Pt(4.5), takeaway_h)
-        left_stripe.shadow.inherit = False
-        left_stripe.fill.solid()
-        left_stripe.fill.fore_color.rgb = acc_rgb
-        left_stripe.line.fill.background()
-
-        badge_txt = takeaway.get("badge", "STRATEGIC TAKEAWAY")
-        pill_w = Inches(2.40)
-        pill_h = Inches(0.26)
-        _add_status_pill(
-            slide=slide,
-            theme=theme,
-            left=start_x + Inches(0.20),
-            top=takeaway_top + Inches(0.12),
-            width=pill_w,
-            height=pill_h,
-            status=badge_txt,
-            font_size_pt=8.5,
-            override_color_key=acc_key,
-        )
-
-        tb_tk = slide.shapes.add_textbox(start_x + Inches(0.20), takeaway_top + Inches(0.44), total_w - Inches(0.40), takeaway_h - Inches(0.50))
-        tf_tk = tb_tk.text_frame
-        tf_tk.word_wrap = True
-        tf_tk.margin_left = tf_tk.margin_right = tf_tk.margin_top = tf_tk.margin_bottom = 0
-
-        p_tkt = tf_tk.paragraphs[0]
-        p_tkt.text = takeaway.get("title", "")
-        p_tkt.font.name = theme.font_family_header
-        p_tkt.font.size = Pt(13.5)
-        p_tkt.font.bold = True
-        p_tkt.font.color.rgb = theme.get_rgb("primary")
-
-        if takeaway.get("description"):
-            p_tkd = tf_tk.add_paragraph()
-            p_tkd.text = takeaway.get("description")
-            p_tkd.font.name = theme.font_family
-            p_tkd.font.size = Pt(11.5)
-            p_tkd.font.color.rgb = theme.get_rgb("secondary")
-            p_tkd.space_before = Pt(5)
-
-    elif takeaway and isinstance(takeaway, str):
-        take_y = Inches(6.12) if footnote else Inches(6.32)
-        take_h = Inches(0.48)
-        tb_take = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, take_y, total_w, take_h)
-        tb_take.fill.solid()
-        tb_take.fill.fore_color.rgb = RGBColor(241, 245, 249)
-        tb_take.line.color.rgb = RGBColor(203, 213, 225)
-        tb_take.line.width = Pt(0.75)
-        strip_shape_shadows(tb_take)
-        tf_take = tb_take.text_frame
-        tf_take.word_wrap = True
-        tf_take.vertical_anchor = MSO_ANCHOR.MIDDLE
-        tf_take.margin_left = tf_take.margin_right = Inches(0.15)
-        pt = tf_take.paragraphs[0]
-        pt.text = str(takeaway)
-        pt.font.name = theme.font_family_header
-        pt.font.size = Pt(8.5)
-        pt.font.bold = True
-        pt.font.color.rgb = RGBColor(30, 41, 59)
+    if takeaway:
+        is_two_row_tk = isinstance(takeaway, dict) and bool(takeaway.get("title") and takeaway.get("description"))
+        if is_two_row_tk:
+            takeaway_top = row_start_y + num_rows * row_h + Inches(0.14)
+            takeaway_h = Inches(1.30)
+        else:
+            takeaway_top = Inches(6.08) if footnote else Inches(6.28)
+            takeaway_h = Inches(0.54)
+        add_takeaway_bar(slide, theme, takeaway, top_y=takeaway_top, left_x=start_x, width=total_w, height=takeaway_h)
 
     if footnote:
         foot_y = Inches(6.75)

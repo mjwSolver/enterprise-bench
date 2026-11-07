@@ -27,11 +27,12 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 
 from .common import (
     add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
-    add_slide_footer, _interpolate_color, _get_contrast_text_color, _add_status_pill, _add_bullet_paragraph,
+    add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color, _add_status_pill, _add_bullet_paragraph,
 )
 
 logger = logging.getLogger(__name__)
 
+@dataclass
 class ProcessChevronStep:
     """Content definition for a single phase in the Stepped Process Chevron Flow."""
     phase_number: str                       # e.g. "01", "PHASE 1"
@@ -260,62 +261,13 @@ def build_chevron_process_slide(
                 r_all.font.color.rgb = theme.get_rgb("secondary")
 
     if takeaway:
-        syn_y = Inches(6.28)
-        syn_h = Inches(0.54)
-        syn_w = total_w
-        col1_x = start_x
-
-        add_card(
-            slide,
-            theme,
-            col1_x,
-            syn_y,
-            syn_w,
-            syn_h,
-            force_rectangle=True,
-            bg_color=hex_to_rgb("#F8FAFC"),
-            border_color=hex_to_rgb("#BAE6FD"),
-            border_width_pt=0.75,
-        )
-
-        stripe_syn = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, syn_y, Inches(0.06), syn_h)
-        stripe_syn.shadow.inherit = False
-        stripe_syn.fill.solid()
-        stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
-        stripe_syn.line.fill.background()
-
-        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.22), syn_y + Inches(0.04), syn_w - Inches(0.36), syn_h - Inches(0.08))
-        syn_tf = syn_tb.text_frame
-        syn_tf.word_wrap = True
-        syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        syn_tf.margin_left = syn_tf.margin_right = syn_tf.margin_top = syn_tf.margin_bottom = 0
-        p_syn = syn_tf.paragraphs[0]
-
-        takeaway_text = takeaway if isinstance(takeaway, str) else str(takeaway.get("text", ""))
-        if ":" in takeaway_text:
-            t_lead, t_body = takeaway_text.split(":", 1)
-            r_tl = p_syn.add_run()
-            r_tl.text = f"{t_lead.strip()}: "
-            r_tl.font.name = theme.font_family_header
-            r_tl.font.size = Pt(10.0)
-            r_tl.font.bold = True
-            r_tl.font.color.rgb = theme.get_rgb("accent")
-
-            r_tb = p_syn.add_run()
-            r_tb.text = t_body.strip()
-            r_tb.font.name = theme.font_family
-            r_tb.font.size = Pt(10.0)
-            r_tb.font.color.rgb = theme.get_rgb("primary")
-        else:
-            p_syn.text = takeaway_text
-            p_syn.font.name = theme.font_family
-            p_syn.font.size = Pt(10.0)
-            p_syn.font.color.rgb = theme.get_rgb("primary")
+        add_takeaway_bar(slide, theme, takeaway, top_y=Inches(6.28), left_x=start_x, width=total_w, height=Inches(0.54))
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
 
 
+@dataclass
 class GanttTask:
     """Represents a discrete task or milestone phase in a delivery timeline."""
     name: str
@@ -682,6 +634,7 @@ def build_timeline_gantt_slide(
     return slide
 
 
+@dataclass
 class PICRowData:
     """Row in the named counterpart (PIC) governance matrix."""
     discipline: str
@@ -1049,6 +1002,7 @@ def build_dense_workstream_runbook_slide(
     return slide
 
 
+@dataclass
 class SwimlaneNodeData:
     """A single service or component node within an architecture swimlane."""
     title: str

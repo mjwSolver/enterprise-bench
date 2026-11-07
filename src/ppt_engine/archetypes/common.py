@@ -598,3 +598,159 @@ def _fit_image_in_box(
         logger.warning(f"Could not calculate aspect ratio for {img_path}: {exc}")
         return box_left, box_top, box_width, box_height
 
+
+def add_takeaway_bar(
+    slide: Any,
+    theme: Theme,
+    takeaway: Union[str, Dict[str, Any]],
+    top_y: Optional[Inches] = None,
+    left_x: Optional[Inches] = None,
+    width: Optional[Inches] = None,
+    height: Optional[Inches] = None,
+    badge: Optional[str] = None,
+    font_size_pt: float = 10.0,
+    accent_key: str = "accent",
+) -> Any:
+    """Renders a standardized executive takeaway or synthesis bar at the bottom of a slide.
+
+    Supports:
+    - String format: "Key Finding: Narrative description..." (auto-bolded lead with span compiler)
+    - Dict format: {"text": "...", "badge": "...", "title": "...", "description": "...", "accent_key": "..."}
+    - Universal inline markdown compilation (**bold**, *italic*, `code`) across all text runs.
+    - Zero drop shadows, sharp rectangle geometry, and clean left indicator accent stripe.
+    """
+    left_x = left_x if left_x is not None else Inches(0.80)
+    width = width if width is not None else Inches(11.733)
+
+    # Parse payload
+    if isinstance(takeaway, dict):
+        acc_key = takeaway.get("accent_key", accent_key)
+        badge_text = takeaway.get("badge", badge)
+        title_text = str(takeaway.get("title", "")).strip()
+        desc_text = str(takeaway.get("description", "")).strip()
+        raw_text = str(takeaway.get("text", "")).strip()
+    else:
+        acc_key = accent_key
+        badge_text = badge
+        title_text = ""
+        desc_text = ""
+        raw_text = str(takeaway).strip() if takeaway else ""
+
+    is_two_row = bool(title_text and desc_text)
+    if height is None:
+        height = Inches(1.30) if is_two_row else Inches(0.54)
+    if top_y is None:
+        top_y = Inches(5.60) if is_two_row else Inches(6.28)
+
+    acc_rgb = theme.get_rgb(acc_key)
+
+    # 1. Base Container Card
+    add_card(
+        slide,
+        theme,
+        left_x,
+        top_y,
+        width,
+        height,
+        force_rectangle=True,
+        bg_color=hex_to_rgb("#F8FAFC"),
+        border_color=hex_to_rgb("#BAE6FD"),
+        border_width_pt=0.75,
+    )
+
+    # 2. Vertical Focus Indicator Stripe on Left
+    stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, top_y, Inches(0.06), height)
+    stripe.shadow.inherit = False
+    stripe.fill.solid()
+    stripe.fill.fore_color.rgb = acc_rgb
+    stripe.line.fill.background()
+
+    # 3. Content Text Box
+    if is_two_row:
+        # Two-row executive card format (Title + Description)
+        tb_y = top_y + (Inches(0.38) if badge_text else Inches(0.10))
+        tb_h = height - (Inches(0.46) if badge_text else Inches(0.20))
+        if badge_text:
+            pill_w = Inches(2.20)
+            pill_h = Inches(0.24)
+            _add_status_pill(
+                slide=slide,
+                theme=theme,
+                left=left_x + Inches(0.20),
+                top=top_y + Inches(0.10),
+                width=pill_w,
+                height=pill_h,
+                status=badge_text,
+                font_size_pt=8.0,
+                override_color_key=acc_key,
+            )
+
+        tb = slide.shapes.add_textbox(left_x + Inches(0.20), tb_y, width - Inches(0.36), tb_h)
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+
+        p_t = tf.paragraphs[0]
+        append_formatted_runs(
+            paragraph=p_t,
+            text=title_text,
+            font_name=theme.font_family_header,
+            font_size_pt=font_size_pt + 2.0,
+            font_color=theme.get_rgb("primary"),
+            default_bold=True,
+        )
+
+        p_d = tf.add_paragraph()
+        p_d.space_before = Pt(4)
+        append_formatted_runs(
+            paragraph=p_d,
+            text=desc_text,
+            font_name=theme.font_family,
+            font_size_pt=font_size_pt,
+            font_color=theme.get_rgb("secondary"),
+        )
+    else:
+        # Single-row synthesis bar format
+        tb = slide.shapes.add_textbox(left_x + Inches(0.22), top_y + Inches(0.04), width - Inches(0.36), height - Inches(0.08))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+        p = tf.paragraphs[0]
+
+        if badge_text:
+            r_b = p.add_run()
+            r_b.text = f"[{badge_text.upper()}] "
+            r_b.font.name = theme.font_family_header
+            r_b.font.size = Pt(font_size_pt)
+            r_b.font.bold = True
+            r_b.font.color.rgb = acc_rgb
+
+        body_text = raw_text or title_text or desc_text
+        if ":" in body_text:
+            t_lead, t_body = body_text.split(":", 1)
+            lead_run = p.add_run()
+            lead_run.text = f"{t_lead.strip()}: "
+            lead_run.font.name = theme.font_family_header
+            lead_run.font.size = Pt(font_size_pt)
+            lead_run.font.bold = True
+            lead_run.font.color.rgb = acc_rgb
+
+            append_formatted_runs(
+                paragraph=p,
+                text=t_body.strip(),
+                font_name=theme.font_family,
+                font_size_pt=font_size_pt,
+                font_color=theme.get_rgb("primary"),
+            )
+        else:
+            append_formatted_runs(
+                paragraph=p,
+                text=body_text.strip(),
+                font_name=theme.font_family,
+                font_size_pt=font_size_pt,
+                font_color=theme.get_rgb("primary"),
+            )
+    return slide
+
+

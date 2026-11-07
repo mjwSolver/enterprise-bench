@@ -861,6 +861,7 @@ def build_hero_cover_slide(
     return slide
 
 
+@dataclass
 class AgendaItem:
     num: str
     title: str

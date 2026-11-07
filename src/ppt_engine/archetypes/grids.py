@@ -27,12 +27,13 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 
 from .common import (
     add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
-    add_card_with_harmonized_icon, add_slide_footer, _interpolate_color, _get_contrast_text_color,
+    add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
     _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
 )
 
 logger = logging.getLogger(__name__)
 
+@dataclass
 class SplitHeroBlock:
     """Content definition for a single narrative block in Split-Hero slide."""
     title: str                              # e.g. "Enterprise Data Ingestion"
@@ -288,6 +289,7 @@ def build_split_hero_slide(
     return slide
 
 
+@dataclass
 class TechLogoItem:
     name: str
     category: str
@@ -547,19 +549,25 @@ def build_card_grid_slide(
             tf_title.margin_left = tf_title.margin_right = tf_title.margin_top = tf_title.margin_bottom = 0
 
             p_t = tf_title.paragraphs[0]
-            p_t.text = itm.title
-            p_t.font.name = theme.font_family_header
-            p_t.font.size = Pt(13.0)
-            p_t.font.bold = True
-            p_t.font.color.rgb = theme.get_rgb("primary")
+            append_formatted_runs(
+                paragraph=p_t,
+                text=itm.title,
+                font_name=theme.font_family_header,
+                font_size_pt=13.0,
+                font_color=theme.get_rgb("primary"),
+                default_bold=True,
+            )
 
             if itm.subtitle:
                 p_s = tf_title.add_paragraph()
-                p_s.text = itm.subtitle
-                p_s.font.name = theme.font_family
-                p_s.font.size = Pt(9.5)
-                p_s.font.color.rgb = theme.get_rgb("secondary")
                 p_s.space_before = Pt(4)
+                append_formatted_runs(
+                    paragraph=p_s,
+                    text=itm.subtitle,
+                    font_name=theme.font_family,
+                    font_size_pt=9.5,
+                    font_color=theme.get_rgb("secondary"),
+                )
 
             # Center column: Metric Area directly on card canvas (no nested box, no stripe)
             met_box_x = cx + Inches(3.75)
@@ -621,6 +629,9 @@ def build_card_grid_slide(
                     font_color=theme.get_rgb("secondary"),
                     space_before_pt=4.0 if b_idx > 0 else 0.0,
                 )
+
+        if takeaway:
+            add_takeaway_bar(slide, theme, takeaway, top_y=Inches(6.28), left_x=content_left, width=total_w, height=Inches(0.54))
 
         add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
         return slide
@@ -791,57 +802,7 @@ def build_card_grid_slide(
                 )
 
     if takeaway:
-        syn_y = Inches(6.28)
-        syn_h = Inches(0.54)
-        syn_w = total_w
-        col1_x = content_left
-
-        add_card(
-            slide,
-            theme,
-            col1_x,
-            syn_y,
-            syn_w,
-            syn_h,
-            force_rectangle=True,
-            bg_color=hex_to_rgb("#F8FAFC"),
-            border_color=hex_to_rgb("#BAE6FD"),
-            border_width_pt=0.75,
-        )
-
-        stripe_syn = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, syn_y, Inches(0.06), syn_h)
-        stripe_syn.shadow.inherit = False
-        stripe_syn.fill.solid()
-        stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
-        stripe_syn.line.fill.background()
-
-        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.22), syn_y + Inches(0.04), syn_w - Inches(0.36), syn_h - Inches(0.08))
-        syn_tf = syn_tb.text_frame
-        syn_tf.word_wrap = True
-        syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        syn_tf.margin_left = syn_tf.margin_right = syn_tf.margin_top = syn_tf.margin_bottom = 0
-        p_syn = syn_tf.paragraphs[0]
-
-        takeaway_text = takeaway if isinstance(takeaway, str) else str(takeaway.get("text", ""))
-        if ":" in takeaway_text:
-            t_lead, t_body = takeaway_text.split(":", 1)
-            r_tl = p_syn.add_run()
-            r_tl.text = f"{t_lead.strip()}: "
-            r_tl.font.name = theme.font_family_header
-            r_tl.font.size = Pt(10.0)
-            r_tl.font.bold = True
-            r_tl.font.color.rgb = theme.get_rgb("accent")
-
-            r_tb = p_syn.add_run()
-            r_tb.text = t_body.strip()
-            r_tb.font.name = theme.font_family
-            r_tb.font.size = Pt(10.0)
-            r_tb.font.color.rgb = theme.get_rgb("primary")
-        else:
-            p_syn.text = takeaway_text
-            p_syn.font.name = theme.font_family
-            p_syn.font.size = Pt(10.0)
-            p_syn.font.color.rgb = theme.get_rgb("primary")
+        add_takeaway_bar(slide, theme, takeaway, top_y=Inches(6.28), left_x=content_left, width=total_w, height=Inches(0.54))
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide

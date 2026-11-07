@@ -27,7 +27,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 
 from .common import (
     add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
-    add_card_with_harmonized_icon, add_slide_footer, _interpolate_color, _get_contrast_text_color,
+    add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
     _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
 )
 
@@ -1696,24 +1696,7 @@ def build_crisp_dm_gate_slide(
 
     # 3. Bottom Takeaway Bar
     if takeaway:
-        take_y = Inches(6.52)
-        take_h = Inches(0.48)
-        tb_take = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, take_y, total_w, take_h)
-        tb_take.fill.solid()
-        tb_take.fill.fore_color.rgb = RGBColor(241, 245, 249)
-        tb_take.line.color.rgb = RGBColor(203, 213, 225)
-        tb_take.line.width = Pt(0.75)
-        strip_shape_shadows(tb_take)
-        tf_take = tb_take.text_frame
-        tf_take.word_wrap = True
-        tf_take.vertical_anchor = MSO_ANCHOR.MIDDLE
-        tf_take.margin_left = tf_take.margin_right = Inches(0.15)
-        pt = tf_take.paragraphs[0]
-        pt.text = str(takeaway)
-        pt.font.name = theme.font_family_header
-        pt.font.size = Pt(8.5)
-        pt.font.bold = True
-        pt.font.color.rgb = RGBColor(30, 41, 59)
+        add_takeaway_bar(slide, theme, takeaway, top_y=Inches(6.42), left_x=left_x, width=total_w, height=Inches(0.54))
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
@@ -1914,24 +1897,7 @@ def build_medallion_tiers_slide(
 
     # 3. Bottom Takeaway Bar
     if takeaway:
-        take_y = Inches(6.52)
-        take_h = Inches(0.48)
-        tb_take = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, take_y, total_w, take_h)
-        tb_take.fill.solid()
-        tb_take.fill.fore_color.rgb = RGBColor(241, 245, 249)
-        tb_take.line.color.rgb = RGBColor(203, 213, 225)
-        tb_take.line.width = Pt(0.75)
-        strip_shape_shadows(tb_take)
-        tf_take = tb_take.text_frame
-        tf_take.word_wrap = True
-        tf_take.vertical_anchor = MSO_ANCHOR.MIDDLE
-        tf_take.margin_left = tf_take.margin_right = Inches(0.15)
-        pt = tf_take.paragraphs[0]
-        pt.text = str(takeaway)
-        pt.font.name = theme.font_family_header
-        pt.font.size = Pt(8.5)
-        pt.font.bold = True
-        pt.font.color.rgb = RGBColor(30, 41, 59)
+        add_takeaway_bar(slide, theme, takeaway, top_y=Inches(6.42), left_x=left_x, width=total_w, height=Inches(0.54))
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide

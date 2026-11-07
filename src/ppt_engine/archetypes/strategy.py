@@ -27,12 +27,13 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 
 from .common import (
     add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
-    add_card_with_harmonized_icon, add_slide_footer, _interpolate_color, _get_contrast_text_color,
+    add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
     _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
 )
 
 logger = logging.getLogger(__name__)
 
+@dataclass
 class HorizonColumnData:
     """Content definition for a single Horizon column in BCG 3-Horizon model."""
     horizon_tag: str            # e.g. "HORIZON 1  |  0-12 MONTHS"
@@ -324,56 +325,7 @@ def build_bcg_3_horizon_slide(
     # 7. Executive Takeaway Bar at Bottom (Harmonized Anchor)
     # -------------------------------------------------------------------------
     if takeaway:
-        syn_y = Inches(6.10)
-        syn_h = Inches(0.68)
-        syn_w = Inches(11.733)
-        col1_x = start_x
-
-        add_card(
-            slide,
-            theme,
-            col1_x,
-            syn_y,
-            syn_w,
-            syn_h,
-            force_rectangle=True,
-            bg_color=hex_to_rgb("#F8FAFC"),
-            border_color=hex_to_rgb("#BAE6FD"),
-            border_width_pt=0.75,
-        )
-
-        stripe_syn = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, syn_y, Inches(0.06), syn_h)
-        stripe_syn.shadow.inherit = False
-        stripe_syn.fill.solid()
-        stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
-        stripe_syn.line.fill.background()
-
-        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.22), syn_y + Inches(0.10), syn_w - Inches(0.36), syn_h - Inches(0.20))
-        syn_tf = syn_tb.text_frame
-        syn_tf.word_wrap = True
-        syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        syn_tf.margin_left = syn_tf.margin_right = syn_tf.margin_top = syn_tf.margin_bottom = 0
-        p_syn = syn_tf.paragraphs[0]
-
-        if ":" in takeaway:
-            t_lead, t_body = takeaway.split(":", 1)
-            r_tl = p_syn.add_run()
-            r_tl.text = f"{t_lead.strip()}: "
-            r_tl.font.name = theme.font_family_header
-            r_tl.font.size = Pt(10.5)
-            r_tl.font.bold = True
-            r_tl.font.color.rgb = theme.get_rgb("accent")
-
-            r_tb = p_syn.add_run()
-            r_tb.text = t_body.strip()
-            r_tb.font.name = theme.font_family
-            r_tb.font.size = Pt(10.5)
-            r_tb.font.color.rgb = theme.get_rgb("primary")
-        else:
-            p_syn.text = takeaway
-            p_syn.font.name = theme.font_family
-            p_syn.font.size = Pt(10.5)
-            p_syn.font.color.rgb = theme.get_rgb("primary")
+        add_takeaway_bar(slide, theme, takeaway, top_y=Inches(6.10), left_x=start_x, width=Inches(11.733), height=Inches(0.68), font_size_pt=10.5)
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
     return slide
@@ -964,6 +916,7 @@ def build_balanced_scorecard_slide(
     return slide
 
 
+@dataclass
 class GapDimensionData:
     """Content definition for a single dimension in Gap Analysis slide."""
     dimension: str                          # e.g. "Data Latency & Ingestion"
@@ -1464,6 +1417,7 @@ def build_gap_analysis_slide(
     return slide
 
 
+@dataclass
 class EquityEntityNode:
     """Represents a single corporate entity in the equity structure tree."""
     name: str                           # e.g., "PT Mitra Integrasi Informatika"
