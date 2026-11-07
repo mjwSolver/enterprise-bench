@@ -134,9 +134,9 @@ def render_threshold_bars(
     header_h = 0.62 if config.get("subtitle") else (0.42 if has_title else 0.15)
     if has_title:
         tb_hdr = slide.shapes.add_textbox(
-            Inches(left_in + 0.22),
-            Inches(top_in + 0.10),
-            Inches(min(w_in * 0.36, 2.40)),
+            Inches(left_in + 0.30),
+            Inches(top_in + 0.20),
+            Inches(min(w_in * 0.45, 3.20)),
             Inches(header_h),
         )
         tf_hdr = tb_hdr.text_frame

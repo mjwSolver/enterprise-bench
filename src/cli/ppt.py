@@ -45,6 +45,120 @@ def list_themes() -> None:
     console.print(table)
 
 
+@ppt_app.command("archetypes")
+def list_archetypes(
+    describe: Optional[str] = typer.Option(None, "--describe", "-d", help="Archetype name to describe in detail"),
+) -> None:
+    """List or inspect declarative slide archetypes and expected YAML parameters."""
+    catalog = {
+        "card_grid": {
+            "family": "Grids",
+            "desc": "2-4 column structured card grid with top stripes, category eyebrows, and metric callouts.",
+            "keys": ["tracker", "title", "subtitle", "columns (default 4)", "items: [{title, subtitle, bullets, badge, top_stripe, metric}]", "takeaway"],
+        },
+        "split_hero": {
+            "family": "Grids",
+            "desc": "Asymmetric hero split (35/65) with anchor KPI on left and narrative cards on right.",
+            "keys": ["tracker", "title", "subtitle", "hero_metric", "hero_metric_label", "hero_descriptor", "right_blocks: [{title, description}]", "takeaway"],
+        },
+        "table_slide": {
+            "family": "Tables",
+            "desc": "Flush data table with alternating rows, status badges, and decision takeaway bar.",
+            "keys": ["tracker", "title", "subtitle", "columns: [{name, width}]", "rows: [[col1, col2, ...]]", "takeaway"],
+        },
+        "chevron_process": {
+            "family": "Processes",
+            "desc": "Linear stage-gate process flow with direction chevrons and 'WE ARE HERE' status badge.",
+            "keys": ["tracker", "title", "subtitle", "steps: [{num, title, status, deliverables, owner}]", "takeaway"],
+        },
+        "medallion_tiers": {
+            "family": "Architecture",
+            "desc": "3-tier data lakehouse medallion flow (Bronze, Silver, Gold) with table rosters and safeguards.",
+            "keys": ["tracker", "title", "subtitle", "tiers: [{tier, tier_badge, metric, metric_label, tables, excluded_note}]", "takeaway"],
+        },
+        "open_telemetry_flow": {
+            "family": "Architecture",
+            "desc": "End-to-end telemetry pipeline flow diagram with ingestion gates and processing nodes.",
+            "keys": ["tracker", "title", "subtitle", "flow_nodes: [{name, type, status}]", "takeaway"],
+        },
+        "crisp_dm_gate": {
+            "family": "Architecture",
+            "desc": "CRISP-DM 6-phase gate validator for data science and ML readiness.",
+            "keys": ["tracker", "title", "subtitle", "phases: [{name, status, checklist}]", "takeaway"],
+        },
+        "browser_mockup": {
+            "family": "Architecture",
+            "desc": "High-DPI macOS desktop browser frame for UI screenshots and dashboards.",
+            "keys": ["tracker", "title", "subtitle", "image_path", "mockup_url", "takeaway"],
+        },
+        "iceberg_concept": {
+            "family": "Architecture",
+            "desc": "Surface vs subsurface foundational split concept visualization.",
+            "keys": ["tracker", "title", "subtitle", "visible_items", "subsurface_items", "takeaways"],
+        },
+        "bcg_3_horizon": {
+            "family": "Strategy",
+            "desc": "BCG 3-Horizon Growth / Modernization Framework (H1 Core, H2 Emerging, H3 Transformational).",
+            "keys": ["tracker", "title", "subtitle", "horizons: [{name, timeframe, focus, initiatives}]", "takeaway"],
+        },
+        "mckinsey_cascade": {
+            "family": "Strategy",
+            "desc": "Top hypothesis anchor with MECE strategic pillar breakdown and proof points.",
+            "keys": ["tracker", "title", "subtitle", "core_hypothesis", "pillars: [{name, proof_points}]", "takeaway"],
+        },
+        "balanced_scorecard": {
+            "family": "Strategy",
+            "desc": "4-quadrant executive matrix (Financial, Customer, Operational, Growth).",
+            "keys": ["tracker", "title", "subtitle", "quadrants: [{name, metrics: [{label, value, target, status}]}]", "takeaway"],
+        },
+        "timeline_gantt": {
+            "family": "Processes",
+            "desc": "Workstream Gantt timeline across months/quarters with milestone markers.",
+            "keys": ["tracker", "title", "subtitle", "workstreams: [{name, tasks: [{name, start, duration}]}]", "takeaway"],
+        },
+        "gap_analysis": {
+            "family": "Strategy",
+            "desc": "Current State vs Target State vs Remediation Plan comparative matrix.",
+            "keys": ["tracker", "title", "subtitle", "dimensions: [{name, current_state, target_state, action_plan}]", "takeaway"],
+        },
+        "cover": {
+            "family": "Covers",
+            "desc": "Executive presentation cover slide with engagement metadata.",
+            "keys": ["title", "subtitle", "client", "vendor", "date_str", "tracker"],
+        },
+        "chapter_divider": {
+            "family": "Covers",
+            "desc": "Bold chapter/section separator slide.",
+            "keys": ["chapter_num", "title", "subtitle", "tracker"],
+        },
+    }
+
+    if describe:
+        arch_name = describe.lower().strip()
+        if arch_name not in catalog:
+            console.print(f"[bold red]Unknown archetype:[/bold red] '{describe}'. Available: {', '.join(catalog.keys())}")
+            raise typer.Exit(code=1)
+        info = catalog[arch_name]
+        console.print(f"\n[bold cyan]Archetype:[/bold cyan] [bold white]{arch_name}[/bold white] ([magenta]{info['family']}[/magenta])")
+        console.print(f"[bold yellow]Description:[/bold yellow] {info['desc']}")
+        console.print("[bold green]Supported YAML Keys:[/bold green]")
+        for k in info["keys"]:
+            console.print(f"  - [white]{k}[/white]")
+        console.print("")
+        return
+
+    table = Table(title="Declarative Slide Archetypes Catalog")
+    table.add_column("Archetype", style="bold cyan")
+    table.add_column("Family", style="magenta")
+    table.add_column("Description", style="white")
+
+    for name, info in catalog.items():
+        table.add_row(name, info["family"], info["desc"])
+
+    console.print(table)
+    console.print("[dim]Use [bold]bench ppt archetypes --describe <name>[/bold] to view expected YAML parameters.[/dim]\n")
+
+
 @ppt_app.command("generate")
 def generate_ppt(
     theme: str = typer.Option("brickred", "--theme", "-t", help="Brand theme to apply"),

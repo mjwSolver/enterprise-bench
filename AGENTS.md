@@ -1,13 +1,17 @@
 # AGENTS.md — Enterprise Workbench (`enterprise-bench`)
 
+> [!IMPORTANT]
+> **Project Neutrality Invariant:** `enterprise-bench` is a generic, reusable enterprise document, presentation, and spreadsheet engineering platform. It must remain strictly project-neutral. Client-specific domain schemas, proprietary clinical terms, and project-specific table names are allowed as input specs/payloads, but are strictly forbidden from entering `enterprise-bench` core code, engine archetypes, or this rule file.
+
 ## 🚨 Critical Directives
 
-1. **Zero Intermediate Unit Testing:** NEVER run unit tests (`pytest`, `uv run pytest`) during active development, refactoring, or bug fixing. Allowed ONLY when explicitly requested by user (e.g. *"run tests"*) or before authorized git push.
+1. **Zero Intermediate Unit Testing:** NEVER run unit tests (`pytest`, `uv run pytest`) during active development, refactoring, or bug fixing. Allowed ONLY when explicitly requested by user (e.g. *"run tests"*) or before authorized git push. When executing `/plan`, "Verification Plan" strictly means headless CLI dry-runs (`uv run bench ppt lint-spec`, `--dry-run`), schema validations, or raster checks—never substitute with `pytest`.
 2. **Headless-First Verification:** All verifications must be 100% headless (CLI audits, linting, headless raster checks). NEVER launch desktop apps (`open -a`, `osascript`) unless user explicitly issues `"pop it"`, `"show me"`, `"open on desktop"`, or `"open in finder"`.
 3. **Line-Targeted Reading & Context Hygiene:** Never read entire multi-topic ledgers or documents >100 lines into context. Use line-targeted inspection (`StartLine`/`EndLine`). Avoid repo-wide blind `grep`/`find`; resolve paths via structured manifests (`docs/INDEX.md`).
-4. **Environment & Path Links:** Always execute commands via `uv run bench ...`. Always use relative markdown links (`[doc](path.md)`).
+4. **Environment & Path Links:** Always execute commands via `uv run bench ...`. In slide copy and diagram specifications (e.g. repo folder visualizations), strictly use relative paths (`01-uc1/src/`). For chat conversations and IDE clicks, follow `GEMINI.md` system paths (`file:///abs/path`).
 5. **Declarative YAML-First Architecture:** NEVER write or iteratively patch monolithic, imperatively hardcoded layout scripts (e.g. 500–700 line Python scripts embedding raw coordinates, shapes, and copy). Content hierarchy, badges, copy, and layout parameters must reside in a declarative YAML spec (e.g. `specs/<topic>.yaml`), executed headlessly by a decoupled, reusable compiler (`uv run bench diagram v2 compile`, static runner). All iteration and content revisions must touch *only* the YAML spec, never re-emitting compiler boilerplate ([ADR](docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md)).
 6. **Explicit Version Stamping on Distribution Archives:** NEVER create or distribute unversioned or timestamp-only archive files (e.g. `diagram_bundle.zip` or `diagram_engine_v2_portable_<timestamp>.zip`). All export bundles and release archives MUST explicitly stamp their semver release version in both the filename and root folder (`diagram_engine_v2_portable_v<X.Y>_<TIMESTAMP>.zip`, containing `diagram_engine_v2_bundle_v<X.Y>_<TIMESTAMP>/`), verified against `VERSION_LOG.md` and `pyproject.toml` prior to distribution ([SOP](docs/specs/diagram_engine_v2_export_sop.md)).
+7. **Empirical Metric Integrity (Anti-Fabricated KPI Invariant):** NEVER invent synthetic or pseudo-percentage numbers (`100%`, `0%`) as hero callouts or card metric decorations. Numeric hero stats ($32\text{--}36\text{ pt}$) are reserved strictly for audited data telemetry (e.g. `99.6%`, `21.0%`, `11,950`) backed by citations or active query audits. Architectural policies, operating models, and governance rules MUST use qualitative semantic status anchors (e.g. `Locked`, `Zero-PII`, `Enclosed`, `Mandated`) or render without naked synthetic numbers.
 
 ---
 
@@ -20,6 +24,7 @@ Classify incoming requests into one execution lane:
 - **✏️ Lane 2: In-Situ Micro-Patch:** Localized text, typo, label, or image updates without altering coordinate grids or canvas bounding boxes (`uv run bench ppt patch`, `uv run bench ppt replace-image`, `gdrive mutate update <file_id> <path.pptx>`). Target presentation window must be dismissed prior to saving if previously opened.
 - **📐 Lane 3: Greenfield Architecture & Staging:** Declarative YAML (`specs/diagrams/<name>.yaml`) compiled via Diagram Engine V2 (`uv run bench diagram v2 compile`). Target presentation window must be dismissed prior to re-saving if previously opened.
   - *Audit-First Invariant:* Always execute `bench diagram v2 audit <spec.yaml>` to verify clearances *before* compiling. Never iterate via blind recompilation.
+  - *Engine Code Lock:* Modifying `src/ppt_engine/` or archetype compilers is strictly forbidden during slide authoring tasks. Layout, copy, and badges must be controlled exclusively via declarative YAML specs.
 
 ---
 
@@ -29,7 +34,7 @@ Classify incoming requests into one execution lane:
 - **Pluggable Design Contract Router:** Slide/diagram specs may declare `design_contract: <name>` to load specialized ceiling rules from `docs/specs/contracts/<name>.md` (e.g. `executive_csuite`, `technical_architecture`, `strategic_tradeoff`). When omitted, the Base Floor invariants below govern layout and geometry.
 - **Visualization Pattern Router:** For non-rectangular elements (wireline constellations, checkpoint gates, radial dials, chrome viewports), select approved patterns and cognitive trade-offs from [VISUALIZATION_CATALOG.md](docs/specs/VISUALIZATION_CATALOG.md).
 - **Sketch/Image Confirmation Gate:** When provided an image or sketch, output a structural graph contract (Containers, Nodes + semantic colors, Connectors) *before* writing code or compiling.
-- **Single-Slide Ceiling:** Visualization prompts are strictly capped at **exactly 1 slide** (or single standalone diagram). No unsolicited multi-slide pitch decks or flat raster screenshots—compile to native DrawingML vector shapes.
+- **Single-Slide Ceiling:** Visualization prompts are strictly capped at **exactly 1 slide** (or single standalone diagram). No unsolicited multi-slide pitch decks or flat raster screenshots—compile to native DrawingML vector shapes. Multi-slide deck specifications (`specs/*.yaml`) and explicit user deck requests are fully exempt.
 - **Core Geometry & Visual Invariants (The Base Floor):**
   - **Locked Typographic Ramp:**
     - Slide Action Title: 20–22 pt, Bold, `#0F172A` (Slate 900).
@@ -55,6 +60,7 @@ Classify incoming requests into one execution lane:
   - **Zero Meta-Labeling:** Never use structural framework labels as slide copy (`DIMENSION 01`, `PHASE A`, `(Complication)`, `(Finding)`). Titles and row headers must state the active technical fact or operational reality directly.
   - **Zero Card Subtitle Echoes:** Never add a card subtitle that merely previews or summarizes the bullet points sitting directly underneath it.
   - **Centered-Block Alignment:** Container bullet lists are centered as a block (`block_cx == container.cx`) with left-aligned internal text lines.
+  - **Direct Engineering Tone Default (Anti-Consultant/Junior-Engineer Tone):** Default slide copy, headlines, and narrative summaries to direct, cause-and-effect engineering language understandable to junior engineers. Strictly avoid high-flown management-consulting buzzwords and academic abstractions unless the spec explicitly sets `design_contract: executive_csuite` or the user explicitly commands executive framing. Explain the practical "why" directly.
   - **Zero Unsolicited Sub-Captions:** Never invent boilerplate captions/subtitles (e.g. "Architecture Working Group"). If not provided by user, leave empty.
 - **Semantic Colors:** Red (`#DC2626` bottleneck/defect), Amber (`#D97706` boundary/wait), Blue (`#0284C7` active flow), Green (`#16A34A` target state).
 - **Proactive Deliverable Link:** When compiling or modifying a slide or diagram, proactively append:
@@ -78,7 +84,6 @@ Classify incoming requests into one execution lane:
 ## 🧰 Specialized Skills Routing
 
 Inspect relevant skill in `.agents/skills/` before acting:
-- **Track A (Ops):** [`enterprise-bench-ops`](skills/enterprise-bench-ops/SKILL.md) — Stamping templates, running bench CLI.
+- **Track A (Ops):** [`enterprise-bench-ops`](skills/enterprise-bench-ops/SKILL.md) — Stamping templates, running bench CLI, compiling decks.
 - **Track B (Engine Dev):** [`enterprise-bench-dev`](skills/enterprise-bench-dev/SKILL.md) — Modifying `src/` engines. Enforces Zero Intermediate Unit Testing.
 - **Track C (Desktop Review):** [`local-app-preview`](skills/local-app-preview/SKILL.md) — On-demand desktop preview on explicit trigger.
-- **Track D (Presentations):** [`presentation-maker`](skills/presentation-maker/SKILL.md) — Presentation design systems, 3 Gears, archetype layout.
