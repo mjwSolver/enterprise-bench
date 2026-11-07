@@ -2,9 +2,12 @@
 
 This cheat sheet documents the available slide archetypes compiled by Diagram Engine V2 (`bench ppt build-deck` / `bench diagram v2 compile`).
 
-> [!NOTE]
-> All archetypes are authored exclusively in declarative YAML (`specs/<deck>.yaml`).
-> Use the CLI for instant schema discovery: `uv run bench ppt archetypes --describe <archetype_name>`.
+> [!TIP]
+> **One-Command CLI Discovery & Snippet Piping:**
+> - List all 23 archetypes: `uv run bench ppt archetypes`
+> - Inspect schema & example: `uv run bench ppt archetypes <name>`
+> - Filter by family: `uv run bench ppt archetypes --family architecture`
+> - Pipe raw YAML snippet directly to deck: `uv run bench ppt archetypes <name> --example >> specs/decks/my_deck.yaml`
 
 ---
 

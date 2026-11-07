@@ -14,10 +14,12 @@ from typing import Any, Optional, Union
 import typer
 from rich import print as rprint
 from rich.table import Table
+from rich.syntax import Syntax
 
 from src.core.config import ROOT_DIR, OUTPUT_DIR, ensure_workspace_dirs
 from src.core.theme import list_available_themes, EnterpriseTheme
 from src.cli.utils import console, open_desktop_review
+from src.ppt_engine.archetypes.catalog import ARCHETYPE_REGISTRY, get_archetype_info
 
 ppt_app = typer.Typer(
     name="ppt",
@@ -47,116 +49,72 @@ def list_themes() -> None:
 
 @ppt_app.command("archetypes")
 def list_archetypes(
+    name: Optional[str] = typer.Argument(None, help="Archetype name to describe in detail or emit example for"),
     describe: Optional[str] = typer.Option(None, "--describe", "-d", help="Archetype name to describe in detail"),
+    example: bool = typer.Option(False, "--example", "-e", help="Emit raw copy-pasteable YAML snippet to stdout"),
+    family: Optional[str] = typer.Option(None, "--family", "-f", help="Filter catalog by family (Covers, Grids, Tables, Processes, Strategy, Architecture, Governance)"),
 ) -> None:
-    """List or inspect declarative slide archetypes and expected YAML parameters."""
-    catalog = {
-        "card_grid": {
-            "family": "Grids",
-            "desc": "2-4 column structured card grid with top stripes, category eyebrows, and metric callouts.",
-            "keys": ["tracker", "title", "subtitle", "columns (default 4)", "items: [{title, subtitle, bullets, badge, top_stripe, metric}]", "takeaway"],
-        },
-        "split_hero": {
-            "family": "Grids",
-            "desc": "Asymmetric hero split (35/65) with anchor KPI on left and narrative cards on right.",
-            "keys": ["tracker", "title", "subtitle", "hero_metric", "hero_metric_label", "hero_descriptor", "right_blocks: [{title, description}]", "takeaway"],
-        },
-        "table_slide": {
-            "family": "Tables",
-            "desc": "Flush data table with alternating rows, status badges, and decision takeaway bar.",
-            "keys": ["tracker", "title", "subtitle", "columns: [{name, width}]", "rows: [[col1, col2, ...]]", "takeaway"],
-        },
-        "chevron_process": {
-            "family": "Processes",
-            "desc": "Linear stage-gate process flow with direction chevrons and 'WE ARE HERE' status badge.",
-            "keys": ["tracker", "title", "subtitle", "steps: [{num, title, status, deliverables, owner}]", "takeaway"],
-        },
-        "medallion_tiers": {
-            "family": "Architecture",
-            "desc": "3-tier data lakehouse medallion flow (Bronze, Silver, Gold) with table rosters and safeguards.",
-            "keys": ["tracker", "title", "subtitle", "tiers: [{tier, tier_badge, metric, metric_label, tables, excluded_note}]", "takeaway"],
-        },
-        "open_telemetry_flow": {
-            "family": "Architecture",
-            "desc": "End-to-end telemetry pipeline flow diagram with ingestion gates and processing nodes.",
-            "keys": ["tracker", "title", "subtitle", "flow_nodes: [{name, type, status}]", "takeaway"],
-        },
-        "crisp_dm_gate": {
-            "family": "Architecture",
-            "desc": "CRISP-DM 6-phase gate validator for data science and ML readiness.",
-            "keys": ["tracker", "title", "subtitle", "phases: [{name, status, checklist}]", "takeaway"],
-        },
-        "browser_mockup": {
-            "family": "Architecture",
-            "desc": "High-DPI macOS desktop browser frame for UI screenshots and dashboards.",
-            "keys": ["tracker", "title", "subtitle", "image_path", "mockup_url", "takeaway"],
-        },
-        "iceberg_concept": {
-            "family": "Architecture",
-            "desc": "Surface vs subsurface foundational split concept visualization.",
-            "keys": ["tracker", "title", "subtitle", "visible_items", "subsurface_items", "takeaways"],
-        },
-        "bcg_3_horizon": {
-            "family": "Strategy",
-            "desc": "BCG 3-Horizon Growth / Modernization Framework (H1 Core, H2 Emerging, H3 Transformational).",
-            "keys": ["tracker", "title", "subtitle", "horizons: [{name, timeframe, focus, initiatives}]", "takeaway"],
-        },
-        "mckinsey_cascade": {
-            "family": "Strategy",
-            "desc": "Top hypothesis anchor with MECE strategic pillar breakdown and proof points.",
-            "keys": ["tracker", "title", "subtitle", "core_hypothesis", "pillars: [{name, proof_points}]", "takeaway"],
-        },
-        "balanced_scorecard": {
-            "family": "Strategy",
-            "desc": "4-quadrant executive matrix (Financial, Customer, Operational, Growth).",
-            "keys": ["tracker", "title", "subtitle", "quadrants: [{name, metrics: [{label, value, target, status}]}]", "takeaway"],
-        },
-        "timeline_gantt": {
-            "family": "Processes",
-            "desc": "Workstream Gantt timeline across months/quarters with milestone markers.",
-            "keys": ["tracker", "title", "subtitle", "workstreams: [{name, tasks: [{name, start, duration}]}]", "takeaway"],
-        },
-        "gap_analysis": {
-            "family": "Strategy",
-            "desc": "Current State vs Target State vs Remediation Plan comparative matrix.",
-            "keys": ["tracker", "title", "subtitle", "dimensions: [{name, current_state, target_state, action_plan}]", "takeaway"],
-        },
-        "cover": {
-            "family": "Covers",
-            "desc": "Executive presentation cover slide with engagement metadata.",
-            "keys": ["title", "subtitle", "client", "vendor", "date_str", "tracker"],
-        },
-        "chapter_divider": {
-            "family": "Covers",
-            "desc": "Bold chapter/section separator slide.",
-            "keys": ["chapter_num", "title", "subtitle", "tracker"],
-        },
-    }
+    """List or inspect declarative slide archetypes, parameters, and copy-pasteable YAML examples."""
+    target_name = (name or describe or "").lower().strip()
 
-    if describe:
-        arch_name = describe.lower().strip()
-        if arch_name not in catalog:
-            console.print(f"[bold red]Unknown archetype:[/bold red] '{describe}'. Available: {', '.join(catalog.keys())}")
+    # 1. Raw YAML Snippet Emission (Pipeable: bench ppt archetypes card_grid --example >> deck.yaml)
+    if example:
+        if not target_name:
+            console.print("[bold red]Error:[/bold red] Specify an archetype name to emit an example: [bold cyan]bench ppt archetypes <name> --example[/bold cyan]")
             raise typer.Exit(code=1)
-        info = catalog[arch_name]
-        console.print(f"\n[bold cyan]Archetype:[/bold cyan] [bold white]{arch_name}[/bold white] ([magenta]{info['family']}[/magenta])")
-        console.print(f"[bold yellow]Description:[/bold yellow] {info['desc']}")
-        console.print("[bold green]Supported YAML Keys:[/bold green]")
-        for k in info["keys"]:
-            console.print(f"  - [white]{k}[/white]")
-        console.print("")
+        info = get_archetype_info(target_name)
+        if not info:
+            console.print(f"[bold red]Unknown archetype:[/bold red] '{target_name}'. Run [bold cyan]bench ppt archetypes[/bold cyan] to view catalog.")
+            raise typer.Exit(code=1)
+        # Emit raw text directly without Rich decoration so shell redirection works cleanly
+        sys.stdout.write(info["example_yaml"])
+        sys.stdout.flush()
         return
 
-    table = Table(title="Declarative Slide Archetypes Catalog")
-    table.add_column("Archetype", style="bold cyan")
-    table.add_column("Family", style="magenta")
-    table.add_column("Description", style="white")
+    # 2. Detailed Single Archetype View
+    if target_name:
+        info = get_archetype_info(target_name)
+        if not info:
+            available = ", ".join(sorted(ARCHETYPE_REGISTRY.keys()))
+            console.print(f"[bold red]Unknown archetype:[/bold red] '{target_name}'. Available: {available}")
+            raise typer.Exit(code=1)
 
-    for name, info in catalog.items():
-        table.add_row(name, info["family"], info["desc"])
+        canon = info["canonical_name"]
+        aliases = ", ".join(info.get("aliases", [])) or "None"
+        console.print(f"\n[bold cyan]Archetype:[/bold cyan] [bold white]{canon}[/bold white]  [dim]|[/dim]  [magenta]{info['family']}[/magenta]")
+        if aliases != "None":
+            console.print(f"[dim]Accepted Aliases: {aliases}[/dim]")
+        console.print(f"\n[bold yellow]Purpose:[/bold yellow] {info['purpose']}")
+
+        console.print("\n[bold green]Supported YAML Keys:[/bold green]")
+        for k in info["keys"]:
+            console.print(f"  • [white]{k}[/white]")
+
+        console.print("\n[bold blue]Minimal Copy-Pasteable YAML Example:[/bold blue]")
+        syntax = Syntax(info["example_yaml"].strip(), "yaml", theme="monokai", line_numbers=False)
+        console.print(syntax)
+        console.print(f"\n[dim]Tip: Run [bold]bench ppt archetypes {canon} --example >> deck.yaml[/bold] to pipe directly.[/dim]\n")
+        return
+
+    # 3. Full Catalog Table
+    table = Table(title="Declarative Slide Archetypes Catalog (23 Archetypes)", header_style="bold cyan")
+    table.add_column("Canonical Name", style="bold white", width=22)
+    table.add_column("Family", style="magenta", width=14)
+    table.add_column("Aliases", style="dim", width=24)
+    table.add_column("When to Use / Purpose", style="white")
+
+    fam_filter = family.lower().strip() if family else None
+
+    for c_name, c_info in ARCHETYPE_REGISTRY.items():
+        if fam_filter and c_info["family"].lower() != fam_filter:
+            continue
+        aliases_str = ", ".join(c_info.get("aliases", [])[:2])
+        if len(c_info.get("aliases", [])) > 2:
+            aliases_str += f", +{len(c_info.get('aliases', [])) - 2}"
+        table.add_row(c_name, c_info["family"], aliases_str or "—", c_info["purpose"])
 
     console.print(table)
-    console.print("[dim]Use [bold]bench ppt archetypes --describe <name>[/bold] to view expected YAML parameters.[/dim]\n")
+    console.print("[dim]Run [bold]bench ppt archetypes <name>[/bold] for schema & example, or [bold]--example[/bold] to emit raw YAML.[/dim]\n")
 
 
 @ppt_app.command("generate")
@@ -313,7 +271,12 @@ def build_ppt_deck(
         rprint(f"[red]Error:[/red] Deck configuration in '{config}' must be a YAML mapping/dictionary.")
         raise typer.Exit(code=1)
 
-    deck_type = config_data.get("deck_type", "weekly_progress")
+    deck_type = config_data.get("deck_type")
+    if not deck_type:
+        if "slides" in config_data:
+            deck_type = "pitch_deck"
+        else:
+            deck_type = "weekly_progress"
     out_path = Path(output) if output else OUTPUT_DIR / "presentations" / f"{config_path.stem}.pptx"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
