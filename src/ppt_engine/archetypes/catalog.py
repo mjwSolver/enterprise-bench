@@ -125,7 +125,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "subtitle (str): Contextual narrative subtitle",
             "columns (int, default 4): Number of card columns (1-4)",
             "items (list): Cards: [{title, subtitle, bullets, badge, metric, metric_label, icon, accent_key}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+            "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: card_grid
   tracker: "STRATEGIC CAPABILITIES | CORE OFFERINGS"
@@ -149,7 +149,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       accent_key: "primary"
       metric: "99.6%"
       metric_label: "FEATURE INTEGRITY"
-  takeaway: "Capital Lever: Consolidate staging layers to reclaim compute credits."
 """,
     },
     "split_hero": {
@@ -164,7 +163,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "hero_stat_label (str): Metric label (e.g. 'Annualized Value')",
             "hero_stat_subtext (str): 1-2 sentence metric audit context",
             "blocks (list): Narrative blocks: [{title, description, category_tag}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: split_hero
   tracker: "EXECUTIVE SYNTHESIS | ROI BLUEPRINT"
@@ -180,7 +178,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     - title: "Real-Time Cortex Inference"
       description: "Serverless ML endpoints serve predictive probabilities into EMR before consultation starts."
       category_tag: "PREDICTIVE SERVING"
-  takeaway: "Decision Lever: Prioritize Silver staging deployment to lock in FY27 savings."
 """,
     },
     "composable_split": {
@@ -194,7 +191,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "split (list|str, optional): Column widths/fractions (e.g. [35, 65], [25, 50, 25], default equal)",
             "gap (float, optional): Gutter width between columns in inches (default: 0.35)",
             "panes (list): Child widgets: [{widget: 'hero_kpi'|'card_list'|'table'|'process_steps'|'card_grid', ...}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+            "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: composable_split
   tracker: "EXECUTIVE SYNTHESIS | VALUE ARCHITECTURE"
@@ -216,9 +213,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
           description: "**Retiring Monolithic Compute:** Decommissioning on-prem clusters eliminates fixed refresh cycles."
         - title: "Toolchain Consolidation & Engineering Capacity"
           description: "**Eliminating Point Solutions:** Unifying storage and governance avoids redundant software tools."
-  takeaway:
-    action: "ARCHITECTURAL EFFICIENCY"
-    text: "Decoupling regional partitioning from widget rendering solves custom diagram composition in 1 turn."
+  # takeaway: "Decision Lever: Approve compute retirement schedule."  # Optional — omit unless needed
 """,
     },
     "tech_logo_grid": {
@@ -230,7 +225,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
             "items (list): Technologies: [{name, category, logo, accent_key}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: tech_logo_grid
   tracker: "ECOSYSTEM ARCHITECTURE | PLATFORM STACK"
@@ -241,7 +235,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       category: "Data Cloud & Cortex GenAI"
     - name: "dbt Core"
       category: "Semantic Transformation"
-  takeaway: "Architecture Policy: Native lakehouse services replace fragile self-managed clusters."
 """,
     },
     "badge_matrix": {
@@ -253,7 +246,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
             "sections (list): Grouped badge categories: [{title, badges: [str]}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: badge_matrix
   tracker: "COMPETENCY & CREDENTIALS | PARTNERSHIP TIERS"
@@ -264,7 +256,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       badges: ["Snowflake SnowPro Core", "SnowPro Advanced Architect", "AWS Data Analytics"]
     - title: "Security & Governance"
       badges: ["SOC 2 Type II", "ISO 27001", "HIPAA Data Compliance"]
-  takeaway: "Assurance: 100% certified engineering squads eliminate delivery execution risk."
 """,
     },
 
@@ -274,7 +265,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     "table": {
         "family": "Tables",
         "aliases": ["matrix_table", "milestones_table", "prerequisites_table", "communication_table", "risk_table", "table_matrix"],
-        "purpose": "Flush data table with custom column widths, alignments, status badge pills, alternating zebra fills, and takeaway bar.",
+        "purpose": "Flush data table with custom column widths, alignments, status badge pills, alternating zebra fills, and optional takeaway bar.",
         "keys": [
             "tracker (str): Category eyebrow tag",
             "title (str): Action title stating the register's active reality",
@@ -282,7 +273,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "columns (list): Definitions: [{header, width, align ('LEFT'|'CENTER'|'RIGHT'), is_status, is_index, is_highlight}]",
             "rows (list of lists): Row cell values matching column count",
             "footnote (str, optional): Table footnote or telemetry source citation",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+            "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: table
   tracker: "PROGRAM GOVERNANCE | MILESTONE REGISTER"
@@ -310,7 +301,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     - ["1", "Silver Tier Dynamic Tables Deployed", "Data Engineering Lead", "Week 02", "COMPLETED"]
     - ["2", "EMR Cortex Copilot Streamlit Mockup", "Frontend ML Specialist", "Week 04", "ON TRACK"]
     - ["3", "Zero-PII Dynamic Masking Audit", "SecOps Compliance Officer", "Week 06", "CRITICAL GATE"]
-  takeaway: "Decision Lever: Authorize Week 06 sign-off gate before advancing to Gold production tables."
+  takeaway: "Decision Lever: Authorize Week 06 sign-off gate before advancing to Gold production tables."  # Optional — omit unless slide asserts a decision gate
 """,
     },
     "feature_matrix": {
@@ -322,7 +313,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
             "matrix_data (dict): Data object: {categories: [str], options: [str], rows: [{category, criteria, scores: {opt: score}}]}",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: feature_matrix
   tracker: "PLATFORM EVALUATION | COMPARATIVE SCORECARD"
@@ -338,7 +328,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       - category: "Security"
         criteria: "In-VPC Role-Based Masking"
         scores: {"Snowflake Cortex": "FULL", "Legacy DIY Clusters": "PARTIAL", "Third-Party SaaS": "NONE"}
-  takeaway: "Platform Verdict: In-warehouse model serving eliminates egress data leakage risks."
 """,
     },
 
@@ -354,7 +343,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title asserting roadmap certainty",
             "subtitle (str): Contextual narrative subtitle",
             "steps (list): Step definitions: [{num, title, status ('COMPLETED'|'IN PROGRESS'|'PLANNED'), deliverables: [str], owner}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+            "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: chevron_process
   tracker: "EXECUTION ROADMAP | STAGE GATES"
@@ -381,7 +370,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       status: "PLANNED"
       deliverables: ["Row masking", "Audit logs"]
       owner: "SecOps"
-  takeaway: "Execution Focus: Phase 02 Dynamic Table validation unlocks production inference."
 """,
     },
     "timeline_gantt": {
@@ -393,7 +381,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title asserting schedule confidence",
             "subtitle (str): Contextual narrative subtitle",
             "timeline_data (dict): Object: {months: [str], workstreams: [{name, color_key, tasks: [{name, start_month, duration_months, is_milestone}]}]}",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: timeline_gantt
   tracker: "PROGRAM SCHEDULE | DELIVERY GANTT"
@@ -418,7 +405,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             start_month: 2.2
             duration_months: 0.8
             is_milestone: true
-  takeaway: "Schedule Risk: Dynamic table sign-off by Week 06 is critical path for model cutover."
 """,
     },
     "change_request_procedure": {
@@ -430,7 +416,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
             "steps (list): Steps: [{step_num, title, description, sla, gate_action}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: change_request_procedure
   tracker: "GOVERNANCE & COMPLIANCE | CHANGE CONTROL"
@@ -447,7 +432,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       description: "Architecture review board audits compute impact and security posture."
       sla: "48 Hours"
       gate_action: "Lead Sign-off"
-  takeaway: "Policy: Any schema alteration altering Silver feature definitions requires formal CR approval."
 """,
     },
 
@@ -463,7 +447,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title asserting strategic trajectory",
             "subtitle (str): Contextual narrative subtitle",
             "horizons (list): Horizon columns: [{name, timeframe, focus, metric, metric_label, bullets: [str]}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+            "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: bcg_3_horizon
   tracker: "STRATEGIC TRANSFORMATION | THREE HORIZONS"
@@ -494,7 +478,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       bullets:
         - "**Closed-loop feedback:** Automated retraining triggers."
         - "**Multi-tenant governance:** Zero-trust cross-clinic data sharing."
-  takeaway: "Strategic Imperative: Horizon 1 foundation is mandatory before Horizon 2 Cortex rollout."
 """,
     },
     "gap_analysis": {
@@ -506,7 +489,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
             "dimensions (list): Dimensions: [{dimension, as_is, to_be, action_plan, status}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+            "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: gap_analysis
   tracker: "GAP ANALYSIS | AS-IS VS TO-BE"
@@ -523,7 +506,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       to_be: "Centralized Silver Dynamic Tables with automated lineage."
       action_plan: "Migrate 12 feature scripts to versioned dbt project."
       status: "PLANNED"
-  takeaway: "Priority: Resolving ingestion latency eliminates 85% of downstream data reconciliation overhead."
 """,
     },
     "corporate_equity_tree": {
@@ -535,7 +517,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
             "tree_data (dict): Tree object: {root_title, tier1_nodes: [{name, code, percentage}], tier2_nodes: [{name, code, percentage}]}",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: corporate_equity_tree
   tracker: "CORPORATE GOVERNANCE | EQUITY STRUCTURE"
@@ -554,7 +535,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       - name: "Clinical Operating Unit"
         code: "CLINIC_OPS"
         percentage: "100.0%"
-  takeaway: "Governance Anchor: 100% clinical subsidiary ownership assures streamlined decision authority."
 """,
     },
 
@@ -570,7 +550,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title asserting schema boundary rules",
             "subtitle (str): Contextual narrative subtitle",
             "tiers (list): Tier definitions: [{tier, tier_badge, metric, metric_label, description, tables: [str], excluded_note}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+            "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: medallion_tiers
   tracker: "MEDALLION DATA TIERS | ELIGIBILITY ROSTER"
@@ -598,7 +578,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       description: "Executive dashboards and regulatory financial compliance marts."
       tables: ["DM_MONTHLY_EXECUTIVE_KPI", "RPT_CLINIC_PERFORMANCE"]
       excluded_note: "Post-hoc aggregates only; not used for real-time inference."
-  takeaway: "Governance Invariant: Never train predictive ML models on Gold aggregation tables."
 """,
     },
     "gate_validation": {
@@ -610,7 +589,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title stating gate passage status",
             "subtitle (str): Contextual narrative subtitle",
             "gates (list): Metric gates: [{title, actual (float), threshold (float), status ('PASS'|'WARNING'|'CRITICAL'), category, variance_label, is_hero}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: gate_validation
   tracker: "STAGE-GATE VALIDATION | ACCURACY THRESHOLDS"
@@ -630,7 +608,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       status: "PASS"
       category: "OPERATIONAL SLA"
       variance_label: "15% Headroom"
-  takeaway: "Go/No-Go Decision: All gating criteria met; approve canary deployment to Clinic 01."
 """,
     },
     "open_telemetry_flow": {
@@ -642,7 +619,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
             "flow_nodes (list): Nodes: [{name, type, status, metrics}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: open_telemetry_flow
   tracker: "OBSERVABILITY & TELEMETRY | DATA PIPELINE"
@@ -658,7 +634,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     - name: "Dynamic Table Staging"
       type: "TRANSFORM"
       status: "HEALTHY"
-  takeaway: "Telemetry SLA: P99 end-to-end pipeline latency audited at 820ms."
 """,
     },
     "crisp_dm_gate": {
@@ -670,7 +645,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
             "phases (list): Phases: [{name, status, checklist: [str]}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
+            "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: crisp_dm_gate
   tracker: "ML LIFECYCLE GOVERNANCE | CRISP-DM AUDIT"
@@ -686,7 +661,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     - name: "Evaluation & Deployment"
       status: "IN PROGRESS"
       checklist: ["Clinician blind test", "Shadow mode latency audit"]
-  takeaway: "Quality Gate: Shadow deployment must maintain 99.5% uptime for 14 continuous days."
 """,
     },
     "browser_mockup": {
@@ -701,7 +675,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "mockup_url (str, optional): Simulated browser address bar URL",
             "window_title (str, optional): Window title bar caption",
             "badge (str, optional): Status pill on top-right of frame",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: browser_mockup
   tracker: "EMR COPILOT INTEGRATION | CLINICAL WORKFLOW"
@@ -711,7 +684,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
   mockup_url: "https://emr.morulaivf.co.id/portal/patient/cycle-summary"
   window_title: "EMR Clinical Workspace — Cortex Intelligence Assistant"
   badge: "LIVE PROTOTYPE"
-  takeaway: "UX Paradigm: Zero-context-switching design increases daily clinician adoption by 74%."
 """,
     },
     "iceberg_concept": {
@@ -724,7 +696,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "subtitle (str): Contextual subtitle",
             "visible_items (list of str): Visible top-level items above waterline",
             "subsurface_items (list of str): Deep foundational architecture requirements below waterline",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: iceberg_concept
   tracker: "TECHNICAL FOUNDATION | ICEBERG FRAMEWORK"
@@ -739,7 +710,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     - "Snowpipe Micro-Batch CDC Ingestion"
     - "Role-Based Access Control & Column Masking"
     - "Automated Feature Drift & Model Lineage Tracking"
-  takeaway: "Investment Reality: 80% of project effort is dedicated to the subsurface data foundation."
 """,
     },
 
@@ -756,7 +726,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "subtitle (str): Contextual narrative subtitle",
             "leadership (list): Executive tier: [{role, name, responsibility}]",
             "working_groups (list): Squads: [{name, lead, members: [str]}]",
-            "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: governance_org_structure
   tracker: "PROGRAM GOVERNANCE | OPERATING MODEL"
@@ -776,7 +745,6 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     - name: "Clinical ML Squad"
       lead: "Lead ML Scientist"
       members: ["Cortex Serving", "Model Validation", "Clinician Feedback"]
-  takeaway: "Accountability: Weekly Steering Committee cadence eliminates cross-squad blockers."
 """,
     },
 }

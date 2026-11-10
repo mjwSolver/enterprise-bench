@@ -965,7 +965,7 @@ def build_gap_analysis_slide(
     # =========================================================================
     if left_items and right_items:
         card_y = Inches(1.80)
-        card_h = Inches(4.08)
+        card_h = Inches(4.08) if takeaway else Inches(4.92)
         col_w = Inches(5.60)
         col1_x = Inches(0.80)
         col2_x = Inches(6.93)
@@ -1144,58 +1144,18 @@ def build_gap_analysis_slide(
                 space_before_pt=bullet_gap_r if b_idx > 0 else 4.0,
             )
 
-        # 4. Single Executive Synthesis Bar at Bottom (The ONLY focal banner)
-        takeaway_text = takeaway or "EXECUTIVE TAKEAWAY: Transitioning from unstructured bullets to native MBB slidecraft ensures board-level clarity and cuts synthesis cycles by 60%."
-        syn_y = Inches(6.10)
-        syn_h = Inches(0.78)
-        syn_w = Inches(11.73)
-
-        add_card(
-            slide,
-            theme,
-            col1_x,
-            syn_y,
-            syn_w,
-            syn_h,
-            force_rectangle=True,
-            bg_color=hex_to_rgb("#F8FAFC"),
-            border_color=hex_to_rgb("#BAE6FD"),
-            border_width_pt=0.75,
-        )
-
-        # Single intentional accent stripe on executive summary only
-        stripe_syn = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, syn_y, Inches(0.06), syn_h)
-        stripe_syn.shadow.inherit = False
-        stripe_syn.fill.solid()
-        stripe_syn.fill.fore_color.rgb = theme.get_rgb("accent")
-        stripe_syn.line.fill.background()
-
-        syn_tb = slide.shapes.add_textbox(col1_x + Inches(0.22), syn_y + Inches(0.12), syn_w - Inches(0.36), syn_h - Inches(0.24))
-        syn_tf = syn_tb.text_frame
-        syn_tf.word_wrap = True
-        syn_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        syn_tf.margin_left = syn_tf.margin_right = syn_tf.margin_top = syn_tf.margin_bottom = 0
-        p_syn = syn_tf.paragraphs[0]
-
-        if ":" in takeaway_text:
-            t_lead, t_body = takeaway_text.split(":", 1)
-            r_tl = p_syn.add_run()
-            r_tl.text = f"{t_lead.strip()}: "
-            r_tl.font.name = theme.font_family_header
-            r_tl.font.size = Pt(10.5)
-            r_tl.font.bold = True
-            r_tl.font.color.rgb = theme.get_rgb("accent")
-
-            r_tb = p_syn.add_run()
-            r_tb.text = t_body.strip()
-            r_tb.font.name = theme.font_family
-            r_tb.font.size = Pt(10.5)
-            r_tb.font.color.rgb = theme.get_rgb("primary")
-        else:
-            p_syn.text = takeaway_text
-            p_syn.font.name = theme.font_family
-            p_syn.font.size = Pt(10.5)
-            p_syn.font.color.rgb = theme.get_rgb("primary")
+        # 4. Optional Executive Synthesis Bar at Bottom (strictly opt-in)
+        if takeaway:
+            add_takeaway_bar(
+                slide,
+                theme,
+                takeaway,
+                top_y=Inches(6.10),
+                left_x=col1_x,
+                width=Inches(11.73),
+                height=Inches(0.78),
+                font_size_pt=10.5,
+            )
 
         add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
         return slide

@@ -253,22 +253,58 @@ def _lint_executive_csuite_contract(
             suggestion="Executive C-Suite slides must feature a dominant focal anchor (hero_stat >= 36 pt, e.g., '+28%' or '$4.2M') with descriptor.",
         )
 
-    # 3. Takeaway anti-echo check
-    takeaway = slide.get("takeaway")
-    if isinstance(takeaway, str) and takeaway.strip() and title:
+    # 3. Takeaway discipline handled via _lint_takeaway_discipline in main loop (echo_as_error=True)
+
+
+def _extract_takeaway_text(slide: Dict[str, Any]) -> str:
+    """Return normalized takeaway/conclusion string from supported slide keys."""
+    raw = slide.get("takeaway") or slide.get("so_what") or slide.get("decision_lever") or slide.get("callout")
+    if isinstance(raw, dict):
+        parts = [str(raw.get("title", "")).strip(), str(raw.get("description", "")).strip(), str(raw.get("text", "")).strip()]
+        return " ".join(p for p in parts if p).strip()
+    if isinstance(raw, str):
+        return raw.strip()
+    return ""
+
+
+def _lint_takeaway_discipline(
+    slide: Dict[str, Any],
+    slide_idx: int,
+    archetype: str,
+    title: str,
+    report: SpecLintReport,
+    echo_as_error: bool = False,
+) -> None:
+    """Flag canned filler prefixes or headline-echoing takeaway bars across all content slides."""
+    tk_text = _extract_takeaway_text(slide)
+    if not tk_text:
+        return
+
+    upper_tk = tk_text.upper()
+    if upper_tk.startswith(("EXECUTIVE TAKEAWAY:", "KEY TAKEAWAY:", "TAKEAWAY:")):
+        report.add_issue(
+            rule_id="LINT008_TAKEAWAY_DISCIPLINE",
+            severity="WARNING",
+            slide_idx=slide_idx,
+            archetype=archetype,
+            message="Generic takeaway prefix ('EXECUTIVE TAKEAWAY:' / 'TAKEAWAY:') detected.",
+            suggestion="Bottom conclusion bars are strictly opt-in. Omit the bar if it adds no new decision, or lead with a specific action tag (e.g. 'Decision Gate:' / 'Capital Lever:').",
+        )
+
+    if title:
         t_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", title.lower()))
-        tk_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", takeaway.lower()))
-        filtered_tk_words = {w for w in tk_words if w not in {"decision", "lever", "capital", "takeaway", "impact"}}
+        tk_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", tk_text.lower()))
+        filtered_tk_words = {w for w in tk_words if w not in {"decision", "lever", "capital", "takeaway", "impact", "executive"}}
         if t_words and filtered_tk_words:
             overlap = len(t_words.intersection(filtered_tk_words)) / max(len(t_words), len(filtered_tk_words))
             if overlap >= 0.75:
                 report.add_issue(
-                    rule_id="LINT006_DESIGN_CONTRACT",
-                    severity="ERROR",
+                    rule_id="LINT006_DESIGN_CONTRACT" if echo_as_error else "LINT008_TAKEAWAY_DISCIPLINE",
+                    severity="ERROR" if echo_as_error else "WARNING",
                     slide_idx=slide_idx,
                     archetype=archetype,
-                    message="Executive C-Suite contract violation: Takeaway bar echoes the action headline.",
-                    suggestion="The headline asserts the Finding; the takeaway bar strictly delivers the Decision Lever / Capital Equation / So-What.",
+                    message="Takeaway bar echoes the action headline without adding a distinct decision lever.",
+                    suggestion="Omit the takeaway bar unless it asserts a concrete forward-looking Decision Lever or Capital Equation not stated in the title.",
                 )
 
 
@@ -793,6 +829,16 @@ def lint_presentation_spec(
     # -------------------------------------------------------------------------
     # Slide-by-Slide Verification
     # -------------------------------------------------------------------------
+    _non_content_archetypes = {
+        "cover", "hero_cover", "cinematic_cover",
+        "chapter_divider", "section_divider",
+        "agenda", "table_of_contents", "toc",
+        "thank_you", "closing", "thank_you_closing",
+    }
+    content_slide_count = 0
+    takeaway_slide_count = 0
+    deck_contract_id = _normalize_contract(deck_contract_raw) if deck_contract_raw else None
+
     for idx, slide in enumerate(slides, start=1):
         if not isinstance(slide, dict):
             continue
@@ -967,9 +1013,10 @@ def lint_presentation_spec(
         # Rule LINT006: Design Contract Enforcement (Modular Ceilings)
         # ---------------------------------------------------------------------
         slide_contract_raw = slide.get("design_contract")
+        active_contract_id: Optional[str] = None
         if slide_contract_raw is not None:
-            contract_id = _normalize_contract(slide_contract_raw)
-            if not contract_id:
+            active_contract_id = _normalize_contract(slide_contract_raw)
+            if not active_contract_id:
                 report.add_issue(
                     rule_id="LINT006_DESIGN_CONTRACT",
                     severity="ERROR",
@@ -978,27 +1025,51 @@ def lint_presentation_spec(
                     message=f"Unrecognized slide-level design_contract: '{slide_contract_raw}'.",
                     suggestion=f"Supported contracts: {', '.join(sorted(VALID_DESIGN_CONTRACTS))}.",
                 )
-            elif arch not in ("cover", "hero_cover", "chapter_divider", "thank_you"):
-                if contract_id == "executive_csuite":
-                    _lint_executive_csuite_contract(slide, idx, arch, title, report)
-                elif contract_id == "strategic_tradeoff":
-                    _lint_strategic_tradeoff_contract(slide, idx, arch, title, report)
-                elif contract_id == "technical_architecture":
-                    _lint_technical_architecture_contract(slide, idx, arch, title, report)
-        elif deck_contract_raw is not None:
-            contract_id = _normalize_contract(deck_contract_raw)
-            if contract_id and arch not in ("cover", "hero_cover", "chapter_divider", "thank_you"):
-                if contract_id == "executive_csuite":
-                    _lint_executive_csuite_contract(slide, idx, arch, title, report)
-                elif contract_id == "strategic_tradeoff":
-                    _lint_strategic_tradeoff_contract(slide, idx, arch, title, report)
-                elif contract_id == "technical_architecture":
-                    _lint_technical_architecture_contract(slide, idx, arch, title, report)
+        else:
+            active_contract_id = deck_contract_id
+
+        is_content_slide = arch not in _non_content_archetypes
+        if is_content_slide:
+            content_slide_count += 1
+            if _extract_takeaway_text(slide):
+                takeaway_slide_count += 1
+
+        if active_contract_id and arch not in ("cover", "hero_cover", "chapter_divider", "thank_you"):
+            if active_contract_id == "executive_csuite":
+                _lint_executive_csuite_contract(slide, idx, arch, title, report)
+            elif active_contract_id == "strategic_tradeoff":
+                _lint_strategic_tradeoff_contract(slide, idx, arch, title, report)
+            elif active_contract_id == "technical_architecture":
+                _lint_technical_architecture_contract(slide, idx, arch, title, report)
+
+        if is_content_slide:
+            _lint_takeaway_discipline(
+                slide,
+                idx,
+                arch,
+                title,
+                report,
+                echo_as_error=(active_contract_id == "executive_csuite"),
+            )
 
         # ---------------------------------------------------------------------
         # Rule LINT007: Raw Markdown Syntax Guardrail
         # ---------------------------------------------------------------------
         _lint_markdown_syntax(slide, idx, arch, report)
+
+    # -------------------------------------------------------------------------
+    # Rule LINT008: Deck-Wide Takeaway Saturation Guardrail (Opt-In Discipline)
+    # -------------------------------------------------------------------------
+    if content_slide_count >= 3 and takeaway_slide_count > (content_slide_count / 2):
+        pct = int(round((takeaway_slide_count / content_slide_count) * 100))
+        report.add_issue(
+            rule_id="LINT008_TAKEAWAY_FATIGUE",
+            severity="WARNING",
+            slide_idx=0,
+            archetype="deck",
+            message=f"Bottom takeaway/conclusion bar appears on {takeaway_slide_count}/{content_slide_count} content slides ({pct}%).",
+            suggestion="Bottom takeaway bars are strictly opt-in. Omit them from informational/evidence slides and reserve them only for slides asserting a concrete decision gate or capital lever.",
+        )
 
     if strict and report.warning_count > 0:
         report.passed = False

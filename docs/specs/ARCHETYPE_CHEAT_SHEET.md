@@ -8,6 +8,7 @@ This cheat sheet documents the available slide archetypes compiled by Diagram En
 > - Inspect schema & example: `uv run bench ppt archetypes <name>`
 > - Filter by family: `uv run bench ppt archetypes --family architecture`
 > - Pipe raw YAML snippet directly to deck: `uv run bench ppt archetypes <name> --example >> specs/decks/my_deck.yaml`
+> - **Opt-In Conclusion Bars:** Bottom `takeaway:` bars are strictly optional—omit them by default unless a slide needs a forward-looking decision gate or capital lever not already stated in the action title.
 
 ---
 
@@ -30,7 +31,6 @@ Structured multi-column card grid (2, 3, or 4 columns) with optional top stripes
       bullets:
         - Lead In: Direct cause-and-effect detail.
         - Next Point: Second punchy bullet.
-  takeaway: Capital equation or strategic decision lever.
 ```
 
 ### `split_hero`
@@ -49,7 +49,6 @@ Asymmetric layout (35/65) featuring a primary hero metric on the left and struct
       description: In-memory columnar processing eliminates staging bottlenecks.
     - title: Resource Partitioning
       description: XS compute warehouses isolate exploratory analysis.
-  takeaway: Resource monitors enforce auto-suspend boundaries.
 ```
 
 ---
@@ -57,7 +56,7 @@ Asymmetric layout (35/65) featuring a primary hero metric on the left and struct
 ## 2. Tables & Matrices
 
 ### `table_slide`
-Contiguous enterprise data table with alternating rows, status badges, and takeaway bar.
+Contiguous enterprise data table with alternating rows, status badges, and an optional bottom takeaway bar.
 ```yaml
 - slide: 4
   archetype: table_slide
@@ -78,7 +77,7 @@ Contiguous enterprise data table with alternating rows, status badges, and takea
   rows:
     - ["Stage 1: OPU", "FACT_MNQ.FACT_OPU", "18,420", "[GREEN] Verified", "Surgical record"]
     - ["Stage 2: Lab", "FACT_SCIENTIFIC.FACT_EMBRYO", "42,100", "[AMBER] Partial", "Straw balance"]
-  takeaway: Operational reconciliation must precede model training.
+  # takeaway: "Decision Gate: Operational reconciliation must precede model training."  # Optional — omit unless needed
 ```
 
 ---
@@ -108,7 +107,6 @@ Directional stage-gate sequence with deliverables and a floating "WE ARE HERE" l
       deliverables:
         - "Dashboard: 2-pane command center"
         - "Sanity: Embryo balance check"
-  takeaway: Gate 2 clearance required prior to sandbox migration.
 ```
 
 ---
@@ -139,7 +137,6 @@ Three-tier data lakehouse medallion flow (Bronze, Silver, Gold) with table roste
       tables:
         - "DM_JOURNEY.DM_PATIENT"
       excluded_note: Aggregations leak future clinical outcomes into past states.
-  takeaway: ML features must be strictly derived from Bronze/Silver historical events.
 ```
 
 ### `browser_mockup`
@@ -152,5 +149,4 @@ High-DPI desktop browser frame displaying an embedded application screenshot.
   subtitle: High-density command center visualizing missingness flags and straw balance.
   image_path: assets/images/mockups/magic_emr_cortex_copilot.png
   mockup_url: "https://morula.snowflakecomputing.com/streamlit/treatment-copilot"
-  takeaway: Interactive filtering accelerates clinic coordinator intervention.
 ```

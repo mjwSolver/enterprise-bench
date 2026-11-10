@@ -1279,7 +1279,7 @@ def build_crisp_dm_gate_slide(
     subtitle: Optional[str] = "Phases 1 & 2 complete; Phase 3 holds the operational line before any model training begins.",
     crisp_phases: Optional[List[Dict[str, Any]]] = None,
     prep_cards: Optional[List[Dict[str, Any]]] = None,
-    takeaway: Optional[str] = "GOVERNING INVARIANT: Zero machine learning algorithms run until the cohort, proxy label, and leakage gates are certified.",
+    takeaway: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
@@ -1539,7 +1539,7 @@ def build_crisp_dm_gate_slide(
         ]
 
     cards_top = Inches(3.02)
-    cards_h = Inches(3.38)
+    cards_h = Inches(3.38) if takeaway else Inches(3.96)
     n_cards = len(prep_cards)
     card_gap = Inches(0.22)
     card_w = (total_w - card_gap * (n_cards - 1)) / n_cards
@@ -1677,7 +1677,7 @@ def build_medallion_tiers_slide(
     action_title: str = "Silver Tables Provide Clean Feature Coverage; Bronze Requires Written Reason",
     subtitle: Optional[str] = "Three stacked medallion tiers classify approved training sources, conditional audit replay, and barred marts.",
     tiers: Optional[List[Dict[str, Any]]] = None,
-    takeaway: Optional[str] = "DATA INTEGRITY RULE: Silver provides 100% of Step 1 signals; Bronze requires written DE rationale; Gold is physically denied.",
+    takeaway: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
     notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
@@ -1737,7 +1737,7 @@ def build_medallion_tiers_slide(
 
     band_top = Inches(1.80)
     band_gap = Inches(0.14)
-    total_band_h = Inches(4.55)
+    total_band_h = Inches(4.55) if takeaway else Inches(5.10)
     band_h = (total_band_h - band_gap * (len(tiers) - 1)) / len(tiers)
 
     for idx, t in enumerate(tiers):
