@@ -28,7 +28,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 from .common import (
     add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
-    _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
+    _add_bullet_paragraph, _fit_image_in_box,
 )
 
 logger = logging.getLogger(__name__)
@@ -184,17 +184,12 @@ def build_split_hero_slide(
         b_y = content_y + b_idx * block_h
 
         # ---------------------------------------------------------------------
-        # Decoupled Title & Status Pill Layout (Zero Spatial Collision)
+        # Full-Width Block Title (Zero Floating Caption Pills)
         # ---------------------------------------------------------------------
-        has_badge = bool(block.metric_badge)
-        pill_w = Inches(1.8) if has_badge else Inches(0)
-        pill_h = Inches(0.34)
-        pill_gap = Inches(0.20) if has_badge else Inches(0)
-
-        title_w = right_w - pill_w - pill_gap if has_badge else right_w
+        title_w = right_w
         title_h = Inches(0.48)
 
-        # Title Text Box (Strictly bounded to left of pill)
+        # Title Text Box
         title_tb = slide.shapes.add_textbox(right_x, b_y + Inches(0.08), title_w, title_h)
         title_tf = title_tb.text_frame
         title_tf.word_wrap = True
@@ -206,50 +201,6 @@ def build_split_hero_slide(
         p_title.font.size = Pt(13.5)
         p_title.font.bold = True
         p_title.font.color.rgb = theme.get_rgb("primary")
-
-        # Metric Pill on the far right (Dynamic 3-Tier Semantic Severity)
-        if has_badge and block.metric_badge:
-            pill_x = right_x + right_w - pill_w
-            pill_y = b_y + Inches(0.08)
-            pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, pill_x, pill_y, pill_w, pill_h)
-            pill.shadow.inherit = False
-            pill.fill.solid()
-
-            # Dynamic 3-Tier Semantic Severity Mapping
-            b_text = block.metric_badge.upper()
-            variant = getattr(block, "badge_variant", None) or ""
-
-            if variant == "danger" or any(k in b_text for k in ("DEFECT", "P1", "BLOCKER", "CRITICAL", "ERROR", "BREACH")):
-                fill_color = theme.get_rgb("badge_red_fill")
-                border_color = theme.get_rgb("badge_red_text")
-                text_color = theme.get_rgb("badge_red_text")
-            elif variant == "warning" or any(k in b_text for k in ("LOCK", "WAIT", "BOTTLENECK", "WARNING", "DEBT", "RISK")):
-                fill_color = theme.get_rgb("badge_amber_fill")
-                border_color = theme.get_rgb("badge_amber_text")
-                text_color = theme.get_rgb("badge_amber_text")
-            elif variant == "success" or any(k in b_text for k in ("TARGET", "RESOLVED", "PARITY", "OPTIMAL", "SUCCESS")):
-                fill_color = theme.get_rgb("badge_green_fill")
-                border_color = theme.get_rgb("badge_green_text")
-                text_color = theme.get_rgb("badge_green_text")
-            else:
-                fill_color = theme.get_rgb("badge_blue_fill")
-                border_color = theme.get_rgb("accent")
-                text_color = theme.get_rgb("primary")
-
-            pill.fill.fore_color.rgb = fill_color
-            pill.line.color.rgb = border_color
-            pill.line.width = Pt(1.0)
-
-            pill_tf = pill.text_frame
-            pill_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-            pill_tf.margin_left = pill_tf.margin_right = pill_tf.margin_top = pill_tf.margin_bottom = 0
-            p_pill = pill_tf.paragraphs[0]
-            p_pill.text = block.metric_badge
-            p_pill.font.name = theme.font_family_header
-            p_pill.font.size = Pt(9.5)
-            p_pill.font.bold = True
-            p_pill.alignment = PP_ALIGN.CENTER
-            p_pill.font.color.rgb = text_color
 
         # Description Body (Placed strictly below header row across full width)
         desc_y = b_y + Inches(0.62)
@@ -380,22 +331,7 @@ def build_tech_logo_grid_slide(
             border_color=theme.get_rgb("border"),
         )
 
-        # 1. Top right status pill
-        pill_w = Inches(1.15)
-        pill_h = Inches(0.22)
-        _add_status_pill(
-            slide,
-            theme,
-            cx + card_w - pill_w - Inches(0.12),
-            cy + Inches(0.10),
-            pill_w,
-            pill_h,
-            itm.tier_badge,
-            font_size_pt=7.5,
-            override_color_key=itm.accent_key,
-        )
-
-        # 2. Logo / Emblem Slot (top left)
+        # 1. Logo / Emblem Slot (top left)
         logo_w = Inches(1.10)
         logo_h = Inches(0.40)
         logo_left = cx + Inches(0.14)
@@ -627,7 +563,7 @@ def build_card_grid_slide(
                     theme.font_family,
                     font_size_pt=10.0,
                     font_color=theme.get_rgb("secondary"),
-                    space_before_pt=4.0 if b_idx > 0 else 0.0,
+                    space_before_pt=7.0 if b_idx > 0 else 0.0,
                 )
 
         if takeaway:
@@ -660,7 +596,7 @@ def build_card_grid_slide(
             border_color=theme.get_rgb("border"),
         )
 
-        has_header_elements = bool(itm.icon or itm.badge)
+        has_header_elements = bool(itm.icon)
         if itm.icon:
             icon_dim = Inches(0.30)
             icon_x = cx + Inches(0.14)
@@ -671,21 +607,6 @@ def build_card_grid_slide(
                     slide.shapes.add_picture(str(icon_path), icon_x, icon_y, width=icon_dim, height=icon_dim)
             except Exception as e:
                 logger.warning(f"Failed to add card icon {itm.icon}: {e}")
-
-        if itm.badge:
-            pill_w = Inches(0.95)
-            pill_h = Inches(0.20)
-            _add_status_pill(
-                slide,
-                theme,
-                cx + card_w - pill_w - Inches(0.12),
-                cy + Inches(0.10),
-                pill_w,
-                pill_h,
-                itm.badge,
-                font_size_pt=7.0,
-                override_color_key=itm.accent_key,
-            )
 
         tb_y = cy + (Inches(0.46) if has_header_elements else Inches(0.18))
 
@@ -754,7 +675,7 @@ def build_card_grid_slide(
             tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
 
             bullet_font_sz = 11.0 if rows == 1 else (8.0 if rows <= 2 else 7.2)
-            bullet_space_before = 8.0 if rows == 1 else 2.5
+            bullet_space_before = 8.0 if rows == 1 else 4.5
             for b in itm.bullets:
                 _add_bullet_paragraph(
                     tf_b,
@@ -790,7 +711,7 @@ def build_card_grid_slide(
                 p_sub.space_before = Pt(4 if rows == 1 else 2)
 
             bullet_font_sz = 10.5 if rows == 1 else (7.8 if rows <= 2 else 7.2)
-            bullet_space_before = 7.0 if rows == 1 else 2.5
+            bullet_space_before = 7.0 if rows == 1 else 4.5
             for b in itm.bullets:
                 _add_bullet_paragraph(
                     tf,
@@ -895,19 +816,6 @@ def build_badge_matrix_slide(
         hp1.font.size = Pt(11.0)
         hp1.font.bold = True
         hp1.font.color.rgb = theme.get_rgb("primary")
-
-        if sec.badge_count_label:
-            _add_status_pill(
-                slide,
-                theme,
-                cx + col_w - Inches(1.60),
-                cy + Inches(0.12),
-                Inches(1.42),
-                Inches(0.24),
-                sec.badge_count_label,
-                font_size_pt=7.5,
-                override_color_key=sec.accent_key,
-            )
 
         item_y = cy + Inches(0.85)
         item_gap = Inches(0.16)

@@ -858,20 +858,6 @@ def build_dense_workstream_runbook_slide(
         p_title.font.bold = True
         p_title.font.color.rgb = theme.get_rgb("primary")
 
-        # Optional Badge Pill at top right of card
-        if q_data.badge:
-            _add_status_pill(
-                slide,
-                theme,
-                left=q_x + quad_w - Inches(1.35),
-                top=q_y + Inches(0.08),
-                width=Inches(1.20),
-                height=Inches(0.20),
-                status=q_data.badge,
-                font_size_pt=7.0,
-                override_color_key=accent_key,
-            )
-
         # Tagline / Subtitle
         p_tag = tf.add_paragraph()
         p_tag.text = q_data.tagline
@@ -919,18 +905,6 @@ def build_dense_workstream_runbook_slide(
     hp.font.size = Pt(10.0)
     hp.font.bold = True
     hp.font.color.rgb = theme.get_rgb("primary")
-
-    _add_status_pill(
-        slide,
-        theme,
-        left=table_x + table_w - Inches(1.85),
-        top=table_y + Inches(0.08),
-        width=Inches(1.70),
-        height=Inches(0.20),
-        status="BAST STAGE-GATE ALIGNED",
-        font_size_pt=7.0,
-        override_color_key="success",
-    )
 
     # Table Column Grid Coordinates:
     # Discipline (2.2"), Vendor PIC (2.3"), Client PIC (2.3"), Scope (3.5"), Status (1.1")
@@ -1240,20 +1214,6 @@ def build_target_architecture_swimlane_slide(
         p2.font.color.rgb = theme.get_rgb("muted")
         p2.space_before = Pt(1.5)
 
-        # Optional Boundary Tag Pill at top right of column
-        if col_data.boundary_notice:
-            _add_status_pill(
-                slide,
-                theme,
-                left=cx + cw - Inches(1.85),
-                top=lane_y + Inches(0.08),
-                width=Inches(1.70),
-                height=Inches(0.18),
-                status=col_data.boundary_notice,
-                font_size_pt=6.5,
-                override_color_key="accent" if col_data.is_target_platform else "neutral",
-            )
-
         # Component Node Cards inside Swimlane
         node_start_y = lane_y + Inches(0.66)
         node_h = Inches(1.18)
@@ -1319,21 +1279,6 @@ def build_target_architecture_swimlane_slide(
             p_nsub.font.size = Pt(8.0)
             p_nsub.font.color.rgb = theme.get_rgb("secondary")
             p_nsub.space_before = Pt(2.0)
-
-            # Status / Workstream Badge Pill on Node
-            if node.status_badge:
-                badge_color = "warning" if node.is_out_of_scope else ("success" if "TARGET" in node.status_badge else "accent")
-                _add_status_pill(
-                    slide,
-                    theme,
-                    left=node_x + node_w - Inches(1.30),
-                    top=curr_node_y + Inches(0.08),
-                    width=Inches(1.18),
-                    height=Inches(0.18),
-                    status=node.status_badge,
-                    font_size_pt=6.5,
-                    override_color_key=badge_color,
-                )
 
     # 2. Bottom Banner: Workstream Routing Pathways
     banner_x = Inches(0.80)

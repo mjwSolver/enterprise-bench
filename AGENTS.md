@@ -50,7 +50,7 @@ Classify incoming requests into one execution lane:
   - **Full-Width Canvas Header:** Action title and subtitle flow in a **single text box** ($w \ge 11.85''$, `space_before = Pt(10)` on subtitle).
   - **Sharp Rectangles:** Sharp rectangles (`MSO_SHAPE.RECTANGLE`) for cards and top accent stripes. Zero top stripes on rounded cards.
   - **Zero Drop Shadows:** Strip OpenXML drop shadows (`<a:outerShdw>`, `<a:effectLst/>`).
-  - **Zero Redundant Badging (No Badge Crutches):** Never place a status/sequence badge (e.g. `PILLAR 01`) if the card title or eyebrow already includes numbering/sequence, or if top stripes establish the semantic category.
+  - **Zero Floating Card Badges (No Badge Crutches):** Never render floating corner/caption status pills (e.g. `PRIMARY`, `SECONDARY`, `PILLAR 01`) on cards, KPI blocks, or containers. Convey priority or state via card titles, left/top accent colors, or structured table `STATUS` columns.
   - **Flat Open Canvas (Zero Nested Callout Boxes):** Never nest bordered callout boxes or inner vertical stripes inside card containers (`met_card` inside `card`). Hero stats ($32\text{--}36\text{ pt}$) float directly on the open canvas above a 0.75 pt hairline divider.
   - **Contiguous Data Tables (`row_gap = 0.0`):** Table rows must sit completely flush. Zero gaps between alternating zebra fills; hairline dividers serve as the sole row boundary to eliminate double-line seam artifacts.
   - **Calibrated 3-Tier Severity (Zero "Red Wave"):** Avoid uniform red panic states and flat monotone tables. Scale severity: Neutral Slate for unmapped keys/metadata $\to$ Amber for operational warnings $\to$ Crimson Red strictly for fatal technical blockers.

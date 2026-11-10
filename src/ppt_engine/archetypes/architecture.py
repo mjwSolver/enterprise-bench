@@ -28,7 +28,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 from .common import (
     add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
-    _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
+    _add_bullet_paragraph, _fit_image_in_box,
 )
 
 logger = logging.getLogger(__name__)
@@ -291,18 +291,6 @@ def build_iceberg_concept_slide(
     ap.font.bold = True
     ap.font.color.rgb = theme.get_rgb("accent")
 
-    _add_status_pill(
-        slide,
-        theme,
-        left_x + iceberg_w - Inches(1.40),
-        top_y + Inches(0.08),
-        Inches(1.25),
-        Inches(0.22),
-        "VISIBLE INTERFACE",
-        font_size_pt=7.0,
-        override_color_key="accent",
-    )
-
     col_w_above = (iceberg_w - Inches(0.32) - (Inches(0.12) * 2)) / 3.0
     for i, itm in enumerate(visible_items[:3]):
         ix = left_x + Inches(0.16) + (i * (col_w_above + Inches(0.12)))
@@ -380,18 +368,6 @@ def build_iceberg_concept_slide(
     bp.font.size = Pt(8.5)
     bp.font.bold = True
     bp.font.color.rgb = RGBColor(147, 197, 253)
-
-    _add_status_pill(
-        slide,
-        theme,
-        left_x + iceberg_w - Inches(1.55),
-        below_y + Inches(0.08),
-        Inches(1.40),
-        Inches(0.22),
-        "CRITICAL FOUNDATION",
-        font_size_pt=7.0,
-        override_color_key="danger",
-    )
 
     b_cols = 2
     b_rows = 3
@@ -473,18 +449,6 @@ def build_iceberg_concept_slide(
     tp2.font.size = Pt(9.0)
     tp2.font.color.rgb = theme.get_rgb("secondary")
     tp2.space_before = Pt(2)
-
-    _add_status_pill(
-        slide,
-        theme,
-        takeaway_x + takeaway_w - Inches(1.30),
-        top_y + Inches(0.12),
-        Inches(1.15),
-        Inches(0.24),
-        "KEY LESSON",
-        font_size_pt=7.5,
-        override_color_key="accent",
-    )
 
     for bullet in takeaways:
         _add_bullet_paragraph(

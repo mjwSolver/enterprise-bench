@@ -501,9 +501,10 @@ def _add_bullet_paragraph(
     font_name: str,
     font_size_pt: float = 11.0,
     font_color: Optional[RGBColor] = None,
-    space_before_pt: float = 4.0,
+    space_before_pt: float = 7.0,
     bullet_char: str = "•",
     lead_color: Optional[RGBColor] = None,
+    space_after_pt: float = 2.0,
 ) -> Any:
     """Appends a bullet paragraph with DrawingML hanging indent (marL/indent). Parses **bold** and Lead: text."""
     from pptx.oxml.xmlchemy import OxmlElement
@@ -522,6 +523,7 @@ def _add_bullet_paragraph(
     if not clean_font:
         clean_font = "Calibri"
     p.space_before = Pt(space_before_pt)
+    p.space_after = Pt(space_after_pt)
 
     # DrawingML Hanging Indent: marL="288000" (0.20 in), indent="-288000"
     pPr = p._p.get_or_add_pPr()
@@ -667,23 +669,9 @@ def add_takeaway_bar(
 
     # 3. Content Text Box
     if is_two_row:
-        # Two-row executive card format (Title + Description)
-        tb_y = top_y + (Inches(0.38) if badge_text else Inches(0.10))
-        tb_h = height - (Inches(0.46) if badge_text else Inches(0.20))
-        if badge_text:
-            pill_w = Inches(2.20)
-            pill_h = Inches(0.24)
-            _add_status_pill(
-                slide=slide,
-                theme=theme,
-                left=left_x + Inches(0.20),
-                top=top_y + Inches(0.10),
-                width=pill_w,
-                height=pill_h,
-                status=badge_text,
-                font_size_pt=8.0,
-                override_color_key=acc_key,
-            )
+        # Two-row executive card format (Title + Description, zero floating badge pills)
+        tb_y = top_y + Inches(0.10)
+        tb_h = height - Inches(0.20)
 
         tb = slide.shapes.add_textbox(left_x + Inches(0.20), tb_y, width - Inches(0.36), tb_h)
         tf = tb.text_frame
@@ -718,15 +706,9 @@ def add_takeaway_bar(
         tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
         p = tf.paragraphs[0]
 
-        if badge_text:
-            r_b = p.add_run()
-            r_b.text = f"[{badge_text.upper()}] "
-            r_b.font.name = theme.font_family_header
-            r_b.font.size = Pt(font_size_pt)
-            r_b.font.bold = True
-            r_b.font.color.rgb = acc_rgb
-
+        # Strip bracketed prefix tags from conclusion banners by default for executive clarity
         body_text = raw_text or title_text or desc_text
+        body_text = re.sub(r"^(?:\[[^\]]+\]\s*)+", "", body_text).strip()
         if ":" in body_text:
             t_lead, t_body = body_text.split(":", 1)
             lead_run = p.add_run()

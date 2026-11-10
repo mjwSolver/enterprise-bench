@@ -371,8 +371,8 @@ def _lint_strategic_tradeoff_contract(
             severity="ERROR",
             slide_idx=slide_idx,
             archetype=archetype,
-            message="Strategic Trade-Off contract violation: No option marked with 'RECOMMENDED' badge or primary accent.",
-            suggestion="Designate the target/recommended option with badge: 'RECOMMENDED' and accent_key: 'accent' to visually anchor the decision.",
+            message="Strategic Trade-Off contract violation: No option marked as recommended or primary accent.",
+            suggestion="Designate the target/recommended option with recommended: true and accent_key: 'accent' to visually anchor the decision.",
         )
 
     # 3. Neutral comparison title check
@@ -463,7 +463,7 @@ def _lint_technical_architecture_contract(
             slide_idx=slide_idx,
             archetype=archetype,
             message="Technical Architecture contract expects diagnostic status tracking ('defect', 'wait', 'active', 'target') on architectural components.",
-            suggestion="Assign 4-tier diagnostic statuses (e.g. metric_badge: 'P1 DEFECT', 'RESOURCE LOCK', or 'TARGET STATE') to convey system lifecycle state.",
+            suggestion="Assign 4-tier diagnostic statuses via diagnostic_status or accent_key ('danger', 'warning', 'accent', 'success') to convey system lifecycle state.",
         )
 
     # 2. Connectors source/destination integrity
@@ -543,8 +543,8 @@ def _lint_markdown_syntax(
                 suggestion="Ensure all <u> tags have matching </u> closures.",
             )
 
-        # Single asterisk italic check (excluding *** and **)
-        clean_for_italics = txt.replace("***", "").replace("**", "")
+        # Single asterisk italic check (excluding ***, **, and literal footnote markers (*))
+        clean_for_italics = txt.replace("***", "").replace("**", "").replace("(*)", "")
         if clean_for_italics.count("*") % 2 != 0:
             report.add_issue(
                 rule_id="LINT007_UNCLOSED_FORMATTING",
@@ -939,22 +939,29 @@ def lint_presentation_spec(
             )
 
         # ---------------------------------------------------------------------
-        # Rule LINT006: Redundant Card Badging / Badge Crutch
+        # Rule LINT006: Redundant Card Badging / Floating Caption Pills
         # ---------------------------------------------------------------------
+        def _flag_floating_card_badge(container: Dict[str, Any], label: str) -> None:
+            bad_val = container.get("badge") or container.get("metric_badge")
+            if bad_val:
+                report.add_issue(
+                    rule_id="LINT006_CARD_BADGE_CRUTCH",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"Floating caption badge '{bad_val}' on {label} is deprecated and ignored by the renderer.",
+                    suggestion="Remove decorative corner badge/metric_badge fields; convey priority or status directly in the card title or accent_key.",
+                )
+
         for item_idx, itm in enumerate(slide.get("items") or []):
-            if isinstance(itm, dict) and itm.get("badge"):
-                badge_val = str(itm.get("badge", "")).strip().upper()
-                has_widget = bool(itm.get("widget"))
-                is_crutch = has_widget or any(k in badge_val for k in ("PILLAR", "STEP", "STREAM", "CATEGORY", "AUDIT", "PIPELINE"))
-                if is_crutch:
-                    report.add_issue(
-                        rule_id="LINT006_CARD_BADGE_CRUTCH",
-                        severity="WARNING",
-                        slide_idx=idx,
-                        archetype=arch,
-                        message=f"Redundant badge '{itm.get('badge')}' on card {item_idx + 1}.",
-                        suggestion="Remove redundant card badges. Cards with internal widgets or numbered headers must not use decorative corner badge pills.",
-                    )
+            if isinstance(itm, dict):
+                _flag_floating_card_badge(itm, f"card {item_idx + 1}")
+        for pane_idx, pane in enumerate(slide.get("panes") or []):
+            if isinstance(pane, dict):
+                _flag_floating_card_badge(pane, f"pane {pane_idx + 1}")
+                for item_idx, itm in enumerate(pane.get("items") or []):
+                    if isinstance(itm, dict):
+                        _flag_floating_card_badge(itm, f"pane {pane_idx + 1} card {item_idx + 1}")
 
         # ---------------------------------------------------------------------
         # Rule LINT006: Design Contract Enforcement (Modular Ceilings)

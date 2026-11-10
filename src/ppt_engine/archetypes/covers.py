@@ -27,7 +27,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 
 from .common import (
     add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe, add_slide_footer,
-    _add_contained_image, _interpolate_color, _get_contrast_text_color, _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
+    _add_contained_image, _interpolate_color, _get_contrast_text_color, _add_bullet_paragraph, _fit_image_in_box,
 )
 
 logger = logging.getLogger(__name__)
@@ -964,11 +964,9 @@ def build_agenda_slide(
         np.font.bold = True
         np.font.color.rgb = theme.get_rgb(item.accent_key if item.accent_key else "accent")
 
-        # Text container
+        # Text container (Full width, zero floating badge pills)
         tb_left = card_x + num_w + Inches(0.12)
         tb_w = col_w - num_w - Inches(0.20)
-        if item.badge:
-            tb_w -= Inches(1.20)
 
         tb = slide.shapes.add_textbox(tb_left, card_y + Inches(0.04), tb_w, card_h - Inches(0.08))
         tf = tb.text_frame
@@ -991,18 +989,6 @@ def build_agenda_slide(
             dp.font.size = Pt(desc_font_pt)
             dp.font.color.rgb = theme.get_rgb("secondary")
             dp.space_before = Pt(1)
-
-        if item.badge:
-            _add_status_pill(
-                slide,
-                theme,
-                card_x + col_w - Inches(1.15),
-                card_y + (card_h - Inches(0.22)) / 2,
-                Inches(1.05),
-                Inches(0.22),
-                item.badge,
-                font_size_pt=7.5,
-            )
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
@@ -1109,7 +1095,6 @@ def build_thank_you_slide(
         # 3a. Left Column: Immediate Governance / Next Steps Card
         ns_title = next_steps.get("title", "IMMEDIATE GOVERNANCE & ACTION PLAN")
         ns_items = next_steps.get("items", [])
-        ns_badge = next_steps.get("badge", "NEXT HORIZONS")
         acc_key = next_steps.get("accent_key", "accent")
 
         add_card_with_top_stripe(
@@ -1125,19 +1110,7 @@ def build_thank_you_slide(
             stripe_height_in=0.06,
         )
 
-        _add_status_pill(
-            slide=slide,
-            theme=theme,
-            left=text_left + Inches(0.20),
-            top=content_y + Inches(0.14),
-            width=Inches(1.80),
-            height=Inches(0.22),
-            status=ns_badge,
-            font_size_pt=7.5,
-            override_color_key=acc_key,
-        )
-
-        ns_tb = slide.shapes.add_textbox(text_left + Inches(0.20), content_y + Inches(0.42), left_w - Inches(0.40), content_h - Inches(0.50))
+        ns_tb = slide.shapes.add_textbox(text_left + Inches(0.20), content_y + Inches(0.16), left_w - Inches(0.40), content_h - Inches(0.26))
         ns_tf = ns_tb.text_frame
         ns_tf.word_wrap = True
         ns_tf.margin_left = ns_tf.margin_right = ns_tf.margin_top = ns_tf.margin_bottom = 0

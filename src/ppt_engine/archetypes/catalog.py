@@ -66,10 +66,10 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "purpose": "Multi-column executive agenda sequence establishing strategic consensus and stage-gate readiness.",
         "keys": [
             "tracker (str): Category eyebrow tag",
-            "title (str): Action title stating the session goal",
-            "subtitle (str): Contextual subtitle describing session sequence",
+            "title (str): Action title",
+            "subtitle (str): Contextual subtitle",
             "columns (int, default 2): Grid columns (1-3)",
-            "items (list): Agenda items: [{num, title, description, badge, accent_key}]",
+            "items (list): Agenda items: [{num, title, description, accent_key}]",
         ],
         "example_yaml": """- archetype: agenda
   tracker: "PROJECT ALIGNMENT | EXECUTIVE AGENDA"
@@ -80,11 +80,9 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     - num: "01"
       title: "Business Drivers & Value Blueprint"
       description: "Strategic objectives, core operational friction, and ROI targets."
-      badge: "ALIGNMENT"
     - num: "02"
       title: "Lakehouse Architecture & Governance"
       description: "Silver feature coverage, RBAC masking, and data contracts."
-      badge: "CORE ENGINE"
 """,
     },
     "thank_you": {
@@ -165,7 +163,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "hero_stat (str): Big naked 32-36pt metric (e.g. '$14.8M', '99.6%')",
             "hero_stat_label (str): Metric label (e.g. 'Annualized Value')",
             "hero_stat_subtext (str): 1-2 sentence metric audit context",
-            "blocks (list): Narrative blocks: [{title, description, metric_badge, badge_variant, category_tag}]",
+            "blocks (list): Narrative blocks: [{title, description, category_tag}]",
             "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: split_hero
@@ -178,13 +176,9 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
   blocks:
     - title: "Automated Patient Feature Pipeline"
       description: "Silver Dynamic Tables refresh features sub-hourly, eliminating 280 hours of monthly manual SQL extraction."
-      metric_badge: "+98% FASTER"
-      badge_variant: "success"
       category_tag: "PIPELINE VELOCITY"
     - title: "Real-Time Cortex Inference"
       description: "Serverless ML endpoints serve predictive probabilities into EMR before consultation starts."
-      metric_badge: "< 85ms SLA"
-      badge_variant: "accent"
       category_tag: "PREDICTIVE SERVING"
   takeaway: "Decision Lever: Prioritize Silver staging deployment to lock in FY27 savings."
 """,
@@ -214,20 +208,14 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       stat_label: "24-Month Net Savings"
       stat_subtext: "Payback model reflects 3.4x ROI across compute retirement and engineering capacity recapture."
       eyebrow: "EXECUTIVE VALUE THESIS"
-      badge: "AUDITED"
-      badge_variant: "success"
       card_style: "filled"
     - widget: card_list
       style: "cards"
       items:
         - title: "Infrastructure Rationalization & Compute Deprecation"
           description: "**Retiring Monolithic Compute:** Decommissioning on-prem clusters eliminates fixed refresh cycles."
-          badge: "+$1.8M RECOVERED"
-          badge_variant: "success"
         - title: "Toolchain Consolidation & Engineering Capacity"
           description: "**Eliminating Point Solutions:** Unifying storage and governance avoids redundant software tools."
-          badge: "+$2.4M VALUE"
-          badge_variant: "success"
   takeaway:
     action: "ARCHITECTURAL EFFICIENCY"
     text: "Decoupling regional partitioning from widget rendering solves custom diagram composition in 1 turn."
@@ -241,7 +229,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "tracker (str): Category eyebrow tag",
             "title (str): Action title",
             "subtitle (str): Contextual subtitle",
-            "items (list): Technologies: [{name, category, tier_badge, logo, accent_key}]",
+            "items (list): Technologies: [{name, category, logo, accent_key}]",
             "takeaway (str|dict, optional): Bottom executive decision lever bar",
         ],
         "example_yaml": """- archetype: tech_logo_grid
@@ -251,10 +239,8 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
   items:
     - name: "Snowflake"
       category: "Data Cloud & Cortex GenAI"
-      tier_badge: "CORE ENGINE"
     - name: "dbt Core"
       category: "Semantic Transformation"
-      tier_badge: "TRANSFORMATION"
   takeaway: "Architecture Policy: Native lakehouse services replace fragile self-managed clusters."
 """,
     },

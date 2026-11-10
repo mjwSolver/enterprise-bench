@@ -277,6 +277,125 @@ class TableColumnDef:
     is_highlight: bool = False
 
 
+def _render_table_row(
+    slide: Any,
+    theme: Theme,
+    columns: List[TableColumnDef],
+    scaled_widths: List[Inches],
+    row: List[Any],
+    start_x: Inches,
+    cur_ry: Inches,
+    total_w: Inches,
+    row_h: Inches,
+    font_size_pt: float,
+    status_keywords: set[str],
+    is_alt: bool = False,
+    is_detached: bool = False,
+) -> None:
+    """Render one table data row, either contiguous or highlighted as a detached addendum row."""
+    if is_detached:
+        card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry, total_w, row_h)
+        card.shadow.inherit = False
+        card.fill.solid()
+        card.fill.fore_color.rgb = hex_to_rgb("#F0F9FF")
+        card.line.color.rgb = theme.get_rgb("accent")
+        card.line.width = Pt(1.25)
+        strip_shape_shadows(card)
+
+        stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry, Pt(4.0), row_h)
+        stripe.shadow.inherit = False
+        stripe.fill.solid()
+        stripe.fill.fore_color.rgb = theme.get_rgb("accent")
+        stripe.line.fill.background()
+        strip_shape_shadows(stripe)
+    else:
+        if is_alt:
+            row_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry, total_w, row_h)
+            row_bg.shadow.inherit = False
+            row_bg.fill.solid()
+            row_bg.fill.fore_color.rgb = theme.get_rgb("surface_muted")
+            row_bg.line.fill.background()
+
+        row_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry + row_h, total_w, Pt(0.5))
+        row_div.shadow.inherit = False
+        row_div.fill.solid()
+        row_div.fill.fore_color.rgb = theme.get_rgb("border")
+        row_div.line.fill.background()
+
+    cur_cx = start_x
+    dim_idx = 1 if (columns and columns[0].is_index) else 0
+    for c_idx, col in enumerate(columns):
+        cw = scaled_widths[c_idx]
+        is_highlighted = getattr(col, "is_highlight", False)
+        if is_highlighted and not is_detached:
+            cell_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cur_cx, cur_ry, cw, row_h)
+            cell_card.shadow.inherit = False
+            cell_card.fill.solid()
+            cell_card.fill.fore_color.rgb = RGBColor(238, 246, 255)
+            cell_card.line.fill.background()
+
+        cell_val = row[c_idx] if c_idx < len(row) else ""
+        cell_str = str(cell_val).strip()
+        is_status_col = col.is_status or (cell_str.upper() in status_keywords and len(cell_str) <= 20)
+
+        if is_status_col and cell_str:
+            pill_w = min(cw - Inches(0.16), max(Inches(1.80), cw * 0.92))
+            pill_h = min(row_h - Inches(0.14), Inches(0.30))
+            pill_x = cur_cx + (cw - pill_w) / 2
+            pill_y = cur_ry + (row_h - pill_h) / 2
+            _add_status_pill(
+                slide=slide,
+                theme=theme,
+                left=pill_x,
+                top=pill_y,
+                width=pill_w,
+                height=pill_h,
+                status=cell_str,
+                font_size_pt=max(8.0, font_size_pt - 1.5),
+                override_color_key="accent" if is_detached else None,
+            )
+        else:
+            is_idx_col = col.is_index or (c_idx == 0 and cell_str.isdigit())
+            tb = slide.shapes.add_textbox(
+                cur_cx + (Inches(0.02) if is_idx_col else Inches(0.08)),
+                cur_ry + Inches(0.02),
+                cw - (Inches(0.04) if is_idx_col else Inches(0.16)),
+                row_h - Inches(0.04),
+            )
+            tf = tb.text_frame
+            tf.word_wrap = True
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf.margin_left = Pt(1) if is_idx_col else Pt(6)
+            tf.margin_right = Pt(1) if is_idx_col else Pt(6)
+            tf.margin_top = Pt(2)
+            tf.margin_bottom = Pt(2)
+            p = tf.paragraphs[0]
+            p.text = cell_str
+            p.alignment = PP_ALIGN.CENTER if col.align == "CENTER" else (PP_ALIGN.RIGHT if col.align == "RIGHT" else PP_ALIGN.LEFT)
+
+            if is_idx_col:
+                p.font.name = theme.font_family_header
+                p.font.size = Pt(font_size_pt + 0.5)
+                p.font.bold = True
+                p.font.color.rgb = theme.get_rgb("accent")
+            elif is_highlighted:
+                p.font.name = theme.font_family_header
+                p.font.size = Pt(font_size_pt)
+                p.font.bold = True
+                p.font.color.rgb = hex_to_rgb("#1E3A8A")
+            elif c_idx == dim_idx:
+                p.font.name = theme.font_family_header
+                p.font.size = Pt(font_size_pt)
+                p.font.bold = True
+                p.font.color.rgb = theme.get_rgb("primary")
+            else:
+                p.font.name = theme.font_family
+                p.font.size = Pt(font_size_pt)
+                p.font.color.rgb = theme.get_rgb("primary" if is_detached else "secondary")
+
+        cur_cx += cw
+
+
 def build_table_slide(
     prs: Presentation,
     theme: Theme,
@@ -285,6 +404,8 @@ def build_table_slide(
     subtitle: Optional[str] = "Detailed tracking matrix with designated owners, baseline targets, and delivery statuses.",
     columns: Optional[List[TableColumnDef]] = None,
     rows: Optional[List[List[Any]]] = None,
+    detached_rows: Optional[List[List[Any]]] = None,
+    detached_connector_symbol: str = "+",
     footnote: Optional[str] = None,
     takeaway: Optional[Dict[str, Any]] = None,
     current_idx: int = 1,
@@ -355,132 +476,98 @@ def build_table_slide(
         p.font.color.rgb = RGBColor(255, 255, 255) if is_highlighted else theme.get_rgb("primary")
         cur_x += cw
 
-    # Rows
+    # Rows (reserve space for optional detached addendum rows + centered connector icon)
     num_rows = len(rows)
+    d_rows = list(detached_rows) if detached_rows else []
+    n_detached = len(d_rows)
+    connector_gap = Inches(0.46) if n_detached > 0 else Inches(0)
     avail_row_h = Inches(4.70) if not footnote else Inches(4.45)
-    row_gap = Inches(0.0)  # Continuous table rows — zero double-line gap artifact
+    total_data_rows = num_rows + n_detached
+
     if takeaway:
         is_two_row_tk = isinstance(takeaway, dict) and bool(takeaway.get("title") and takeaway.get("description"))
         avail_table_h = (Inches(2.80) if footnote else Inches(3.00)) if is_two_row_tk else (Inches(3.75) if footnote else Inches(4.00))
-        row_h = min(Inches(0.56), max(Inches(0.30), avail_table_h / num_rows))
+        row_h = min(Inches(0.56), max(Inches(0.30), (avail_table_h - connector_gap) / total_data_rows))
     else:
-        max_h = Inches(0.65) if num_rows <= 5 else Inches(0.50)
-        row_h = min(max_h, max(Inches(0.30), avail_row_h / num_rows))
+        max_h = Inches(0.65) if total_data_rows <= 5 else Inches(0.50)
+        row_h = min(max_h, max(Inches(0.30), (avail_row_h - connector_gap) / total_data_rows))
 
     row_start_y = header_y + header_h
 
     status_keywords = {
         "COMPLETE", "COMPLETED", "IN PROGRESS", "ON TRACK", "RESCHEDULED", "PLANNED",
         "CRITICAL GATE", "MILESTONE GATE", "HIGH", "MEDIUM", "LOW", "SIGNED-OFF",
-        "MUTUAL", "DAILY", "WEEKLY", "AS NEEDED", "OPEN", "RESOLVED"
+        "MUTUAL", "DAILY", "WEEKLY", "AS NEEDED", "OPEN", "RESOLVED", "INCLUDE ANYWAY"
     }
 
-    font_size_pt = 9.0 if num_rows > 8 else (10.0 if num_rows > 5 else 10.5)
+    font_size_pt = 9.0 if total_data_rows > 8 else (10.0 if total_data_rows > 5 else 10.5)
 
     for r_idx, row in enumerate(rows):
         cur_ry = row_start_y + r_idx * row_h
-        is_alt = (r_idx % 2 != 0)
+        _render_table_row(
+            slide=slide,
+            theme=theme,
+            columns=columns,
+            scaled_widths=scaled_widths,
+            row=row,
+            start_x=start_x,
+            cur_ry=cur_ry,
+            total_w=total_w,
+            row_h=row_h,
+            font_size_pt=font_size_pt,
+            status_keywords=status_keywords,
+            is_alt=(r_idx % 2 != 0),
+            is_detached=False,
+        )
 
-        # Modern Row Hygiene: Borderless rows with subtle alternating fill and hairline bottom divider
-        if is_alt:
-            row_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry, total_w, row_h)
-            row_bg.shadow.inherit = False
-            row_bg.fill.solid()
-            row_bg.fill.fore_color.rgb = theme.get_rgb("surface_muted")
-            row_bg.line.fill.background()
+    if n_detached > 0:
+        table_end_y = row_start_y + num_rows * row_h
+        sym = str(detached_connector_symbol or "+").strip()
+        if sym:
+            badge_d = Inches(0.30)
+            badge_x = start_x + (total_w - badge_d) / 2
+            badge_y = table_end_y + (connector_gap - badge_d) / 2
+            badge_oval = slide.shapes.add_shape(MSO_SHAPE.OVAL, badge_x, badge_y, badge_d, badge_d)
+            badge_oval.shadow.inherit = False
+            badge_oval.fill.solid()
+            badge_oval.fill.fore_color.rgb = hex_to_rgb("#E0F2FE")
+            badge_oval.line.color.rgb = theme.get_rgb("accent")
+            badge_oval.line.width = Pt(1.25)
+            strip_shape_shadows(badge_oval)
+            tf_sym = badge_oval.text_frame
+            tf_sym.word_wrap = False
+            tf_sym.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_sym.margin_left = tf_sym.margin_right = tf_sym.margin_top = tf_sym.margin_bottom = 0
+            p_sym = tf_sym.paragraphs[0]
+            p_sym.text = sym
+            p_sym.alignment = PP_ALIGN.CENTER
+            p_sym.font.name = theme.font_family_header
+            p_sym.font.size = Pt(14.0)
+            p_sym.font.bold = True
+            p_sym.font.color.rgb = theme.get_rgb("accent")
 
-        # Faint hairline divider under row (0.5pt)
-        row_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry + row_h, total_w, Pt(0.5))
-        row_div.shadow.inherit = False
-        row_div.fill.solid()
-        row_div.fill.fore_color.rgb = theme.get_rgb("border")
-        row_div.line.fill.background()
-
-        cur_cx = start_x
-        for c_idx, col in enumerate(columns):
-            cw = scaled_widths[c_idx]
-            is_highlighted = getattr(col, "is_highlight", False)
-            if is_highlighted:
-                cell_card = slide.shapes.add_shape(
-                    MSO_SHAPE.RECTANGLE,
-                    cur_cx,
-                    cur_ry,
-                    cw,
-                    row_h,
-                )
-                cell_card.shadow.inherit = False
-                cell_card.fill.solid()
-                cell_card.fill.fore_color.rgb = RGBColor(238, 246, 255)
-                cell_card.line.fill.background()
-
-            cell_val = row[c_idx] if c_idx < len(row) else ""
-            cell_str = str(cell_val).strip()
-
-            is_status_col = col.is_status or (cell_str.upper() in status_keywords and len(cell_str) <= 20)
-
-            if is_status_col and cell_str:
-                pill_w = min(cw - Inches(0.16), max(Inches(1.80), cw * 0.92))
-                pill_h = min(row_h - Inches(0.14), Inches(0.30))
-                pill_x = cur_cx + (cw - pill_w) / 2
-                pill_y = cur_ry + (row_h - pill_h) / 2
-                _add_status_pill(
-                    slide=slide,
-                    theme=theme,
-                    left=pill_x,
-                    top=pill_y,
-                    width=pill_w,
-                    height=pill_h,
-                    status=cell_str,
-                    font_size_pt=max(8.0, font_size_pt - 1.5),
-                )
-            else:
-                is_idx_col = col.is_index or (c_idx == 0 and cell_str.isdigit())
-                tb = slide.shapes.add_textbox(cur_cx + (Inches(0.02) if is_idx_col else Inches(0.08)), cur_ry + Inches(0.02), cw - (Inches(0.04) if is_idx_col else Inches(0.16)), row_h - Inches(0.04))
-                tf = tb.text_frame
-                tf.word_wrap = True
-                tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-                tf.margin_left = Pt(1) if is_idx_col else Pt(6)
-                tf.margin_right = Pt(1) if is_idx_col else Pt(6)
-                tf.margin_top = Pt(2)
-                tf.margin_bottom = Pt(2)
-                p = tf.paragraphs[0]
-                p.text = cell_str
-                if col.align == "CENTER":
-                    p.alignment = PP_ALIGN.CENTER
-                elif col.align == "RIGHT":
-                    p.alignment = PP_ALIGN.RIGHT
-                else:
-                    p.alignment = PP_ALIGN.LEFT
-
-                is_highlighted = getattr(col, "is_highlight", False)
-                dim_idx = 1 if (columns and columns[0].is_index) else 0
-
-                if is_idx_col:
-                    p.font.name = theme.font_family_header
-                    p.font.size = Pt(font_size_pt + 0.5)
-                    p.font.bold = True
-                    p.font.color.rgb = theme.get_rgb("accent")
-                elif is_highlighted:
-                    p.font.name = theme.font_family_header
-                    p.font.size = Pt(font_size_pt)
-                    p.font.bold = True
-                    p.font.color.rgb = hex_to_rgb("#1E3A8A")
-                elif c_idx == dim_idx:
-                    p.font.name = theme.font_family_header
-                    p.font.size = Pt(font_size_pt)
-                    p.font.bold = True
-                    p.font.color.rgb = theme.get_rgb("primary")
-                else:
-                    p.font.name = theme.font_family
-                    p.font.size = Pt(font_size_pt)
-                    p.font.color.rgb = theme.get_rgb("secondary")
-
-            cur_cx += cw
+        det_start_y = table_end_y + connector_gap
+        for d_idx, d_row in enumerate(d_rows):
+            _render_table_row(
+                slide=slide,
+                theme=theme,
+                columns=columns,
+                scaled_widths=scaled_widths,
+                row=d_row,
+                start_x=start_x,
+                cur_ry=det_start_y + d_idx * row_h,
+                total_w=total_w,
+                row_h=row_h,
+                font_size_pt=font_size_pt,
+                status_keywords=status_keywords,
+                is_alt=False,
+                is_detached=True,
+            )
 
     if takeaway:
         is_two_row_tk = isinstance(takeaway, dict) and bool(takeaway.get("title") and takeaway.get("description"))
         if is_two_row_tk:
-            takeaway_top = row_start_y + num_rows * row_h + Inches(0.14)
+            takeaway_top = row_start_y + total_data_rows * row_h + connector_gap + Inches(0.14)
             takeaway_h = Inches(1.30)
         else:
             takeaway_top = Inches(6.08) if footnote else Inches(6.28)
