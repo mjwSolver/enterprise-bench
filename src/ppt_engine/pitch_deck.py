@@ -64,6 +64,7 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 from src.core.slug_registry import EngagementContext, substitute_slugs_in_presentation
+from src.ppt_engine.archetypes.common import find_emojis
 from src.ppt_engine.consulting_archetypes import (
     AgendaItem,
     BadgeMatrixSection,
@@ -75,6 +76,7 @@ from src.ppt_engine.consulting_archetypes import (
     GanttTask,
     GanttTimelineData,
     GanttWorkstream,
+    GapDimensionData,
     HorizonColumnData,
     ProcessChevronStep,
     ScorecardMetric,
@@ -148,7 +150,7 @@ class PitchDeckBuilder:
         self.vendor_name: str = self.metadata.get("vendor_name", "PT Metrodata Electronics Tbk")
         self.product: str = self.metadata.get("product", "Snowflake AI Data Cloud")
         self.date_str: str = self.metadata.get("date_str", "September 2026")
-        self.notice: str = self.metadata.get("confidentiality", "Enterprise Strategy Group  |  Confidential & Proprietary")
+        self.notice: Optional[str] = self.metadata.get("confidentiality")
 
     @classmethod
     def from_yaml(
@@ -165,13 +167,35 @@ class PitchDeckBuilder:
         builder = cls(theme=theme_name, config_dict=data)
         return builder
 
+    def _validate_zero_emojis(self, obj: Any, context: str = "deck") -> None:
+        if isinstance(obj, str):
+            found = find_emojis(obj)
+            if found:
+                raise ValueError(
+                    f"Prohibited emoji(s) detected in {context}: {' '.join(dict.fromkeys(found))}. "
+                    "Emojis are banned; use clean text or Lucide/SVG vector icons instead."
+                )
+        elif isinstance(obj, dict):
+            for k, v in obj.items():
+                if k == "icon_emoji" and v:
+                    raise ValueError(
+                        f"Prohibited icon_emoji '{v}' detected in {context}. "
+                        "Use vector SVG logos or Lucide icons instead."
+                    )
+                self._validate_zero_emojis(v, context=context)
+        elif isinstance(obj, (list, tuple)):
+            for it in obj:
+                self._validate_zero_emojis(it, context=context)
+
     def build_all(self, slide_limit: Optional[int] = None) -> None:
         """Iterates through all declared slides in config and compiles them into the presentation."""
+        self._validate_zero_emojis(self.metadata, context="deck metadata")
         slides_cfg = self.config.get("slides") or []
         if slide_limit is not None and slide_limit > 0:
             slides_cfg = slides_cfg[:slide_limit]
 
         for s_idx, s_cfg in enumerate(slides_cfg, start=1):
+            self._validate_zero_emojis(s_cfg, context=f"slide {s_idx}")
             archetype = s_cfg.get("archetype", "")
             self._dispatch_slide(archetype, s_cfg, s_idx, len(slides_cfg))
 
@@ -235,9 +259,9 @@ class PitchDeckBuilder:
             build_agenda_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "PROJECT ALIGNMENT | EXECUTIVE AGENDA"),
-                action_title=cfg.get("title", "Comprehensive Project Alignment Across Governance, Deliverables, and Timelines"),
-                subtitle=cfg.get("subtitle", "Structured discussion sequence establishing strategic consensus and stage-gate readiness."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Agenda"),
+                subtitle=cfg.get("subtitle"),
                 items=items if items else None,
                 columns=int(cfg.get("columns", 2)),
                 current_idx=idx,
@@ -251,7 +275,7 @@ class PitchDeckBuilder:
                 self.theme,
                 tracker=cfg.get("tracker", "SECTION"),
                 title=cfg.get("headline", cfg.get("title", "Chapter Title")),
-                subtitle=cfg.get("subtitle", "Executive overview and transition context."),
+                subtitle=cfg.get("subtitle"),
                 division_tag=cfg.get("division_tagline", "PT Mitra Integrasi Informatika"),
                 hero_image_path=cfg.get("hero_image_path"),
                 current_idx=idx,
@@ -296,14 +320,14 @@ class PitchDeckBuilder:
                     parent_subtitle=tree_raw.get("parent_subtitle") or tree_raw.get("holding_subtitle", "Leading ICT Solutions & Distribution Ecosystem in Indonesia"),
                     tier1_nodes=p_nodes,
                     tier2_nodes=s_nodes,
-                    footnote=tree_raw.get("footnote", "* Consolidated group financial statements and ownership matrix."),
+                    footnote=tree_raw.get("footnote"),
                 )
             build_equity_corporate_tree_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "CORPORATE STRUCTURE | SUBSIDIARIES & AFFILIATES"),
-                action_title=cfg.get("title", "Comprehensive ICT Ecosystem Connects Distribution, Solutions & Cloud Subsidiaries"),
-                subtitle=cfg.get("subtitle", "Strategic corporate equity hierarchy across distribution channels, managed services, and enterprise consulting."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Corporate Structure & Shareholding Hierarchy"),
+                subtitle=cfg.get("subtitle"),
                 tree_data=tree_data,
                 current_idx=idx,
                 total_slides=total,
@@ -325,16 +349,18 @@ class PitchDeckBuilder:
                         metric=itm.get("metric"),
                         metric_label=itm.get("metric_label"),
                         widget=itm.get("widget"),
+                        has_top_stripe=bool(itm.get("has_top_stripe", False)),
                     ))
             build_card_grid_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "STRATEGIC CAPABILITIES | CORE SERVICE OFFERINGS"),
-                action_title=cfg.get("title", "Eight Strategic Pillars Deliver End-to-End Enterprise Modernization"),
-                subtitle=cfg.get("subtitle", "Integrated solution pillars supporting digital transformation from foundation cloud infrastructure to applied intelligence."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Capability Overview"),
+                subtitle=cfg.get("subtitle"),
                 items=items if items else None,
-                columns=int(cfg.get("columns", 4)),
+                columns=int(cfg["columns"]) if cfg.get("columns") is not None else None,
                 takeaway=cfg.get("takeaway"),
+                show_top_stripes=bool(cfg.get("show_top_stripes", False)),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
@@ -348,7 +374,7 @@ class PitchDeckBuilder:
                     items.append(TechLogoItem(
                         name=itm.get("name", ""),
                         category=itm.get("category", ""),
-                        tier_badge=itm.get("tier_badge", "CORE"),
+                        tier_badge=itm.get("tier_badge"),
                         logo=itm.get("logo"),
                         accent_key=itm.get("accent_key", "accent"),
                         description=itm.get("description"),
@@ -356,11 +382,12 @@ class PitchDeckBuilder:
             build_tech_logo_grid_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "PRODUCT PORTFOLIO | ENTERPRISE DATA ECOSYSTEM"),
-                action_title=cfg.get("title", "Best-in-Class Technology Partnerships Ensure Seamless Solution Interoperability"),
-                subtitle=cfg.get("subtitle", "Curated partner portfolio spanning database engines, event streaming, data transformation, and visualization."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Technology Stack Overview"),
+                subtitle=cfg.get("subtitle"),
                 items=items if items else None,
                 columns=int(cfg.get("columns", 4)),
+                show_top_stripes=bool(cfg.get("show_top_stripes", False)),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
@@ -380,10 +407,11 @@ class PitchDeckBuilder:
             build_badge_matrix_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "COMPETENCIES & CERTIFICATIONS | ENTERPRISE ASSURANCE"),
-                action_title=cfg.get("title", "Certified Engineering Teams Guarantee Flawless Implementation and High Availability"),
-                subtitle=cfg.get("subtitle", "Validated competencies across data lakehouse, cloud hyperscalers, and regulatory governance standards."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Capabilities & Credentials Matrix"),
+                subtitle=cfg.get("subtitle"),
                 sections=sections if sections else None,
+                show_top_stripes=bool(cfg.get("show_top_stripes", False)),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
@@ -393,15 +421,19 @@ class PitchDeckBuilder:
             build_iceberg_concept_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "ANALYTICS FOUNDATION | THE ICEBERG CONCEPT"),
-                action_title=cfg.get("title", "Modern Data Platforms Eliminate the Subsurface Technical Debt That Breaks Dashboards"),
-                subtitle=cfg.get("subtitle", "While executives view surface reports, 85% of analytic resilience relies on robust foundation data engineering."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Architecture Foundation Overview"),
+                subtitle=cfg.get("subtitle"),
                 visible_items=cfg.get("visible_items"),
                 subsurface_items=cfg.get("subsurface_items"),
                 takeaways=cfg.get("takeaways"),
+                takeaway_title=cfg.get("takeaway_title"),
+                takeaway_subtitle=cfg.get("takeaway_subtitle"),
+                show_top_stripes=bool(cfg.get("show_top_stripes", False)),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
+                source=cfg.get("source"),
             )
 
         elif arch in ("split_hero", "kpi_framework"):
@@ -418,12 +450,13 @@ class PitchDeckBuilder:
             build_split_hero_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "ANALYTICS JOURNEY | KPI DISCOVERY FRAMEWORK"),
-                action_title=cfg.get("title", "High-Performance Analytics Begins with Clarifying Strategic Business Objectives"),
-                subtitle=cfg.get("subtitle", "Aligning technical data schemas with executive decision metrics ensures measurable return on investment."),
-                hero_stat=cfg.get("hero_stat", cfg.get("hero_tag", "4 STAGES")),
-                hero_stat_label=cfg.get("hero_stat_label", cfg.get("hero_title", "KPI Framework")),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Executive Impact Overview"),
+                subtitle=cfg.get("subtitle"),
+                hero_stat=cfg.get("hero_stat", cfg.get("hero_tag", "")),
+                hero_stat_label=cfg.get("hero_stat_label", cfg.get("hero_title", "")),
                 hero_stat_subtext=cfg.get("hero_stat_subtext", cfg.get("hero_body")),
+                hero_eyebrow=cfg.get("hero_eyebrow"),
                 blocks=blocks if blocks else None,
                 source=cfg.get("source"),
                 current_idx=idx,
@@ -435,9 +468,9 @@ class PitchDeckBuilder:
             build_composable_split_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "EXECUTIVE SYNTHESIS | VALUE ARCHITECTURE"),
-                action_title=cfg.get("title", cfg.get("action_title", "Composable Multi-Widget Layout Solves Asymmetric Presentation Needs Without Raw DrawingML Math")),
-                subtitle=cfg.get("subtitle", "Canvas partitioning into relative spatial columns eliminates trial-and-error coordinate hacking."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", cfg.get("action_title", "")),
+                subtitle=cfg.get("subtitle"),
                 split=cfg.get("split"),
                 panes=cfg.get("panes", cfg.get("columns", cfg.get("regions"))),
                 top_kpis=cfg.get("top_kpis"),
@@ -516,9 +549,9 @@ class PitchDeckBuilder:
             build_bcg_3_horizon_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "SNOWFLAKE ARCHITECTURE | THE AI DATA CLOUD"),
-                action_title=cfg.get("title", "Decoupled Architecture Delivers Infinite Compute Elasticity with Zero Resource Contention"),
-                subtitle=cfg.get("subtitle", "Three independent layers: centralized cloud storage, multi-cluster elastic compute, and unified cloud services."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Three-Horizon Modernization Strategy"),
+                subtitle=cfg.get("subtitle"),
                 horizons=horizons if horizons else None,
                 takeaway=cfg.get("takeaway"),
                 source=cfg.get("source"),
@@ -531,34 +564,64 @@ class PitchDeckBuilder:
             build_browser_mockup_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "SYSTEM INTERFACE & RUNTIME VALIDATION"),
-                action_title=cfg.get("title", "Modernized Analytics Platform Eliminates ERP Latency and Siloed Data Exports"),
-                subtitle=cfg.get("subtitle", "High-fidelity interface preview running directly on Snowflake Cortex AI and Streamlit serving tiers."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Interface & System Preview"),
+                subtitle=cfg.get("subtitle"),
                 screenshot_path=cfg.get("screenshot_path") or cfg.get("screenshot") or cfg.get("image_path"),
                 url=cfg.get("url", "https://finance.snowflakecomputing.com/streamlit/app"),
                 telemetry_badges=cfg.get("telemetry_badges"),
                 theme_mode=cfg.get("theme_mode", "light"),
-                takeaways_title=cfg.get("takeaways_title", "KEY OBSERVATIONS & DRIVERS"),
+                takeaways_title=cfg.get("takeaways_title"),
                 takeaways=cfg.get("takeaways"),
+                show_top_stripes=bool(cfg.get("show_top_stripes", False)),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
+                source=cfg.get("source"),
             )
 
         elif arch in ("gap_analysis", "as_is_to_be"):
+            dims: Optional[List[GapDimensionData]] = None
+            raw_dims = cfg.get("dimensions")
+            if raw_dims and isinstance(raw_dims, list):
+                dims = []
+                for d in raw_dims:
+                    if not isinstance(d, dict):
+                        continue
+                    as_is_txt = d.get("as_is_state") or d.get("as_is") or ""
+                    if not as_is_txt:
+                        t_as = str(d.get("as_is_title") or "").strip()
+                        b_as = str(d.get("as_is_body") or "").strip()
+                        as_is_txt = f"{t_as}: {b_as}" if (t_as and b_as) else (t_as or b_as)
+                    to_be_txt = d.get("to_be_state") or d.get("to_be") or ""
+                    if not to_be_txt:
+                        t_tb = str(d.get("to_be_title") or "").strip()
+                        b_tb = str(d.get("to_be_body") or "").strip()
+                        to_be_txt = f"{t_tb}: {b_tb}" if (t_tb and b_tb) else (t_tb or b_tb)
+                    dims.append(GapDimensionData(
+                        dimension=d.get("dimension", ""),
+                        as_is_state=as_is_txt,
+                        to_be_state=to_be_txt,
+                        transition_lever=d.get("transition_lever"),
+                        impact_delta=d.get("impact_delta"),
+                        deficit_tag=d.get("deficit_tag"),
+                    ))
             build_gap_analysis_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "GAP ANALYSIS | AS-IS VS TO-BE"),
-                action_title=cfg.get("title", "Strategic Modernization Bridges Current Legacy Friction into Agile Intelligence"),
-                subtitle=cfg.get("subtitle", "Detailed comparative analysis across latency, data quality, scalability, and operational governance."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Current vs. Target Architecture Comparison"),
+                subtitle=cfg.get("subtitle"),
+                dimensions=dims,
+                as_is_header=cfg.get("as_is_header", "CURRENT STATE (AS-IS)"),
+                to_be_header=cfg.get("to_be_header", "TARGET ARCHITECTURE (TO-BE)"),
                 left_title=cfg.get("left_title"),
                 left_subtitle=cfg.get("left_subtitle"),
-                left_items=cfg.get("left_items"),
+                left_items=cfg.get("left_items") or cfg.get("left_bullets"),
                 left_eyebrow=cfg.get("left_eyebrow"),
                 right_title=cfg.get("right_title"),
                 right_subtitle=cfg.get("right_subtitle"),
-                right_items=cfg.get("right_items"),
+                right_items=cfg.get("right_items") or cfg.get("right_bullets"),
                 right_eyebrow=cfg.get("right_eyebrow"),
                 takeaway=cfg.get("takeaway"),
                 source=cfg.get("source"),
@@ -571,46 +634,81 @@ class PitchDeckBuilder:
             build_open_telemetry_flow_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "CLINICAL AI GOVERNANCE | REAL-TIME TELEMETRY & GATE VERIFICATION"),
-                action_title=cfg.get("title", "Dual-Engine Pipeline Telemetry Validates 99.4% Model Fidelity and Enforces Sub-Second Inference SLAs"),
-                subtitle=cfg.get("subtitle", "Real-time Snowflake Cortex inference audits confirm automated compliance gates across all 4 production reproductive medicine prediction models."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Pipeline Telemetry & Quality Gates"),
+                subtitle=cfg.get("subtitle"),
                 pipeline_steps=cfg.get("pipeline_steps"),
                 hero_metrics=cfg.get("hero_metrics"),
                 mockup_config=cfg.get("mockup_config") or cfg.get("widget"),
                 left_title=cfg.get("left_title", "Production Model Serving Console"),
-                left_subtitle=cfg.get("left_subtitle", "Snowflake Snowpark Container Services & Streamlit HUD"),
+                left_subtitle=cfg.get("left_subtitle"),
                 right_title=cfg.get("right_title", "Automated Production Quality Gates"),
-                right_subtitle=cfg.get("right_subtitle", "Continuous Model Validation & Regulatory Threshold Tracking"),
+                right_subtitle=cfg.get("right_subtitle"),
                 gate_matrix=cfg.get("gate_matrix") or cfg.get("threshold_bars") or cfg.get("chart_data"),
-                chart_style=cfg.get("chart_style", "track_bars"),
-                footnote=cfg.get("footnote", "Audit Window: 30-day rolling inference window across 12 Morula IVF clinic branches."),
+                footnote=cfg.get("footnote"),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
             )
 
         elif arch in ("gate_validation", "threshold_bars", "coverage_gate_validation", "metric_gate_review"):
+            resolved_chart = cfg.get("chart_data") or cfg.get("threshold_bars")
+            if not resolved_chart and cfg.get("gates"):
+                raw_gates = [g for g in (cfg.get("gates") or []) if isinstance(g, dict)]
+                series = []
+                thresholds = []
+                seen_thresh = set()
+                for g in raw_gates:
+                    val = float(g.get("actual", g.get("value", 0.0)))
+                    st = str(g.get("status", "PASS")).upper()
+                    bar_c = "#16A34A" if st == "PASS" else ("#D97706" if st in ("WARN", "WARNING") else "#DC2626")
+                    series.append({
+                        "label": g.get("label") or g.get("title", ""),
+                        "value": val,
+                        "display_value": g.get("display_value") or (f"{val * 100:.1f}%" if val <= 1.0 else f"{val}"),
+                        "subtext": g.get("subtext") or g.get("variance_label", ""),
+                        "status": st,
+                        "bar_color": g.get("bar_color", "#0284C7" if g.get("is_hero") else bar_c),
+                        "status_color": g.get("status_color", bar_c),
+                    })
+                    if "threshold" in g and g["threshold"] is not None:
+                        t_val = float(g["threshold"])
+                        if t_val not in seen_thresh:
+                            seen_thresh.add(t_val)
+                            thresholds.append({
+                                "value": t_val,
+                                "label": f">= {t_val * 100:.0f}% GATE" if t_val <= 1.0 else f">= {t_val} GATE",
+                                "color": "emerald" if len(seen_thresh) == 1 else "amber",
+                            })
+                resolved_chart = {
+                    "title": cfg.get("chart_title", "STAGE-GATE TELEMETRY VALIDATION"),
+                    "series": series,
+                    "thresholds": thresholds,
+                }
             build_gate_validation_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "EMPIRICAL DATA RECONNAISSANCE & LIMITATIONS"),
-                action_title=cfg.get("title", "Historical Volume Is Viable for Baseline, but Heavily Concentrated"),
-                subtitle=cfg.get("subtitle", "11,950 labelled rows across 27 months with 21% no-show rate; billing and SOAP clear 90% join threshold."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Gate Validation & Empirical Threshold Review"),
+                subtitle=cfg.get("subtitle"),
                 kpis=cfg.get("kpis"),
-                chart_data=cfg.get("chart_data") or cfg.get("threshold_bars"),
+                chart_data=resolved_chart,
                 constraints_card=cfg.get("constraints_card") or cfg.get("constraints"),
+                takeaway=cfg.get("takeaway") or cfg.get("conclusion"),
+                show_top_stripes=bool(cfg.get("show_top_stripes", False)),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
+                source=cfg.get("source"),
             )
 
         elif arch in ("crisp_dm_gate", "crisp_dm", "crisp_dm_lifecycle"):
             build_crisp_dm_gate_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "CRISP-DM LIFECYCLE & UC-1 DATA PREPARATION"),
-                action_title=cfg.get("title", "Data Preparation Is the Active Gate Deciding Machine Learning Feasibility"),
-                subtitle=cfg.get("subtitle", "Phases 1 & 2 complete; Phase 3 holds the operational line before any model training begins."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "CRISP-DM Lifecycle & Data Preparation Gate"),
+                subtitle=cfg.get("subtitle"),
                 crisp_phases=cfg.get("crisp_phases"),
                 prep_cards=cfg.get("prep_cards"),
                 takeaway=cfg.get("takeaway"),
@@ -623,9 +721,9 @@ class PitchDeckBuilder:
             build_medallion_tiers_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "MEDALLION DATA TIER ELIGIBILITY ROSTER"),
-                action_title=cfg.get("title", "Silver Tables Provide Clean Feature Coverage; Bronze Requires Written Reason"),
-                subtitle=cfg.get("subtitle", "Three stacked medallion tiers classify approved training sources, conditional audit replay, and barred marts."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Medallion Data Tier Eligibility"),
+                subtitle=cfg.get("subtitle"),
                 tiers=cfg.get("tiers"),
                 takeaway=cfg.get("takeaway"),
                 current_idx=idx,
@@ -640,21 +738,26 @@ class PitchDeckBuilder:
                     acc_key = s.get("accent_key")
                     acc_col = self.theme.get_rgb(acc_key) if acc_key else None
                     steps.append(ProcessChevronStep(
-                        phase_number=s.get("phase_number", "01"),
+                        phase_number=str(s.get("phase_number") or s.get("num") or f"{len(steps)+1:02d}"),
                         title=s.get("title", ""),
                         duration_badge=s.get("duration_badge", s.get("subtitle")),
                         deliverables=s.get("deliverables") or [],
                         status=s.get("status"),
                         accent_color=acc_col,
+                        is_current=bool(s.get("is_current", False)),
+                        pin_label=s.get("pin_label"),
+                        pin_color=s.get("pin_color"),
                     ))
             build_chevron_process_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "DELIVERY METHODOLOGY | EXECUTION ROADMAP"),
-                action_title=cfg.get("title", "Structured Four-Stage Delivery Framework Drives Predictable Implementation"),
-                subtitle=cfg.get("subtitle", "Sequential phase gates: Initiation, Cloud Development, Integration Testing, and Executive Handover."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Delivery Phases & Roadmap"),
+                subtitle=cfg.get("subtitle"),
                 steps=steps if steps else None,
                 takeaway=cfg.get("takeaway"),
+                pin_color=str(cfg.get("pin_color", "accent")),
+                pin_label=str(cfg.get("pin_label", "[ CURRENT: WE ARE HERE ]")),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
@@ -777,9 +880,9 @@ class PitchDeckBuilder:
             build_table_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "PROJECT GOVERNANCE | REGISTER"),
-                action_title=cfg.get("title", "Structured Governance Register Establishes Accountabilities and Timelines"),
-                subtitle=cfg.get("subtitle", "Detailed tracking matrix with designated owners, baseline targets, and delivery statuses."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Structured Governance Register"),
+                subtitle=cfg.get("subtitle"),
                 columns=columns if columns else None,
                 rows=rows if rows else None,
                 detached_rows=cfg.get("detached_rows") or None,
@@ -795,13 +898,13 @@ class PitchDeckBuilder:
             build_thank_you_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "ENGAGEMENT WRAP-UP | THANK YOU"),
+                tracker=cfg.get("tracker"),
                 title=cfg.get("title", "Thank You"),
-                subtitle=cfg.get("subtitle", "Partnering to accelerate enterprise data modernization with Snowflake AI Data Cloud."),
+                subtitle=cfg.get("subtitle"),
                 contacts=cfg.get("contacts"),
                 next_steps=cfg.get("next_steps"),
                 company=cfg.get("company", f"{self.vendor_name}  |  PT Mitra Integrasi Informatika"),
-                office=cfg.get("office", "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"),
+                office=cfg.get("office"),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
@@ -819,23 +922,23 @@ class PitchDeckBuilder:
                             category=r.get("category", ""),
                             criteria=r.get("criteria", ""),
                             scores=r.get("scores") or {},
-                            business_impact=r.get("business_impact", "HIGH"),
+                            business_impact=r.get("business_impact") or r.get("impact", "HIGH"),
                         ))
                     elif hasattr(r, "category"):
                         f_rows.append(r)
                 m_data = FeatureMatrixData(
-                    columns=m_raw.get("columns") or [],
+                    columns=m_raw.get("columns") or m_raw.get("options") or [],
                     rows=f_rows,
-                    recommendation_badge=m_raw.get("recommendation_badge", "RECOMMENDED ARCHITECTURE"),
-                    recommended_column=m_raw.get("recommended_column", "Snowflake Data Cloud"),
-                    footnote=m_raw.get("footnote", "Harvey Balls: ● Full Native Support | ◐ Partial / Requires Extension | ○ Complex / Unsupported"),
+                    recommendation_badge=m_raw.get("recommendation_badge") or cfg.get("recommendation_badge"),
+                    recommended_column=m_raw.get("recommended_column") or cfg.get("recommended_column"),
+                    footnote=m_raw.get("footnote") or cfg.get("footnote"),
                 )
             build_feature_matrix_slide(
                 self.prs,
                 self.theme,
-                tracker=cfg.get("tracker", "ARCHITECTURE EVALUATION | PLATFORM BENCHMARK"),
-                action_title=cfg.get("title", "Snowflake AI Data Cloud Demonstrates Superior Capabilities Across Core Criteria"),
-                subtitle=cfg.get("subtitle", "Multi-dimensional comparative assessment evaluating compute elasticity, data governance, and native AI integration."),
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Platform Comparison Matrix"),
+                subtitle=cfg.get("subtitle"),
                 matrix_data=m_data,
                 current_idx=idx,
                 total_slides=total,
@@ -847,9 +950,9 @@ class PitchDeckBuilder:
             build_chapter_divider_slide(
                 self.prs,
                 self.theme,
-                tracker=f"SLIDE {idx:02d}",
+                tracker=cfg.get("tracker") or f"SECTION {idx:02d}",
                 title=cfg.get("title", f"Slide {idx}"),
-                subtitle=cfg.get("subtitle", "Executive slide content."),
+                subtitle=cfg.get("subtitle"),
                 current_idx=idx,
                 total_slides=total,
             )

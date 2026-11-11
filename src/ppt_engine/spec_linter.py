@@ -24,6 +24,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from src.ppt_engine.archetypes.common import find_emojis
+
 
 # Known passive category labels that fail the McKinsey Action Title rule
 _PASSIVE_CATEGORY_RE = re.compile(
@@ -838,19 +840,70 @@ def lint_presentation_spec(
     content_slide_count = 0
     takeaway_slide_count = 0
     deck_contract_id = _normalize_contract(deck_contract_raw) if deck_contract_raw else None
+    has_chapters = any(
+        isinstance(s, dict) and str(s.get("archetype", "")).lower().strip() in ("chapter_divider", "section_divider")
+        for s in slides
+    )
+    current_chapter: Optional[str] = None
+
+    def _collect_emojis(obj: Any) -> List[str]:
+        found: List[str] = []
+        if isinstance(obj, str):
+            found.extend(find_emojis(obj))
+        elif isinstance(obj, dict):
+            for k, v in obj.items():
+                if k == "icon_emoji" and v:
+                    found.append(str(v))
+                else:
+                    found.extend(_collect_emojis(v))
+        elif isinstance(obj, (list, tuple)):
+            for it in obj:
+                found.extend(_collect_emojis(it))
+        return found
+
+    deck_meta_emojis = _collect_emojis(data.get("metadata") or {})
+    if deck_meta_emojis:
+        report.add_issue(
+            rule_id="LINT009_ZERO_EMOJI",
+            severity="ERROR",
+            slide_idx=0,
+            archetype="deck",
+            message=f"Prohibited emoji(s) in deck metadata: {' '.join(dict.fromkeys(deck_meta_emojis))}.",
+            suggestion="Remove all emojis; use clean text or vector SVG/Lucide icons only.",
+        )
 
     for idx, slide in enumerate(slides, start=1):
         if not isinstance(slide, dict):
             continue
 
         arch = slide.get("archetype", "unknown")
+        arch_norm = str(arch).lower().strip()
         title = str(slide.get("title", "")).strip()
         subtitle = str(slide.get("subtitle", "")).strip()
+        tracker_val = str(slide.get("tracker", "")).strip()
+
+        if arch_norm in ("chapter_divider", "section_divider") and title:
+            current_chapter = title
 
         # ---------------------------------------------------------------------
-        # Rule LINT002: Action Title Quality Gate (Non-Cover Slides)
+        # Rule LINT009: Zero-Emoji Hard Gate
         # ---------------------------------------------------------------------
-        if arch not in ("cover", "hero_cover", "chapter_divider", "thank_you"):
+        slide_emojis = _collect_emojis(slide)
+        if slide_emojis:
+            uniq = " ".join(dict.fromkeys(slide_emojis))
+            report.add_issue(
+                rule_id="LINT009_ZERO_EMOJI",
+                severity="ERROR",
+                slide_idx=idx,
+                archetype=arch,
+                message=f"Prohibited emoji(s) detected on slide ({uniq}).",
+                suggestion="Remove all Unicode emojis from slide text/badges/icons; use Lucide icons or SVG logos instead.",
+            )
+
+        # ---------------------------------------------------------------------
+        # Rule LINT002: Action Title & Tracker Discipline (Subtitle strictly opt-in)
+        # ---------------------------------------------------------------------
+        if arch_norm not in ("cover", "hero_cover", "cinematic_cover", "chapter_divider", "section_divider", "thank_you", "closing", "thank_you_closing"):
             if not title:
                 report.add_issue(
                     rule_id="LINT002_ACTION_TITLE",
@@ -881,14 +934,25 @@ def lint_presentation_spec(
                         suggestion="Replace generic topic labels with an assertive analytical finding.",
                     )
 
-            if not subtitle:
+            if tracker_val:
+                tracker_words = tracker_val.split()
+                if len(tracker_words) > 8:
+                    report.add_issue(
+                        rule_id="LINT002_TRACKER_DISCIPLINE",
+                        severity="WARNING",
+                        slide_idx=idx,
+                        archetype=arch,
+                        message=f"Top-left tracker breadcrumb is overly verbose ({len(tracker_words)} words): '{tracker_val}'.",
+                        suggestion="Keep top-left tracker concise (2-6 words, e.g. 'CHAPTER TOPIC | CONTEXT'); move explanations to title or optional subtitle.",
+                    )
+            elif has_chapters and current_chapter and arch_norm not in _non_content_archetypes:
                 report.add_issue(
-                    rule_id="LINT002_SUBTITLE_CONTEXT",
+                    rule_id="LINT002_TRACKER_DISCIPLINE",
                     severity="WARNING",
                     slide_idx=idx,
                     archetype=arch,
-                    message="Missing tracker/subtitle narrative.",
-                    suggestion="Add a 1-sentence tracker subtitle (10-12 words) answering 'So what?' for the reader.",
+                    message="Slide omits top-left tracker in a chaptered deck.",
+                    suggestion=f"Consider using active chapter context '{current_chapter}' as a concise breadcrumb (or omit if standalone).",
                 )
 
         # ---------------------------------------------------------------------
@@ -1005,6 +1069,17 @@ def lint_presentation_spec(
         for pane_idx, pane in enumerate(slide.get("panes") or []):
             if isinstance(pane, dict):
                 _flag_floating_card_badge(pane, f"pane {pane_idx + 1}")
+                w_type = str(pane.get("widget", "")).lower().strip()
+                if w_type in ("hero_kpi", "hero_stat", "kpi", "kpi_block"):
+                    if not (pane.get("stat") or pane.get("hero_stat")) or not (pane.get("stat_label") or pane.get("label")):
+                        report.add_issue(
+                            rule_id="LINT009_EMPIRICAL_KPI",
+                            severity="ERROR",
+                            slide_idx=idx,
+                            archetype=arch,
+                            message=f"hero_kpi widget on pane {pane_idx + 1} is missing required 'stat' or 'stat_label'.",
+                            suggestion="Provide explicit verified 'stat' and 'stat_label' values instead of relying on fallbacks.",
+                        )
                 for item_idx, itm in enumerate(pane.get("items") or []):
                     if isinstance(itm, dict):
                         _flag_floating_card_badge(itm, f"pane {pane_idx + 1} card {item_idx + 1}")

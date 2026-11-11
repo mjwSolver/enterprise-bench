@@ -87,7 +87,7 @@ def render_macos_window(
       title: Optional[str] (Window header title)
       theme_mode: Optional[str] ('light' or 'dark', default 'light')
       screenshot_path / image_path: Optional[str] (Path to interface capture PNG/JPG)
-      telemetry_badges: Optional[List[str]] (e.g. ['🧬 Snowflake Streamlit', '🛡️ PII De-Identified'])
+      telemetry_badges: Optional[List[str]] (opt-in badges, e.g. ['Snowflake Streamlit', 'PII De-Identified'])
       aspect_ratio: Optional[str] (e.g. '16:9', '16:10', '4:3', 'preserve')
       shadow: Optional[bool] (default True)
       dpi: Optional[int] (default 300)

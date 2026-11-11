@@ -8,26 +8,27 @@ This cheat sheet documents the available slide archetypes compiled by Diagram En
 > - Inspect schema & example: `uv run bench ppt archetypes <name>`
 > - Filter by family: `uv run bench ppt archetypes --family architecture`
 > - Pipe raw YAML snippet directly to deck: `uv run bench ppt archetypes <name> --example >> specs/decks/my_deck.yaml`
-> - **Opt-In Conclusion Bars:** Bottom `takeaway:` bars are strictly optional—omit them by default unless a slide needs a forward-looking decision gate or capital lever not already stated in the action title.
+> - **Opt-In Headers, Footers & Bars:** `tracker`, `subtitle`, `notice`, `footnote`, and `takeaway` are strictly optional—omit them to reclaim canvas space dynamically (`>= 18.0 pt` title, global `>= 8.0 pt` min font floor).
+> - **Zero Emojis:** Never embed emojis in titles, bullets, tags, or badges (`LINT009_ZERO_EMOJI` enforces hard failure). Use SVG icons or `numbered: true` index numerals instead.
 
 ---
 
 ## 1. Grids & Layouts
 
 ### `card_grid`
-Structured multi-column card grid (2, 3, or 4 columns) with optional top stripes, category badges, and metric callouts.
+Auto-balanced multi-column card grid (supports 1–12+ items; omit `columns` to auto-balance cleanly) with opt-in `top_stripe` (`false` default) and density-scaled typography (`>= 8.0 pt` floor).
 ```yaml
 - slide: 2
   archetype: card_grid
   tracker: STRATEGIC CAPABILITIES | CORE SERVICES
   title: Comprehensive Enterprise Solutions Span Infrastructure to AI
-  subtitle: Eight integrated core pillars deliver complete lifecycle support.
-  columns: 4
+  subtitle: Integrated pillars deliver complete lifecycle support.
+  # columns: 4  # Optional: omit for dynamic 1-12+ grid balancing
   items:
     - title: Cloud Migration
       subtitle: AWS & Azure Landing Zones
       badge: Foundation
-      top_stripe: true
+      top_stripe: false
       bullets:
         - Lead In: Direct cause-and-effect detail.
         - Next Point: Second punchy bullet.
@@ -85,13 +86,11 @@ Contiguous enterprise data table with alternating rows, status badges, and an op
 ## 3. Processes & Flows
 
 ### `chevron_process`
-Directional stage-gate sequence with deliverables and a floating "WE ARE HERE" location badge.
+Directional stage-gate sequence with deliverables and an opt-in location pin (`is_current: true`, customizable `pin_label` and `pin_color`).
 ```yaml
 - slide: 5
   archetype: chevron_process
-  tracker: IMPLEMENTATION ROADMAP | STAGE GATES
   title: Four-Stage Transition Sequence Delivers Governed Production Servicing
-  subtitle: Phased delivery path from sandbox audit to production release.
   steps:
     - num: 1
       title: Discovery & Audit
@@ -103,6 +102,8 @@ Directional stage-gate sequence with deliverables and a floating "WE ARE HERE" l
     - num: 2
       title: Treatment Copilot
       status: IN PROGRESS
+      is_current: true
+      pin_color: accent
       owner: Engineering Team
       deliverables:
         - "Dashboard: 2-pane command center"

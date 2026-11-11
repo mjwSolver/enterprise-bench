@@ -26,6 +26,7 @@ from src.ppt_engine.theme_engine import Theme, hex_to_rgb, rgb_to_hex, strip_sha
 from .common import (
     add_slide_with_background,
     add_slide_header,
+    resolve_content_top,
     add_card,
     add_card_with_top_stripe,
     add_card_with_harmonized_icon,
@@ -133,14 +134,20 @@ def render_hero_kpi_widget(
 ) -> None:
     """
     Renders an executive Hero KPI block in the assigned bounding box.
-    Supports filled dark-card style (like split_hero left anchor) or surface card style.
+    Requires explicit 'stat' and 'stat_label' (never fabricates fallback KPI numbers).
     """
     bx, by, bw, bh = box
     style = str(cfg.get("card_style", "filled")).lower().strip()
-    stat = str(cfg.get("stat", cfg.get("hero_stat", "99.4%"))).strip()
-    stat_label = str(cfg.get("stat_label", cfg.get("label", "Primary Performance Metric"))).strip()
+    stat_raw = cfg.get("stat", cfg.get("hero_stat"))
+    label_raw = cfg.get("stat_label", cfg.get("label"))
+    if not stat_raw or not label_raw:
+        raise ValueError("hero_kpi widget requires explicit 'stat' and 'stat_label' values (synthetic fallbacks are prohibited).")
+
+    stat = str(stat_raw).strip()
+    stat_label = str(label_raw).strip()
     stat_subtext = cfg.get("stat_subtext", cfg.get("subtext", cfg.get("description")))
-    eyebrow = str(cfg.get("eyebrow", cfg.get("tracker", "KEY PERFORMANCE METRIC"))).strip().upper()
+    eyebrow_raw = cfg.get("eyebrow", cfg.get("tracker"))
+    eyebrow = str(eyebrow_raw).strip().upper() if eyebrow_raw and str(eyebrow_raw).strip() else ""
     accent_key = cfg.get("accent_key", "accent")
 
     is_filled = style in ("filled", "primary", "dark")
@@ -160,8 +167,8 @@ def render_hero_kpi_widget(
         force_rectangle=True,
     )
 
-    # If surface card, add top accent stripe
-    if not is_filled:
+    # Optional top accent stripe on surface card (opt-in only)
+    if not is_filled and cfg.get("show_top_stripe", False):
         st_h = Pt(4.0)
         stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, by, bw, st_h)
         stripe.shadow.inherit = False
@@ -173,20 +180,21 @@ def render_hero_kpi_widget(
     pad_y = Inches(0.24) if not is_filled else Inches(0.30)
     inner_w = to_emu(bw - (pad_x * 2))
 
-    # 2. Eyebrow Tag (Full inner width, zero floating badge pills)
-    tb_eye = slide.shapes.add_textbox(to_emu(bx + pad_x), to_emu(by + pad_y), inner_w, Inches(0.30))
-    tf_eye = tb_eye.text_frame
-    tf_eye.word_wrap = True
-    tf_eye.margin_left = tf_eye.margin_right = tf_eye.margin_top = tf_eye.margin_bottom = 0
-    p_eye = tf_eye.paragraphs[0]
-    p_eye.text = eyebrow
-    p_eye.font.name = theme.font_family_header
-    p_eye.font.size = Pt(9.5)
-    p_eye.font.bold = True
-    p_eye.font.color.rgb = theme.get_rgb("accent") if is_filled else theme.get_rgb("muted_text")
-
-    # 3. Huge Stat Callout
-    stat_top = to_emu(by + pad_y + Inches(0.32))
+    # 2. Opt-in Eyebrow Tag
+    if eyebrow:
+        tb_eye = slide.shapes.add_textbox(to_emu(bx + pad_x), to_emu(by + pad_y), inner_w, Inches(0.30))
+        tf_eye = tb_eye.text_frame
+        tf_eye.word_wrap = True
+        tf_eye.margin_left = tf_eye.margin_right = tf_eye.margin_top = tf_eye.margin_bottom = 0
+        p_eye = tf_eye.paragraphs[0]
+        p_eye.text = eyebrow
+        p_eye.font.name = theme.font_family_header
+        p_eye.font.size = Pt(9.5)
+        p_eye.font.bold = True
+        p_eye.font.color.rgb = theme.get_rgb("accent") if is_filled else theme.get_rgb("muted_text")
+        stat_top = to_emu(by + pad_y + Inches(0.32))
+    else:
+        stat_top = to_emu(by + pad_y)
     tb_stat = slide.shapes.add_textbox(to_emu(bx + pad_x), stat_top, inner_w, Inches(0.85))
     tf_stat = tb_stat.text_frame
     tf_stat.word_wrap = True
@@ -253,32 +261,64 @@ def render_card_list_widget(
     cfg: Dict[str, Any],
 ) -> None:
     """
-    Renders a vertical list/stack of cards or divided narrative streams inside the bounding box.
+    Renders a flexible 1-6 vertical stack of cards, clean divided streams, or numbered story cards
+    (large far-left index numeral + vertical hairline divider + story title & copy).
     """
     bx, by, bw, bh = box
     raw_items = cfg.get("items", cfg.get("cards", cfg.get("blocks", [])))
     if not raw_items:
         return
 
+    header_title = cfg.get("title") or cfg.get("header_title") or cfg.get("header_bar")
+    if isinstance(header_title, str) and header_title.strip():
+        hdr_h = Inches(0.32)
+        h_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, by, bw, hdr_h)
+        h_card.shadow.inherit = False
+        h_card.fill.solid()
+        h_card.fill.fore_color.rgb = theme.get_rgb(cfg.get("header_bg_key", "primary"))
+        h_card.line.fill.background()
+        tf_h = h_card.text_frame
+        tf_h.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_h.margin_left = Inches(0.14)
+        p_h = tf_h.paragraphs[0]
+        p_h.text = header_title.strip().upper()
+        p_h.font.name = theme.font_family_header
+        p_h.font.size = Pt(10.0)
+        p_h.font.bold = True
+        p_h.font.color.rgb = RGBColor(255, 255, 255)
+        by = to_emu(by + hdr_h + Inches(0.10))
+        bh = to_emu(max(Inches(1.20), bh - hdr_h - Inches(0.10)))
+
     style = str(cfg.get("style", "cards")).lower().strip()
     is_divided = style in ("divided", "streams", "stream", "lines")
+    is_numbered = bool(
+        cfg.get("numbered", cfg.get("show_numbers", False))
+        or style in ("numbered", "story", "stories", "numbered_cards")
+        or any(isinstance(it, dict) and (it.get("number") is not None or it.get("index") is not None) for it in raw_items)
+    )
+    default_stripe = bool(cfg.get("show_stripe", cfg.get("striped", style == "striped")))
 
-    n_items = len(raw_items)
-    gap_y = Inches(0.14) if not is_divided else Inches(0)
+    items = list(raw_items)[:6]
+    n_items = len(items)
+    gap_y = Inches(0.10 if n_items >= 4 else 0.14) if not is_divided else Inches(0)
     avail_h = bh - (gap_y * (n_items - 1)) if not is_divided else bh
     item_h = to_emu(avail_h / n_items)
 
-    for idx, item in enumerate(raw_items):
+    title_pt = 12.0 if n_items <= 3 else (10.5 if n_items <= 5 else 10.0)
+    body_pt = 10.0 if n_items <= 3 else 9.0
+
+    for idx, item in enumerate(items):
         item_y = to_emu(by + (idx * (item_h + gap_y))) if not is_divided else to_emu(by + (idx * item_h))
         item_dict = item if isinstance(item, dict) else {"title": str(item)}
 
-        title = str(item_dict.get("title", f"Pillar {idx+1}")).strip()
+        title = str(item_dict.get("title", f"Item {idx + 1}")).strip()
         desc = item_dict.get("description", item_dict.get("body", ""))
         bullets = item_dict.get("bullets", [])
         accent_key = item_dict.get("accent_key", "accent")
+        accent_rgb = theme.get_rgb(accent_key)
+        use_stripe = bool(item_dict.get("show_stripe", default_stripe))
 
         if not is_divided:
-            # Standalone card box
             add_card(
                 slide,
                 theme,
@@ -290,53 +330,91 @@ def render_card_list_widget(
                 border_color=theme.get_rgb("border"),
                 force_rectangle=True,
             )
-            # Left accent focus stripe
-            st = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, item_y, Pt(4.0), item_h)
-            st.shadow.inherit = False
-            st.fill.solid()
-            st.fill.fore_color.rgb = theme.get_rgb(accent_key)
-            st.line.fill.background()
-            pad_left = Inches(0.20)
-            pad_top = Inches(0.12)
+            if use_stripe:
+                st = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, item_y, Pt(4.0), item_h)
+                st.shadow.inherit = False
+                st.fill.solid()
+                st.fill.fore_color.rgb = accent_rgb
+                st.line.fill.background()
+            pad_left = Inches(0.20 if use_stripe else 0.18)
+            pad_top = Inches(0.08 if n_items >= 4 else 0.12)
         else:
             pad_left = Inches(0.04)
-            pad_top = Inches(0.08)
+            pad_top = Inches(0.06 if n_items >= 4 else 0.08)
 
-        card_content_w = to_emu(bw - pad_left - Inches(0.16))
+        # Optional Large Left Numeral Column + Hairline Vertical Divider (Story-Card Mode)
+        if is_numbered:
+            num_val = item_dict.get("number", item_dict.get("index", idx + 1))
+            num_text = str(num_val)
+            num_w = Inches(0.68 if n_items >= 4 else 0.78)
+            num_x = to_emu(bx + (Inches(0.10) if not is_divided else Inches(0.02)))
+            tb_num = slide.shapes.add_textbox(num_x, item_y, num_w, item_h)
+            tf_num = tb_num.text_frame
+            tf_num.word_wrap = False
+            tf_num.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_num.margin_left = tf_num.margin_right = tf_num.margin_top = tf_num.margin_bottom = 0
+            pn = tf_num.paragraphs[0]
+            pn.text = num_text
+            pn.alignment = PP_ALIGN.CENTER
+            pn.font.name = theme.font_family_header
+            pn.font.size = Pt(28.0 if n_items <= 3 else (22.0 if n_items <= 5 else 20.0))
+            pn.font.bold = True
+            pn.font.color.rgb = accent_rgb
 
-        # Header: Full-width Title (zero floating badge pills)
-        title_h = Inches(0.48)
-        tb_title = slide.shapes.add_textbox(to_emu(bx + pad_left), to_emu(item_y + pad_top), card_content_w, title_h)
+            div_x = to_emu(num_x + num_w + Inches(0.04))
+            v_pad = Inches(0.10 if n_items >= 4 else 0.16)
+            v_div = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                div_x,
+                to_emu(item_y + v_pad),
+                Pt(0.75),
+                to_emu(max(Inches(0.24), item_h - v_pad * 2)),
+            )
+            v_div.shadow.inherit = False
+            v_div.fill.solid()
+            v_div.fill.fore_color.rgb = theme.get_rgb("border")
+            v_div.line.fill.background()
+
+            text_left = to_emu(div_x + Inches(0.16))
+        else:
+            text_left = to_emu(bx + pad_left)
+
+        card_content_w = to_emu((bx + bw) - text_left - Inches(0.16))
+
+        # Header
+        is_single_line_t = len(title) <= 46
+        title_h = Inches(0.28 if (is_single_line_t and n_items >= 4) else (0.34 if is_single_line_t else 0.44))
+        tb_title = slide.shapes.add_textbox(text_left, to_emu(item_y + pad_top), card_content_w, title_h)
         tf_title = tb_title.text_frame
         tf_title.word_wrap = True
         tf_title.margin_left = tf_title.margin_right = tf_title.margin_top = tf_title.margin_bottom = 0
         p_t = tf_title.paragraphs[0]
         p_t.text = title
         p_t.font.name = theme.font_family_header
-        p_t.font.size = Pt(12.0)
+        p_t.font.size = Pt(title_pt)
         p_t.font.bold = True
         p_t.font.color.rgb = theme.get_rgb("primary")
 
         # Body: Description or Bullets
         body_y = to_emu(item_y + pad_top + title_h + Inches(0.02))
-        body_h = to_emu(item_h - (body_y - item_y) - Inches(0.08))
-        if body_h > Inches(0.30):
-            tb_body = slide.shapes.add_textbox(to_emu(bx + pad_left), body_y, card_content_w, body_h)
+        body_h = to_emu(item_h - (body_y - item_y) - Inches(0.06))
+        if body_h > Inches(0.22):
+            tb_body = slide.shapes.add_textbox(text_left, body_y, card_content_w, body_h)
             tf_body = tb_body.text_frame
             tf_body.word_wrap = True
             tf_body.margin_left = tf_body.margin_right = tf_body.margin_top = tf_body.margin_bottom = 0
 
             if bullets and isinstance(bullets, list):
-                bullet_gap = 7.0 if body_h >= Inches(0.95) else 4.5
+                bullet_gap = 6.0 if body_h >= Inches(0.95) else 3.0
                 for b_idx, b_text in enumerate(bullets[:2]):
                     p_b = tf_body.paragraphs[0] if b_idx == 0 else tf_body.add_paragraph()
                     p_b.space_before = Pt(bullet_gap) if b_idx > 0 else Pt(0)
-                    p_b.space_after = Pt(2.0)
+                    p_b.space_after = Pt(1.5)
                     append_formatted_runs(
                         paragraph=p_b,
                         text=f"•  {b_text}",
                         font_name=theme.font_family,
-                        font_size_pt=10.0,
+                        font_size_pt=body_pt,
                         font_color=theme.get_rgb("secondary"),
                         lead_color=theme.get_rgb("primary"),
                         auto_colon_lead=True,
@@ -347,7 +425,7 @@ def render_card_list_widget(
                     paragraph=p_d,
                     text=str(desc),
                     font_name=theme.font_family,
-                    font_size_pt=10.0,
+                    font_size_pt=body_pt,
                     font_color=theme.get_rgb("secondary"),
                     lead_color=theme.get_rgb("primary"),
                     auto_colon_lead=True,
@@ -378,7 +456,13 @@ def render_table_widget(
     Renders a structured contiguous data table inside the bounding box.
     """
     bx, by, bw, bh = box
-    headers = cfg.get("headers", ["Dimension", "Status", "Observation"])
+    cols_cfg = cfg.get("columns")
+    if cols_cfg and isinstance(cols_cfg, list):
+        headers = [c.get("header", "") if isinstance(c, dict) else str(c) for c in cols_cfg]
+        widths_cfg = cfg.get("column_widths") or [c.get("width", 1) if isinstance(c, dict) else 1 for c in cols_cfg]
+    else:
+        headers = cfg.get("headers")
+        widths_cfg = cfg.get("column_widths")
     rows = cfg.get("rows", [])
     if not headers or not rows:
         return
@@ -391,7 +475,7 @@ def render_table_widget(
     table = shape.table
 
     # Column widths
-    col_fractions = parse_split_fractions(cfg.get("column_widths"), n_cols)
+    col_fractions = parse_split_fractions(widths_cfg, n_cols)
     for c_idx, frac in enumerate(col_fractions):
         table.columns[c_idx].width = int(bw * frac)
 
@@ -942,7 +1026,7 @@ def render_code_block_widget(
             pm2.space_before = Pt(1)
             pm2.text = str(m_item.get("label", "")).upper()
             pm2.font.name = theme.font_family_header
-            pm2.font.size = Pt(7.5)
+            pm2.font.size = Pt(8.0)
             pm2.font.bold = True
             pm2.font.color.rgb = theme.get_rgb("muted_text")
 
@@ -1234,9 +1318,9 @@ def _render_top_kpi_strip(
 def build_composable_split_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "EXECUTIVE SYNTHESIS | VALUE ARCHITECTURE",
+    tracker: Optional[str] = None,
     action_title: str = "Composable Multi-Widget Layout Solves Asymmetric Presentation Needs Without Raw DrawingML Math",
-    subtitle: Optional[str] = "Canvas partitioning into relative spatial columns eliminates trial-and-error coordinate hacking.",
+    subtitle: Optional[str] = None,
     split: Optional[Union[List[Union[int, float]], str]] = None,
     panes: Optional[List[Dict[str, Any]]] = None,
     top_kpis: Optional[List[Dict[str, Any]]] = None,
@@ -1244,7 +1328,7 @@ def build_composable_split_slide(
     takeaway: Optional[Union[str, Dict[str, Any]]] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
     source: Optional[str] = None,
 ) -> Any:
     """
@@ -1253,20 +1337,19 @@ def build_composable_split_slide(
       - Automatically partitions remaining canvas into relative columns based on `split`.
       - Renders modular child widgets (native_chart, code_block, image, hero_kpi, card_list, table, etc.)
         inside each calculated pane bounding box without manual coordinate calculation.
-      - Automatically accounts for takeaway bar clearance and footer positioning.
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     # Content Area Geometry
     content_left = Inches(0.80)
-    content_top = Inches(1.80)
+    content_top = resolve_content_top(header_bottom, gap_in=0.20)
     content_width = Inches(11.733)
 
     if top_kpis and isinstance(top_kpis, list):
         kpi_h = Inches(0.96)
         _render_top_kpi_strip(slide, theme, top_kpis, content_left, content_top, content_width, kpi_h)
-        content_top = Inches(2.90)
+        content_top = content_top + kpi_h + Inches(0.14)
 
     # Calculate content height based on takeaway presence and top KPI strip offset
     if takeaway:
@@ -1321,6 +1404,8 @@ def build_composable_split_slide(
         dispatcher = WIDGET_DISPATCHERS.get(widget_type, render_card_list_widget)
         try:
             dispatcher(slide, theme, box, pane_cfg)
+        except ValueError:
+            raise
         except Exception as e:
             logger.error(f"Failed to render pane {p_idx} widget '{widget_type}': {e}", exc_info=True)
 

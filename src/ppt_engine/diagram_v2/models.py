@@ -198,14 +198,14 @@ def classify_geometric_tier(w_in: float, h_in: float) -> str:
 
 CANONICAL_TYPOGRAPHIC_SCALE: Dict[str, Dict[str, float]] = {
     "Tier A": {"title_pt": 12.0, "subtitle_pt": 9.0, "kicker_pt": 8.0},
-    "Tier B": {"title_pt": 10.5, "subtitle_pt": 8.5, "kicker_pt": 7.5},
+    "Tier B": {"title_pt": 10.5, "subtitle_pt": 8.5, "kicker_pt": 8.0},
     "Tier C": {"title_pt": 9.5, "subtitle_pt": 8.0, "kicker_pt": 0.0},
-    "Tier D": {"flow_pt": 7.5, "badge_pt": 8.0},
+    "Tier D": {"flow_pt": 8.0, "badge_pt": 8.0},
     # Backward compatibility aliases
     "T1": {"title_pt": 12.0, "subtitle_pt": 9.0, "kicker_pt": 8.0},
-    "T2": {"title_pt": 10.5, "subtitle_pt": 8.5, "kicker_pt": 7.5},
+    "T2": {"title_pt": 10.5, "subtitle_pt": 8.5, "kicker_pt": 8.0},
     "T3": {"title_pt": 9.5, "subtitle_pt": 8.0, "kicker_pt": 0.0},
-    "T4": {"flow_pt": 7.5, "badge_pt": 8.0},
+    "T4": {"flow_pt": 8.0, "badge_pt": 8.0},
 }
 
 
@@ -224,7 +224,7 @@ class NodeSpec(BaseModel):
     w: float
     h: Optional[float] = None  # None = auto-measure proportional height
     icon: Optional[str] = None  # Asset path, vendor slug (e.g. "aws:aws_lambda"), or SVG path
-    icon_emoji: Optional[str] = None  # e.g. "🖥️"
+    icon_emoji: Optional[str] = None  # Deprecated (Zero-Emoji invariant forbids emojis; use SVG `icon` instead)
     icon_layout: str = "auto"  # "auto", "stack", "side"
     icon_color: Optional[str] = None
     stroke_hex: str = "#3B82F6"

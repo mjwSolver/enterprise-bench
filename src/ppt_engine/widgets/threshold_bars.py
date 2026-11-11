@@ -121,13 +121,14 @@ def render_threshold_bars(
         bg.line.width = Pt(1.0)
         strip_shape_shadows(bg)
 
-        # Top Accent Stripe
-        stripe_color = _resolve_color(config.get("stripe_color", "accent"), theme, default_hex="#0284C7")
-        stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(left_in), Inches(top_in), Inches(w_in), Inches(0.06))
-        stripe.fill.solid()
-        stripe.fill.fore_color.rgb = stripe_color
-        stripe.line.fill.background()
-        strip_shape_shadows(stripe)
+        # Optional Top Accent Stripe (opt-in)
+        if config.get("show_top_stripe", False):
+            stripe_color = _resolve_color(config.get("stripe_color", "accent"), theme, default_hex="#0284C7")
+            stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(left_in), Inches(top_in), Inches(w_in), Inches(0.06))
+            stripe.fill.solid()
+            stripe.fill.fore_color.rgb = stripe_color
+            stripe.line.fill.background()
+            strip_shape_shadows(stripe)
 
     # 2. Header Area
     has_title = bool(config.get("title"))
@@ -270,7 +271,7 @@ def render_threshold_bars(
         if subtext:
             r_sub = p_val.add_run()
             r_sub.text = f"{subtext} "
-            r_sub.font.size = Pt(7.8)
+            r_sub.font.size = Pt(8.0)
             r_sub.font.color.rgb = RGBColor(100, 116, 139)
 
         if status_tag:
@@ -410,7 +411,7 @@ def render_threshold_bars(
             p_pill = tf_pill.paragraphs[0]
             p_pill.text = th_label
             p_pill.font.name = getattr(theme, "font_family_header", "Arial")
-            p_pill.font.size = Pt(6.8)
+            p_pill.font.size = Pt(8.0)
             p_pill.font.bold = True
             p_pill.font.color.rgb = th_rgb
             p_pill.alignment = PP_ALIGN.CENTER

@@ -832,7 +832,7 @@ def build_change_request_procedure_slide(
         p_actor = tf.add_paragraph()
         p_actor.text = f"{owner_label} {ph['actor']}"
         p_actor.font.name = theme.font_family
-        p_actor.font.size = Pt(7.5)
+        p_actor.font.size = Pt(8.0)
         p_actor.font.bold = True
         p_actor.font.color.rgb = stripe_c
         p_actor.space_before = Pt(2)
@@ -847,18 +847,18 @@ def build_change_request_procedure_slide(
         p_act_lbl = tf.add_paragraph()
         p_act_lbl.text = checklist_label
         p_act_lbl.font.name = theme.font_family
-        p_act_lbl.font.size = Pt(7.0)
+        p_act_lbl.font.size = Pt(8.0)
         p_act_lbl.font.bold = True
         p_act_lbl.font.color.rgb = c_primary
         p_act_lbl.space_before = Pt(4)
 
         for act in ph["actions"]:
-            _add_bullet_paragraph(tf, act, theme.font_family, font_size_pt=7.5, font_color=c_secondary, space_before_pt=1.5)
+            _add_bullet_paragraph(tf, act, theme.font_family, font_size_pt=8.0, font_color=c_secondary, space_before_pt=1.5)
 
         p_art = tf.add_paragraph()
         p_art.text = artifact_label
         p_art.font.name = theme.font_family
-        p_art.font.size = Pt(7.0)
+        p_art.font.size = Pt(8.0)
         p_art.font.bold = True
         p_art.font.color.rgb = c_muted
         p_art.space_before = Pt(4)
@@ -866,7 +866,7 @@ def build_change_request_procedure_slide(
         p_art_val = tf.add_paragraph()
         p_art_val.text = ph["artifact"]
         p_art_val.font.name = theme.font_family
-        p_art_val.font.size = Pt(7.5)
+        p_art_val.font.size = Pt(8.0)
         p_art_val.font.bold = True
         p_art_val.font.color.rgb = c_accent
         p_art_val.space_before = Pt(1)
@@ -884,7 +884,7 @@ def build_change_request_procedure_slide(
             pill_w,
             pill_h,
             ph["status"],
-            font_size_pt=7.5,
+            font_size_pt=8.0,
             override_color_key="accent",
         )
 
@@ -1100,7 +1100,7 @@ def build_snowflake_data_pipeline_slide(
                     "icon": "amazons3.svg",
                 },
             ],
-            "callout_title": "⚡ Automated Snowpipe & Event Triggers",
+            "callout_title": "Automated Snowpipe & Event Triggers",
             "callout_desc": "Serverless data loading upon file arrival with zero manual intervention.",
         },
         {
@@ -1125,7 +1125,7 @@ def build_snowflake_data_pipeline_slide(
                     "icon": "snowflake.svg",
                 },
             ],
-            "callout_title": "⚡ Virtual Warehouses & Dynamic Pruning",
+            "callout_title": "Virtual Warehouses & Dynamic Pruning",
             "callout_desc": "Multi-cluster elastic compute scales to zero; instant queries with zero contention.",
         },
         {
@@ -1150,7 +1150,7 @@ def build_snowflake_data_pipeline_slide(
                     "icon": "shield-check.svg",
                 },
             ],
-            "callout_title": "⚡ RBAC Security & Horizon Governance",
+            "callout_title": "RBAC Security & Horizon Governance",
             "callout_desc": "Column masking, dynamic row access policies & centralized audit trail.",
         },
     ]

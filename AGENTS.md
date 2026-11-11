@@ -36,14 +36,17 @@ Classify incoming requests into one execution lane:
 - **Sketch/Image Confirmation Gate:** When provided an image or sketch, output a structural graph contract (Containers, Nodes + semantic colors, Connectors) *before* writing code or compiling.
 - **Single-Slide Ceiling:** Visualization prompts are strictly capped at **exactly 1 slide** (or single standalone diagram). No unsolicited multi-slide pitch decks or flat raster screenshots—compile to native DrawingML vector shapes. Multi-slide deck specifications (`specs/*.yaml`) and explicit user deck requests are fully exempt.
 - **Core Geometry & Visual Invariants (The Base Floor):**
-  - **Locked Typographic Ramp:**
-    - Slide Action Title: 20–22 pt, Bold, `#0F172A` (Slate 900).
-    - Slide Subtitle / Context: 11–12 pt, Regular, `#475569` (Slate 600).
+  - **Locked Typographic Ramp & Hard Floors:**
+    - Slide Action Title: 20–22 pt (hard floor **`>= 18.0 pt`**; never clamped down to 16.5 pt), Bold, `#0F172A` (Slate 900).
+    - Slide Subtitle / Context (opt-in): 11–12 pt, Regular, `#475569` (Slate 600).
     - Card / Container Header: 13–14 pt, Bold, `#1E293B` (Slate 800).
-    - Category Eyebrow / Tracker: 8.5–9.5 pt, Bold Uppercase (`tracking = 0.05em`), `#64748B` (Slate 500).
+    - Category Eyebrow / Tracker (opt-in): 8.5–9.5 pt, Bold Uppercase (`tracking = 0.05em`), `#64748B` (Slate 500).
     - Body Bullet Lead-in: 10.5–11 pt, Bold `#0F172A`, followed by regular weight body.
     - KPI Hero Number: 32–36 pt, Bold, semantic color.
-    - Footnote / Metadata: 8–8.5 pt, Regular, `#94A3B8` (Slate 400).
+    - Footnote / Metadata (opt-in): 8–8.5 pt, Regular, `#94A3B8` (Slate 400).
+    - **Global `8.0 pt` Minimum Font Floor:** No rendered text anywhere (captions, footnotes, diagram flow pills, node subtitles, badge labels) may drop below **`8.0 pt`** (`slide_validator.py` and `diagram_v2/auditor.py` fail `< 8.0 pt` as an error).
+  - **Zero-Emoji Invariant:** Unicode emojis (`⚡`, `🖥️`, `⚠️`, etc.) and `icon_emoji` fields are strictly forbidden in slide specs, archetype renderers, and Diagram V2 specs (`LINT009_ZERO_EMOJI`, `PitchDeckBuilder`, and `diagram_v2/auditor.py` halt on any emoji). Use crisp SVG icons, numeric indices, or plain text instead.
+  - **Opt-In Metadata & Dynamic Header Anchoring:** `tracker`, `subtitle`, `notice`/`source`, `footnote`, `takeaway`, `tag`, `pin_label`/`is_current`, and card `top_stripe` are strictly opt-in. When omitted, archetypes must NOT synthesize fallback filler and must reclaim dead vertical/horizontal space dynamically via `resolve_content_top(header_bottom, ...)`.
   - **Single Focal Anchor Invariant:** Every slide must possess exactly ONE visual focal point that draws executive eye-tracking within 2 seconds (1 primary accent container `#F0F9FF` with `#0284C7` border among neutral `#FFFFFF` peers, or 1 enlarged 36 pt callout). Never style all cards with identical visual weight.
   - **Decoupled KPI Micro-Formatting:** Metric callouts must strictly separate value from descriptor: Top line eyebrow (9 pt uppercase slate), Middle line naked numeric delta (`+28%`, `$4.2M`) at 32–36 pt Bold, Bottom line timeframe/descriptor (9–10 pt regular muted text) below a 0.75 pt hairline.
   - **Asymmetric Layout Routing (Anti-Uniformity):** Never default to homogeneous 3-column vertical cards unless presenting 3 truly parallel peer items. For comparisons, split canvas 40/60 or 35/65; for metrics, use left Hero Anchor column ($w \approx 3.2''$) with right body container ($w \approx 8.4''$); for sequences, use horizontal step ribbons.

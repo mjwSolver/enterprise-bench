@@ -26,7 +26,7 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 from .common import (
-    add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
+    add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
     _add_bullet_paragraph, _fit_image_in_box,
 )
@@ -46,51 +46,32 @@ class SplitHeroBlock:
 def build_split_hero_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "Executive Synthesis & Core Impact",
+    tracker: Optional[str] = None,
     action_title: str = "Modern Data Architecture Unlocks High-Yield Operational Transformation",
-    subtitle: Optional[str] = "Centralized lakehouse foundation drives immediate cost avoidance and predictive analytics velocity.",
+    subtitle: Optional[str] = None,
     hero_stat: str = "$14.8M",
     hero_stat_label: str = "Annualized Business Value",
-    hero_stat_subtext: Optional[str] = "Projected 3-year cumulative ROI with 4.2x payback across supply chain and analytics operations.",
+    hero_stat_subtext: Optional[str] = None,
+    hero_eyebrow: Optional[str] = None,
     blocks: Optional[List[SplitHeroBlock]] = None,
     source: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders an asymmetric split-screen consulting layout:
-      - Left 1/3: Deep high-contrast hero card with 42pt numeric impact callout.
+      - Left 1/3: Deep high-contrast hero card with 40pt numeric impact callout.
       - Right 2/3: Unbordered horizontal narrative streams separated by hairline dividers.
-      - Eliminates repetitive 3-card/4-card box fatigue.
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     if blocks is None:
-        blocks = [
-            SplitHeroBlock(
-                title="Real-Time Streaming & Ingestion",
-                description="Sub-second CDC streaming via Snowpipe Streaming eliminates overnight batch latency, delivering live business telemetry to operations teams.",
-                metric_badge="+98% Latency Drop",
-                category_tag="STREAM 01  |  INGESTION",
-            ),
-            SplitHeroBlock(
-                title="Unified Semantic Modeling & Transformation",
-                description="Centralized dbt transformation models standardize metrics across ERP, CRM, and Supply Chain, eliminating reconciliation overhead and reporting drift.",
-                metric_badge="100% Data Parity",
-                category_tag="STREAM 02  |  TRANSFORMATION",
-            ),
-            SplitHeroBlock(
-                title="Automated Governance & Audit Security",
-                description="Integrated role-based access control (RBAC), tag-based data masking, and automated access logs ensure continuous SOC2 and GDPR compliance.",
-                metric_badge="Zero Audit Findings",
-                category_tag="STREAM 03  |  SECURITY",
-            ),
-        ]
+        blocks = []
 
-    content_y = Inches(1.85)
-    content_h = Inches(5.05)
+    content_y = resolve_content_top(header_bottom, gap_in=0.20)
+    content_h = max(Inches(4.20), Inches(6.88) - content_y)
 
     # 1. Left 1/3 High-Contrast Hero Card (Sharp Rectangle)
     hero_x = Inches(0.8)
@@ -113,22 +94,24 @@ def build_split_hero_slide(
     h_tf.word_wrap = True
     h_tf.margin_left = h_tf.margin_right = h_tf.margin_top = h_tf.margin_bottom = 0
 
-    # Eyebrow Tag
-    p_eye = h_tf.paragraphs[0]
-    p_eye.text = "EXECUTIVE VALUE THESIS"
-    p_eye.font.name = theme.font_family_header
-    p_eye.font.size = Pt(9.5)
-    p_eye.font.bold = True
-    p_eye.font.color.rgb = theme.get_rgb("accent")
+    # Optional Eyebrow Tag + Huge Metric Stat Callout
+    if hero_eyebrow and str(hero_eyebrow).strip():
+        p_eye = h_tf.paragraphs[0]
+        p_eye.text = str(hero_eyebrow).strip().upper()
+        p_eye.font.name = theme.font_family_header
+        p_eye.font.size = Pt(9.5)
+        p_eye.font.bold = True
+        p_eye.font.color.rgb = theme.get_rgb("accent")
+        p_stat = h_tf.add_paragraph()
+        p_stat.space_before = Pt(14)
+    else:
+        p_stat = h_tf.paragraphs[0]
 
-    # Huge Metric Stat Callout
-    p_stat = h_tf.add_paragraph()
     p_stat.text = hero_stat
     p_stat.font.name = theme.font_family_header
     p_stat.font.size = Pt(40.0)
     p_stat.font.bold = True
     p_stat.font.color.rgb = RGBColor(255, 255, 255)
-    p_stat.space_before = Pt(14)
 
     # Metric Label
     p_lbl = h_tf.add_paragraph()
@@ -244,7 +227,7 @@ def build_split_hero_slide(
 class TechLogoItem:
     name: str
     category: str
-    tier_badge: str = "CORE"
+    tier_badge: Optional[str] = None
     logo: Optional[str] = None
     accent_key: str = "accent"
     description: Optional[str] = None
@@ -261,6 +244,7 @@ class CardGridItem:
     metric: Optional[str] = None
     metric_label: Optional[str] = None
     widget: Optional[Dict[str, Any]] = None
+    has_top_stripe: bool = False
 
 
 @dataclass
@@ -274,35 +258,31 @@ class BadgeMatrixSection:
 def build_tech_logo_grid_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "TECHNOLOGY PORTFOLIO | ENTERPRISE ECOSYSTEM",
+    tracker: Optional[str] = None,
     action_title: str = "Curated Best-of-Breed Technology Stack Delivers Governed High-Performance Analytics",
-    subtitle: Optional[str] = "Standardized technology matrix spanning ingestion, lakehouse storage, transformation, and semantic delivery.",
+    subtitle: Optional[str] = None,
     items: Optional[List[TechLogoItem]] = None,
     columns: int = 4,
+    show_top_stripes: bool = False,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
-    """Renders a structured grid of normalized technology cards with top stripes and badges."""
+    """Renders a structured grid of normalized technology cards."""
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     if not items:
-        items = [
-            TechLogoItem("Snowflake", "AI Data Cloud & Lakehouse", tier_badge="CORE PLATFORM", logo="snowflake.svg", accent_key="accent"),
-            TechLogoItem("dbt Labs", "Semantic Transformation & DDL", tier_badge="MODELING", logo="dbt.svg", accent_key="accent_secondary"),
-            TechLogoItem("Apache Kafka", "Event Streaming & CDC", tier_badge="INGESTION", logo="kafka.svg", accent_key="primary"),
-            TechLogoItem("Amazon S3", "Scalable Object Storage", tier_badge="STORAGE", logo="amazons3.svg", accent_key="accent"),
-            TechLogoItem("HashiCorp Vault", "Secrets & Key Management", tier_badge="SECURITY", logo="vault.svg", accent_key="danger"),
-            TechLogoItem("Streamlit", "Interactive Data Applications", tier_badge="SERVING", logo="trending-up", accent_key="accent"),
-            TechLogoItem("Tableau", "Enterprise BI & Visualizations", tier_badge="ANALYTICS", logo="chart", accent_key="accent_secondary"),
-            TechLogoItem("Python", "Advanced Analytics & Machine Learning", tier_badge="COMPUTE", logo="cpu", accent_key="primary"),
-        ]
+        items = []
 
     content_left = Inches(0.80)
-    content_top = Inches(1.80)
+    content_top = resolve_content_top(header_bottom, gap_in=0.20)
     total_w = Inches(11.733)
-    total_h = Inches(5.00)
+    total_h = max(Inches(4.20), Inches(6.85) - content_top)
+
+    if not items:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
 
     cols = max(1, min(columns, len(items)))
     rows = max(1, (len(items) + cols - 1) // cols)
@@ -319,17 +299,30 @@ def build_tech_logo_grid_slide(
         cy = content_top + (r_idx * (card_h + gap_y))
 
         accent_rgb = theme.get_rgb(itm.accent_key)
-        card, stripe = add_card_with_top_stripe(
-            slide,
-            theme,
-            cx,
-            cy,
-            card_w,
-            card_h,
-            accent_rgb=accent_rgb,
-            bg_color=theme.get_rgb("surface"),
-            border_color=theme.get_rgb("border"),
-        )
+        if show_top_stripes:
+            card, stripe = add_card_with_top_stripe(
+                slide,
+                theme,
+                cx,
+                cy,
+                card_w,
+                card_h,
+                accent_rgb=accent_rgb,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+            )
+        else:
+            card = add_card(
+                slide,
+                theme,
+                cx,
+                cy,
+                card_w,
+                card_h,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+                force_rectangle=True,
+            )
 
         # 1. Logo / Emblem Slot (top left)
         logo_w = Inches(1.10)
@@ -415,39 +408,44 @@ def build_tech_logo_grid_slide(
 def build_card_grid_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "STRATEGIC CAPABILITIES | CORE SERVICE OFFERINGS",
+    tracker: Optional[str] = None,
     action_title: str = "Comprehensive Enterprise Solutions Span Modern Infrastructure to Autonomous Intelligence",
-    subtitle: Optional[str] = "Eight integrated core pillars deliver complete lifecycle support from strategic advisory to operational execution.",
+    subtitle: Optional[str] = None,
     items: Optional[List[CardGridItem]] = None,
-    columns: int = 4,
+    columns: Optional[int] = None,
     takeaway: Optional[Union[str, Dict[str, Any]]] = None,
+    show_top_stripes: bool = False,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
-    """Renders an N x M grid of structured capability cards with harmonized icons, top stripes, and bullets."""
+    """Renders a flexible 1-12+ N x M grid of capability/scenario cards with density-scaled >=8pt typography and opt-in stripes."""
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     if not items:
-        items = [
-            CardGridItem("Cloud Infrastructure", "Multi-cloud architecture & migration", "cloud", ["Hybrid cloud orchestration", "Cost optimization (FinOps)", "Automated landing zones"], "accent", "PILLAR 01"),
-            CardGridItem("Data & Artificial Intelligence", "Modern data stack & machine learning", "database", ["Snowflake AI Data Cloud", "dbt semantic engineering", "Cortex GenAI solutions"], "accent", "PILLAR 02"),
-            CardGridItem("Cyber Security", "Zero-trust identity & governance", "shield", ["Enterprise RBAC & masking", "Threat posture defense", "SOC2 compliance auditing"], "danger", "PILLAR 03"),
-            CardGridItem("Digital Workplace", "Modern collaboration platforms", "users", ["Microsoft 365 & Power Platform", "Streamlined B2B workflows", "Hybrid workforce agility"], "primary", "PILLAR 04"),
-            CardGridItem("Enterprise Applications", "ERP & core transaction backbones", "layers", ["SAP ERP modernization", "CRM customer 360 views", "Supply chain integration"], "accent_secondary", "PILLAR 05"),
-            CardGridItem("Business Process Automation", "Intelligent robotic workflow automation", "cpu", ["RPA process discovery", "Low-code application hubs", "End-to-end task automation"], "accent", "PILLAR 06"),
-            CardGridItem("Managed IT Services", "24/7 mission-critical operations", "activity", ["SLA performance monitoring", "Preventative maintenance", "Incident remediation"], "primary", "PILLAR 07"),
-            CardGridItem("IT Advisory & Consulting", "Strategic technology alignment", "target", ["Digital maturity assessment", "Cloud transition roadmaps", "Program governance assurance"], "accent", "PILLAR 08"),
-        ]
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
 
     content_left = Inches(0.80)
-    content_top = Inches(1.80)
+    content_top = resolve_content_top(header_bottom, gap_in=0.20)
     total_w = Inches(11.733)
-    total_h = Inches(4.35) if takeaway else Inches(5.00)
+    bottom_limit = Inches(6.14 if takeaway else 6.86)
+    total_h = max(Inches(3.60), bottom_limit - content_top)
 
-    cols = max(1, min(columns, len(items)))
-    rows = max(1, (len(items) + cols - 1) // cols)
+    n_items = len(items)
+    if columns is not None and int(columns) >= 1:
+        cols = max(1, min(int(columns), n_items))
+    elif n_items <= 3:
+        cols = n_items
+    elif n_items == 4:
+        cols = 2
+    elif n_items <= 9:
+        cols = 3
+    else:
+        cols = 4
+
+    rows = max(1, (n_items + cols - 1) // cols)
 
     if cols == 1:
         gap_y = Inches(0.18)
@@ -572,29 +570,44 @@ def build_card_grid_slide(
         add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
         return slide
 
-    gap_x = Inches(0.24)
-    gap_y = Inches(0.22)
-    card_w = (total_w - (gap_x * (cols - 1))) / cols
+    gap_x = Inches(0.20 if cols >= 4 else 0.24)
+    gap_y = Inches(0.16 if rows >= 3 else 0.22)
     card_h = (total_h - (gap_y * (rows - 1))) / rows
 
     for idx, itm in enumerate(items):
         r_idx = idx // cols
         c_idx = idx % cols
+        row_count = min(cols, n_items - r_idx * cols)
+        card_w = (total_w - (gap_x * (row_count - 1))) / max(1, row_count)
         cx = content_left + (c_idx * (card_w + gap_x))
         cy = content_top + (r_idx * (card_h + gap_y))
 
         accent_rgb = theme.get_rgb(itm.accent_key)
-        card, stripe = add_card_with_top_stripe(
-            slide,
-            theme,
-            cx,
-            cy,
-            card_w,
-            card_h,
-            accent_rgb=accent_rgb,
-            bg_color=theme.get_rgb("surface"),
-            border_color=theme.get_rgb("border"),
-        )
+        use_top_stripe = show_top_stripes or bool(getattr(itm, "has_top_stripe", False))
+        if use_top_stripe:
+            card, stripe = add_card_with_top_stripe(
+                slide,
+                theme,
+                cx,
+                cy,
+                card_w,
+                card_h,
+                accent_rgb=accent_rgb,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+            )
+        else:
+            card = add_card(
+                slide,
+                theme,
+                cx,
+                cy,
+                card_w,
+                card_h,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+                force_rectangle=True,
+            )
 
         has_header_elements = bool(itm.icon)
         if itm.icon:
@@ -620,7 +633,7 @@ def build_card_grid_slide(
             p_title = tf.paragraphs[0]
             p_title.text = itm.title
             p_title.font.name = theme.font_family_header
-            p_title.font.size = Pt(13.5 if rows == 1 else (10.0 if rows <= 2 else 9.0))
+            p_title.font.size = Pt(13.5 if rows == 1 else (12.0 if rows == 2 else 10.5))
             p_title.font.bold = True
             p_title.font.color.rgb = theme.get_rgb("primary")
 
@@ -628,7 +641,7 @@ def build_card_grid_slide(
                 p_sub = tf.add_paragraph()
                 p_sub.text = itm.subtitle
                 p_sub.font.name = theme.font_family_header
-                p_sub.font.size = Pt(9.5 if rows == 1 else 8.0)
+                p_sub.font.size = Pt(9.5 if rows == 1 else (9.0 if rows == 2 else 8.5))
                 p_sub.font.bold = True
                 p_sub.font.color.rgb = accent_rgb
                 p_sub.space_before = Pt(3)
@@ -646,7 +659,7 @@ def build_card_grid_slide(
             p_met = met_tf.paragraphs[0]
             p_met.text = itm.metric
             p_met.font.name = theme.font_family_header
-            p_met.font.size = Pt(34.0 if rows == 1 else (20.0 if rows <= 2 else 16.0))
+            p_met.font.size = Pt(34.0 if rows == 1 else (24.0 if rows == 2 else 18.0))
             p_met.font.bold = True
             p_met.font.color.rgb = accent_rgb
 
@@ -654,7 +667,7 @@ def build_card_grid_slide(
                 p_ml = met_tf.add_paragraph()
                 p_ml.text = itm.metric_label.upper()
                 p_ml.font.name = theme.font_family_header
-                p_ml.font.size = Pt(9.0 if rows == 1 else 7.5)
+                p_ml.font.size = Pt(9.0 if rows == 1 else (8.5 if rows == 2 else 8.0))
                 p_ml.font.bold = True
                 p_ml.font.color.rgb = theme.get_rgb("secondary")
                 p_ml.space_before = Pt(3)
@@ -674,8 +687,8 @@ def build_card_grid_slide(
             tf_b.word_wrap = True
             tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
 
-            bullet_font_sz = 11.0 if rows == 1 else (8.0 if rows <= 2 else 7.2)
-            bullet_space_before = 8.0 if rows == 1 else 4.5
+            bullet_font_sz = 11.0 if rows == 1 else (10.0 if rows == 2 else 8.5)
+            bullet_space_before = 8.0 if rows == 1 else 5.0
             for b in itm.bullets:
                 _add_bullet_paragraph(
                     tf_b,
@@ -686,9 +699,9 @@ def build_card_grid_slide(
                     space_before_pt=bullet_space_before,
                 )
         else:
-            tb_x = cx + Inches(0.14)
-            tb_w = card_w - Inches(0.28)
-            tb_h = card_h - Inches(0.50)
+            tb_x = cx + Inches(0.16)
+            tb_w = card_w - Inches(0.32)
+            tb_h = card_h - Inches(0.32)
 
             tb = slide.shapes.add_textbox(tb_x, tb_y, tb_w, tb_h)
             tf = tb.text_frame
@@ -698,7 +711,7 @@ def build_card_grid_slide(
             p_title = tf.paragraphs[0]
             p_title.text = itm.title
             p_title.font.name = theme.font_family_header
-            p_title.font.size = Pt(13.5 if rows == 1 else (10.0 if rows <= 2 else 9.0))
+            p_title.font.size = Pt(13.5 if rows == 1 else (12.0 if rows == 2 else 10.5))
             p_title.font.bold = True
             p_title.font.color.rgb = theme.get_rgb("primary")
 
@@ -706,12 +719,12 @@ def build_card_grid_slide(
                 p_sub = tf.add_paragraph()
                 p_sub.text = itm.subtitle
                 p_sub.font.name = theme.font_family
-                p_sub.font.size = Pt(10.0 if rows == 1 else 8.0)
+                p_sub.font.size = Pt(10.0 if rows == 1 else (9.5 if rows == 2 else 8.5))
                 p_sub.font.color.rgb = theme.get_rgb("secondary")
                 p_sub.space_before = Pt(4 if rows == 1 else 2)
 
-            bullet_font_sz = 10.5 if rows == 1 else (7.8 if rows <= 2 else 7.2)
-            bullet_space_before = 7.0 if rows == 1 else 4.5
+            bullet_font_sz = 11.0 if rows == 1 else (10.0 if rows == 2 else 8.5)
+            bullet_space_before = 7.0 if rows == 1 else (5.0 if rows == 2 else 3.5)
             for b in itm.bullets:
                 _add_bullet_paragraph(
                     tf,
@@ -732,56 +745,27 @@ def build_card_grid_slide(
 def build_badge_matrix_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "COMPETENCY & CREDENTIALS | PARTNERSHIP TIERS",
+    tracker: Optional[str] = None,
     action_title: str = "Certified Industry Expertise Assures Technical Excellence and Rapid Delivery",
-    subtitle: Optional[str] = "Tiered competency matrix validates advanced specialization across hyperscalers, lakehouse platforms, and governance frameworks.",
+    subtitle: Optional[str] = None,
     sections: Optional[List[BadgeMatrixSection]] = None,
+    show_top_stripes: bool = False,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """Renders a clustered multi-column matrix of partner certifications and credentials."""
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     if not sections:
-        sections = [
-            BadgeMatrixSection(
-                section_title="Cloud & Data Lakehouse",
-                accent_key="accent",
-                badge_count_label="TIER 1 STATUS",
-                items=[
-                    {"name": "Snowflake", "level": "Select Services Partner", "domain": "Data Cloud & Analytics", "icon": "snowflake"},
-                    {"name": "Amazon Web Services", "level": "Advanced Tier Services", "domain": "Cloud Migration & Storage", "icon": "aws"},
-                    {"name": "Microsoft Azure", "level": "Solutions Partner", "domain": "Data & AI Modernization", "icon": "layers"},
-                ]
-            ),
-            BadgeMatrixSection(
-                section_title="Data Transformation & BI",
-                accent_key="accent_secondary",
-                badge_count_label="CERTIFIED PRACTICE",
-                items=[
-                    {"name": "dbt Labs", "level": "Preferred Partner", "domain": "Semantic Modeling", "icon": "dbt"},
-                    {"name": "Tableau", "level": "Gold Reseller & Services", "domain": "Visual Intelligence", "icon": "trending-up"},
-                    {"name": "Power BI", "level": "Enterprise Delivery Certified", "domain": "Self-Service Analytics", "icon": "activity"},
-                ]
-            ),
-            BadgeMatrixSection(
-                section_title="Security, Governance & CDC",
-                accent_key="primary",
-                badge_count_label="REGULATORY ASSURED",
-                items=[
-                    {"name": "HashiCorp Vault", "level": "Security Certified", "domain": "Secrets & Key Management", "icon": "lock"},
-                    {"name": "Apache Kafka", "level": "Streaming Architecture", "domain": "Real-time CDC Pipelines", "icon": "zap"},
-                    {"name": "SOC 2 Type II", "level": "Audited Controls", "domain": "Information Security Assurance", "icon": "shield"},
-                ]
-            ),
-        ]
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
 
     content_left = Inches(0.80)
-    content_top = Inches(1.80)
+    content_top = resolve_content_top(header_bottom, gap_in=0.20)
     total_w = Inches(11.733)
-    total_h = Inches(5.00)
+    total_h = max(Inches(4.20), Inches(6.85) - content_top)
 
     num_cols = len(sections)
     gap_x = Inches(0.28)
@@ -793,17 +777,30 @@ def build_badge_matrix_slide(
         cy = content_top
 
         accent_rgb = theme.get_rgb(sec.accent_key)
-        card, stripe = add_card_with_top_stripe(
-            slide,
-            theme,
-            cx,
-            cy,
-            col_w,
-            col_h,
-            accent_rgb=accent_rgb,
-            bg_color=theme.get_rgb("surface"),
-            border_color=theme.get_rgb("border"),
-        )
+        if show_top_stripes:
+            card, stripe = add_card_with_top_stripe(
+                slide,
+                theme,
+                cx,
+                cy,
+                col_w,
+                col_h,
+                accent_rgb=accent_rgb,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+            )
+        else:
+            card = add_card(
+                slide,
+                theme,
+                cx,
+                cy,
+                col_w,
+                col_h,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+                force_rectangle=True,
+            )
 
         hdr_tb = slide.shapes.add_textbox(cx + Inches(0.18), cy + Inches(0.14), col_w - Inches(0.36), Inches(0.60))
         htf = hdr_tb.text_frame

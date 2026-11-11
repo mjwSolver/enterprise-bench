@@ -88,15 +88,15 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     "thank_you": {
         "family": "Covers",
         "aliases": ["closing", "thank_you_closing"],
-        "purpose": "Engagement closing slide with primary stakeholder contacts, office coordinates, and immediate next steps.",
+        "purpose": "Opt-in engagement closing slide with optional stakeholder contacts, office coordinates, and next steps; optically centers clean 'Thank You' when contact blocks are omitted.",
         "keys": [
-            "tracker (str): Category eyebrow tag",
+            "tracker (str, opt-in): Category eyebrow tag",
             "title (str): Closing header (default 'Thank You')",
-            "subtitle (str): Forward-looking partnership commitment",
-            "company (str): Corporate division name",
-            "office (str): Physical office address",
-            "contacts (list): Contact cards: [{role, name, email}]",
-            "next_steps (list): Bulleted action items for project kick-off",
+            "subtitle (str, opt-in): Closing narrative sentence",
+            "company (str, opt-in): Corporate division name",
+            "office (str, opt-in): Physical office address",
+            "contacts (list, opt-in): Contact cards: [{role, name, email}]",
+            "next_steps (list, opt-in): Bulleted action items for project kick-off",
         ],
         "example_yaml": """- archetype: thank_you
   tracker: "ENGAGEMENT WRAP-UP | NEXT STEPS"
@@ -118,13 +118,13 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     "card_grid": {
         "family": "Grids",
         "aliases": ["capability_cards", "pillars_grid"],
-        "purpose": "Structured 1-4 column capability card grid with top stripes, status pills, hero metrics, and bold lead bullets.",
+        "purpose": "Auto-balanced 1-12+ capability card grid with density-scaled typography (>= 8.0 pt floor), opt-in top stripes, hero metrics, and bold lead bullets.",
         "keys": [
-            "tracker (str): Category eyebrow tag",
-            "title (str): Action title stating the core finding",
-            "subtitle (str): Contextual narrative subtitle",
-            "columns (int, default 4): Number of card columns (1-4)",
-            "items (list): Cards: [{title, subtitle, bullets, badge, metric, metric_label, icon, accent_key}]",
+            "tracker (str, opt-in): Category eyebrow tag",
+            "title (str): Action title stating the core finding (>= 18.0 pt)",
+            "subtitle (str, opt-in): Contextual narrative subtitle",
+            "columns (int, optional): Override column count (omit to auto-balance 1-12+ items across 1-4 columns)",
+            "items (list): Cards: [{title, subtitle, bullets, badge, metric, metric_label, icon, accent_key, has_top_stripe}]",
             "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: card_grid
@@ -190,7 +190,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "subtitle (str): Contextual narrative subtitle",
             "split (list|str, optional): Column widths/fractions (e.g. [35, 65], [25, 50, 25], default equal)",
             "gap (float, optional): Gutter width between columns in inches (default: 0.35)",
-            "panes (list): Child widgets: [{widget: 'hero_kpi'|'card_list'|'table'|'process_steps'|'card_grid', ...}]",
+            "panes (list): Child widgets: [{widget: 'hero_kpi'|'card_list'|'table'|'process_steps'|'card_grid', ...}]; hero_kpi requires audited stat+stat_label; card_list supports 1-6 items, numbered:true story cards, and header_bar",
             "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: composable_split
@@ -309,9 +309,11 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "aliases": ["harvey_balls"],
         "purpose": "Multi-criteria scorecard comparing architectural options, technologies, or vendors across qualitative Harvey balls.",
         "keys": [
-            "tracker (str): Category eyebrow tag",
+            "tracker (str, opt-in): Category eyebrow tag",
             "title (str): Action title",
-            "subtitle (str): Contextual subtitle",
+            "subtitle (str, opt-in): Contextual subtitle",
+            "recommended_column (str, opt-in): Optional highlighted option name",
+            "footnote (str, opt-in): Optional legend/methodology note",
             "matrix_data (dict): Data object: {categories: [str], options: [str], rows: [{category, criteria, scores: {opt: score}}]}",
         ],
         "example_yaml": """- archetype: feature_matrix
@@ -337,12 +339,12 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     "chevron_process": {
         "family": "Processes",
         "aliases": ["process_flow", "value_chain"],
-        "purpose": "Linear chevron stage-gate workflow showing end-to-end phases, milestone deliverables, and active 'WE ARE HERE' status.",
+        "purpose": "Linear chevron stage-gate workflow showing end-to-end phases, optional statuses/deliverables, and opt-in customizable current-stage pin.",
         "keys": [
-            "tracker (str): Category eyebrow tag",
+            "tracker (str, opt-in): Category eyebrow tag",
             "title (str): Action title asserting roadmap certainty",
-            "subtitle (str): Contextual narrative subtitle",
-            "steps (list): Step definitions: [{num, title, status ('COMPLETED'|'IN PROGRESS'|'PLANNED'), deliverables: [str], owner}]",
+            "subtitle (str, opt-in): Contextual narrative subtitle",
+            "steps (list): Step definitions: [{num, title, status (optional), deliverables: [str], owner, is_current (bool, opt-in), pin_label (str), pin_color (str)}]",
             "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: chevron_process
@@ -585,10 +587,14 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "aliases": ["threshold_bars", "coverage_gate_validation", "metric_gate_review"],
         "purpose": "Multi-tier threshold progress bar charts comparing actual telemetry against required compliance/accuracy stage-gates.",
         "keys": [
-            "tracker (str): Category eyebrow tag",
+            "tracker (str, opt-in): Category eyebrow tag",
             "title (str): Action title stating gate passage status",
-            "subtitle (str): Contextual narrative subtitle",
+            "subtitle (str, opt-in): Contextual narrative subtitle",
+            "kpis (list, opt-in): 1-6 summary KPI tiles (collapses cleanly when omitted)",
             "gates (list): Metric gates: [{title, actual (float), threshold (float), status ('PASS'|'WARNING'|'CRITICAL'), category, variance_label, is_hero}]",
+            "constraints_card (dict, opt-in): Right-hand observations/warnings card",
+            "takeaway (str, opt-in): Bottom conclusion banner",
+            "show_top_stripes (bool, default false): Opt-in accent stripes",
         ],
         "example_yaml": """- archetype: gate_validation
   tracker: "STAGE-GATE VALIDATION | ACCURACY THRESHOLDS"
@@ -668,13 +674,16 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "aliases": ["window_mockup", "app_mockup", "app_walkthrough", "module_walkthrough"],
         "purpose": "High-DPI macOS window viewport framing live enterprise web app screenshots, dashboards, or Streamlit UIs.",
         "keys": [
-            "tracker (str): Category eyebrow tag",
+            "tracker (str, opt-in): Category eyebrow tag",
             "title (str): Action title describing UI workflow",
-            "subtitle (str): Contextual narrative subtitle",
+            "subtitle (str, opt-in): Contextual narrative subtitle",
             "image_path (str): Relative path to high-resolution UI screenshot",
             "mockup_url (str, optional): Simulated browser address bar URL",
             "window_title (str, optional): Window title bar caption",
             "badge (str, optional): Status pill on top-right of frame",
+            "takeaways (list, opt-in): 1-5 right-side observation cards (mockup widens cleanly when omitted)",
+            "takeaways_title (str, opt-in): Optional dark header bar title above takeaways",
+            "align (str, optional): Alignment for single-card takeaway ('left'|'center')",
         ],
         "example_yaml": """- archetype: browser_mockup
   tracker: "EMR COPILOT INTEGRATION | CLINICAL WORKFLOW"
@@ -691,11 +700,12 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "aliases": ["iceberg"],
         "purpose": "Surface vs Subsurface visualization contrasting visible business metrics with hidden foundational architecture requirements.",
         "keys": [
-            "tracker (str): Category eyebrow tag",
+            "tracker (str, opt-in): Category eyebrow tag",
             "title (str): Action title",
-            "subtitle (str): Contextual subtitle",
+            "subtitle (str, opt-in): Contextual subtitle",
             "visible_items (list of str): Visible top-level items above waterline",
             "subsurface_items (list of str): Deep foundational architecture requirements below waterline",
+            "takeaways (list, opt-in): Optional right-side panel items (iceberg expands full width when omitted)",
         ],
         "example_yaml": """- archetype: iceberg_concept
   tracker: "TECHNICAL FOUNDATION | ICEBERG FRAMEWORK"

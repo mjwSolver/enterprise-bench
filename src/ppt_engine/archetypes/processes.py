@@ -26,7 +26,7 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 from .common import (
-    add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
+    add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color, _add_status_pill, _add_bullet_paragraph,
 )
 
@@ -41,28 +41,33 @@ class ProcessChevronStep:
     deliverables: List[str] = field(default_factory=list)
     status: Optional[str] = None            # e.g. "COMPLETED", "IN PROGRESS", "PLANNED"
     accent_color: Optional[RGBColor] = None # Optional override for chevron fill
+    is_current: bool = False                # Explicit active-phase marker
+    pin_label: Optional[str] = None         # Custom marker text
+    pin_color: Optional[str] = None         # Theme color key or hex override
 
 
 def build_chevron_process_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "Execution Roadmap & Delivery Phases",
+    tracker: Optional[str] = None,
     action_title: str = "Phased Execution Roadmap Delivers Accelerated Value Across Four Controlled Horizons",
-    subtitle: Optional[str] = "Sequential progression transitions foundation infrastructure into production analytics.",
+    subtitle: Optional[str] = None,
     steps: Optional[List[ProcessChevronStep]] = None,
     takeaway: Optional[Union[str, Dict[str, Any]]] = None,
+    pin_color: str = "accent",
+    pin_label: str = "[ CURRENT: WE ARE HERE ]",
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders an executive stepped process flow using interconnected horizontal chevrons.
-      - Distinct chevron headers with progressive color saturation.
-      - Sharp rectangular card containers below each chevron (zero corner distortion).
-      - Structured deliverable checklists with status pills.
+      - Opt-in active pin indicator (customizable color, drawn only when a step is active/current).
+      - Sharp rectangular card containers below each chevron.
+      - Strictly conditional status brackets (static/planning workflows render cleanly without status noise).
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     if steps is None:
         steps = [
@@ -119,33 +124,42 @@ def build_chevron_process_slide(
     n_steps = len(steps)
     total_w = Inches(11.733)
     start_x = Inches(0.8)
-    chevron_y = Inches(1.80)
+    has_pin = any(
+        getattr(s, "is_current", False) or str(s.status or "").strip().upper() == "IN PROGRESS"
+        for s in steps
+    )
+    chevron_y = resolve_content_top(header_bottom, gap_in=(0.38 if has_pin else 0.18))
     chevron_h = Inches(0.56)
     gap = Inches(0.12)
     step_w = (total_w - (n_steps - 1) * gap) / n_steps
     card_y = chevron_y + chevron_h + Inches(0.08)
-    card_h = Inches(3.72) if takeaway else Inches(4.30)
+    bottom_limit = Inches(6.14 if takeaway else 6.86)
+    card_h = max(Inches(3.20), bottom_limit - card_y)
 
     base_primary = theme.get_rgb("primary")
     light_tint = _interpolate_color(RGBColor(241, 245, 249), base_primary, 0.28)
 
     for i, step in enumerate(steps):
         cur_x = start_x + i * (step_w + gap)
+        step_status_u = str(step.status or "").strip().upper()
+        is_active = bool(getattr(step, "is_current", False) or step_status_u == "IN PROGRESS")
 
-        # 1. Consistent Cohesive Chevron Color across all steps (Metrodata Blue)
-        step_color = theme.get_rgb("accent")
+        # 1. Consistent Cohesive Chevron Color across all steps
+        step_color = step.accent_color or theme.get_rgb("accent")
 
-        # 1b. Floating "WE ARE HERE" Location Marker Shape (Unmistakable visual indicator)
-        if step.status == "IN PROGRESS":
+        # 1b. Opt-in Active Location Marker Shape (customizable color; never hardcoded alarm red)
+        if is_active:
             pin_w = Inches(2.20)
             pin_h = Inches(0.24)
             pin_x = cur_x + (step_w - pin_w) / 2
             pin_y = chevron_y - pin_h - Inches(0.04)
 
+            p_col_key = getattr(step, "pin_color", None) or pin_color
+            pin_fill = hex_to_rgb(p_col_key) if str(p_col_key).startswith("#") else theme.get_rgb(str(p_col_key))
             pin_badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, pin_x, pin_y, pin_w, pin_h)
             pin_badge.shadow.inherit = False
             pin_badge.fill.solid()
-            pin_badge.fill.fore_color.rgb = hex_to_rgb("#DC2626")  # Metrodata Crimson Red!
+            pin_badge.fill.fore_color.rgb = pin_fill
             pin_badge.line.fill.background()
 
             pin_tf = pin_badge.text_frame
@@ -153,7 +167,7 @@ def build_chevron_process_slide(
             pin_tf.word_wrap = False
             pin_tf.margin_left = pin_tf.margin_right = pin_tf.margin_top = pin_tf.margin_bottom = 0
             p_pin = pin_tf.paragraphs[0]
-            p_pin.text = "[ CURRENT: WE ARE HERE ]"
+            p_pin.text = str(getattr(step, "pin_label", None) or pin_label)
             p_pin.font.name = theme.font_family_header
             p_pin.font.size = Pt(9.5)
             p_pin.font.bold = True
@@ -182,8 +196,7 @@ def build_chevron_process_slide(
         p_ch.font.bold = True
         p_ch.font.color.rgb = RGBColor(255, 255, 255)
 
-        # 3. Render body card container underneath (Highlight active sprint card)
-        is_active = step.status == "IN PROGRESS"
+        # 3. Render body card container underneath
         card = add_card(
             slide,
             theme,
@@ -203,38 +216,43 @@ def build_chevron_process_slide(
         inner_tf.word_wrap = True
         inner_tf.margin_left = inner_tf.margin_right = inner_tf.margin_top = inner_tf.margin_bottom = 0
 
-        # Duration Badge (Consistent styling across all columns)
-        p_badge = inner_tf.paragraphs[0]
-        p_badge.text = step.duration_badge or ""
-        p_badge.font.name = theme.font_family_header
-        p_badge.font.size = Pt(10.5)
-        p_badge.font.bold = True
-        p_badge.font.color.rgb = theme.get_rgb("primary")
+        has_card_head = False
+        if step.duration_badge:
+            p_badge = inner_tf.paragraphs[0]
+            p_badge.text = step.duration_badge
+            p_badge.font.name = theme.font_family_header
+            p_badge.font.size = Pt(10.5)
+            p_badge.font.bold = True
+            p_badge.font.color.rgb = theme.get_rgb("primary")
+            has_card_head = True
 
-        # Status Pill Row (Clean ASCII to prevent headless font glyph box □)
-        p_st = inner_tf.add_paragraph()
-        if step.status == "COMPLETED":
-            p_st.text = "[ COMPLETED ]"
-            p_st.font.color.rgb = hex_to_rgb("#059669")
-        elif step.status == "IN PROGRESS":
-            p_st.text = "[ IN PROGRESS • ACTIVE SPRINT ]"
-            p_st.font.color.rgb = hex_to_rgb("#0052CC")
-        else:
-            p_st.text = "[ PLANNED ]"
-            p_st.font.color.rgb = hex_to_rgb("#64748B")
-        p_st.font.name = theme.font_family_header
-        p_st.font.size = Pt(9.5)
-        p_st.font.bold = True
-        p_st.space_before = Pt(2)
+        # Strictly Conditional Status Row (omitted cleanly when step.status is unset)
+        if step.status and str(step.status).strip():
+            p_st = inner_tf.add_paragraph() if has_card_head else inner_tf.paragraphs[0]
+            if step_status_u == "COMPLETED":
+                p_st.text = "[ COMPLETED ]"
+                p_st.font.color.rgb = hex_to_rgb("#059669")
+            elif step_status_u == "IN PROGRESS":
+                p_st.text = "[ IN PROGRESS ]"
+                p_st.font.color.rgb = hex_to_rgb("#0052CC")
+            else:
+                p_st.text = f"[ {step_status_u} ]"
+                p_st.font.color.rgb = hex_to_rgb("#64748B")
+            p_st.font.name = theme.font_family_header
+            p_st.font.size = Pt(9.5)
+            p_st.font.bold = True
+            if has_card_head:
+                p_st.space_before = Pt(2)
+            has_card_head = True
 
         # Deliverables Section Header
-        p_dh = inner_tf.add_paragraph()
+        p_dh = inner_tf.add_paragraph() if has_card_head else inner_tf.paragraphs[0]
         p_dh.text = "KEY DELIVERABLES"
         p_dh.font.name = theme.font_family_header
         p_dh.font.size = Pt(10.0)
         p_dh.font.bold = True
         p_dh.font.color.rgb = theme.get_rgb("accent")
-        p_dh.space_before = Pt(8)
+        p_dh.space_before = Pt(8 if has_card_head else 0)
 
         # Deliverables Checklist (Balanced 9.5pt typography)
         for deliv in step.deliverables:
@@ -342,9 +360,9 @@ def _default_gantt_data() -> GanttTimelineData:
 def build_timeline_gantt_slide(
     prs_or_slide: Any,
     theme: Optional[Theme] = None,
-    tracker: str = "DELIVERY ROADMAP | PROJECT EXECUTION",
+    tracker: Optional[str] = None,
     action_title: str = "Phased Execution Plan Ensures Iterative Milestone Realization Across 12 Weeks",
-    subtitle: Optional[str] = "Integrated schedule coordinating foundational lakehouse infrastructure, dbt transformations, and Streamlit delivery.",
+    subtitle: Optional[str] = None,
     gantt_data: Optional[GanttTimelineData] = None,
     current_idx: int = 4,
     total_slides: int = 10,
@@ -370,14 +388,14 @@ def build_timeline_gantt_slide(
     bg.fill.fore_color.rgb = theme.get_rgb("background")
     bg.line.fill.background()
 
-    # 2. Unified Header Frame (AGENTS.md Zero Collision Rule)
-    add_slide_header(slide, theme, tracker=tracker, title=action_title, subtitle=subtitle)
+    # 2. Unified Header Frame
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, title=action_title, subtitle=subtitle)
 
     # 3. Canvas Bounds
     left_x = Inches(0.80)
     grid_left = Inches(3.85)
     grid_width = Inches(8.68)
-    header_y = Inches(1.85)
+    header_y = resolve_content_top(header_bottom, gap_in=(0.34 if data.current_period_marker is not None else 0.20))
     header_h = Inches(0.35)
 
     num_periods = max(1, data.total_periods)
@@ -806,7 +824,7 @@ def build_dense_workstream_runbook_slide(
             width=pill_w,
             height=Inches(0.24),
             status=text,
-            font_size_pt=7.5,
+            font_size_pt=8.0,
             override_color_key=c_key,
         )
         cur_x += pill_w + Inches(0.10)
@@ -927,7 +945,7 @@ def build_dense_workstream_runbook_slide(
         p_th = th_tf.paragraphs[0]
         p_th.text = h_text
         p_th.font.name = theme.font_family_header
-        p_th.font.size = Pt(7.5)
+        p_th.font.size = Pt(8.0)
         p_th.font.bold = True
         p_th.font.color.rgb = theme.get_rgb("muted")
 
@@ -969,7 +987,7 @@ def build_dense_workstream_runbook_slide(
                 width=col_widths[4],
                 height=Inches(0.20),
                 status=row.status,
-                font_size_pt=7.0,
+                font_size_pt=8.0,
                 override_color_key="success" if "CONFIRM" in row.status else "warning",
             )
 
@@ -1016,26 +1034,27 @@ class TargetArchitectureSwimlaneData:
     columns: Optional[List[ArchitectureSwimlaneColumn]] = None
     workstream_connectors: Optional[List[SwimlanePathConnector]] = None
     out_of_scope_callout: Optional[str] = None
+    show_top_stripes: bool = False
 
 
 def build_target_architecture_swimlane_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "TARGET ARCHITECTURE  |  3-COLUMN BOUNDARY SWIMLANES",
+    tracker: Optional[str] = None,
     action_title: str = "Target Lakehouse Architecture Establishes Unified Medallion Ingestion and Semantic Serving",
-    subtitle: Optional[str] = "Three-column boundary architecture isolating on-premises feeds, managed cloud lakehouse core, and consumer analytics.",
+    subtitle: Optional[str] = None,
     swimlane_data: Optional[TargetArchitectureSwimlaneData] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Architecture & Modernization Practice  |  Confidential & Contractual",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Builds a Gear 2 Target Architecture Swimlane slide (BSIM Slide 6 pattern).
     Enforces a 3-column boundary topology (Source Ingress -> Target Lakehouse -> Consumers),
-    labeled workstream pathways (WS1, WS2, WS3, WS4), and explicit out-of-scope boundaries.
+    with strictly opt-in workstream routing banner and top stripes.
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
 
     # Resolve Default Dataset if not provided
@@ -1162,8 +1181,12 @@ def build_target_architecture_swimlane_slide(
     # Left: 0.80", Widths: Col1 3.40", Col2 4.80" (Hero), Col3 3.133", Gaps 0.20"
     col_x_list = [Inches(0.80), Inches(4.40), Inches(9.40)]
     col_w_list = [Inches(3.40), Inches(4.80), Inches(3.133)]
-    lane_y = Inches(1.42)
-    lane_h = Inches(4.68)
+    has_connectors = bool(swimlane_data.workstream_connectors)
+    use_top_stripes = bool(getattr(swimlane_data, "show_top_stripes", False))
+    lane_y_in = resolve_content_top(header_bottom, gap_in=0.14)
+    lane_y = Inches(lane_y_in)
+    bottom_limit = 6.10 if has_connectors else 6.85
+    lane_h = Inches(max(3.60, bottom_limit - lane_y_in))
 
     stripe_colors = [
         RGBColor(71, 85, 105),   # Slate for Ingress
@@ -1180,19 +1203,33 @@ def build_target_architecture_swimlane_slide(
         bg_tint = theme.get_rgb("surface") if col_data.is_target_platform else theme.get_rgb("surface_muted")
         b_color = theme.get_rgb("primary") if col_data.is_target_platform else theme.get_rgb("border")
 
-        add_card_with_top_stripe(
-            slide=slide,
-            theme=theme,
-            left=cx,
-            top=lane_y,
-            width=cw,
-            height=lane_h,
-            accent_rgb=st_color,
-            bg_color=bg_tint,
-            border_color=b_color,
-            border_width_pt=1.5 if col_data.is_target_platform else 1.0,
-            stripe_height_in=0.05,
-        )
+        if use_top_stripes:
+            add_card_with_top_stripe(
+                slide=slide,
+                theme=theme,
+                left=cx,
+                top=lane_y,
+                width=cw,
+                height=lane_h,
+                accent_rgb=st_color,
+                bg_color=bg_tint,
+                border_color=b_color,
+                border_width_pt=1.5 if col_data.is_target_platform else 1.0,
+                stripe_height_in=0.05,
+            )
+        else:
+            add_card(
+                slide=slide,
+                theme=theme,
+                left=cx,
+                top=lane_y,
+                width=cw,
+                height=lane_h,
+                bg_color=bg_tint,
+                border_color=b_color,
+                border_width_pt=1.5 if col_data.is_target_platform else 1.0,
+                force_rectangle=True,
+            )
 
         # Swimlane Header
         h_tb = slide.shapes.add_textbox(cx + Inches(0.16), lane_y + Inches(0.10), cw - Inches(0.32), Inches(0.48))
@@ -1255,7 +1292,7 @@ def build_target_architecture_swimlane_slide(
                 p_cat = n_tf.paragraphs[0]
                 p_cat.text = node.category.upper()
                 p_cat.font.name = theme.font_family_header
-                p_cat.font.size = Pt(7.0)
+                p_cat.font.size = Pt(8.0)
                 p_cat.font.bold = True
                 p_cat.font.color.rgb = theme.get_rgb("accent")
 
@@ -1280,42 +1317,42 @@ def build_target_architecture_swimlane_slide(
             p_nsub.font.color.rgb = theme.get_rgb("secondary")
             p_nsub.space_before = Pt(2.0)
 
-    # 2. Bottom Banner: Workstream Routing Pathways
-    banner_x = Inches(0.80)
-    banner_y = Inches(6.18)
-    banner_w = Inches(11.733)
-    banner_h = Inches(0.78)
+    # 2. Bottom Banner: Opt-In Workstream Routing Pathways
+    if has_connectors:
+        banner_x = Inches(0.80)
+        banner_y = Inches(6.18)
+        banner_w = Inches(11.733)
+        banner_h = Inches(0.78)
 
-    add_card_with_top_stripe(
-        slide=slide,
-        theme=theme,
-        left=banner_x,
-        top=banner_y,
-        width=banner_w,
-        height=banner_h,
-        accent_rgb=RGBColor(2, 132, 199),  # Sky Blue
-        bg_color=theme.get_rgb("surface"),
-        border_color=theme.get_rgb("border"),
-        stripe_height_in=0.035,
-    )
+        add_card_with_top_stripe(
+            slide=slide,
+            theme=theme,
+            left=banner_x,
+            top=banner_y,
+            width=banner_w,
+            height=banner_h,
+            accent_rgb=RGBColor(2, 132, 199),  # Sky Blue
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+            stripe_height_in=0.035,
+        )
 
-    # Banner Header
-    b_tb = slide.shapes.add_textbox(banner_x + Inches(0.14), banner_y + Inches(0.06), banner_w - Inches(0.28), Inches(0.20))
-    b_tf = b_tb.text_frame
-    b_tf.margin_left = b_tf.margin_right = b_tf.margin_top = b_tf.margin_bottom = 0
-    bp = b_tf.paragraphs[0]
-    bp.text = "WORKSTREAM INTEGRATION & ROUTING PATHWAYS"
-    bp.font.name = theme.font_family_header
-    bp.font.size = Pt(8.5)
-    bp.font.bold = True
-    bp.font.color.rgb = theme.get_rgb("primary")
+        # Banner Header
+        b_tb = slide.shapes.add_textbox(banner_x + Inches(0.14), banner_y + Inches(0.06), banner_w - Inches(0.28), Inches(0.20))
+        b_tf = b_tb.text_frame
+        b_tf.margin_left = b_tf.margin_right = b_tf.margin_top = b_tf.margin_bottom = 0
+        bp = b_tf.paragraphs[0]
+        bp.text = "WORKSTREAM INTEGRATION & ROUTING PATHWAYS"
+        bp.font.name = theme.font_family_header
+        bp.font.size = Pt(8.5)
+        bp.font.bold = True
+        bp.font.color.rgb = theme.get_rgb("primary")
 
-    # Render Workstream Connectors as 4 Horizontal Flow Blocks
-    flow_x_offsets = [Inches(0.14), Inches(2.98), Inches(5.82), Inches(8.66)]
-    flow_w = Inches(2.70)
-    flow_y = banner_y + Inches(0.28)
+        # Render Workstream Connectors as 4 Horizontal Flow Blocks
+        flow_x_offsets = [Inches(0.14), Inches(2.98), Inches(5.82), Inches(8.66)]
+        flow_w = Inches(2.70)
+        flow_y = banner_y + Inches(0.28)
 
-    if swimlane_data.workstream_connectors:
         for f_idx, conn in enumerate(swimlane_data.workstream_connectors[:4]):
             fx = banner_x + flow_x_offsets[f_idx]
             f_box = slide.shapes.add_textbox(fx, flow_y, flow_w, Inches(0.42))
@@ -1335,7 +1372,7 @@ def build_target_architecture_swimlane_slide(
             fp2 = f_tf.add_paragraph()
             fp2.text = conn.label
             fp2.font.name = theme.font_family
-            fp2.font.size = Pt(7.5)
+            fp2.font.size = Pt(8.0)
             fp2.font.color.rgb = theme.get_rgb("secondary")
             fp2.space_before = Pt(1.0)
 

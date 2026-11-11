@@ -26,7 +26,7 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 from .common import (
-    add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe, add_slide_footer,
+    add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe, add_slide_footer,
     _add_contained_image, _interpolate_color, _get_contrast_text_color, _add_bullet_paragraph, _fit_image_in_box,
 )
 
@@ -873,41 +873,25 @@ class AgendaItem:
 def build_agenda_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "PROJECT ALIGNMENT | EXECUTIVE AGENDA",
+    tracker: Optional[str] = None,
     action_title: str = "Comprehensive Project Alignment Across Governance, Deliverables, and Timelines",
-    subtitle: Optional[str] = "Structured discussion sequence establishing strategic consensus and stage-gate readiness.",
+    subtitle: Optional[str] = None,
     items: Optional[List[AgendaItem]] = None,
     columns: int = 2,
     current_idx: int = 2,
     total_slides: int = 19,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders an executive table of contents / agenda slide with balanced multi-column cards.
     Each item features a crisp rectangular card, accent-tinted number box, bold title, and optional description.
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     if not items:
-        items = [
-            AgendaItem("01", "Project Initiation & Context", "Background, drivers, and executive sponsorship."),
-            AgendaItem("02", "Strategic Objectives", "Core transformation goals and business value targets."),
-            AgendaItem("03", "Stakeholders & Governance Roles", "Steering committee and PMO responsibilities."),
-            AgendaItem("04", "Project Team & RACI", "Joint organization hierarchy and delivery pods."),
-            AgendaItem("05", "Scope of Work & Workstreams", "Phased implementation boundaries and modules."),
-            AgendaItem("06", "Deliverables & Artifacts", "Milestone acceptance documents and specs."),
-            AgendaItem("07", "Project Assumptions", "Technical and operational baseline conditions."),
-            AgendaItem("08", "Target Solution Architecture", "Snowflake platform and Streamlit serving tiers."),
-            AgendaItem("09", "High-Level Phased Timeline", "Delivery roadmap from kick-off to go-live."),
-            AgendaItem("10", "Detailed Execution Gantt", "Weekly activity scheduling and critical path."),
-            AgendaItem("11", "Stage-Gate Milestones", "Contractual milestone dates and sign-off criteria."),
-            AgendaItem("12", "Project Prerequisites", "Environment setup, credentials, and connectivity."),
-            AgendaItem("13", "Communication & Collaboration", "Meeting cadence, status reporting, and channels."),
-            AgendaItem("14", "Risk Register & Mitigations", "Active risk controls, mitigations, and owners."),
-            AgendaItem("15", "Change Request Procedure", "Scope change governance and escalation gates."),
-            AgendaItem("16", "Q&A & Executive Discussion", "Open forum for clarification and final alignment."),
-        ]
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
 
     total_items = len(items)
     cols = max(1, min(columns, 4))
@@ -915,8 +899,8 @@ def build_agenda_slide(
 
     canvas_w = Inches(11.733)
     start_x = Inches(0.80)
-    start_y = Inches(1.80)
-    avail_h = Inches(5.00)
+    start_y = resolve_content_top(header_bottom, gap_in=0.20)
+    avail_h = max(Inches(4.20), Inches(6.85) - start_y)
 
     gap_x = Inches(0.35)
     col_w = (canvas_w - (cols - 1) * gap_x) / cols
@@ -997,25 +981,26 @@ def build_agenda_slide(
 def build_thank_you_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "ENGAGEMENT WRAP-UP | THANK YOU",
+    tracker: Optional[str] = None,
     title: str = "Thank You",
-    subtitle: Optional[str] = "Partnering to accelerate enterprise data modernization with Snowflake AI Data Cloud.",
+    subtitle: Optional[str] = None,
     contacts: Optional[List[Dict[str, str]]] = None,
     next_steps: Optional[Dict[str, Any]] = None,
-    company: str = "PT Metrodata Electronics Tbk  |  PT Mitra Integrasi Informatika",
-    office: str = "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470",
+    company: Optional[str] = "PT Metrodata Electronics Tbk  |  PT Mitra Integrasi Informatika",
+    office: Optional[str] = None,
     current_idx: int = 19,
     total_slides: int = 19,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
-    Renders an executive corporate closing slide featuring dual brand vertical stripes
-    (1 red : 2 blue ratio), prominent typography, contact cards with top stripes, and corporate footer.
+    Renders a clean closing slide featuring dual vertical brand stripes (1 red : 2 blue),
+    opt-in next-steps / contact cards, and vertical optical centering when body cards are omitted.
     """
     slide = add_slide_with_background(prs, theme)
 
-    stripe_top = Inches(1.80)
-    stripe_height = Inches(4.50)
+    has_cards = bool((next_steps and isinstance(next_steps, (dict, list))) or contacts)
+    stripe_top = Inches(1.80) if has_cards else Inches(2.50)
+    stripe_height = Inches(4.50) if has_cards else Inches(2.15)
     stripe_left = Inches(0.80)
     red_w = Inches(0.045)
     blue_w = Inches(0.090)
@@ -1033,35 +1018,43 @@ def build_thank_you_slide(
     s_blue.fill.fore_color.rgb = theme.get_rgb("accent", "#0052CC")
     s_blue.line.fill.background()
 
-    # 2. Text Content Area
+    # 2. Text Content Area (Vertically centered beside stripes when no contact/next_steps cards)
     text_left = stripe_left + red_w + blue_w + Inches(0.35)
     text_width = Inches(11.20)
-    tb = slide.shapes.add_textbox(text_left, Inches(1.80), text_width, Inches(1.70))
+    tb_top = stripe_top
+    tb_h = Inches(1.75) if has_cards else stripe_height
+    tb = slide.shapes.add_textbox(text_left, tb_top, text_width, tb_h)
     tf = tb.text_frame
     tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.TOP if has_cards else MSO_ANCHOR.MIDDLE
     tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
 
-    p_tr = tf.paragraphs[0]
-    p_tr.text = tracker.upper()
-    p_tr.font.name = theme.font_family_header
-    p_tr.font.size = Pt(11.0)
-    p_tr.font.bold = True
-    p_tr.font.color.rgb = theme.get_rgb("accent")
+    has_first = False
+    if tracker and str(tracker).strip():
+        p_tr = tf.paragraphs[0]
+        p_tr.text = str(tracker).strip().upper()
+        p_tr.font.name = theme.font_family_header
+        p_tr.font.size = Pt(11.0)
+        p_tr.font.bold = True
+        p_tr.font.color.rgb = theme.get_rgb("accent")
+        has_first = True
 
-    p_t = tf.add_paragraph()
+    p_t = tf.add_paragraph() if has_first else tf.paragraphs[0]
     p_t.text = title
     p_t.font.name = theme.font_family_header
-    p_t.font.size = Pt(36.0)
+    p_t.font.size = Pt(36.0 if len(title) <= 32 else 28.0)
     p_t.font.bold = True
     p_t.font.color.rgb = theme.get_rgb("primary")
-    p_t.space_before = Pt(6)
+    if has_first:
+        p_t.space_before = Pt(6)
 
-    p_s = tf.add_paragraph()
-    p_s.text = subtitle or "Delivering Data-Driven Value & Predictive Intelligence with Cloud Analytics Platform."
-    p_s.font.name = theme.font_family
-    p_s.font.size = Pt(13.0)
-    p_s.font.color.rgb = theme.get_rgb("secondary")
-    p_s.space_before = Pt(10)
+    if subtitle and str(subtitle).strip():
+        p_s = tf.add_paragraph()
+        p_s.text = str(subtitle).strip()
+        p_s.font.name = theme.font_family
+        p_s.font.size = Pt(13.0)
+        p_s.font.color.rgb = theme.get_rgb("secondary")
+        p_s.space_before = Pt(10)
 
     # 3. Content Area: Structured Split Layout if next_steps provided
     if next_steps:
@@ -1232,66 +1225,27 @@ def build_thank_you_slide(
                 cp3.font.size = Pt(11.0)
                 cp3.font.color.rgb = theme.get_rgb("secondary")
                 cp3.space_before = Pt(4)
-    else:
-        # Clean corporate closing card (no personal staff names)
-        card_w = Inches(7.50)
-        card_h = Inches(1.80)
-        card_y = Inches(3.85)
 
-        card, stripe = add_card_with_top_stripe(
-            slide=slide,
-            theme=theme,
-            left=text_left,
-            top=card_y,
-            width=card_w,
-            height=card_h,
-            accent_rgb=theme.get_rgb("accent"),
-            bg_color=theme.get_rgb("surface"),
-            border_color=theme.get_rgb("border"),
-            stripe_height_in=0.06,
-        )
-
-        ctb = slide.shapes.add_textbox(text_left + Inches(0.22), card_y + Inches(0.18), card_w - Inches(0.44), card_h - Inches(0.30))
-        ctf = ctb.text_frame
-        ctf.word_wrap = True
-        ctf.margin_left = ctf.margin_right = ctf.margin_top = ctf.margin_bottom = 0
-
-        cp1 = ctf.paragraphs[0]
-        cp1.text = "Data & AI Modernization Practice"
-        cp1.font.name = theme.font_family_header
-        cp1.font.size = Pt(14.0)
-        cp1.font.bold = True
-        cp1.font.color.rgb = theme.get_rgb("primary")
-
-        cp2 = ctf.add_paragraph()
-        cp2.text = "Enterprise Cloud & Analytics Advisory Core"
-        cp2.font.name = theme.font_family
-        cp2.font.size = Pt(11.0)
-        cp2.font.color.rgb = theme.get_rgb("accent")
-        cp2.space_before = Pt(3)
-
-        cp3 = ctf.add_paragraph()
-        cp3.text = "Official Support Channel: enterprise.consulting@enterprise-bench.local"
-        cp3.font.name = theme.font_family
-        cp3.font.size = Pt(11.0)
-        cp3.font.color.rgb = theme.get_rgb("secondary")
-        cp3.space_before = Pt(4)
-
-    # 4. Corporate Address Footer Anchored at Bottom
-    otb = slide.shapes.add_textbox(text_left, Inches(6.55), text_width, Inches(0.50))
-    otf = otb.text_frame
-    otf.word_wrap = True
-    otf.margin_left = otf.margin_right = otf.margin_top = otf.margin_bottom = 0
-    op1 = otf.paragraphs[0]
-    op1.text = f"{company}  |  {office}"
-    op1.font.name = theme.font_family
-    op1.font.size = Pt(10.0)
-    op1.font.color.rgb = theme.get_rgb("secondary")
-
-    op2 = otf.add_paragraph()
-    op2.text = notice
-    op2.font.name = theme.font_family
-    op2.font.size = Pt(8.5)
-    op2.font.color.rgb = theme.get_rgb("muted")
+    # 4. Corporate Identity / Optional Office / Notice Footer Anchored at Bottom
+    footer_parts = [str(p).strip() for p in (company, office) if p and str(p).strip()]
+    if footer_parts or (notice and str(notice).strip()):
+        otb = slide.shapes.add_textbox(text_left, Inches(6.55), text_width, Inches(0.50))
+        otf = otb.text_frame
+        otf.word_wrap = True
+        otf.margin_left = otf.margin_right = otf.margin_top = otf.margin_bottom = 0
+        has_footer_line = False
+        if footer_parts:
+            op1 = otf.paragraphs[0]
+            op1.text = "  |  ".join(footer_parts)
+            op1.font.name = theme.font_family
+            op1.font.size = Pt(10.0)
+            op1.font.color.rgb = theme.get_rgb("secondary")
+            has_footer_line = True
+        if notice and str(notice).strip():
+            op2 = otf.add_paragraph() if has_footer_line else otf.paragraphs[0]
+            op2.text = str(notice).strip()
+            op2.font.name = theme.font_family
+            op2.font.size = Pt(8.5)
+            op2.font.color.rgb = theme.get_rgb("muted")
     return slide
 

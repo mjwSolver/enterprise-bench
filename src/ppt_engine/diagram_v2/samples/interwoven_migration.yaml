@@ -77,7 +77,6 @@ nodes:
     y: 1.65
     w: 1.90
     h: 1.05
-    icon_emoji: "🖥️"
     stroke_hex: "#3B82F6"
     fill_hex: "#FFFFFF"
     stroke_width: 2.0
@@ -90,7 +89,6 @@ nodes:
     y: 3.55
     w: 1.90
     h: 1.05
-    icon_emoji: "🖥️"
     stroke_hex: "#3B82F6"
     fill_hex: "#FFFFFF"
     stroke_width: 2.0
@@ -103,7 +101,6 @@ nodes:
     y: 5.45
     w: 1.90
     h: 1.05
-    icon_emoji: "🖥️"
     stroke_hex: "#3B82F6"
     fill_hex: "#FFFFFF"
     stroke_width: 2.0
@@ -126,7 +123,7 @@ nodes:
     container_id: "group_legacy"
     title: "1-Task Script"
     subtitle: "Synchronous Bottleneck"
-    kicker: "⚠️ BOTTLENECK"
+    kicker: "BOTTLENECK"
     role: "defect"
     x: 7.35
     y: 1.65

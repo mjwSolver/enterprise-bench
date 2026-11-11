@@ -26,7 +26,7 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 from .common import (
-    add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
+    add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
     _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
 )
@@ -53,15 +53,15 @@ class HorizonColumnData:
 def build_bcg_3_horizon_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "Growth Strategy & Portfolio Architecture  |  BCG 3-Horizon Framework",
+    tracker: Optional[str] = None,
     action_title: str = "Balanced Portfolio Allocation Fuels Core Modernization while Incubating Future Engines",
-    subtitle: Optional[str] = "Phased sequencing balances near-term cash generation with disruptive 3-5 year platform bets.",
+    subtitle: Optional[str] = None,
     horizons: Optional[List[HorizonColumnData]] = None,
     takeaway: Optional[str] = None,
     source: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Builds a BCG 3-Horizon Growth / Modernization Slide.
@@ -69,7 +69,7 @@ def build_bcg_3_horizon_slide(
     initiatives, status badges, and an optional executive synthesis takeaway bar.
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     thresholds = theme.typography_thresholds
 
@@ -134,12 +134,13 @@ def build_bcg_3_horizon_slide(
 
     # Layout Coordinates
     start_x = Inches(0.8)
-    timeline_y = Inches(1.70)
+    timeline_y = resolve_content_top(header_bottom, gap_in=0.22)
     timeline_h = Inches(0.36)
-    row_y = Inches(2.22)
+    row_y = timeline_y + timeline_h + Inches(0.16)
     card_w = Inches(3.72)
     card_gap = Inches(0.28)
-    card_h = Inches(3.72) if takeaway else Inches(4.58)
+    bottom_limit = Inches(5.96 if takeaway else 6.86)
+    card_h = max(Inches(3.60), bottom_limit - row_y)
 
     for i, h_data in enumerate(horizons[:3]):
         cx = start_x + i * (card_w + card_gap)
@@ -353,21 +354,21 @@ StrategicPillarData = StrategyPillarData
 def build_mckinsey_cascade_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "Corporate Transformation & Strategy Cascade  |  McKinsey MECE Model",
+    tracker: Optional[str] = None,
     action_title: str = "Structured Hypothesis Cascade Unlocks $42M in Sustainable Operational Alpha",
-    subtitle: Optional[str] = "Three mutually exclusive strategic pillars resolve core platform constraints and optimize cost-to-serve.",
+    subtitle: Optional[str] = None,
     hypothesis_statement: str = "CORE HYPOTHESIS: By decoupling tier-1 core applications into autonomous cloud microservices and instituting zero-trust attestation, the enterprise can lower infrastructure TCO by 35% while multiplying deployment frequency by 4x.",
     pillars: Optional[List[StrategyPillarData]] = None,
-    synthesis_conclusion: Optional[str] = "STRATEGIC IMPLICATION: Direct capital expenditure into automated pipeline governance to validate H1 cost savings before executing legacy hardware decommissioning.",
+    synthesis_conclusion: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
 ) -> Any:
     """
     Builds a McKinsey MECE Hypothesis / Strategy Cascade Slide.
-    Structure: Top Hypothesis Anchor Box -> 3 Vertical MECE Pillar Cards -> Bottom Synthesis Banner.
+    Structure: Top Hypothesis Anchor Box -> 3 Vertical MECE Pillar Cards -> Optional Synthesis Banner.
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     thresholds = theme.typography_thresholds
 
@@ -411,8 +412,9 @@ def build_mckinsey_cascade_slide(
             ),
         ]
 
-    # 1. Top Hypothesis Anchor Card (Y=1.70", Height=0.85")
-    hypo_y = Inches(1.70)
+    # 1. Top Hypothesis Anchor Card
+    hypo_y_in = resolve_content_top(header_bottom, gap_in=0.16)
+    hypo_y = Inches(hypo_y_in)
     hypo_h = Inches(0.85)
     hypo_w = Inches(11.733)
     add_card(
@@ -445,9 +447,11 @@ def build_mckinsey_cascade_slide(
     p_hb.font.color.rgb = theme.get_rgb("primary")
     p_hb.space_before = Pt(2)
 
-    # 2. Middle Row: 3 MECE Strategy Pillars (Y=2.68", Height=3.45")
-    pillar_y = Inches(2.68)
-    pillar_h = Inches(3.45)
+    # 2. Middle Row: 3 MECE Strategy Pillars
+    pillar_y_in = hypo_y_in + 0.85 + 0.14
+    pillar_y = Inches(pillar_y_in)
+    bottom_limit = 6.12 if synthesis_conclusion else 6.85
+    pillar_h = Inches(max(2.60, bottom_limit - pillar_y_in))
     card_w = Inches(3.72)
     card_gap = Inches(0.28)
     start_x = Inches(0.8)
@@ -612,9 +616,9 @@ QuadrantData = ScorecardQuadrantData
 def build_balanced_scorecard_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "Executive Governance & Performance  |  Balanced Scorecard",
+    tracker: Optional[str] = None,
     action_title: str = "Target Performance Exceeds Benchmark SLAs Across All Four Operational Dimensions",
-    subtitle: Optional[str] = "Comprehensive KPI matrix tracking financial returns, customer value, process speed, and organizational resilience.",
+    subtitle: Optional[str] = None,
     quadrants: Optional[List[ScorecardQuadrantData]] = None,
     current_idx: int = 1,
     total_slides: int = 1,
@@ -623,7 +627,7 @@ def build_balanced_scorecard_slide(
     Builds an Executive Balanced Scorecard / KPI Matrix Slide (4-Quadrant 2x2 Grid).
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     thresholds = theme.typography_thresholds
 
@@ -729,11 +733,11 @@ def build_balanced_scorecard_slide(
 
     # Grid Dimensions (2 columns x 2 rows)
     grid_x = Inches(0.8)
-    grid_y = Inches(1.68)
+    grid_y = resolve_content_top(header_bottom, gap_in=0.20)
     quad_w = Inches(5.72)
-    quad_h = Inches(2.50)
     gap_x = Inches(0.29)
     gap_y = Inches(0.18)
+    quad_h = min(Inches(2.58), max(Inches(2.25), (Inches(6.90) - grid_y - gap_y) / 2))
 
     positions = [
         (grid_x, grid_y),                                   # Q1: Top-Left
@@ -742,7 +746,7 @@ def build_balanced_scorecard_slide(
         (grid_x + quad_w + gap_x, grid_y + quad_h + gap_y) # Q4: Bottom-Right
     ]
 
-    glyph_labels = ["[ $ ]", "[ ★ ]", "[ ⚙ ]", "[ 🛡 ]"]
+    glyph_labels = ["01", "02", "03", "04"]
 
     for idx, quad_data in enumerate(quadrants[:4]):
         qx, qy = positions[idx]
@@ -930,9 +934,9 @@ class GapDimensionData:
 def build_gap_analysis_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "Architecture Gap Analysis  |  Current vs. Target State",
+    tracker: Optional[str] = None,
     action_title: str = "Modernization Closes Critical Gaps Between Legacy Constraints and Future Target State",
-    subtitle: Optional[str] = "Systematic transformation resolves batch latency, data silos, and manual governance overhead.",
+    subtitle: Optional[str] = None,
     dimensions: Optional[List[GapDimensionData]] = None,
     as_is_header: str = "CURRENT STATE (AS-IS)",
     to_be_header: str = "TARGET ARCHITECTURE (TO-BE)",
@@ -948,24 +952,25 @@ def build_gap_analysis_slide(
     source: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders a consulting Gap Analysis / Comparative Transformation slide:
       - 2-Column Mode (left_items & right_items): Before vs After comparative cards with directional connector.
-      - 3-Row Mode (dimensions): Dimension-by-dimension transition levers and target impacts.
-      - Single Executive Synthesis Bar at bottom for intentional, non-repetitive emphasis.
+      - Row Mode (dimensions): Directional right-pointing triangle anchors by default, or pill badges when transition_lever text is supplied.
+      - Optional Executive Synthesis Bar at bottom (`takeaway=None` by default).
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
     thresholds = theme.typography_thresholds
 
     # =========================================================================
     # Mode A: 2-Column Comparative Matrix (Before vs After)
     # =========================================================================
     if left_items and right_items:
-        card_y = Inches(1.80)
-        card_h = Inches(4.08) if takeaway else Inches(4.92)
+        card_y = resolve_content_top(header_bottom, gap_in=0.22)
+        bottom_limit = Inches(6.14 if takeaway else 6.88)
+        card_h = max(Inches(3.60), bottom_limit - card_y)
         col_w = Inches(5.60)
         col1_x = Inches(0.80)
         col2_x = Inches(6.93)
@@ -1196,14 +1201,22 @@ def build_gap_analysis_slide(
         return slide
 
     # Geometry Layout
-    header_y = Inches(1.85)
+    has_levers = any(bool(getattr(d, "transition_lever", None)) for d in dimensions)
+    header_y = resolve_content_top(header_bottom, gap_in=0.22)
     header_h = Inches(0.38)
     col1_x = Inches(0.8)
-    col1_w = Inches(4.75)
-    center_x = Inches(5.72)
-    center_w = Inches(1.88)
-    col2_x = Inches(7.77)
-    col2_w = Inches(4.75)
+    if has_levers:
+        col1_w = Inches(4.75)
+        center_x = Inches(5.72)
+        center_w = Inches(1.88)
+        col2_x = Inches(7.77)
+        col2_w = Inches(4.75)
+    else:
+        col1_w = Inches(5.40)
+        center_x = Inches(6.28)
+        center_w = Inches(0.77)
+        col2_x = Inches(7.13)
+        col2_w = Inches(5.40)
 
     # 1. Column Headers (Clean, subtle styling)
     h1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, header_y, col1_w, header_h)
@@ -1222,17 +1235,18 @@ def build_gap_analysis_slide(
     p_h1.font.bold = True
     p_h1.font.color.rgb = hex_to_rgb("#475569")
 
-    hc = slide.shapes.add_textbox(center_x, header_y, center_w, header_h)
-    hc_tf = hc.text_frame
-    hc_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    hc_tf.margin_left = hc_tf.margin_right = hc_tf.margin_top = hc_tf.margin_bottom = 0
-    p_hc = hc_tf.paragraphs[0]
-    p_hc.text = "TRANSITION LEVER"
-    p_hc.font.name = theme.font_family_header
-    p_hc.font.size = Pt(10.0)
-    p_hc.font.bold = True
-    p_hc.alignment = PP_ALIGN.CENTER
-    p_hc.font.color.rgb = theme.get_rgb("muted")
+    if has_levers:
+        hc = slide.shapes.add_textbox(center_x, header_y, center_w, header_h)
+        hc_tf = hc.text_frame
+        hc_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        hc_tf.margin_left = hc_tf.margin_right = hc_tf.margin_top = hc_tf.margin_bottom = 0
+        p_hc = hc_tf.paragraphs[0]
+        p_hc.text = "TRANSITION LEVER"
+        p_hc.font.name = theme.font_family_header
+        p_hc.font.size = Pt(10.0)
+        p_hc.font.bold = True
+        p_hc.alignment = PP_ALIGN.CENTER
+        p_hc.font.color.rgb = theme.get_rgb("muted")
 
     h2 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x, header_y, col2_w, header_h)
     h2.shadow.inherit = False
@@ -1251,8 +1265,9 @@ def build_gap_analysis_slide(
     p_h2.font.color.rgb = theme.get_rgb("primary")
 
     n_dim = len(dimensions)
-    content_y = Inches(2.32)
-    available_h = Inches(4.60)
+    content_y = header_y + header_h + Inches(0.10)
+    bottom_limit = Inches(6.14 if takeaway else 6.88)
+    available_h = max(Inches(3.20), bottom_limit - content_y)
     gap_y = Inches(0.10)
     row_h = (available_h - (n_dim - 1) * gap_y) / n_dim
 
@@ -1302,30 +1317,40 @@ def build_gap_analysis_slide(
         p_as.font.color.rgb = theme.get_rgb("secondary")
         p_as.space_before = Pt(4)
 
-        # Center Transition Lever Badge
-        lever_h = Inches(0.56)
-        lever_y = cur_y + (row_h - lever_h) / 2
-        lever_badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, center_x, lever_y, center_w, lever_h)
-        lever_badge.shadow.inherit = False
-        lever_badge.fill.solid()
-        lever_badge.fill.fore_color.rgb = hex_to_rgb("#EFF6FF")
-        lever_badge.line.color.rgb = theme.get_rgb("accent")
-        lever_badge.line.width = Pt(1.0)
+        # Center Transition Indicator: Pill when lever text exists, otherwise clean right-pointing triangle
+        if dim.transition_lever:
+            lever_h = Inches(0.56)
+            lever_y = cur_y + (row_h - lever_h) / 2
+            lever_badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, center_x, lever_y, center_w, lever_h)
+            lever_badge.shadow.inherit = False
+            lever_badge.fill.solid()
+            lever_badge.fill.fore_color.rgb = hex_to_rgb("#EFF6FF")
+            lever_badge.line.color.rgb = theme.get_rgb("accent")
+            lever_badge.line.width = Pt(1.0)
 
-        l_tf = lever_badge.text_frame
-        l_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        l_tf.word_wrap = True
-        l_tf.margin_left = Inches(0.06)
-        l_tf.margin_right = Inches(0.06)
-        l_tf.margin_top = l_tf.margin_bottom = 0
-        p_lv = l_tf.paragraphs[0]
-        lever_name = dim.transition_lever or "Transition Lever"
-        p_lv.text = f"{lever_name} ->"
-        p_lv.font.name = theme.font_family_header
-        p_lv.font.size = Pt(9.5)
-        p_lv.font.bold = True
-        p_lv.alignment = PP_ALIGN.CENTER
-        p_lv.font.color.rgb = theme.get_rgb("accent")
+            l_tf = lever_badge.text_frame
+            l_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            l_tf.word_wrap = True
+            l_tf.margin_left = Inches(0.06)
+            l_tf.margin_right = Inches(0.06)
+            l_tf.margin_top = l_tf.margin_bottom = 0
+            p_lv = l_tf.paragraphs[0]
+            p_lv.text = f"{dim.transition_lever} ->"
+            p_lv.font.name = theme.font_family_header
+            p_lv.font.size = Pt(9.5)
+            p_lv.font.bold = True
+            p_lv.alignment = PP_ALIGN.CENTER
+            p_lv.font.color.rgb = theme.get_rgb("accent")
+        else:
+            tri_size = min(Inches(0.36), row_h * 0.34)
+            tri_x = center_x + (center_w - tri_size) / 2
+            tri_y = cur_y + (row_h - tri_size) / 2
+            tri = slide.shapes.add_shape(MSO_SHAPE.ISOSCELES_TRIANGLE, tri_x, tri_y, tri_size, tri_size)
+            tri.rotation = 90.0
+            tri.shadow.inherit = False
+            tri.fill.solid()
+            tri.fill.fore_color.rgb = theme.get_rgb("accent")
+            tri.line.fill.background()
 
         # Right Card: To-Be Target Capability (NO GREEN SIDE STRIPE!)
         add_card(
@@ -1370,10 +1395,10 @@ def build_gap_analysis_slide(
         if dim.impact_delta:
             p_to.space_before = Pt(4)
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
-    return slide
+    if takeaway:
+        add_takeaway_bar(slide, theme, takeaway, top_y=Inches(6.28), left_x=col1_x, width=Inches(11.733), height=Inches(0.54))
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
     return slide
 
 
@@ -1397,7 +1422,7 @@ class EquityTreeData:
     parent_subtitle: str = "Holding & Listed Investment Company"
     tier1_nodes: List[EquityEntityNode] = field(default_factory=list)
     tier2_nodes: List[EquityEntityNode] = field(default_factory=list)
-    footnote: str = "*) Reflects legal equity shareholding percentages as of latest PMO baseline."
+    footnote: Optional[str] = None
 
 
 def _default_equity_tree_data() -> EquityTreeData:
@@ -1675,7 +1700,7 @@ def _render_equity_node_card(
     p_domain.text = node.business_domain.upper()
     p_domain.alignment = PP_ALIGN.CENTER
     p_domain.font.name = theme.font_family
-    p_domain.font.size = Pt(7.0 if len(node.business_domain) > 24 else 7.5)
+    p_domain.font.size = Pt(8.0)
     p_domain.font.bold = True
     p_domain.font.color.rgb = theme.get_rgb("secondary")
 
@@ -1683,13 +1708,13 @@ def _render_equity_node_card(
 def build_equity_corporate_tree_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "CORPORATE GOVERNANCE | EQUITY STRUCTURE",
+    tracker: Optional[str] = None,
     action_title: str = "Metrodata Group Operates Multi-Tier Operating Subsidiaries and Specialized JVs",
-    subtitle: Optional[str] = "PT Metrodata Electronics Tbk (MTDL) maintains controlling equity across core ICT distribution, solutions, and digital consulting entities.",
+    subtitle: Optional[str] = None,
     tree_data: Optional[EquityTreeData] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders the Corporate Equity & Shareholding Tree Archetype (Slide 3 Benchmark):

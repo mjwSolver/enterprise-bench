@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import re
 import sys
 from dataclasses import dataclass, field
@@ -26,6 +27,26 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 logger = logging.getLogger(__name__)
+
+# Strict Zero-Emoji Policy pattern (covers Supplemental Symbols/Pictographs, Emoticons,
+# Transport/Map, Dingbats/Misc excluding approved vector arrows ➔ U+2794 and Harvey balls ●◐○)
+EMOJI_PATTERN = re.compile(
+    "["
+    "\U0001F300-\U0001FAFF"
+    "\U00002600-\U000026FF"
+    "\U00002700-\U00002793"
+    "\U00002795-\U000027BF"
+    "\U0000FE0F"
+    "]+"
+)
+
+
+def find_emojis(text: Any) -> List[str]:
+    """Return any prohibited Unicode emoji sequences present in text."""
+    if not text or not isinstance(text, str):
+        return []
+    return EMOJI_PATTERN.findall(text)
+
 
 def create_presentation(theme: Optional[Theme] = None) -> Presentation:
     """Initialize a standard 16:9 widescreen presentation deck."""
@@ -55,44 +76,67 @@ def add_slide_with_background(prs: Presentation, theme: Theme) -> Any:
     return slide
 
 
+def _estimate_wrapped_lines(text: str, font_pt: float, box_width_in: float) -> int:
+    """Estimate rendered line count conservatively from font size and container width."""
+    if not text or not text.strip():
+        return 0
+    clean = re.sub(r"\*\*|__|`|~~", "", text.strip())
+    chars_per_line = max(18, int((box_width_in * 72.0) / max(font_pt * 0.54, 1.0)))
+    total_lines = 0
+    for seg in clean.splitlines() or [""]:
+        total_lines += max(1, math.ceil(len(seg) / chars_per_line))
+    return total_lines
+
+
 def add_slide_header(
     slide: Any,
     theme: Theme,
-    tracker: str,
+    tracker: Optional[str] = None,
     action_title: Optional[str] = None,
     subtitle: Optional[str] = None,
     tracker_color: Optional[RGBColor] = None,
     title: Optional[str] = None,
-) -> None:
-    """Renders structured consulting header: Category Tracker, Action Headline, Subtitle."""
+) -> float:
+    """Renders structured header (opt-in tracker, >=18pt Action Headline, opt-in Subtitle) and returns estimated bottom Y in inches."""
     thresholds = theme.typography_thresholds
     tracker_rgb = tracker_color or theme.get_rgb("accent")
     resolved_title = action_title or title or ""
+    header_width_in = 11.733
 
-    # 1. Tracker Breadcrumb (Auto-sanitized to eliminate meta-labeling like "SLIDE 07 |")
-    clean_tracker = re.sub(r"^SLIDE\s+\d+\s*\|\s*", "", tracker.strip(), flags=re.IGNORECASE)
-    tb_tr = slide.shapes.add_textbox(Inches(0.8), Inches(0.36), Inches(11.733), Inches(0.22))
-    tf_tr = tb_tr.text_frame
-    tf_tr.word_wrap = True
-    tf_tr.margin_left = tf_tr.margin_right = tf_tr.margin_top = tf_tr.margin_bottom = 0
-    p_tr = tf_tr.paragraphs[0]
-    p_tr.text = clean_tracker.upper()
-    p_tr.font.name = theme.font_family_header
-    p_tr.font.size = Pt(thresholds.get("tracker_pt", 9.5))
-    p_tr.font.bold = True
-    p_tr.font.color.rgb = tracker_rgb
+    # 1. Tracker Breadcrumb (Strictly opt-in; auto-sanitized against "SLIDE XX |")
+    clean_tracker = re.sub(r"^SLIDE\s+\d+\s*\|\s*", "", str(tracker).strip(), flags=re.IGNORECASE) if tracker else ""
+    if clean_tracker:
+        tb_tr = slide.shapes.add_textbox(Inches(0.8), Inches(0.36), Inches(header_width_in), Inches(0.22))
+        tf_tr = tb_tr.text_frame
+        tf_tr.word_wrap = True
+        tf_tr.margin_left = tf_tr.margin_right = tf_tr.margin_top = tf_tr.margin_bottom = 0
+        p_tr = tf_tr.paragraphs[0]
+        p_tr.text = clean_tracker.upper()
+        p_tr.font.name = theme.font_family_header
+        p_tr.font.size = Pt(max(8.0, thresholds.get("tracker_pt", 9.5)))
+        p_tr.font.bold = True
+        p_tr.font.color.rgb = tracker_rgb
+        header_top_in = 0.58
+    else:
+        header_top_in = 0.42
 
-    # 2. Action Headline & Context Subtitle (Unified Text Frame for Consistent Spacing)
-    tb_header = slide.shapes.add_textbox(Inches(0.8), Inches(0.58), Inches(11.733), Inches(0.65))
+    # 2. Action Headline & Opt-In Subtitle (Strict >= 18.0 pt Action Title floor)
+    base_title_pt = max(18.0, float(thresholds.get("action_title_pt", 18.0)))
+    title_lines = _estimate_wrapped_lines(resolved_title, base_title_pt, header_width_in)
+    subtitle_pt = max(8.0, float(thresholds.get("subtitle_pt", 10.5)))
+    subtitle_lines = _estimate_wrapped_lines(str(subtitle), subtitle_pt, header_width_in) if subtitle else 0
+
+    est_title_h = max(0.32, title_lines * (base_title_pt * 1.25 / 72.0))
+    est_sub_h = (4.0 / 72.0 + subtitle_lines * (subtitle_pt * 1.28 / 72.0)) if subtitle_lines > 0 else 0.0
+    frame_h_in = max(0.40, est_title_h + est_sub_h + 0.04)
+
+    tb_header = slide.shapes.add_textbox(Inches(0.8), Inches(header_top_in), Inches(header_width_in), Inches(frame_h_in))
     tf_h = tb_header.text_frame
     tf_h.word_wrap = True
     tf_h.margin_left = tf_h.margin_right = tf_h.margin_top = tf_h.margin_bottom = 0
 
     p_t = tf_h.paragraphs[0]
     p_t.text = ""
-    base_title_pt = thresholds.get("action_title_pt", 18.0)
-    if len(resolved_title) > 60:
-        base_title_pt = min(base_title_pt, 16.5)
     append_formatted_runs(
         paragraph=p_t,
         text=resolved_title,
@@ -102,7 +146,7 @@ def add_slide_header(
         default_bold=True,
     )
 
-    # 3. Context Subtitle (Flowed via paragraph offset to ensure consistent spacing at all times)
+    # 3. Context Subtitle (Opt-in; flowed via paragraph offset)
     if subtitle:
         p_s = tf_h.add_paragraph()
         p_s.space_before = Pt(4)
@@ -110,9 +154,16 @@ def add_slide_header(
             paragraph=p_s,
             text=subtitle,
             font_name=theme.font_family,
-            font_size_pt=thresholds.get("subtitle_pt", 10.0),
+            font_size_pt=subtitle_pt,
             font_color=theme.get_rgb("secondary"),
         )
+
+    return round(header_top_in + est_title_h + est_sub_h, 3)
+
+
+def resolve_content_top(header_bottom_in: float, gap_in: float = 0.22, min_top_in: float = 1.10) -> Inches:
+    """Compute vertical content start (Inches) dynamically below add_slide_header bottom."""
+    return Inches(max(min_top_in, header_bottom_in + gap_in))
 
 
 def add_card(
@@ -334,11 +385,12 @@ def add_slide_footer(
     theme: Theme,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
     source: Optional[str] = None,
 ) -> None:
-    """Renders bottom divider line, confidentiality notice, source attribution, and slide pagination."""
+    """Renders bottom divider line, opt-in notice/source attribution, and slide pagination."""
     thresholds = theme.typography_thresholds
+    caption_pt = max(8.0, float(thresholds.get("caption_pt", 8.5)))
 
     # Divider line
     divider = slide.shapes.add_shape(
@@ -353,23 +405,23 @@ def add_slide_footer(
     divider.fill.fore_color.rgb = theme.get_rgb("border")
     divider.line.fill.background()
 
-    # Notice text (with optional source attribution prefix)
-    tb_n = slide.shapes.add_textbox(Inches(0.8), Inches(7.12), Inches(9.5), Inches(0.25))
-    tf_n = tb_n.text_frame
-    tf_n.margin_left = tf_n.margin_right = tf_n.margin_top = tf_n.margin_bottom = 0
-    p_n = tf_n.paragraphs[0]
+    # Notice / Source text (Strictly opt-in; omitted cleanly when unset)
+    left_text = ""
+    if source and str(source).strip():
+        clean_src = str(source).strip()
+        left_text = clean_src if clean_src.lower().startswith("source:") else f"Source: {clean_src}"
+    elif notice and str(notice).strip():
+        left_text = str(notice).strip()
 
-    if source:
-        clean_src = source.strip()
-        if not clean_src.lower().startswith("source:"):
-            clean_src = f"Source: {clean_src}"
-        p_n.text = clean_src
-    else:
-        p_n.text = notice or "Enterprise Strategy Group  |  Confidential & Proprietary"
-
-    p_n.font.name = theme.font_family
-    p_n.font.size = Pt(thresholds.get("caption_pt", 8.5))
-    p_n.font.color.rgb = theme.get_rgb("muted")
+    if left_text:
+        tb_n = slide.shapes.add_textbox(Inches(0.8), Inches(7.12), Inches(9.5), Inches(0.25))
+        tf_n = tb_n.text_frame
+        tf_n.margin_left = tf_n.margin_right = tf_n.margin_top = tf_n.margin_bottom = 0
+        p_n = tf_n.paragraphs[0]
+        p_n.text = left_text
+        p_n.font.name = theme.font_family
+        p_n.font.size = Pt(caption_pt)
+        p_n.font.color.rgb = theme.get_rgb("muted")
 
     # Slide number
     tb_p = slide.shapes.add_textbox(Inches(10.533), Inches(7.12), Inches(2.0), Inches(0.25))
@@ -378,7 +430,7 @@ def add_slide_footer(
     p_p = tf_p.paragraphs[0]
     p_p.text = f"{current_idx:02d} / {total_slides:02d}"
     p_p.font.name = theme.font_family
-    p_p.font.size = Pt(thresholds.get("caption_pt", 8.5))
+    p_p.font.size = Pt(caption_pt)
     p_p.font.bold = True
     p_p.alignment = PP_ALIGN.RIGHT
     p_p.font.color.rgb = theme.get_rgb("muted")

@@ -26,7 +26,7 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 from .common import (
-    add_slide_with_background, add_slide_header, add_card, add_card_with_top_stripe,
+    add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
     _add_bullet_paragraph, _fit_image_in_box,
 )
@@ -36,49 +36,47 @@ logger = logging.getLogger(__name__)
 def build_browser_mockup_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "System Architecture & Interface Validation",
+    tracker: Optional[str] = None,
     action_title: str = "Modernized Analytics Platform Eliminates ERP Latency and Siloed Data Exports",
-    subtitle: Optional[str] = "High-fidelity interface preview running directly on Snowflake Cortex AI and Streamlit serving tiers.",
+    subtitle: Optional[str] = None,
     screenshot_path: Optional[Union[str, Path]] = None,
     url: str = "https://finance.snowflakecomputing.com/streamlit/app",
     telemetry_badges: Optional[List[str]] = None,
     theme_mode: str = "light",
     aspect_ratio: Optional[str] = "16:9",
     target_dpi: int = 300,
-    takeaways_title: str = "KEY OBSERVATIONS & DRIVERS",
+    takeaways_title: Optional[str] = None,
     takeaways: Optional[List[Dict[str, Any]]] = None,
+    show_top_stripes: bool = False,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
+    source: Optional[str] = None,
     output_temp_dir: Optional[Path] = None,
 ) -> Any:
     """
-    Renders an executive presentation slide featuring a high-DPI browser mockup container
-    on the left (w=7.60") paired with structured observation cards on the right (w=3.88").
+    Renders a presentation slide featuring a high-DPI browser mockup container,
+    paired optionally with 1-5 structured observation cards on the right.
     """
     from src.ppt_engine.image_engine import frame_browser_mockup, ImageEngine
 
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
-    # 1. Resolve source image or generate high-fidelity fallback
+    # 1. Resolve source image or clean placeholder card (Zero emojis)
     if screenshot_path and Path(screenshot_path).exists():
         src_img: Union[str, Path, Image.Image] = Path(screenshot_path)
     else:
         engine = ImageEngine()
         src_img = engine.generate_procedural_3d_card(
-            title="Enterprise Analytics Platform",
+            title="Analytics Interface Preview",
             primary_color=theme.get_hex("primary"),
             accent_color=theme.get_hex("accent"),
         )
 
-    # 2. Render Mockup Container
-    if telemetry_badges is None:
-        telemetry_badges = [
-            "🏷️ Snowflake Cortex AI",
-            "⚡ Real-Time Ingestion",
-            "📊 Daily Reconciled",
-        ]
+    # 2. Render Mockup Container (telemetry_badges strictly opt-in; zero emojis)
+    has_sidebar = bool(takeaways)
+    mockup_w_in = 7.60 if has_sidebar else 9.60
 
     save_dir = Path(output_temp_dir) if output_temp_dir else Path("output/mockups")
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -89,186 +87,182 @@ def build_browser_mockup_slide(
         url=url,
         theme_mode=theme_mode,
         target_dpi=target_dpi,
-        target_width_in=7.6,
+        target_width_in=mockup_w_in,
         aspect_ratio=aspect_ratio,
         telemetry_badges=telemetry_badges,
         output_path=temp_mockup_path,
     )
 
     # 3. Add Framed Mockup Image Picture to Slide
-    mockup_x = Inches(0.80)
-    mockup_y = Inches(1.85)
-    mockup_w = Inches(7.60)
-    slide.shapes.add_picture(str(temp_mockup_path), mockup_x, mockup_y, width=mockup_w)
+    mockup_y = resolve_content_top(header_bottom, gap_in=0.20)
+    mockup_x = Inches(0.80) if has_sidebar else Inches((13.333 - mockup_w_in) / 2.0)
+    slide.shapes.add_picture(str(temp_mockup_path), mockup_x, mockup_y, width=Inches(mockup_w_in))
 
-    # 4. Right Column: Structured Takeaways & Observation Cards
-    right_x = Inches(8.65)
-    right_w = Inches(3.88)
-    right_y = Inches(1.85)
+    # 4. Opt-in Right Column: 1-5 Observation Cards (with optional solid section header bar)
+    if takeaways:
+        items = list(takeaways)[:5]
+        right_x = Inches(8.65)
+        right_w = Inches(3.88)
+        right_y = mockup_y
+        bottom_limit = Inches(6.85)
+        cur_card_y = right_y
 
-    if takeaways is None:
-        takeaways = [
-            {
-                "title": "Continuous Data Ingestion",
-                "body": "Replaces 12-hour nightly batch jobs with Snowpipe micro-batching, delivering sub-minute analytical readiness.",
-                "tag": "LATENCY REDUCTION",
-                "tag_color": "accent",
-            },
-            {
-                "title": "Automated Dynamic Masking",
-                "body": "Role-based access control (RBAC) masks sensitive enterprise PII without requiring manual spreadsheet scrubbers.",
-                "tag": "SECURITY & AUDIT",
-                "tag_color": "secondary",
-            },
-            {
-                "title": "Executive Self-Service Serving",
-                "body": "Streamlit app gives finance leadership real-time margin drill-downs without waiting for IT ticket resolution.",
-                "tag": "BUSINESS AGILITY",
-                "tag_color": "primary",
-            },
-        ]
+        if takeaways_title and str(takeaways_title).strip():
+            hdr_h = Inches(0.32)
+            h_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x, right_y, right_w, hdr_h)
+            h_card.shadow.inherit = False
+            h_card.fill.solid()
+            h_card.fill.fore_color.rgb = theme.get_rgb("primary")
+            h_card.line.fill.background()
 
-    # Render Right Column Section Header Badge
-    hdr_h = Inches(0.32)
-    h_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x, right_y, right_w, hdr_h)
-    h_card.shadow.inherit = False
-    h_card.fill.solid()
-    h_card.fill.fore_color.rgb = theme.get_rgb("primary")
-    h_card.line.fill.background()
+            tf_h = h_card.text_frame
+            tf_h.word_wrap = True
+            tf_h.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_h.margin_left = Inches(0.12)
+            tf_h.margin_top = tf_h.margin_bottom = 0
+            p_h = tf_h.paragraphs[0]
+            p_h.text = str(takeaways_title).strip().upper()
+            p_h.font.name = theme.font_family_header
+            p_h.font.size = Pt(9.5)
+            p_h.font.bold = True
+            p_h.font.color.rgb = RGBColor(255, 255, 255)
+            cur_card_y = right_y + hdr_h + Inches(0.12)
 
-    tf_h = h_card.text_frame
-    tf_h.word_wrap = True
-    tf_h.margin_left = Inches(0.12)
-    tf_h.margin_top = Inches(0.06)
-    p_h = tf_h.paragraphs[0]
-    p_h.text = takeaways_title.upper()
-    p_h.font.name = theme.font_family_header
-    p_h.font.size = Pt(9.5)
-    p_h.font.bold = True
-    p_h.font.color.rgb = RGBColor(255, 255, 255)
+        num_cards = len(items)
+        card_gap = Inches(0.10 if num_cards >= 4 else 0.14)
+        total_card_space = max(Inches(2.40), bottom_limit - cur_card_y)
+        card_h = (total_card_space - (num_cards - 1) * card_gap) / max(1, num_cards)
 
-    # Stack observation cards
-    card_gap = Inches(0.14)
-    num_cards = len(takeaways)
-    total_card_space = Inches(4.35)
-    card_h = (total_card_space - (num_cards - 1) * card_gap) / max(1, num_cards)
+        title_pt = 13.0 if num_cards == 1 else (12.0 if num_cards <= 3 else 11.0)
+        body_pt = 11.5 if num_cards == 1 else (10.5 if num_cards <= 3 else 9.5)
 
-    cur_card_y = right_y + hdr_h + Inches(0.12)
-    for t_item in takeaways:
-        accent_key = t_item.get("tag_color", "accent")
-        accent_rgb = theme.get_rgb(accent_key) if accent_key in ("primary", "secondary", "accent") else theme.get_rgb("accent")
-        c_card, _ = add_card_with_top_stripe(
-            slide=slide,
-            theme=theme,
-            left=right_x,
-            top=cur_card_y,
-            width=right_w,
-            height=card_h,
-            accent_rgb=accent_rgb,
-            stripe_height_in=0.035,
-        )
-        tf_c = c_card.text_frame
-        tf_c.word_wrap = True
-        tf_c.margin_left = Inches(0.16)
-        tf_c.margin_right = Inches(0.16)
-        tf_c.margin_top = Inches(0.10)
-        tf_c.margin_bottom = Inches(0.08)
+        for t_item in items:
+            accent_key = t_item.get("tag_color", t_item.get("accent_key", "accent"))
+            accent_rgb = theme.get_rgb(accent_key) if accent_key in ("primary", "secondary", "accent") else theme.get_rgb("accent")
+            if show_top_stripes or t_item.get("has_top_stripe"):
+                c_card, _ = add_card_with_top_stripe(
+                    slide=slide,
+                    theme=theme,
+                    left=right_x,
+                    top=cur_card_y,
+                    width=right_w,
+                    height=card_h,
+                    accent_rgb=accent_rgb,
+                    stripe_height_in=0.04,
+                )
+            else:
+                c_card = add_card(
+                    slide=slide,
+                    theme=theme,
+                    left=right_x,
+                    top=cur_card_y,
+                    width=right_w,
+                    height=card_h,
+                    force_rectangle=True,
+                )
 
-        # Tag
-        p_tag = tf_c.paragraphs[0]
-        p_tag.text = t_item.get("tag", "OBSERVATION").upper()
-        p_tag.font.name = theme.font_family_header
-        p_tag.font.size = Pt(8.5)
-        p_tag.font.bold = True
-        p_tag.font.color.rgb = accent_rgb
+            tf_c = c_card.text_frame
+            tf_c.word_wrap = True
+            is_centered = str(t_item.get("align", "")).lower() == "center" or num_cards == 1
+            tf_c.vertical_anchor = MSO_ANCHOR.MIDDLE if is_centered else MSO_ANCHOR.TOP
+            tf_c.margin_left = Inches(0.16)
+            tf_c.margin_right = Inches(0.16)
+            tf_c.margin_top = Inches(0.08)
+            tf_c.margin_bottom = Inches(0.08)
 
-        # Title
-        p_tit = tf_c.add_paragraph()
-        p_tit.text = t_item.get("title", "")
-        p_tit.font.name = theme.font_family_header
-        p_tit.font.size = Pt(11.0)
-        p_tit.font.bold = True
-        p_tit.font.color.rgb = theme.get_rgb("primary")
-        p_tit.space_before = Pt(3)
+            has_first_para = False
+            tag_val = t_item.get("tag")
+            if tag_val:
+                p_tag = tf_c.paragraphs[0]
+                p_tag.text = str(tag_val).upper()
+                p_tag.font.name = theme.font_family_header
+                p_tag.font.size = Pt(8.5)
+                p_tag.font.bold = True
+                p_tag.font.color.rgb = accent_rgb
+                if is_centered:
+                    p_tag.alignment = PP_ALIGN.CENTER
+                has_first_para = True
 
-        # Body / Bullets
-        body_val = t_item.get("body") or t_item.get("desc") or t_item.get("description") or ""
-        if isinstance(body_val, list):
-            for b_item in body_val:
-                p_b = tf_c.add_paragraph()
-                p_b.text = f"•  {b_item}"
-                p_b.font.name = theme.font_family
-                p_b.font.size = Pt(8.5)
-                p_b.font.color.rgb = theme.get_rgb("secondary")
-                p_b.space_before = Pt(2)
-        else:
-            p_bod = tf_c.add_paragraph()
-            p_bod.text = str(body_val)
-            p_bod.font.name = theme.font_family
-            p_bod.font.size = Pt(9.0)
-            p_bod.font.color.rgb = theme.get_rgb("secondary")
-            p_bod.space_before = Pt(3)
+            card_title = t_item.get("title", "")
+            if card_title:
+                p_tit = tf_c.add_paragraph() if has_first_para else tf_c.paragraphs[0]
+                p_tit.text = str(card_title)
+                p_tit.font.name = theme.font_family_header
+                p_tit.font.size = Pt(title_pt)
+                p_tit.font.bold = True
+                p_tit.font.color.rgb = theme.get_rgb("primary")
+                if has_first_para:
+                    p_tit.space_before = Pt(3)
+                if is_centered:
+                    p_tit.alignment = PP_ALIGN.CENTER
+                has_first_para = True
 
-        cur_card_y += card_h + card_gap
+            body_val = t_item.get("body") or t_item.get("desc") or t_item.get("description") or ""
+            if isinstance(body_val, list):
+                for b_item in body_val:
+                    p_b = tf_c.add_paragraph() if has_first_para else tf_c.paragraphs[0]
+                    p_b.text = f"•  {b_item}"
+                    p_b.font.name = theme.font_family
+                    p_b.font.size = Pt(body_pt)
+                    p_b.font.color.rgb = theme.get_rgb("secondary")
+                    if has_first_para:
+                        p_b.space_before = Pt(3)
+                    has_first_para = True
+            elif body_val:
+                p_bod = tf_c.add_paragraph() if has_first_para else tf_c.paragraphs[0]
+                p_bod.text = str(body_val)
+                p_bod.font.name = theme.font_family
+                p_bod.font.size = Pt(body_pt)
+                p_bod.font.color.rgb = theme.get_rgb("secondary")
+                if has_first_para:
+                    p_bod.space_before = Pt(4)
+                if is_centered:
+                    p_bod.alignment = PP_ALIGN.CENTER
+
+            cur_card_y += card_h + card_gap
 
     # 5. Slide Footer
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
     return slide
 
 
 def build_iceberg_concept_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "STRATEGIC RATIONALE | ARCHITECTURE FOUNDATION",
+    tracker: Optional[str] = None,
     action_title: str = "Modern Data Platform Architecture Solves the Critical Subsurface Foundation Gap",
-    subtitle: Optional[str] = "While executives interact with surface dashboards, 85% of analytical resilience depends on robust foundation engineering.",
+    subtitle: Optional[str] = None,
     visible_items: Optional[List[Dict[str, str]]] = None,
     subsurface_items: Optional[List[Dict[str, str]]] = None,
     takeaways: Optional[List[str]] = None,
+    takeaway_title: Optional[str] = None,
+    takeaway_subtitle: Optional[str] = None,
+    show_top_stripes: bool = False,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
+    source: Optional[str] = None,
 ) -> Any:
-    """Renders the Iceberg Concept: Visible 15% Business Interface vs. Subsurface 85% Data Platform Foundation."""
+    """Renders the Iceberg Concept: Visible Surface vs. Subsurface Foundation, with opt-in right takeaway panel."""
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
-    if not visible_items:
-        visible_items = [
-            {"title": "Executive KPI Dashboards", "desc": "Tableau & Power BI visual summaries for C-level tracking."},
-            {"title": "Streamlit Financial Apps", "desc": "Interactive margin, opex, and scenario analysis portals."},
-            {"title": "Cortex GenAI Summaries", "desc": "Natural language automated performance reporting."},
-        ]
-
-    if not subsurface_items:
-        subsurface_items = [
-            {"title": "Snowflake AI Data Cloud", "desc": "Decoupled cloud storage and multi-cluster elastic compute engines."},
-            {"title": "Automated CDC Pipelines", "desc": "Continuous Kafka/dbt ingestion capturing ERP transactions without downtime."},
-            {"title": "dbt Semantic Models", "desc": "Standardized star-schema data marts eliminating query divergence."},
-            {"title": "RBAC & Dynamic Masking", "desc": "Granular PII protection, column dynamic masking, and audit logging."},
-            {"title": "Automated Orchestration", "desc": "Dependency-aware DAG pipelines with alerting and SLA triggers."},
-            {"title": "FinOps & Cost Governance", "desc": "Warehouse auto-suspend/resume preventing runaway compute spend."},
-        ]
-
-    if not takeaways:
-        takeaways = [
-            "Dashboard failures originate in broken upstream data pipelines, not visualization design.",
-            "Legacy point-to-point ETL creates untraceable data lineage and reporting discrepancies.",
-            "Snowflake's decoupled storage-compute architecture guarantees 99.99% uptime and zero contention.",
-            "Investing in subsurface foundation data engineering reduces maintenance overhead by 70%.",
-        ]
+    visible_items = list(visible_items or [])
+    subsurface_items = list(subsurface_items or [])
 
     left_x = Inches(0.80)
-    top_y = Inches(1.80)
-    iceberg_w = Inches(7.70)
-    iceberg_h = Inches(5.00)
+    top_y = resolve_content_top(header_bottom, gap_in=0.20)
+    bottom_limit = Inches(6.85)
+    has_takeaways = bool(takeaways)
+    iceberg_w = Inches(7.70) if has_takeaways else Inches(11.733)
+    iceberg_h = max(Inches(4.20), bottom_limit - top_y)
 
     takeaway_x = left_x + iceberg_w + Inches(0.30)
     takeaway_w = Inches(11.733) - iceberg_w - Inches(0.30)
     takeaway_h = iceberg_h
 
-    # 1. Above the Waterline Container (Top 28% of left panel)
-    above_h = Inches(1.50)
+    # 1. Above the Waterline Container
+    above_h = min(Inches(1.65), iceberg_h * 0.30)
     add_card(
         slide,
         theme,
@@ -285,14 +279,16 @@ def build_iceberg_concept_slide(
     atf = atb.text_frame
     atf.margin_left = atf.margin_right = atf.margin_top = atf.margin_bottom = 0
     ap = atf.paragraphs[0]
-    ap.text = "ABOVE THE WATERLINE  |  WHAT THE BUSINESS SEES (15% OF EFFORT)"
+    ap.text = "ABOVE THE WATERLINE  |  VISIBLE SURFACE"
     ap.font.name = theme.font_family_header
     ap.font.size = Pt(8.5)
     ap.font.bold = True
     ap.font.color.rgb = theme.get_rgb("accent")
 
-    col_w_above = (iceberg_w - Inches(0.32) - (Inches(0.12) * 2)) / 3.0
-    for i, itm in enumerate(visible_items[:3]):
+    n_vis = max(1, min(3, len(visible_items)))
+    col_w_above = (iceberg_w - Inches(0.32) - (Inches(0.12) * (n_vis - 1))) / n_vis
+    for i, raw_itm in enumerate(visible_items[:3]):
+        itm = raw_itm if isinstance(raw_itm, dict) else {"title": str(raw_itm), "desc": ""}
         ix = left_x + Inches(0.16) + (i * (col_w_above + Inches(0.12)))
         iy = top_y + Inches(0.38)
         ih = above_h - Inches(0.48)
@@ -312,18 +308,20 @@ def build_iceberg_concept_slide(
         tf_i.word_wrap = True
         tf_i.margin_left = tf_i.margin_right = tf_i.margin_top = tf_i.margin_bottom = 0
         p_it = tf_i.paragraphs[0]
-        p_it.text = itm.get("title", "")
+        p_it.text = str(itm.get("title", ""))
         p_it.font.name = theme.font_family_header
-        p_it.font.size = Pt(8.5)
+        p_it.font.size = Pt(9.5)
         p_it.font.bold = True
         p_it.font.color.rgb = theme.get_rgb("primary")
 
-        p_id = tf_i.add_paragraph()
-        p_id.text = itm.get("desc", "")
-        p_id.font.name = theme.font_family
-        p_id.font.size = Pt(7.5)
-        p_id.font.color.rgb = theme.get_rgb("secondary")
-        p_id.space_before = Pt(2)
+        desc_str = str(itm.get("desc", itm.get("description", "")) or "").strip()
+        if desc_str:
+            p_id = tf_i.add_paragraph()
+            p_id.text = desc_str
+            p_id.font.name = theme.font_family
+            p_id.font.size = Pt(8.5)
+            p_id.font.color.rgb = theme.get_rgb("secondary")
+            p_id.space_before = Pt(2)
 
     # 2. Waterline Divider Bar
     waterline_y = top_y + above_h + Inches(0.08)
@@ -337,7 +335,7 @@ def build_iceberg_concept_slide(
     wl_tf = wl_bar.text_frame
     wl_tf.margin_left = wl_tf.margin_right = wl_tf.margin_top = wl_tf.margin_bottom = 0
     wl_p = wl_tf.paragraphs[0]
-    wl_p.text = "---  THE WATERLINE: ARCHITECTURAL FOUNDATION BOUNDARY  ---"
+    wl_p.text = "ARCHITECTURAL FOUNDATION BOUNDARY"
     wl_p.alignment = PP_ALIGN.CENTER
     wl_p.font.name = theme.font_family_header
     wl_p.font.size = Pt(8.5)
@@ -363,20 +361,22 @@ def build_iceberg_concept_slide(
     btf = btb.text_frame
     btf.margin_left = btf.margin_right = btf.margin_top = btf.margin_bottom = 0
     bp = btf.paragraphs[0]
-    bp.text = "BELOW THE WATERLINE  |  DATA PLATFORM FOUNDATION (85% OF ARCHITECTURAL INVESTMENT)"
+    bp.text = "BELOW THE WATERLINE  |  DATA PLATFORM FOUNDATION"
     bp.font.name = theme.font_family_header
     bp.font.size = Pt(8.5)
     bp.font.bold = True
     bp.font.color.rgb = RGBColor(147, 197, 253)
 
-    b_cols = 2
-    b_rows = 3
+    b_cols = 2 if has_takeaways else 3
+    n_sub = max(1, min(6, len(subsurface_items)))
+    b_rows = max(1, (n_sub + b_cols - 1) // b_cols)
     b_gap_x = Inches(0.14)
     b_gap_y = Inches(0.10)
     b_item_w = (iceberg_w - Inches(0.32) - (b_gap_x * (b_cols - 1))) / b_cols
     b_item_h = (below_h - Inches(0.44) - (b_gap_y * (b_rows - 1))) / b_rows
 
-    for i, itm in enumerate(subsurface_items[:6]):
+    for i, raw_itm in enumerate(subsurface_items[:6]):
+        itm = raw_itm if isinstance(raw_itm, dict) else {"title": str(raw_itm), "desc": ""}
         r_i = i // b_cols
         c_i = i % b_cols
         bx = left_x + Inches(0.16) + (c_i * (b_item_w + b_gap_x))
@@ -400,85 +400,105 @@ def build_iceberg_concept_slide(
         tf_bi.margin_left = tf_bi.margin_right = tf_bi.margin_top = tf_bi.margin_bottom = 0
 
         p_bit = tf_bi.paragraphs[0]
-        p_bit.text = itm.get("title", "")
+        p_bit.text = str(itm.get("title", ""))
         p_bit.font.name = theme.font_family_header
-        p_bit.font.size = Pt(8.5)
+        p_bit.font.size = Pt(9.5)
         p_bit.font.bold = True
         p_bit.font.color.rgb = RGBColor(241, 245, 249)
 
-        p_bid = tf_bi.add_paragraph()
-        p_bid.text = itm.get("desc", "")
-        p_bid.font.name = theme.font_family
-        p_bid.font.size = Pt(7.5)
-        p_bid.font.color.rgb = RGBColor(148, 163, 184)
-        p_bid.space_before = Pt(1.5)
+        b_desc_str = str(itm.get("desc", itm.get("description", "")) or "").strip()
+        if b_desc_str:
+            p_bid = tf_bi.add_paragraph()
+            p_bid.text = b_desc_str
+            p_bid.font.name = theme.font_family
+            p_bid.font.size = Pt(8.5)
+            p_bid.font.color.rgb = RGBColor(148, 163, 184)
+            p_bid.space_before = Pt(2.0)
 
-    # RIGHT PANEL: STRATEGIC TAKEAWAY
-    add_card_with_top_stripe(
-        slide,
-        theme,
-        takeaway_x,
-        top_y,
-        takeaway_w,
-        takeaway_h,
-        accent_rgb=theme.get_rgb("accent"),
-        bg_color=theme.get_rgb("surface"),
-        border_color=theme.get_rgb("border"),
-    )
+    # 4. OPT-IN RIGHT PANEL: Takeaways (only drawn when explicitly supplied)
+    if takeaways:
+        if show_top_stripes:
+            add_card_with_top_stripe(
+                slide,
+                theme,
+                takeaway_x,
+                top_y,
+                takeaway_w,
+                takeaway_h,
+                accent_rgb=theme.get_rgb("accent"),
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+            )
+        else:
+            add_card(
+                slide,
+                theme,
+                takeaway_x,
+                top_y,
+                takeaway_w,
+                takeaway_h,
+                bg_color=theme.get_rgb("surface"),
+                border_color=theme.get_rgb("border"),
+                force_rectangle=True,
+            )
 
-    ttb = slide.shapes.add_textbox(
-        takeaway_x + Inches(0.18),
-        top_y + Inches(0.14),
-        takeaway_w - Inches(0.36),
-        takeaway_h - Inches(0.28),
-    )
-    ttf = ttb.text_frame
-    ttf.word_wrap = True
-    ttf.margin_left = ttf.margin_right = ttf.margin_top = ttf.margin_bottom = 0
-
-    tp1 = ttf.paragraphs[0]
-    tp1.text = "STRATEGIC TAKEAWAY"
-    tp1.font.name = theme.font_family_header
-    tp1.font.size = Pt(12.0)
-    tp1.font.bold = True
-    tp1.font.color.rgb = theme.get_rgb("primary")
-
-    tp2 = ttf.add_paragraph()
-    tp2.text = "Why Foundation Data Engineering Outweighs UI Styling"
-    tp2.font.name = theme.font_family
-    tp2.font.size = Pt(9.0)
-    tp2.font.color.rgb = theme.get_rgb("secondary")
-    tp2.space_before = Pt(2)
-
-    for bullet in takeaways:
-        _add_bullet_paragraph(
-            ttf,
-            bullet,
-            theme.font_family,
-            font_size_pt=8.5,
-            font_color=theme.get_rgb("secondary"),
-            space_before_pt=8.0,
+        ttb = slide.shapes.add_textbox(
+            takeaway_x + Inches(0.18),
+            top_y + Inches(0.14),
+            takeaway_w - Inches(0.36),
+            takeaway_h - Inches(0.28),
         )
+        ttf = ttb.text_frame
+        ttf.word_wrap = True
+        ttf.margin_left = ttf.margin_right = ttf.margin_top = ttf.margin_bottom = 0
+
+        tp1 = ttf.paragraphs[0]
+        tp1.text = takeaway_title or "KEY TAKEAWAYS"
+        tp1.font.name = theme.font_family_header
+        tp1.font.size = Pt(12.0)
+        tp1.font.bold = True
+        tp1.font.color.rgb = theme.get_rgb("primary")
+
+        if takeaway_subtitle:
+            tp2 = ttf.add_paragraph()
+            tp2.text = takeaway_subtitle
+            tp2.font.name = theme.font_family
+            tp2.font.size = Pt(9.5)
+            tp2.font.color.rgb = theme.get_rgb("secondary")
+            tp2.space_before = Pt(2)
+
+        for bullet in takeaways:
+            _add_bullet_paragraph(
+                ttf,
+                bullet,
+                theme.font_family,
+                font_size_pt=9.5,
+                font_color=theme.get_rgb("secondary"),
+                space_before_pt=8.0,
+            )
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+    return slide
 
 
 def build_open_telemetry_flow_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "CLINICAL AI GOVERNANCE | REAL-TIME TELEMETRY & GATE VERIFICATION",
+    tracker: Optional[str] = None,
     action_title: str = "Dual-Engine Pipeline Telemetry Validates 99.4% Model Fidelity and Enforces Sub-Second Inference SLAs",
-    subtitle: Optional[str] = "Real-time Snowflake Cortex inference audits confirm automated compliance gates across all 4 production reproductive medicine prediction models.",
+    subtitle: Optional[str] = None,
     pipeline_steps: Optional[List[Dict[str, Any]]] = None,
     hero_metrics: Optional[List[Dict[str, Any]]] = None,
     mockup_config: Optional[Dict[str, Any]] = None,
     left_title: Optional[str] = "Production Model Serving Console",
-    left_subtitle: Optional[str] = "Snowflake Snowpark Container Services & Streamlit HUD",
+    left_subtitle: Optional[str] = None,
     right_title: Optional[str] = "Automated Production Quality Gates",
-    right_subtitle: Optional[str] = "Continuous Model Validation & Regulatory Threshold Tracking",
+    right_subtitle: Optional[str] = None,
     gate_matrix: Optional[Dict[str, Any]] = None,
-    footnote: Optional[str] = "Audit Window: 30-day rolling inference window across 12 Morula IVF clinic branches.",
+    footnote: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Architecture Practice  |  Clinical AI Telemetry Gate Demo",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders an open-canvas technical architecture slide breaking away from standard
@@ -573,7 +593,7 @@ def build_open_telemetry_flow_slide(
         p2 = tf_st.add_paragraph()
         p2.text = str(st.get("desc", ""))
         p2.font.name = theme.font_family
-        p2.font.size = Pt(7.5)
+        p2.font.size = Pt(8.0)
         p2.font.color.rgb = RGBColor(100, 116, 139)
 
     # Connecting Conduits with Directional Chevrons (Triangles + Lines)
@@ -690,7 +710,7 @@ def build_open_telemetry_flow_slide(
     p_gl = tf_g.add_paragraph()
     p_gl.text = "F1 SCORE"
     p_gl.font.name = theme.font_family_header
-    p_gl.font.size = Pt(6.5)
+    p_gl.font.size = Pt(8.0)
     p_gl.font.bold = True
     p_gl.font.color.rgb = RGBColor(100, 116, 139)
     p_gl.alignment = PP_ALIGN.CENTER
@@ -709,14 +729,14 @@ def build_open_telemetry_flow_slide(
     p_m1_d = tf_m1.add_paragraph()
     p_m1_d.text = "▼ -28ms under SLA"
     p_m1_d.font.name = theme.font_family_header
-    p_m1_d.font.size = Pt(7.5)
+    p_m1_d.font.size = Pt(8.0)
     p_m1_d.font.bold = True
     p_m1_d.font.color.rgb = RGBColor(22, 163, 74)
 
     p_m1_l = tf_m1.add_paragraph()
     p_m1_l.text = "P99 INFERENCE LATENCY"
     p_m1_l.font.name = theme.font_family_header
-    p_m1_l.font.size = Pt(7.0)
+    p_m1_l.font.size = Pt(8.0)
     p_m1_l.font.bold = True
     p_m1_l.font.color.rgb = RGBColor(100, 116, 139)
 
@@ -740,14 +760,14 @@ def build_open_telemetry_flow_slide(
     p_m2_d = tf_m2.add_paragraph()
     p_m2_d.text = "● 100% Attestation"
     p_m2_d.font.name = theme.font_family_header
-    p_m2_d.font.size = Pt(7.5)
+    p_m2_d.font.size = Pt(8.0)
     p_m2_d.font.bold = True
     p_m2_d.font.color.rgb = RGBColor(22, 163, 74)
 
     p_m2_l = tf_m2.add_paragraph()
     p_m2_l.text = "PRODUCTION DRIFT BREACHES"
     p_m2_l.font.name = theme.font_family_header
-    p_m2_l.font.size = Pt(7.0)
+    p_m2_l.font.size = Pt(8.0)
     p_m2_l.font.bold = True
     p_m2_l.font.color.rgb = RGBColor(100, 116, 139)
 
@@ -842,7 +862,7 @@ def build_open_telemetry_flow_slide(
         p_th = tf_p.paragraphs[0]
         p_th.text = th["label"]
         p_th.font.name = theme.font_family_header
-        p_th.font.size = Pt(6.8)
+        p_th.font.size = Pt(8.0)
         p_th.font.bold = True
         p_th.font.color.rgb = th["rgb"]
         p_th.alignment = PP_ALIGN.CENTER
@@ -992,7 +1012,7 @@ def build_open_telemetry_flow_slide(
         if subtext:
             r_sub = p_val.add_run()
             r_sub.text = f"{subtext} "
-            r_sub.font.size = Pt(7.8)
+            r_sub.font.size = Pt(8.0)
             r_sub.font.color.rgb = RGBColor(100, 116, 139)
 
         r_tag = p_val.add_run()
@@ -1002,21 +1022,22 @@ def build_open_telemetry_flow_slide(
         r_tag.font.size = Pt(8.2)
         r_tag.font.color.rgb = status_rgb
 
-    # Technical Baseline Footnote (Lines + Crosshairs)
-    fn_line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(6.85), Inches(6.36), Inches(5.68), Inches(0.015))
-    fn_line.fill.solid()
-    fn_line.fill.fore_color.rgb = RGBColor(226, 232, 240)
-    fn_line.line.fill.background()
-    strip_shape_shadows(fn_line)
+    # Technical Baseline Footnote (Opt-in only)
+    if footnote and str(footnote).strip():
+        fn_line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(6.85), Inches(6.36), Inches(5.68), Inches(0.015))
+        fn_line.fill.solid()
+        fn_line.fill.fore_color.rgb = RGBColor(226, 232, 240)
+        fn_line.line.fill.background()
+        strip_shape_shadows(fn_line)
 
-    tb_fn = slide.shapes.add_textbox(Inches(6.85), Inches(6.42), Inches(5.68), Inches(0.24))
-    tf_fn = tb_fn.text_frame
-    tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
-    p_fn = tf_fn.paragraphs[0]
-    p_fn.text = f"+ {footnote} +"
-    p_fn.font.name = theme.font_family
-    p_fn.font.size = Pt(8.0)
-    p_fn.font.color.rgb = RGBColor(100, 116, 139)
+        tb_fn = slide.shapes.add_textbox(Inches(6.85), Inches(6.42), Inches(5.68), Inches(0.24))
+        tf_fn = tb_fn.text_frame
+        tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
+        p_fn = tf_fn.paragraphs[0]
+        p_fn.text = str(footnote).strip()
+        p_fn.font.name = theme.font_family
+        p_fn.font.size = Pt(8.0)
+        p_fn.font.color.rgb = RGBColor(100, 116, 139)
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
@@ -1030,122 +1051,110 @@ def build_open_telemetry_flow_slide(
 def build_gate_validation_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "EMPIRICAL DATA RECONNAISSANCE & LIMITATIONS",
+    tracker: Optional[str] = None,
     action_title: str = "Historical Volume Is Viable for Baseline, but Heavily Concentrated",
-    subtitle: Optional[str] = "11,950 labelled rows across 27 months with 21% no-show rate; billing and SOAP clear 90% join threshold.",
+    subtitle: Optional[str] = None,
     kpis: Optional[List[Dict[str, Any]]] = None,
     chart_data: Optional[Dict[str, Any]] = None,
     constraints_card: Optional[Dict[str, Any]] = None,
+    takeaway: Optional[Union[str, Dict[str, Any]]] = None,
+    show_top_stripes: bool = False,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
+    source: Optional[str] = None,
 ) -> Any:
     """
-    Renders an executive presentation slide featuring:
-    - Top KPI Strip (3-4 metric cards with semantic accent stripes)
-    - Left Container: Horizontal bar chart with vertical gate lines (threshold_bars widget)
-    - Right Container: Core constraints card with hero stat block, bold bullets, and takeaway box
+    Renders a Gate Validation slide:
+      - Dynamic top KPI strip (1-6 metrics cleanly scaled; omitted cleanly if empty)
+      - Left Container: Horizontal bar chart with threshold gates (threshold_bars widget)
+      - Right Container: Freeform panel (opt-in hero_stat + dynamic body/bullets)
+      - Optional bottom conclusion banner (`takeaway=None` by default)
     """
     from src.ppt_engine.widgets.threshold_bars import render_threshold_bars
 
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
-    # 1. Top KPI Banner
-    if kpis is None:
-        kpis = [
-            {"stat": "11,950", "label": "Labelled Cohort Rows", "subtext": "2024-07 to 2026-09 Encounters", "color": "accent"},
-            {"stat": "21.0%", "label": "Baseline No-Show Rate", "subtext": "Stable Operational Class Rate", "color": "accent"},
-            {"stat": "27 Mos", "label": "Historical Window", "subtext": "Longitudinal Depth on PROD", "color": "accent"},
-            {"stat": "6 of 6", "label": "Quality Gates Passed", "subtext": "Zero Schema or Null Blockers", "color": "emerald"},
-        ]
-
-    kpi_top = Inches(1.80)
-    kpi_h = Inches(1.05)
+    # 1. Top KPI Strip (dynamic 1-6 items; skipped cleanly if empty)
+    kpis_list = list(kpis[:6]) if kpis else []
+    kpi_top = resolve_content_top(header_bottom, gap_in=0.18)
+    kpi_h = Inches(0.95)
     total_w = Inches(11.733)
-    n_kpis = max(1, len(kpis))
-    card_gap = Inches(0.20)
-    card_w = (total_w - (card_gap * (n_kpis - 1))) / n_kpis
 
-    for idx, k_item in enumerate(kpis):
-        kpi_x = Inches(0.80) + idx * (card_w + card_gap)
-        col_key = k_item.get("color", "accent")
-        col_rgb = theme.get_rgb(col_key) if hasattr(theme, "get_rgb") else RGBColor(2, 132, 199)
+    if kpis_list:
+        n_kpis = len(kpis_list)
+        card_gap = Inches(0.14 if n_kpis >= 5 else 0.20)
+        card_w = (total_w - (card_gap * (n_kpis - 1))) / n_kpis
+        stat_pt = 22 if n_kpis <= 4 else 19
+        lbl_pt = 9.5 if n_kpis <= 4 else 8.5
+        sub_pt = 8.5 if n_kpis <= 4 else 8.0
 
-        # Card Background
-        card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, kpi_x, kpi_top, card_w, kpi_h)
-        card.fill.solid()
-        card.fill.fore_color.rgb = theme.get_rgb("surface")
-        card.line.color.rgb = theme.get_rgb("border")
-        card.line.width = Pt(1.0)
-        strip_shape_shadows(card)
+        for idx, k_item in enumerate(kpis_list):
+            kpi_x = Inches(0.80) + idx * (card_w + card_gap)
+            col_key = str(k_item.get("color") or k_item.get("accent") or "accent")
+            if col_key.startswith("#"):
+                col_rgb = hex_to_rgb(col_key)
+            else:
+                col_rgb = theme.get_rgb(col_key) if hasattr(theme, "get_rgb") else RGBColor(2, 132, 199)
 
-        # Top Accent Stripe
-        stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, kpi_x, kpi_top, card_w, Inches(0.06))
-        stripe.fill.solid()
-        stripe.fill.fore_color.rgb = col_rgb
-        stripe.line.fill.background()
-        strip_shape_shadows(stripe)
+            card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, kpi_x, kpi_top, card_w, kpi_h)
+            card.fill.solid()
+            card.fill.fore_color.rgb = theme.get_rgb("surface")
+            card.line.color.rgb = theme.get_rgb("border")
+            card.line.width = Pt(1.0)
+            strip_shape_shadows(card)
 
-        # Text Frame
-        tf = card.text_frame
-        tf.word_wrap = True
-        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        tf.margin_left = tf.margin_right = Inches(0.15)
-        tf.margin_top = tf.margin_bottom = Inches(0.08)
+            if show_top_stripes or k_item.get("has_top_stripe"):
+                stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, kpi_x, kpi_top, card_w, Inches(0.06))
+                stripe.fill.solid()
+                stripe.fill.fore_color.rgb = col_rgb
+                stripe.line.fill.background()
+                strip_shape_shadows(stripe)
 
-        p1 = tf.paragraphs[0]
-        p1.text = str(k_item.get("stat", ""))
-        p1.font.name = theme.font_family_header
-        p1.font.size = Pt(22)
-        p1.font.bold = True
-        p1.font.color.rgb = col_rgb
-        p1.alignment = PP_ALIGN.LEFT
+            tf = card.text_frame
+            tf.word_wrap = True
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf.margin_left = tf.margin_right = Inches(0.12 if n_kpis >= 5 else 0.15)
+            tf.margin_top = tf.margin_bottom = Inches(0.06)
 
-        p2 = tf.add_paragraph()
-        p2.text = str(k_item.get("label", "")).upper()
-        p2.font.name = theme.font_family_header
-        p2.font.size = Pt(9.5)
-        p2.font.bold = True
-        p2.font.color.rgb = theme.get_rgb("primary")
-        p2.space_before = Pt(2)
+            p1 = tf.paragraphs[0]
+            p1.text = str(k_item.get("stat") if k_item.get("stat") is not None else k_item.get("value", ""))
+            p1.font.name = theme.font_family_header
+            p1.font.size = Pt(stat_pt)
+            p1.font.bold = True
+            p1.font.color.rgb = col_rgb
+            p1.alignment = PP_ALIGN.LEFT
 
-        if k_item.get("subtext"):
-            p3 = tf.add_paragraph()
-            p3.text = str(k_item.get("subtext", ""))
-            p3.font.name = theme.font_family
-            p3.font.size = Pt(8.5)
-            p3.font.color.rgb = theme.get_rgb("secondary")
-            p3.space_before = Pt(1)
+            p2 = tf.add_paragraph()
+            p2.text = str(k_item.get("label", "")).upper()
+            p2.font.name = theme.font_family_header
+            p2.font.size = Pt(lbl_pt)
+            p2.font.bold = True
+            p2.font.color.rgb = theme.get_rgb("primary")
+            p2.space_before = Pt(2)
 
-    # 2. Bottom Section: Split Screen
-    bottom_top = Inches(3.02)
-    bottom_h = Inches(3.90)
+            if k_item.get("subtext"):
+                p3 = tf.add_paragraph()
+                p3.text = str(k_item.get("subtext", ""))
+                p3.font.name = theme.font_family
+                p3.font.size = Pt(sub_pt)
+                p3.font.color.rgb = theme.get_rgb("secondary")
+                p3.space_before = Pt(1)
 
-    # Left Container: Join Coverage / Threshold Bars (width 6.60")
+    # 2. Split Section (dynamically anchored below KPI strip + above opt-in conclusion banner)
+    bottom_top = (kpi_top + kpi_h + Inches(0.16)) if kpis_list else kpi_top
+    bottom_limit = Inches(6.14 if takeaway else 6.88)
+    bottom_h = max(Inches(3.20), bottom_limit - bottom_top)
+
     left_x = Inches(0.80)
     left_w = Inches(6.60)
 
-    if chart_data is None:
-        chart_data = {
-            "title": "Join Coverage to Cohort",
-            "subtitle": "Empirical PROD join rates.",
-            "series": [
-                {"label": "FACT_TRANSACTION", "value": 0.999, "display_value": "99.9%", "subtext": "(8.68M)", "status": "PASS", "bar_color": "accent", "status_color": "emerald"},
-                {"label": "FACT_SOAP_PATIENT", "value": 0.958, "display_value": "95.8%", "subtext": "(193.7K)", "status": "PASS", "bar_color": "accent", "status_color": "emerald"},
-                {"label": "FACT_CHAT", "value": 0.664, "display_value": "66.4%", "subtext": "(Starts 2025)", "status": "EXCL", "bar_color": "muted", "status_color": "secondary"},
-                {"label": "FACT_CALL_CENTER", "value": 0.253, "display_value": "25.3%", "subtext": "(8.8K rows)", "status": "EXCL", "bar_color": "danger", "status_color": "danger"},
-            ],
-            "thresholds": [
-                {"value": 0.90, "label": ">=90% GATE", "color": "emerald"},
-                {"value": 0.60, "label": "<60% EXCL", "color": "amber"},
-            ],
-            "footnote": "Audit Finding: Billing & SOAP exceed quality bar; Chat/Calls excluded due to short history.",
-        }
+    resolved_chart = dict(chart_data) if chart_data else {"series": []}
+    resolved_chart.setdefault("show_top_stripe", show_top_stripes)
+    render_threshold_bars(slide, theme, left_x, bottom_top, left_w, bottom_h, resolved_chart)
 
-    render_threshold_bars(slide, theme, left_x, bottom_top, left_w, bottom_h, chart_data)
-
-    # Right Container: Constraints Card (width 4.933")
+    # Right Container: Freeform Panel
     right_x = Inches(7.60)
     right_w = Inches(4.933)
 
@@ -1156,50 +1165,48 @@ def build_gate_validation_slide(
     bg_right.line.width = Pt(1.0)
     strip_shape_shadows(bg_right)
 
-    stripe_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x, bottom_top, right_w, Inches(0.06))
-    stripe_r.fill.solid()
-    stripe_r.fill.fore_color.rgb = theme.get_rgb("warning", default="#D97706")
-    stripe_r.line.fill.background()
-    strip_shape_shadows(stripe_r)
+    card_cfg = dict(constraints_card) if constraints_card else {}
+    if show_top_stripes or card_cfg.get("has_top_stripe"):
+        stripe_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x, bottom_top, right_w, Inches(0.06))
+        stripe_r.fill.solid()
+        stripe_r.fill.fore_color.rgb = theme.get_rgb(card_cfg.get("stripe_color", "accent"))
+        stripe_r.line.fill.background()
+        strip_shape_shadows(stripe_r)
 
-    if constraints_card is None:
-        constraints_card = {
-            "title": "What Limits the Data (Core Constraints)",
-            "subtitle": "Three operational realities governing production generalization.",
-            "hero_stat": "94.9% Concentration",
-            "hero_stat_label": "MIJ Menteng Branch Dominance",
-            "bullets": [
-                "Branch Skew: MIJ Menteng holds 94.9% of rows; requires branch calibration for regional clinics.",
-                "Snapshot Grain: Appointment table reflects final status only; cancellation lead time is unrecorded.",
-                "Proxy Label: REALISASI serves as proxy; clinic front-desk cancellation interviews pending.",
-            ],
-            "takeaway": "TAKEAWAY: Sufficient for initial POC; regional generalization requires multi-clinic data.",
-        }
+    pad_x = Inches(0.24)
+    inner_w = right_w - (pad_x * 2)
+    cur_y = bottom_top + Inches(0.16)
 
-    # Right Header
-    tb_rh = slide.shapes.add_textbox(right_x + Inches(0.25), bottom_top + Inches(0.14), right_w - Inches(0.50), Inches(0.50))
-    tf_rh = tb_rh.text_frame
-    tf_rh.word_wrap = True
-    tf_rh.margin_left = tf_rh.margin_right = tf_rh.margin_top = tf_rh.margin_bottom = 0
-    p_rh1 = tf_rh.paragraphs[0]
-    p_rh1.text = str(constraints_card.get("title", "Core Constraints"))
-    p_rh1.font.name = theme.font_family_header
-    p_rh1.font.size = Pt(13)
-    p_rh1.font.bold = True
-    p_rh1.font.color.rgb = theme.get_rgb("primary")
+    card_title = card_cfg.get("title")
+    card_subtitle = card_cfg.get("subtitle")
+    if card_title or card_subtitle:
+        rh_h = Inches(0.62 if card_subtitle else 0.36)
+        tb_rh = slide.shapes.add_textbox(right_x + pad_x, cur_y, inner_w, rh_h)
+        tf_rh = tb_rh.text_frame
+        tf_rh.word_wrap = True
+        tf_rh.margin_left = tf_rh.margin_right = tf_rh.margin_top = tf_rh.margin_bottom = 0
+        if card_title:
+            p_rh1 = tf_rh.paragraphs[0]
+            p_rh1.text = str(card_title)
+            p_rh1.font.name = theme.font_family_header
+            p_rh1.font.size = Pt(13)
+            p_rh1.font.bold = True
+            p_rh1.font.color.rgb = theme.get_rgb("primary")
+        if card_subtitle:
+            p_rh2 = tf_rh.add_paragraph() if card_title else tf_rh.paragraphs[0]
+            p_rh2.text = str(card_subtitle)
+            p_rh2.font.name = theme.font_family
+            p_rh2.font.size = Pt(9.5)
+            p_rh2.font.color.rgb = theme.get_rgb("secondary")
+            if card_title:
+                p_rh2.space_before = Pt(2)
+        cur_y += rh_h + Inches(0.10)
 
-    if constraints_card.get("subtitle"):
-        p_rh2 = tf_rh.add_paragraph()
-        p_rh2.text = str(constraints_card.get("subtitle"))
-        p_rh2.font.name = theme.font_family
-        p_rh2.font.size = Pt(9.5)
-        p_rh2.font.color.rgb = theme.get_rgb("secondary")
-
-    # Big Concentration Stat Card
-    hero_stat = constraints_card.get("hero_stat")
-    hero_offset_y = 0.0
+    # Opt-in Hero Stat Block inside right panel
+    hero_stat = card_cfg.get("hero_stat")
     if hero_stat:
-        stat_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x + Inches(0.25), bottom_top + Inches(0.78), right_w - Inches(0.50), Inches(0.65))
+        stat_h = Inches(0.76)
+        stat_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x + pad_x, cur_y, inner_w, stat_h)
         stat_card.fill.solid()
         stat_card.fill.fore_color.rgb = RGBColor(254, 243, 199)
         stat_card.line.color.rgb = RGBColor(245, 158, 11)
@@ -1207,46 +1214,62 @@ def build_gate_validation_slide(
         strip_shape_shadows(stat_card)
 
         tf_sc = stat_card.text_frame
+        tf_sc.word_wrap = True
         tf_sc.vertical_anchor = MSO_ANCHOR.MIDDLE
-        tf_sc.margin_left = tf_sc.margin_right = Inches(0.15)
+        tf_sc.margin_left = tf_sc.margin_right = Inches(0.14)
+        tf_sc.margin_top = tf_sc.margin_bottom = Inches(0.06)
         p_sc = tf_sc.paragraphs[0]
         p_sc.text = f"{hero_stat}  "
         p_sc.font.name = theme.font_family_header
-        p_sc.font.size = Pt(17)
+        p_sc.font.size = Pt(16)
         p_sc.font.bold = True
         p_sc.font.color.rgb = RGBColor(180, 83, 9)
 
-        if constraints_card.get("hero_stat_label"):
+        if card_cfg.get("hero_stat_label"):
             r_sc = p_sc.add_run()
-            r_sc.text = str(constraints_card.get("hero_stat_label"))
+            r_sc.text = str(card_cfg.get("hero_stat_label"))
             r_sc.font.size = Pt(9.5)
             r_sc.font.bold = True
             r_sc.font.color.rgb = theme.get_rgb("primary")
-        hero_offset_y = 0.77
+        cur_y += stat_h + Inches(0.12)
 
-    # Bullets
-    bullets_y = bottom_top + Inches(0.78 + hero_offset_y)
-    bullets_h = Inches(1.45 if hero_stat else 2.10)
-    tb_b = slide.shapes.add_textbox(right_x + Inches(0.25), bullets_y, right_w - Inches(0.50), bullets_h)
-    tf_b = tb_b.text_frame
-    tf_b.word_wrap = True
-    tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
+    # Freeform Narrative / Bullets
+    c_bullets = card_cfg.get("bullets") or card_cfg.get("items") or []
+    body_text = card_cfg.get("body") or card_cfg.get("description")
+    inline_note = card_cfg.get("takeaway")
+    note_reserve = Inches(0.68) if inline_note else Inches(0.14)
+    bullets_h = max(Inches(0.60), (bottom_top + bottom_h) - cur_y - note_reserve)
 
-    c_bullets = constraints_card.get("bullets") or []
-    for b_i, b_item in enumerate(c_bullets):
-        _add_bullet_paragraph(
-            tf_b,
-            b_item,
-            theme.font_family,
-            font_size_pt=9.0,
-            font_color=theme.get_rgb("secondary"),
-            space_before_pt=6.0 if b_i > 0 else 0.0,
-        )
+    if c_bullets or body_text:
+        tb_b = slide.shapes.add_textbox(right_x + pad_x, cur_y, inner_w, bullets_h)
+        tf_b = tb_b.text_frame
+        tf_b.word_wrap = True
+        tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
+        if c_bullets:
+            for b_i, b_item in enumerate(c_bullets):
+                if isinstance(b_item, dict):
+                    lbl = str(b_item.get("label") or b_item.get("title") or "").strip()
+                    det = str(b_item.get("detail") or b_item.get("body") or b_item.get("description") or "").strip()
+                    fmt_item = f"**{lbl}:** {det}" if (lbl and det) else (lbl or det)
+                else:
+                    fmt_item = str(b_item)
+                _add_bullet_paragraph(
+                    tf_b,
+                    fmt_item,
+                    theme.font_family,
+                    font_size_pt=10.0,
+                    font_color=theme.get_rgb("secondary"),
+                    space_before_pt=7.0 if b_i > 0 else 0.0,
+                )
+        elif body_text:
+            p_bd = tf_b.paragraphs[0]
+            p_bd.text = str(body_text)
+            p_bd.font.name = theme.font_family
+            p_bd.font.size = Pt(10.0)
+            p_bd.font.color.rgb = theme.get_rgb("secondary")
 
-    # Takeaway Container
-    takeaway_text = constraints_card.get("takeaway")
-    if takeaway_text:
-        tb_rtake = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x + Inches(0.25), bottom_top + bottom_h - Inches(0.68), right_w - Inches(0.50), Inches(0.58))
+    if inline_note:
+        tb_rtake = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x + pad_x, bottom_top + bottom_h - Inches(0.64), inner_w, Inches(0.52))
         tb_rtake.fill.solid()
         tb_rtake.fill.fore_color.rgb = RGBColor(241, 245, 249)
         tb_rtake.line.color.rgb = RGBColor(203, 213, 225)
@@ -1257,13 +1280,16 @@ def build_gate_validation_slide(
         tf_rt.vertical_anchor = MSO_ANCHOR.MIDDLE
         tf_rt.margin_left = tf_rt.margin_right = Inches(0.12)
         p_rt = tf_rt.paragraphs[0]
-        p_rt.text = str(takeaway_text)
+        p_rt.text = str(inline_note)
         p_rt.font.name = theme.font_family_header
-        p_rt.font.size = Pt(8.5)
+        p_rt.font.size = Pt(9.0)
         p_rt.font.bold = True
         p_rt.font.color.rgb = RGBColor(30, 41, 59)
 
-    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+    if takeaway:
+        add_takeaway_bar(slide, theme, takeaway, top_y=Inches(6.28), left_x=left_x, width=total_w, height=Inches(0.54))
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
     return slide
 
 
@@ -1274,15 +1300,15 @@ def build_gate_validation_slide(
 def build_crisp_dm_gate_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "CRISP-DM LIFECYCLE & UC-1 DATA PREPARATION",
+    tracker: Optional[str] = None,
     action_title: str = "Data Preparation Is the Active Gate Deciding Machine Learning Feasibility",
-    subtitle: Optional[str] = "Phases 1 & 2 complete; Phase 3 holds the operational line before any model training begins.",
+    subtitle: Optional[str] = None,
     crisp_phases: Optional[List[Dict[str, Any]]] = None,
     prep_cards: Optional[List[Dict[str, Any]]] = None,
     takeaway: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders an executive presentation slide featuring:
@@ -1395,7 +1421,7 @@ def build_crisp_dm_gate_slide(
             np = ntf.paragraphs[0]
             np.text = p.get("num", f"{idx+1:02d}")
             np.font.name = theme.font_family_header
-            np.font.size = Pt(7.5)
+            np.font.size = Pt(8.0)
             np.font.bold = True
             np.font.color.rgb = RGBColor(255, 255, 255)
             np.alignment = PP_ALIGN.CENTER
@@ -1423,7 +1449,7 @@ def build_crisp_dm_gate_slide(
             cp = ctf.paragraphs[0]
             cp.text = p.get("num", f"{idx+1:02d}")
             cp.font.name = theme.font_family_header
-            cp.font.size = Pt(7.5)
+            cp.font.size = Pt(8.0)
             cp.font.bold = True
             cp.font.color.rgb = RGBColor(255, 255, 255)
             cp.alignment = PP_ALIGN.CENTER
@@ -1444,7 +1470,7 @@ def build_crisp_dm_gate_slide(
             np = ntf.paragraphs[0]
             np.text = p.get("num", f"{idx+1:02d}")
             np.font.name = theme.font_family_header
-            np.font.size = Pt(7.0)
+            np.font.size = Pt(8.0)
             np.font.bold = True
             np.font.color.rgb = RGBColor(148, 163, 184)
             np.alignment = PP_ALIGN.CENTER
@@ -1469,7 +1495,7 @@ def build_crisp_dm_gate_slide(
         st_tag = p.get("status", "PLANNED")
         lp2.text = f"[{st_tag}]"
         lp2.font.name = theme.font_family_header
-        lp2.font.size = Pt(7.2)
+        lp2.font.size = Pt(8.0)
         lp2.font.bold = True
         lp2.font.color.rgb = RGBColor(217, 119, 6) if is_hl else (theme.get_rgb("accent") if is_done else RGBColor(148, 163, 184))
         lp2.alignment = PP_ALIGN.CENTER
@@ -1586,7 +1612,7 @@ def build_crisp_dm_gate_slide(
         ep = etf.paragraphs[0]
         ep.text = f"STEP 0{c_i + 1} OF 04"
         ep.font.name = theme.font_family_header
-        ep.font.size = Pt(7.5)
+        ep.font.size = Pt(8.0)
         ep.font.bold = True
         ep.font.color.rgb = acc_rgb
 
@@ -1628,7 +1654,7 @@ def build_crisp_dm_gate_slide(
                 pm2 = met_tf.add_paragraph()
                 pm2.text = str(c.get("metric_label", "")).upper()
                 pm2.font.name = theme.font_family_header
-                pm2.font.size = Pt(7.5)
+                pm2.font.size = Pt(8.0)
                 pm2.font.bold = True
                 pm2.font.color.rgb = theme.get_rgb("secondary")
                 pm2.space_before = Pt(1)
@@ -1673,14 +1699,14 @@ def build_crisp_dm_gate_slide(
 def build_medallion_tiers_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "MEDALLION DATA TIER ELIGIBILITY ROSTER",
+    tracker: Optional[str] = None,
     action_title: str = "Silver Tables Provide Clean Feature Coverage; Bronze Requires Written Reason",
-    subtitle: Optional[str] = "Three stacked medallion tiers classify approved training sources, conditional audit replay, and barred marts.",
+    subtitle: Optional[str] = None,
     tiers: Optional[List[Dict[str, Any]]] = None,
     takeaway: Optional[str] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders an executive presentation slide featuring:

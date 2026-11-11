@@ -925,7 +925,7 @@ class PowerPointDiagramCompiler:
 
         # 5. Cards
         for box, name, sub in ((app1, "app1", "Device 1"), (app2, "app2", "Device 2"), (app3, "app3", "Device 3")):
-            self.add_card(slide, box.x, box.y, box.w, box.h, title=name, subtitle=sub, icon_emoji="🖥️")
+            self.add_card(slide, box.x, box.y, box.w, box.h, title=name, subtitle=sub)
 
         cdsw_svg = _REPO_ROOT / "assets" / "logos" / "cloudera" / "cloudera_cdsw.svg"
         self.add_card(
@@ -942,9 +942,9 @@ class PowerPointDiagramCompiler:
 
         # Warning Pills (above the task card)
         pill_y = task.y - 0.45
-        self.add_pill_badge(slide, x=task.x, y=pill_y, w=1.40, h=0.28, text="⚠️ BOTTLENECK",
+        self.add_pill_badge(slide, x=task.x, y=pill_y, w=1.40, h=0.28, text="BOTTLENECK",
                             bg_hex="#FEE2E2", text_hex="#DC2626", border_hex="#FECACA")
-        self.add_pill_badge(slide, x=task.x + 1.55, y=pill_y, w=1.55, h=0.28, text="⚠️ SYNCHRONOUS",
+        self.add_pill_badge(slide, x=task.x + 1.55, y=pill_y, w=1.55, h=0.28, text="SYNCHRONOUS",
                             bg_hex="#FEF3C7", text_hex="#B45309", border_hex="#FDE68A")
 
         # Step Bullet List
@@ -1036,7 +1036,7 @@ class PowerPointDiagramCompiler:
         # 5. Render Cards & Detailed Content
         self.add_card(
             slide, user_box.x, user_box.y, user_box.w, user_box.h,
-            title="User", subtitle="Operator / Client", icon_emoji="👤",
+            title="User", subtitle="Operator / Client",
             stroke_hex="#3B82F6", fill_hex="#FFFFFF",
         )
         notes_shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.58), Inches(3.55), Inches(1.34), Inches(3.35))
@@ -1068,14 +1068,14 @@ class PowerPointDiagramCompiler:
         p_desc = tf_n.add_paragraph()
         p_desc.text = "Triggers local executables on host workstation requiring hardware authorization."
         p_desc.font.name = "Arial"
-        p_desc.font.size = Pt(7.5)
+        p_desc.font.size = Pt(8.0)
         p_desc.font.color.rgb = _hex_to_rgb("#475569")
         p_desc.space_before = Pt(8)
 
         self.add_card(
             slide, exe_box.x, exe_box.y, exe_box.w, exe_box.h,
             title="EXE", subtitle="Client Executable\nCan be more than 1 type\nwith different programs",
-            icon_emoji="⚙️", stroke_hex="#3B82F6", fill_hex="#FFFFFF",
+            stroke_hex="#3B82F6", fill_hex="#FFFFFF",
         )
 
         sc_container = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(safe_box.x), Inches(safe_box.y), Inches(safe_box.w), Inches(safe_box.h))
@@ -1094,7 +1094,7 @@ class PowerPointDiagramCompiler:
         tf_sc = sc_hdr.text_frame
         tf_sc.vertical_anchor = MSO_ANCHOR.MIDDLE
         p_sc0 = tf_sc.paragraphs[0]
-        p_sc0.text = "🛡️ Safe Checker"
+        p_sc0.text = "Safe Checker"
         p_sc0.alignment = PP_ALIGN.CENTER
         p_sc0.font.name = "Arial"
         p_sc0.font.size = Pt(11)
@@ -1133,7 +1133,7 @@ class PowerPointDiagramCompiler:
         tf_api = send_api_box.text_frame
         tf_api.vertical_anchor = MSO_ANCHOR.MIDDLE
         p_api = tf_api.paragraphs[0]
-        p_api.text = "📤 Send request API ke CDSW"
+        p_api.text = "Send request API ke CDSW"
         p_api.alignment = PP_ALIGN.CENTER
         p_api.font.name = "Arial"
         p_api.font.size = Pt(9.0)
@@ -1143,7 +1143,7 @@ class PowerPointDiagramCompiler:
         p_api2.text = "Payload: MAC + Client Identity"
         p_api2.alignment = PP_ALIGN.CENTER
         p_api2.font.name = "Arial"
-        p_api2.font.size = Pt(7.5)
+        p_api2.font.size = Pt(8.0)
         p_api2.font.color.rgb = _hex_to_rgb("#0284C7")
 
         rec_box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.90), Inches(3.76), Inches(2.15), Inches(0.48))
@@ -1155,7 +1155,7 @@ class PowerPointDiagramCompiler:
         tf_rec = rec_box.text_frame
         tf_rec.vertical_anchor = MSO_ANCHOR.MIDDLE
         p_rec = tf_rec.paragraphs[0]
-        p_rec.text = "📥 Receive Status"
+        p_rec.text = "Receive Status"
         p_rec.alignment = PP_ALIGN.CENTER
         p_rec.font.name = "Arial"
         p_rec.font.size = Pt(9.0)
@@ -1165,7 +1165,7 @@ class PowerPointDiagramCompiler:
         p_rec2.text = "Status: Allowed / Not Allowed"
         p_rec2.alignment = PP_ALIGN.CENTER
         p_rec2.font.name = "Arial"
-        p_rec2.font.size = Pt(7.5)
+        p_rec2.font.size = Pt(8.0)
         p_rec2.font.color.rgb = _hex_to_rgb("#D97706")
 
         tb_ie = slide.shapes.add_textbox(Inches(4.90), Inches(4.30), Inches(2.15), Inches(0.25))
@@ -1254,10 +1254,10 @@ class PowerPointDiagramCompiler:
         )
 
         pill_y = task_box.y - 0.45
-        self.add_pill_badge(slide, x=task_box.x, y=pill_y, w=0.85, h=0.28, text="⚠️ BOTTLENECK",
-                            bg_hex="#FEE2E2", text_hex="#DC2626", border_hex="#FECACA", font_pt=7.5)
-        self.add_pill_badge(slide, x=task_box.x + 0.90, y=pill_y, w=0.85, h=0.28, text="⚠️ SYNCHRONOUS",
-                            bg_hex="#FEF3C7", text_hex="#B45309", border_hex="#FDE68A", font_pt=7.5)
+        self.add_pill_badge(slide, x=task_box.x, y=pill_y, w=0.85, h=0.28, text="BOTTLENECK",
+                            bg_hex="#FEE2E2", text_hex="#DC2626", border_hex="#FECACA", font_pt=8.0)
+        self.add_pill_badge(slide, x=task_box.x + 0.90, y=pill_y, w=0.85, h=0.28, text="SYNCHRONOUS",
+                            bg_hex="#FEF3C7", text_hex="#B45309", border_hex="#FDE68A", font_pt=8.0)
 
         self.add_bullet_list(
             slide, x=task_box.x, y=3.20, w=1.75, h=1.65,
@@ -1349,7 +1349,7 @@ class PowerPointDiagramCompiler:
 
         # 5. Cards
         for box, name, sub in ((app1, "app1", "Device 1"), (app2, "app2", "Device 2"), (app3, "app3", "Device 3")):
-            self.add_card(slide, box.x, box.y, box.w, box.h, title=name, subtitle=sub, icon_emoji="🖥️")
+            self.add_card(slide, box.x, box.y, box.w, box.h, title=name, subtitle=sub)
 
         gw_svg = _REPO_ROOT / "assets" / "logos" / "aws" / "aws_api_gateway.svg"
         self.add_card(
@@ -1466,7 +1466,7 @@ class PowerPointDiagramCompiler:
         p_lth.font.bold = True
         p_lth.font.color.rgb = _hex_to_rgb("#991B1B")
 
-        self.add_pill_badge(slide, x=5.05, y=box_y + 0.08, w=1.35, h=0.25, text="⚠️ BOTTLENECK", bg_hex="#FEE2E2", text_hex="#DC2626", border_hex="#FECACA", font_pt=8.0)
+        self.add_pill_badge(slide, x=5.05, y=box_y + 0.08, w=1.35, h=0.25, text="BOTTLENECK", bg_hex="#FEE2E2", text_hex="#DC2626", border_hex="#FECACA", font_pt=8.0)
 
         left_bullets = [
             "Execution Topology: Monolithic scheduled batch runner running on shared CDSW cluster node.",

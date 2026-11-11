@@ -61,7 +61,6 @@ nodes:
     y: 1.95
     w: 1.40
     h: 1.10
-    icon_emoji: "🖥️"
     stroke_hex: "#3B82F6"
     fill_hex: "#FFFFFF"
     stroke_width: 2.0
@@ -74,7 +73,6 @@ nodes:
     y: 5.15
     w: 1.15
     h: 1.20
-    icon_emoji: "🖥️"
     stroke_hex: "#3B82F6"
     fill_hex: "#FFFFFF"
     stroke_width: 2.0
@@ -87,7 +85,6 @@ nodes:
     y: 5.15
     w: 1.15
     h: 1.20
-    icon_emoji: "🖥️"
     stroke_hex: "#3B82F6"
     fill_hex: "#FFFFFF"
     stroke_width: 2.0
@@ -124,7 +121,7 @@ badges:
     y: 1.70
     w: 1.45
     h: 0.28
-    text: "⚠️ BOTTLENECK"
+    text: "BOTTLENECK"
     bg_hex: "#FEE2E2"
     text_hex: "#DC2626"
     border_hex: "#FECACA"
@@ -134,7 +131,7 @@ badges:
     y: 1.70
     w: 1.55
     h: 0.28
-    text: "⚠️ SYNCHRONOUS"
+    text: "SYNCHRONOUS"
     bg_hex: "#FEF3C7"
     text_hex: "#B45309"
     border_hex: "#FDE68A"

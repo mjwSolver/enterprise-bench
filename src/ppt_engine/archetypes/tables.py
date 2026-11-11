@@ -26,7 +26,7 @@ from src.ppt_engine.text_formatting import append_formatted_runs, set_formatted_
 from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex, strip_shape_shadows
 
 from .common import (
-    add_slide_with_background, add_slide_header, add_card, add_slide_footer, add_takeaway_bar,
+    add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_slide_footer, add_takeaway_bar,
     _interpolate_color, _add_status_pill, _add_bullet_paragraph,
 )
 
@@ -42,12 +42,12 @@ class FeatureScorecardRow:
 
 @dataclass
 class FeatureMatrixData:
-    """Dataset for an executive platform scorecard with Harvey Balls."""
+    """Dataset for an executive platform scorecard."""
     columns: List[str] = field(default_factory=list)
     rows: List[FeatureScorecardRow] = field(default_factory=list)
-    recommendation_badge: str = "RECOMMENDED ARCHITECTURE"
-    recommended_column: str = "Snowflake Data Cloud"
-    footnote: str = "Harvey Balls: ● Full Native Support | ◐ Partial / Requires Extension | ○ Complex / Unsupported"
+    recommendation_badge: Optional[str] = None
+    recommended_column: Optional[str] = None
+    footnote: Optional[str] = None
 
 
 def _default_feature_matrix_data() -> FeatureMatrixData:
@@ -92,17 +92,17 @@ def _default_feature_matrix_data() -> FeatureMatrixData:
 def build_feature_matrix_slide(
     prs_or_slide: Any,
     theme: Optional[Theme] = None,
-    tracker: str = "ARCHITECTURE EVALUATION | PLATFORM BENCHMARK",
+    tracker: Optional[str] = None,
     action_title: str = "Snowflake AI Data Cloud Demonstrates Superior Capabilities Across Core Evaluation Criteria",
-    subtitle: Optional[str] = "Multi-dimensional comparative assessment evaluating compute elasticity, data governance, and native AI integration.",
+    subtitle: Optional[str] = None,
     matrix_data: Optional[FeatureMatrixData] = None,
     current_idx: int = 5,
     total_slides: int = 10,
     notice: Optional[str] = None,
 ) -> Any:
     """
-    Renders an executive feature evaluation matrix slide utilizing Harvey Balls glyphs
-    (●, ◐, ○) and highlighting the recommended platform choice.
+    Renders an executive feature evaluation matrix slide (supports Harvey Balls or plain labels)
+    with strictly opt-in recommendation highlighting and footnote legends.
     """
     if theme is None:
         theme = get_theme("default")
@@ -121,14 +121,18 @@ def build_feature_matrix_slide(
     bg.line.fill.background()
 
     # 2. Unified Header Frame
-    add_slide_header(slide, theme, tracker=tracker, title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, title=action_title, subtitle=subtitle)
 
-    # 3. Canvas Table Layout Bounds
+    # 3. Canvas Table Layout Bounds (Dynamic below header + reclaims space if footnote omitted)
     table_left = Inches(0.80)
-    table_top = Inches(1.85)
+    table_top = resolve_content_top(header_bottom, gap_in=0.20)
     table_w = Inches(11.733)
     hdr_h = Inches(0.42)
-    row_h = Inches(0.70)
+    bottom_limit = Inches(6.24 if data.footnote else 6.86)
+    n_rows = max(1, len(data.rows))
+    row_gap = Inches(0.06)
+    avail_rows_h = max(Inches(2.50), bottom_limit - table_top - hdr_h - row_gap)
+    row_h = min(Inches(0.82), max(Inches(0.42), (avail_rows_h - (row_gap * max(0, n_rows - 1))) / n_rows))
 
     platforms = data.columns
     cat_w = Inches(2.20)
@@ -147,14 +151,15 @@ def build_feature_matrix_slide(
         tb = slide.shapes.add_textbox(x, table_top, w, hdr_h)
         tf = tb.text_frame
         tf.word_wrap = True
-        tf.margin_top = Inches(0.08)
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.margin_top = tf.margin_bottom = 0
         p = tf.paragraphs[0]
         p.alignment = align
         p.text = text
         p.font.name = theme.font_family_header
-        p.font.size = Pt(8.5)
+        p.font.size = Pt(9.0)
         p.font.bold = True
-        p.font.color.rgb = theme.get_rgb("accent") if is_rec else RGBColor(255, 255, 255)
+        p.font.color.rgb = RGBColor(147, 197, 253) if is_rec else RGBColor(255, 255, 255)
 
     _add_hdr_txt(table_left + Inches(0.12), cat_w - Inches(0.12), "DOMAIN / CATEGORY")
     _add_hdr_txt(table_left + cat_w + Inches(0.10), crit_w - Inches(0.10), "EVALUATION CRITERIA")
@@ -187,62 +192,69 @@ def build_feature_matrix_slide(
         rc.line.width = Pt(0.75)
 
         # Category cell
-        tb_cat = slide.shapes.add_textbox(table_left + Inches(0.12), cur_y + Inches(0.12), cat_w - Inches(0.18), row_h - Inches(0.20))
+        tb_cat = slide.shapes.add_textbox(table_left + Inches(0.12), cur_y + Inches(0.10), cat_w - Inches(0.18), row_h - Inches(0.20))
         tf_cat = tb_cat.text_frame
         tf_cat.word_wrap = True
+        tf_cat.vertical_anchor = MSO_ANCHOR.MIDDLE
         p_c = tf_cat.paragraphs[0]
         p_c.text = row.category
         p_c.font.name = theme.font_family_header
-        p_c.font.size = Pt(9.0)
+        p_c.font.size = Pt(10.0)
         p_c.font.bold = True
         p_c.font.color.rgb = theme.get_rgb("primary")
 
         # Criteria cell
-        tb_crit = slide.shapes.add_textbox(table_left + cat_w + Inches(0.10), cur_y + Inches(0.12), crit_w - Inches(0.20), row_h - Inches(0.20))
+        tb_crit = slide.shapes.add_textbox(table_left + cat_w + Inches(0.10), cur_y + Inches(0.10), crit_w - Inches(0.20), row_h - Inches(0.20))
         tf_crit = tb_crit.text_frame
         tf_crit.word_wrap = True
+        tf_crit.vertical_anchor = MSO_ANCHOR.MIDDLE
         p_cr = tf_crit.paragraphs[0]
         p_cr.text = row.criteria
         p_cr.font.name = theme.font_family
-        p_cr.font.size = Pt(9.5)
+        p_cr.font.size = Pt(10.0)
         p_cr.font.color.rgb = theme.get_rgb("secondary")
 
         # Platform scores
         for p_idx, plat in enumerate(platforms):
             px = table_left + cat_w + crit_w + p_idx * plat_w
-            score_raw = row.scores.get(plat, "○")
-            glyph = harvey_glyph_map.get(score_raw.upper() if isinstance(score_raw, str) else "", "○")
+            score_raw = row.scores.get(plat, "-")
+            mapped = harvey_glyph_map.get(score_raw.upper().strip() if isinstance(score_raw, str) else "")
+            glyph = mapped if mapped is not None else str(score_raw)
 
-            is_rec = (plat == data.recommended_column)
+            is_rec = bool(data.recommended_column and plat == data.recommended_column)
             if is_rec:
                 col_hl = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, px + Inches(0.04), cur_y + Inches(0.04), plat_w - Inches(0.08), row_h - Inches(0.08))
                 col_hl.fill.solid()
                 col_hl.fill.fore_color.rgb = RGBColor(241, 245, 249)
                 col_hl.line.fill.background()
 
-            tb_sc = slide.shapes.add_textbox(px, cur_y + Inches(0.14), plat_w, Inches(0.35))
+            tb_sc = slide.shapes.add_textbox(px, cur_y + Inches(0.08), plat_w, row_h - Inches(0.16))
             tf_sc = tb_sc.text_frame
+            tf_sc.vertical_anchor = MSO_ANCHOR.MIDDLE
             p_s = tf_sc.paragraphs[0]
             p_s.alignment = PP_ALIGN.CENTER
             p_s.text = glyph
             p_s.font.name = theme.font_family_header
-            p_s.font.size = Pt(16.0)
+            p_s.font.size = Pt(16.0 if glyph in ("●", "◐", "○") else 10.5)
             p_s.font.bold = True
             if glyph == "●":
                 p_s.font.color.rgb = RGBColor(16, 185, 129) if is_rec else theme.get_rgb("primary")
             elif glyph == "◐":
                 p_s.font.color.rgb = RGBColor(245, 158, 11)  # Amber
-            else:
+            elif glyph == "○":
                 p_s.font.color.rgb = RGBColor(148, 163, 184)  # Slate-400
+            else:
+                p_s.font.color.rgb = theme.get_rgb("primary")
 
-        # Impact Badge
-        tb_imp = slide.shapes.add_textbox(table_left + cat_w + crit_w + len(platforms) * plat_w, cur_y + Inches(0.16), impact_w, Inches(0.35))
+        # Impact Badge (Scaled cleanly to 10.0pt to match spacious cells)
+        tb_imp = slide.shapes.add_textbox(table_left + cat_w + crit_w + len(platforms) * plat_w, cur_y + Inches(0.08), impact_w, row_h - Inches(0.16))
         tf_imp = tb_imp.text_frame
+        tf_imp.vertical_anchor = MSO_ANCHOR.MIDDLE
         p_im = tf_imp.paragraphs[0]
         p_im.alignment = PP_ALIGN.CENTER
         p_im.text = row.business_impact.upper()
         p_im.font.name = theme.font_family_header
-        p_im.font.size = Pt(8.0)
+        p_im.font.size = Pt(10.0)
         p_im.font.bold = True
         if row.business_impact.upper() in ("CRITICAL", "HIGH"):
             p_im.font.color.rgb = RGBColor(220, 38, 38)
@@ -251,16 +263,17 @@ def build_feature_matrix_slide(
 
         cur_y += row_h + Inches(0.06)
 
-    # 5. Recommendation callout & Footnote
-    foot_y = cur_y + Inches(0.15)
-    tb_fn = slide.shapes.add_textbox(table_left, foot_y, table_w, Inches(0.30))
-    tf_fn = tb_fn.text_frame
-    p_fn = tf_fn.paragraphs[0]
-    p_fn.text = data.footnote
-    p_fn.font.name = theme.font_family
-    p_fn.font.size = Pt(8.0)
-    p_fn.font.italic = True
-    p_fn.font.color.rgb = RGBColor(100, 116, 139)
+    # 5. Strictly Opt-In Footnote / Legend
+    if data.footnote and str(data.footnote).strip():
+        foot_y = cur_y + Inches(0.12)
+        tb_fn = slide.shapes.add_textbox(table_left, foot_y, table_w, Inches(0.30))
+        tf_fn = tb_fn.text_frame
+        p_fn = tf_fn.paragraphs[0]
+        p_fn.text = str(data.footnote).strip()
+        p_fn.font.name = theme.font_family
+        p_fn.font.size = Pt(8.5)
+        p_fn.font.italic = True
+        p_fn.font.color.rgb = RGBColor(100, 116, 139)
 
     # 6. Slide Footer
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
@@ -399,9 +412,9 @@ def _render_table_row(
 def build_table_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str = "PROJECT GOVERNANCE | STAGE-GATE REGISTER",
+    tracker: Optional[str] = None,
     action_title: str = "Structured Governance Register Establishes Accountabilities and Timelines",
-    subtitle: Optional[str] = "Detailed tracking matrix with designated owners, baseline targets, and delivery statuses.",
+    subtitle: Optional[str] = None,
     columns: Optional[List[TableColumnDef]] = None,
     rows: Optional[List[List[Any]]] = None,
     detached_rows: Optional[List[List[Any]]] = None,
@@ -410,14 +423,14 @@ def build_table_slide(
     takeaway: Optional[Dict[str, Any]] = None,
     current_idx: int = 1,
     total_slides: int = 1,
-    notice: str = "Enterprise Strategy Group  |  Confidential & Proprietary",
+    notice: Optional[str] = None,
 ) -> Any:
     """
     Renders an executive consulting table/matrix slide using sharp vector cards.
     Includes primary color header band, alternating row shading, dynamic status pills, and footnotes.
     """
     slide = add_slide_with_background(prs, theme)
-    add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
+    header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     if not columns or not rows:
         add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
@@ -425,7 +438,7 @@ def build_table_slide(
 
     start_x = Inches(0.80)
     total_w = Inches(11.733)
-    header_y = Inches(1.72)
+    header_y = resolve_content_top(header_bottom, gap_in=0.20)
     header_h = Inches(0.38)
 
     # Normalize column widths to sum exactly to total_w
@@ -481,18 +494,21 @@ def build_table_slide(
     d_rows = list(detached_rows) if detached_rows else []
     n_detached = len(d_rows)
     connector_gap = Inches(0.46) if n_detached > 0 else Inches(0)
-    avail_row_h = Inches(4.70) if not footnote else Inches(4.45)
+    row_start_y = header_y + header_h
+    bottom_bound = Inches(6.68 if footnote else 6.86)
+    avail_row_h = max(Inches(2.40), bottom_bound - row_start_y)
     total_data_rows = num_rows + n_detached
 
     if takeaway:
         is_two_row_tk = isinstance(takeaway, dict) and bool(takeaway.get("title") and takeaway.get("description"))
-        avail_table_h = (Inches(2.80) if footnote else Inches(3.00)) if is_two_row_tk else (Inches(3.75) if footnote else Inches(4.00))
+        tk_bottom = Inches(5.32 if is_two_row_tk else 6.08)
+        if footnote:
+            tk_bottom -= Inches(0.24)
+        avail_table_h = max(Inches(1.80), tk_bottom - row_start_y)
         row_h = min(Inches(0.56), max(Inches(0.30), (avail_table_h - connector_gap) / total_data_rows))
     else:
         max_h = Inches(0.65) if total_data_rows <= 5 else Inches(0.50)
         row_h = min(max_h, max(Inches(0.30), (avail_row_h - connector_gap) / total_data_rows))
-
-    row_start_y = header_y + header_h
 
     status_keywords = {
         "COMPLETE", "COMPLETED", "IN PROGRESS", "ON TRACK", "RESCHEDULED", "PLANNED",

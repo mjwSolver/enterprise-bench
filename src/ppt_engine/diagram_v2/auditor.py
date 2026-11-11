@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple
 
+from src.ppt_engine.archetypes.common import find_emojis
 from src.ppt_engine.diagram_v2.models import (
     DiagramSpec,
     DeckHeaderContract,
@@ -241,6 +242,7 @@ class Tier1GeometricLinter:
     def lint(self) -> List[AuditIssue]:
         """Runs the complete suite of deterministic Tier 1 geometric linting checks."""
         issues: List[AuditIssue] = []
+        issues.extend(self.check_zero_emojis())
         issues.extend(self.check_node_collisions())
         issues.extend(self.check_container_badge_occlusion())
         issues.extend(self.check_container_label_occlusion())
@@ -266,6 +268,60 @@ class Tier1GeometricLinter:
     # Alias for backward compatibility
     def audit(self) -> List[AuditIssue]:
         return self.lint()
+
+    # =========================================================================
+    # Rule 0: Zero-Emoji Hard Gate
+    # =========================================================================
+    def check_zero_emojis(self) -> List[AuditIssue]:
+        """Rejects emojis in node icon_emoji fields, titles, subtitles, labels, or bullets."""
+        issues: List[AuditIssue] = []
+
+        def _flag(elem_id: str, field_name: str, text: Optional[str]) -> None:
+            if not text:
+                return
+            hits = find_emojis(str(text))
+            if hits:
+                issues.append(AuditIssue(
+                    severity="CRITICAL",
+                    category="ZERO_EMOJI_VIOLATION",
+                    element_id=elem_id,
+                    description=(
+                        f"Element '{elem_id}' contains forbidden emoji(s) {hits} in '{field_name}'. "
+                        "Use crisp SVG icons, numeric indices, or plain text instead."
+                    ),
+                    suggested_fix=f"Strip emojis from '{field_name}' on '{elem_id}' (use SVG icon_path or clean typography).",
+                ))
+
+        _flag("spec.name", "name", self.spec.name)
+        _flag("header.action_title", "action_title", self.spec.header.action_title)
+        _flag("header.subtitle", "subtitle", self.spec.header.subtitle)
+        _flag("header.tracker", "tracker", self.spec.header.tracker)
+        for c in self.spec.containers:
+            _flag(c.id, "label", c.label)
+            _flag(c.id, "tag_badge", c.tag_badge)
+        for n in self.spec.nodes:
+            if n.icon_emoji and str(n.icon_emoji).strip():
+                issues.append(AuditIssue(
+                    severity="CRITICAL",
+                    category="ZERO_EMOJI_VIOLATION",
+                    element_id=n.id,
+                    description=f"Node '{n.id}' sets forbidden icon_emoji='{n.icon_emoji}'. Emojis are disabled system-wide.",
+                    suggested_fix=f"Remove icon_emoji from node '{n.id}' and use a local SVG icon or plain typography.",
+                ))
+            _flag(n.id, "title", n.title)
+            _flag(n.id, "subtitle", n.subtitle)
+            _flag(n.id, "kicker", n.kicker)
+            for b in (n.bullets or []):
+                _flag(n.id, "bullets", b)
+        for f in self.spec.flows:
+            _flag(f.id or "flow", "label", f.label)
+        for b in self.spec.badges:
+            _flag(b.id or "badge", "text", b.text)
+        for bl in self.spec.bullet_lists:
+            for item in bl.items:
+                _flag(bl.id or "bullet_list", "items", item)
+
+        return issues
 
     # =========================================================================
     # Rule 1: Node-on-Node Collisions & Insufficient Gutter (Clearance Halo Matrix)
@@ -1371,8 +1427,8 @@ class Tier1GeometricLinter:
             if t_pt > 9.5:
                 t_pt -= 0.5
                 can_shrink = True
-            if s_pt > 7.5:
-                s_pt -= 0.25
+            if s_pt > 8.0:
+                s_pt = max(8.0, s_pt - 0.25)
                 can_shrink = True
             if has_icon and icon > 0.24:
                 icon -= 0.02
@@ -1543,7 +1599,7 @@ class Tier1GeometricLinter:
                     f"Flow connectors use {len(flow_pts)} distinct font sizes ({sorted(flow_pts)}pt), "
                     f"exceeding standard limit of 1 consistent size across flow labels."
                 ),
-                suggested_fix="Standardize all flow label font sizes to canonical font_pt: 7.5.",
+                suggested_fix="Standardize all flow label font sizes to canonical font_pt: 8.5.",
             ))
 
         badge_pts = {round(b.font_pt, 1) for b in self.spec.badges}
@@ -1856,7 +1912,7 @@ class Tier1GeometricLinter:
                 sub_font = n.subtitle_pt if n.subtitle_pt is not None else eff_s
 
                 # Unconditional < 8pt failure (illegible even on appendix)
-                if title_font < 8.0 or (n.subtitle and sub_font < 7.5):
+                if title_font < 8.0 or (n.subtitle and sub_font < 8.0):
                     sub_8pt_nodes.append((n.id, title_font, sub_font))
                 elif not container_bypass:
                     # Standard mode: card titles must maintain standard floor (>= 10.5pt) and subtitles >= 8.0pt

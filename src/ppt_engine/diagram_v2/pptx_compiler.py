@@ -388,8 +388,8 @@ class PPTXCompiler:
             if t_pt > 9.5:
                 t_pt -= 0.5
                 shrunk = True
-            if s_pt > 7.5:
-                s_pt -= 0.25
+            if s_pt > 8.0:
+                s_pt = max(8.0, s_pt - 0.25)
                 shrunk = True
             if has_icon and icon > 0.24:
                 icon -= 0.02
