@@ -149,7 +149,7 @@ def import_asset_library_cli(
 
 @asset_app.command("fetch-logo")
 def fetch_logo_cli(
-    domain_or_url: str = typer.Argument(..., help="Domain name (e.g. 'morulaivf.co.id') or direct logo image URL"),
+    domain_or_url: str = typer.Argument(..., help="Domain name (e.g. 'example.com') or direct logo image URL"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Explicit destination file path (.png or .svg)"),
     name: Optional[str] = typer.Option(None, "--name", "-n", help="Asset key / file stem name (defaults to domain slug)"),
 ) -> None:

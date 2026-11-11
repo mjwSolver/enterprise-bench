@@ -172,6 +172,7 @@ def render_hero_kpi_widget(
         st_h = Pt(4.0)
         stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, by, bw, st_h)
         stripe.shadow.inherit = False
+        strip_shape_shadows(stripe)
         stripe.fill.solid()
         stripe.fill.fore_color.rgb = theme.get_rgb(accent_key)
         stripe.line.fill.background()
@@ -229,6 +230,7 @@ def render_hero_kpi_widget(
         Pt(0.75),
     )
     h_div.shadow.inherit = False
+    strip_shape_shadows(h_div)
     h_div.fill.solid()
     h_div.fill.fore_color.rgb = hex_to_rgb("#334155") if is_filled else theme.get_rgb("border")
     h_div.line.fill.background()
@@ -274,6 +276,7 @@ def render_card_list_widget(
         hdr_h = Inches(0.32)
         h_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, by, bw, hdr_h)
         h_card.shadow.inherit = False
+        strip_shape_shadows(h_card)
         h_card.fill.solid()
         h_card.fill.fore_color.rgb = theme.get_rgb(cfg.get("header_bg_key", "primary"))
         h_card.line.fill.background()
@@ -336,6 +339,7 @@ def render_card_list_widget(
             if use_stripe:
                 st = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, item_y, Pt(4.0), item_h)
                 st.shadow.inherit = False
+                strip_shape_shadows(st)
                 st.fill.solid()
                 st.fill.fore_color.rgb = accent_rgb
                 st.line.fill.background()
@@ -374,6 +378,7 @@ def render_card_list_widget(
                 to_emu(max(Inches(0.24), item_h - v_pad * 2)),
             )
             v_div.shadow.inherit = False
+            strip_shape_shadows(v_div)
             v_div.fill.solid()
             v_div.fill.fore_color.rgb = theme.get_rgb("border")
             v_div.line.fill.background()
@@ -451,6 +456,7 @@ def render_card_list_widget(
                 Pt(0.75),
             )
             div.shadow.inherit = False
+            strip_shape_shadows(div)
             div.fill.solid()
             div.fill.fore_color.rgb = theme.get_rgb("border")
             div.line.fill.background()
@@ -580,6 +586,7 @@ def render_process_steps_widget(
             # Top accent stripe
             top_st = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, sx, by, step_w, Pt(3.5))
             top_st.shadow.inherit = False
+            strip_shape_shadows(top_st)
             top_st.fill.solid()
             top_st.fill.fore_color.rgb = theme.get_rgb(accent_key)
             top_st.line.fill.background()
@@ -649,6 +656,7 @@ def render_process_steps_widget(
             # Left stripe
             left_st = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, sy, Pt(3.5), step_h)
             left_st.shadow.inherit = False
+            strip_shape_shadows(left_st)
             left_st.fill.solid()
             left_st.fill.fore_color.rgb = theme.get_rgb(accent_key)
             left_st.line.fill.background()
@@ -989,6 +997,7 @@ def render_code_block_widget(
     hdr_h = Inches(0.36)
     hdr = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, by, bw, hdr_h)
     hdr.shadow.inherit = False
+    strip_shape_shadows(hdr)
     hdr.fill.solid()
     hdr.fill.fore_color.rgb = theme.get_rgb("primary")
     hdr.line.fill.background()
@@ -1016,6 +1025,7 @@ def render_code_block_widget(
             if m_idx > 0:
                 v_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, mx, to_emu(curr_y + Inches(0.06)), Pt(0.75), to_emu(met_h - Inches(0.14)))
                 v_div.shadow.inherit = False
+                strip_shape_shadows(v_div)
                 v_div.fill.solid()
                 v_div.fill.fore_color.rgb = theme.get_rgb("border")
                 v_div.line.fill.background()
@@ -1043,6 +1053,7 @@ def render_code_block_widget(
         # Bottom hairline separator before code well
         h_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, to_emu(bx + Inches(0.12)), to_emu(curr_y + met_h), to_emu(bw - Inches(0.24)), Pt(0.75))
         h_div.shadow.inherit = False
+        strip_shape_shadows(h_div)
         h_div.fill.solid()
         h_div.fill.fore_color.rgb = theme.get_rgb("border")
         h_div.line.fill.background()
@@ -1064,6 +1075,7 @@ def render_code_block_widget(
         max(Inches(0.60), sql_h),
     )
     code_well.shadow.inherit = False
+    strip_shape_shadows(code_well)
     code_well.fill.solid()
     code_well.fill.fore_color.rgb = hex_to_rgb("#F8FAFC")
     code_well.line.color.rgb = theme.get_rgb("border")
@@ -1203,6 +1215,7 @@ def render_image_widget(
             div_w = to_emu(bw - cap_pad_x * 2)
             div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, to_emu(bx + cap_pad_x), to_emu(by + img_box_h + Inches(0.02)), div_w, Pt(0.75))
             div.shadow.inherit = False
+            strip_shape_shadows(div)
             div.fill.solid()
             div.fill.fore_color.rgb = theme.get_rgb("border")
             div.line.fill.background()
@@ -1290,6 +1303,7 @@ def _render_top_kpi_strip(
         # Thin semantic left accent rule (clean, non-boxy indicator)
         bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, kx, top, Pt(3.5), height)
         bar.shadow.inherit = False
+        strip_shape_shadows(bar)
         bar.fill.solid()
         bar.fill.fore_color.rgb = col_rgb
         bar.line.fill.background()

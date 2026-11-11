@@ -661,6 +661,71 @@ class SlideValidator:
             except Exception:
                 pass
 
+            # Check OpenXML Zero Drop Shadows Invariant (explicit outerShdw or unstripped theme effectRef)
+            try:
+                sp = getattr(shape, "_element", None)
+                if sp is not None and getattr(shape, "shape_type", None) in (MSO_SHAPE_TYPE.AUTO_SHAPE, MSO_SHAPE_TYPE.FREEFORM):
+                    sp_pr = getattr(sp, "spPr", None)
+                    has_explicit_empty_eff = False
+                    if sp_pr is not None:
+                        for child in sp_pr:
+                            if child.tag.endswith("outerShdw"):
+                                issues.append(
+                                    ValidationIssue(
+                                        check_id="CHECK_5_THEME_GEOMETRY",
+                                        check_name="Zero Drop Shadows Compliance",
+                                        slide_number=slide_num,
+                                        severity=Severity.ERROR,
+                                        message="Shape contains OpenXML drop shadow (<a:outerShdw>).",
+                                        shape_id=str(getattr(shape, "shape_id", "")),
+                                        shape_name=getattr(shape, "name", "Shape"),
+                                        found_value="a:outerShdw",
+                                        expected_threshold="strip_shape_shadows() / empty <a:effectLst/>",
+                                        fix_suggestion="Strip shadows via strip_shape_shadows(shape).",
+                                    )
+                                )
+                            elif child.tag.endswith("effectLst"):
+                                if any(sub.tag.endswith("outerShdw") for sub in child):
+                                    issues.append(
+                                        ValidationIssue(
+                                            check_id="CHECK_5_THEME_GEOMETRY",
+                                            check_name="Zero Drop Shadows Compliance",
+                                            slide_number=slide_num,
+                                            severity=Severity.ERROR,
+                                            message="Shape <a:effectLst> contains <a:outerShdw> drop shadow.",
+                                            shape_id=str(getattr(shape, "shape_id", "")),
+                                            shape_name=getattr(shape, "name", "Shape"),
+                                            found_value="a:outerShdw",
+                                            expected_threshold="empty <a:effectLst/>",
+                                            fix_suggestion="Strip shadows via strip_shape_shadows(shape).",
+                                        )
+                                    )
+                                elif len(child) == 0:
+                                    has_explicit_empty_eff = True
+                    style_el = sp.find("{http://schemas.openxmlformats.org/presentationml/2006/main}style")
+                    if style_el is not None:
+                        eff_ref = style_el.find("{http://schemas.openxmlformats.org/drawingml/2006/main}effectRef")
+                        if eff_ref is not None and eff_ref.get("idx", "0") != "0":
+                            issues.append(
+                                ValidationIssue(
+                                    check_id="CHECK_5_THEME_GEOMETRY",
+                                    check_name="Zero Drop Shadows Compliance",
+                                    slide_number=slide_num,
+                                    severity=Severity.WARNING if has_explicit_empty_eff else Severity.ERROR,
+                                    message=(
+                                        f"Shape retains non-zero theme <a:effectRef idx=\"{eff_ref.get('idx')}\">"
+                                        + (" alongside <a:effectLst/>." if has_explicit_empty_eff else " without <a:effectLst/>.")
+                                    ),
+                                    shape_id=str(getattr(shape, "shape_id", "")),
+                                    shape_name=getattr(shape, "name", "Shape"),
+                                    found_value=f"effectRef idx={eff_ref.get('idx')}",
+                                    expected_threshold="idx='0' + empty <a:effectLst/>",
+                                    fix_suggestion="Call strip_shape_shadows(shape) to enforce flat vector styling.",
+                                )
+                            )
+            except Exception:
+                pass
+
         return issues
 
 

@@ -58,6 +58,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
@@ -122,7 +123,7 @@ from src.ppt_engine.reference_slides import (
     build_snowflake_data_pipeline_slide,
     build_snowflake_platform_architecture_slide,
 )
-from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb
+from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, strip_shape_shadows
 
 logger = logging.getLogger(__name__)
 
@@ -911,23 +912,27 @@ class PitchDeckBuilder:
             )
 
         elif arch in ("feature_matrix", "harvey_balls"):
+            from src.ppt_engine.archetypes.tables import FeatureScorecardRow
+
             m_raw = cfg.get("matrix_data")
             m_data = None
             if m_raw and isinstance(m_raw, dict):
                 f_rows = []
                 for r in (m_raw.get("rows") or []):
                     if isinstance(r, dict):
-                        from src.ppt_engine.consulting_archetypes import FeatureScorecardRow
                         f_rows.append(FeatureScorecardRow(
                             category=r.get("category", ""),
                             criteria=r.get("criteria", ""),
                             scores=r.get("scores") or {},
-                            business_impact=r.get("business_impact") or r.get("impact", "HIGH"),
+                            business_impact=r.get("business_impact") or r.get("impact"),
                         ))
                     elif hasattr(r, "category"):
                         f_rows.append(r)
+                cols = m_raw.get("columns") or m_raw.get("options") or []
+                if not cols and f_rows:
+                    cols = list(f_rows[0].scores.keys())
                 m_data = FeatureMatrixData(
-                    columns=m_raw.get("columns") or m_raw.get("options") or [],
+                    columns=cols,
                     rows=f_rows,
                     recommendation_badge=m_raw.get("recommendation_badge") or cfg.get("recommendation_badge"),
                     recommended_column=m_raw.get("recommended_column") or cfg.get("recommended_column"),
@@ -1001,13 +1006,27 @@ class PitchDeckBuilder:
                         else:
                             paragraph.text = new_page_str
 
+    def _strip_all_shadows(self) -> None:
+        """Enforce Zero Drop Shadows across every vector shape (recursing into groups) prior to save."""
+        def _walk_strip(shapes) -> None:
+            for sh in shapes:
+                if getattr(sh, "shape_type", None) == MSO_SHAPE_TYPE.GROUP:
+                    _walk_strip(sh.shapes)
+                    continue
+                if getattr(sh, "shape_type", None) != MSO_SHAPE_TYPE.PICTURE:
+                    strip_shape_shadows(sh)
+
+        for slide in self.prs.slides:
+            _walk_strip(slide.shapes)
+
     def save(
         self,
         output_path: Union[str, Path],
         engagement_context: Optional[EngagementContext] = None,
     ) -> Path:
-        """Saves presentation deck to target path after synchronizing pagination and substituting slugs."""
+        """Saves presentation deck to target path after synchronizing pagination, stripping shadows, and substituting slugs."""
         self.update_pagination()
+        self._strip_all_shadows()
         if engagement_context is None:
             engagement_context = EngagementContext.default_ngl()
         substitute_slugs_in_presentation(self.prs, engagement_context)

@@ -88,6 +88,28 @@ class PPTVisualLinter:
                 if not is_pill and not is_header:
                     content_textboxes.append({"text": text, "x": x, "y": y, "w": w, "h": h, "shape": shape})
 
+                if not is_pill and not is_header and not tf.word_wrap:
+                    w_pt = w * 72.0
+                    for p in tf.paragraphs:
+                        fs = p.font.size.pt if p.font.size else 10.5
+                        longest = max(p.text.split("\n"), key=len, default="")
+                        est_w_pt = len(longest) * fs * 0.52
+                        if est_w_pt > (w_pt + 8.0):
+                            issues.append(
+                                VisualIssue(
+                                    slide_index=slide_idx,
+                                    issue_type="TEXT_OVERFLOW",
+                                    shape_name=f"Line '{longest[:25]}...'",
+                                    severity="WARNING",
+                                    description=(
+                                        f"Unwrapped text line (~{est_w_pt:.0f}pt) exceeds container width "
+                                        f"({w_pt:.0f}pt) with word_wrap disabled."
+                                    ),
+                                    suggested_fix="Enable tf.word_wrap = True or widen the container.",
+                                    bbox=(x, y, w, h),
+                                )
+                            )
+
                 if not is_pill and not is_header and h < 3.0:
                     # Estimate text height based on font sizes and line count
                     est_height = 0.0

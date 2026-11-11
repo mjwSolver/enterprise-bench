@@ -157,6 +157,7 @@ def build_bcg_3_horizon_slide(
             timeline_h,
         )
         step_pill.shadow.inherit = False
+        strip_shape_shadows(step_pill)
         step_pill.fill.solid()
         step_pill.fill.fore_color.rgb = theme.get_rgb(h_data.status_bg_key)
         step_pill.line.color.rgb = theme.get_rgb(h_data.status_text_key)
@@ -197,6 +198,7 @@ def build_bcg_3_horizon_slide(
             arrow_y = timeline_y + (timeline_h - arr_dim) / 2
             arr_shape = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, arrow_x, arrow_y, arr_dim, arr_dim)
             arr_shape.shadow.inherit = False
+            strip_shape_shadows(arr_shape)
             arr_shape.fill.solid()
             arr_shape.fill.fore_color.rgb = hex_to_rgb("#94A3B8")
             arr_shape.line.fill.background()
@@ -281,6 +283,7 @@ def build_bcg_3_horizon_slide(
         # ---------------------------------------------------------------------
         div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + pad_x, divider_y, content_w, Pt(0.75))
         div.shadow.inherit = False
+        strip_shape_shadows(div)
         div.fill.solid()
         div.fill.fore_color.rgb = theme.get_rgb("border")
         div.line.fill.background()
@@ -784,6 +787,7 @@ def build_balanced_scorecard_slide(
                 Inches(0.44),
             )
             icon_badge.shadow.inherit = False
+            strip_shape_shadows(icon_badge)
             icon_badge.fill.solid()
             icon_badge.fill.fore_color.rgb = theme.get_rgb("surface_muted")
             icon_badge.line.color.rgb = accent_rgb
@@ -900,6 +904,7 @@ def build_balanced_scorecard_slide(
             badge_shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
             bp = slide.shapes.add_shape(badge_shape_type, badge_x, badge_y, badge_w, badge_h)
             bp.shadow.inherit = False
+            strip_shape_shadows(bp)
             bp.fill.solid()
             bp.fill.fore_color.rgb = theme.get_rgb(status_bg_key)
             bp.line.color.rgb = theme.get_rgb(status_text_key)
@@ -1030,6 +1035,7 @@ def build_gap_analysis_slide(
 
         div_l = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x + pad_x, card_y + Inches(0.96), content_w, Pt(0.75))
         div_l.shadow.inherit = False
+        strip_shape_shadows(div_l)
         div_l.fill.solid()
         div_l.fill.fore_color.rgb = hex_to_rgb("#E2E8F0")
         div_l.line.fill.background()
@@ -1060,6 +1066,7 @@ def build_gap_analysis_slide(
         disc_y = card_y + (card_h - disc_dim) / 2
         disc_shape = slide.shapes.add_shape(MSO_SHAPE.OVAL, disc_x, disc_y, disc_dim, disc_dim)
         disc_shape.shadow.inherit = False
+        strip_shape_shadows(disc_shape)
         disc_shape.fill.solid()
         disc_shape.fill.fore_color.rgb = hex_to_rgb("#F1F5F9")
         disc_shape.line.color.rgb = hex_to_rgb("#CBD5E1")
@@ -1070,6 +1077,7 @@ def build_gap_analysis_slide(
         arr_y = card_y + (card_h - arr_dim) / 2
         arr_shape = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, arr_x, arr_y, arr_dim, arr_dim)
         arr_shape.shadow.inherit = False
+        strip_shape_shadows(arr_shape)
         arr_shape.fill.solid()
         arr_shape.fill.fore_color.rgb = theme.get_rgb("accent")
         arr_shape.line.fill.background()
@@ -1125,6 +1133,7 @@ def build_gap_analysis_slide(
 
         div_r = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x + pad_x, card_y + Inches(0.96), content_w, Pt(0.75))
         div_r.shadow.inherit = False
+        strip_shape_shadows(div_r)
         div_r.fill.solid()
         div_r.fill.fore_color.rgb = hex_to_rgb("#BAE6FD")
         div_r.line.fill.background()
@@ -1221,6 +1230,7 @@ def build_gap_analysis_slide(
     # 1. Column Headers (Clean, subtle styling)
     h1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col1_x, header_y, col1_w, header_h)
     h1.shadow.inherit = False
+    strip_shape_shadows(h1)
     h1.fill.solid()
     h1.fill.fore_color.rgb = hex_to_rgb("#F1F5F9")
     h1.line.color.rgb = hex_to_rgb("#CBD5E1")
@@ -1250,6 +1260,7 @@ def build_gap_analysis_slide(
 
     h2 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, col2_x, header_y, col2_w, header_h)
     h2.shadow.inherit = False
+    strip_shape_shadows(h2)
     h2.fill.solid()
     h2.fill.fore_color.rgb = hex_to_rgb("#EFF6FF")
     h2.line.color.rgb = theme.get_rgb("accent")
@@ -1323,6 +1334,7 @@ def build_gap_analysis_slide(
             lever_y = cur_y + (row_h - lever_h) / 2
             lever_badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, center_x, lever_y, center_w, lever_h)
             lever_badge.shadow.inherit = False
+            strip_shape_shadows(lever_badge)
             lever_badge.fill.solid()
             lever_badge.fill.fore_color.rgb = hex_to_rgb("#EFF6FF")
             lever_badge.line.color.rgb = theme.get_rgb("accent")
@@ -1348,6 +1360,7 @@ def build_gap_analysis_slide(
             tri = slide.shapes.add_shape(MSO_SHAPE.ISOSCELES_TRIANGLE, tri_x, tri_y, tri_size, tri_size)
             tri.rotation = 90.0
             tri.shadow.inherit = False
+            strip_shape_shadows(tri)
             tri.fill.solid()
             tri.fill.fore_color.rgb = theme.get_rgb("accent")
             tri.line.fill.background()
@@ -1534,6 +1547,7 @@ def _draw_h_line(
     h = Pt(width_pt)
     line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, y, w, h)
     line.shadow.inherit = False
+    strip_shape_shadows(line)
     line.fill.solid()
     line.fill.fore_color.rgb = color
     line.line.fill.background()
@@ -1554,6 +1568,7 @@ def _draw_v_line(
     w = Pt(width_pt)
     line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, top, w, h)
     line.shadow.inherit = False
+    strip_shape_shadows(line)
     line.fill.solid()
     line.fill.fore_color.rgb = color
     line.line.fill.background()
@@ -1624,6 +1639,7 @@ def _render_equity_node_card(
     # 1. Main Card Container (Strict Sharp Rectangle)
     card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
     card.shadow.inherit = False
+    strip_shape_shadows(card)
     card.fill.solid()
     card.fill.fore_color.rgb = theme.get_rgb("surface")
     card.line.color.rgb = theme.get_rgb("border")
@@ -1633,6 +1649,7 @@ def _render_equity_node_card(
     stripe_h = Inches(0.06)
     stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, stripe_h)
     stripe.shadow.inherit = False
+    strip_shape_shadows(stripe)
     stripe.fill.solid()
     stripe.fill.fore_color.rgb = accent_rgb
     stripe.line.fill.background()
@@ -1644,6 +1661,7 @@ def _render_equity_node_card(
     pill_top = top + Inches(0.12)
     pill = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, pill_left, pill_top, pill_w, pill_h)
     pill.shadow.inherit = False
+    strip_shape_shadows(pill)
     pill.fill.solid()
     pill.fill.fore_color.rgb = pill_bg_rgb
     pill.line.color.rgb = pill_border_rgb
@@ -1689,6 +1707,7 @@ def _render_equity_node_card(
     domain_top = top + height - domain_h - Inches(0.08)
     domain_pill = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left + Inches(0.08), domain_top, width - Inches(0.16), domain_h)
     domain_pill.shadow.inherit = False
+    strip_shape_shadows(domain_pill)
     domain_pill.fill.solid()
     domain_pill.fill.fore_color.rgb = theme.get_rgb("surface_muted")
     domain_pill.line.fill.background()
@@ -1757,6 +1776,7 @@ def build_equity_corporate_tree_slide(
     # Container Card (Strict Sharp Rectangle)
     card_p = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, parent_left, parent_top, parent_w, parent_h)
     card_p.shadow.inherit = False
+    strip_shape_shadows(card_p)
     card_p.fill.solid()
     card_p.fill.fore_color.rgb = c_primary
     card_p.line.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
@@ -1765,6 +1785,7 @@ def build_equity_corporate_tree_slide(
     # Top Accent Stripe (Strict Sharp Rectangle)
     stripe_p = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, parent_left, parent_top, parent_w, Inches(0.06))
     stripe_p.shadow.inherit = False
+    strip_shape_shadows(stripe_p)
     stripe_p.fill.solid()
     stripe_p.fill.fore_color.rgb = c_accent
     stripe_p.line.fill.background()

@@ -157,6 +157,7 @@ def build_chapter_divider_slide(
         except Exception:
             fallback_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, panel_x, panel_y, panel_w, panel_h)
             fallback_bg.shadow.inherit = False
+            strip_shape_shadows(fallback_bg)
             fallback_bg.line.fill.background()
             fallback_bg.fill.solid()
             fallback_bg.fill.fore_color.rgb = hex_to_rgb("#0F172A")
@@ -164,6 +165,7 @@ def build_chapter_divider_slide(
         # Photo missing (Fallback): Solid rectangle filled with deep primary color (#0F172A)
         fallback_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, panel_x, panel_y, panel_w, panel_h)
         fallback_bg.shadow.inherit = False
+        strip_shape_shadows(fallback_bg)
         fallback_bg.line.fill.background()
         fallback_bg.fill.solid()
         fallback_bg.fill.fore_color.rgb = hex_to_rgb("#0F172A")
@@ -171,6 +173,7 @@ def build_chapter_divider_slide(
     # 4. Dark Translucent Scrim Overlay (45% alpha via OpenXML DrawingML)
     scrim = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, panel_x, panel_y, panel_w, panel_h)
     scrim.shadow.inherit = False
+    strip_shape_shadows(scrim)
     scrim.line.fill.background()
     scrim.fill.solid()
     scrim.fill.fore_color.rgb = scrim_color or hex_to_rgb("#0B132B")
@@ -217,6 +220,7 @@ def build_chapter_divider_slide(
 
         badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, badge_x, badge_y, badge_w, badge_h)
         badge.shadow.inherit = False
+        strip_shape_shadows(badge)
         badge.fill.solid()
         badge.fill.fore_color.rgb = RGBColor(255, 255, 255)
         badge.line.fill.background()
@@ -313,6 +317,7 @@ def build_cover_slide(
         stripe_h,
     )
     red_bar.shadow.inherit = False
+    strip_shape_shadows(red_bar)
     red_bar.fill.solid()
     red_bar.fill.fore_color.rgb = theme.get_rgb("accent_secondary", default="#DC2626")
     red_bar.line.fill.background()
@@ -326,6 +331,7 @@ def build_cover_slide(
         stripe_h,
     )
     blue_bar.shadow.inherit = False
+    strip_shape_shadows(blue_bar)
     blue_bar.fill.solid()
     blue_bar.fill.fore_color.rgb = theme.get_rgb("accent", default="#0052CC")
     blue_bar.line.fill.background()
@@ -373,6 +379,7 @@ def build_cover_slide(
         Inches(0.015),
     )
     divider.shadow.inherit = False
+    strip_shape_shadows(divider)
     divider.fill.solid()
     divider.fill.fore_color.rgb = theme.get_rgb("border")
     divider.line.fill.background()
@@ -398,8 +405,12 @@ def build_cover_slide(
         p_c = Path(client_logo_path)
         if p_c.is_file():
             resolved_client_logo = p_c
-    elif client and "morula" in client.lower():
-        resolved_client_logo = rm.resolve_asset("logo_morula_ivf", impacted_slide="Cover")
+    elif client:
+        client_slug = re.sub(r"[^a-z0-9]+", "_", client.lower()).strip("_")
+        for candidate in (Path("assets/logos") / f"{client_slug}.png", Path("assets/images/logos") / f"{client_slug}.png"):
+            if candidate.is_file():
+                resolved_client_logo = candidate
+                break
 
     resolved_product_logo: Optional[Path] = None
     if product_logo_path is not None:
@@ -430,6 +441,7 @@ def build_cover_slide(
         _add_contained_image(slide, resolved_client_logo, client_x, slot_y, client_w, slot_h)
         sep1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, sep1_x, slot_y + Inches(0.08), Inches(0.015), slot_h - Inches(0.16))
         sep1.shadow.inherit = False
+        strip_shape_shadows(sep1)
         sep1.fill.solid()
         sep1.fill.fore_color.rgb = theme.get_rgb("border")
         sep1.line.fill.background()
@@ -440,6 +452,7 @@ def build_cover_slide(
     else:
         p_box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, prod_x, slot_y + Inches(0.05), prod_w, slot_h - Inches(0.10))
         p_box.shadow.inherit = False
+        strip_shape_shadows(p_box)
         p_box.fill.solid()
         p_box.fill.fore_color.rgb = theme.get_rgb("surface")
         p_box.line.color.rgb = theme.get_rgb("border")
@@ -458,6 +471,7 @@ def build_cover_slide(
     # Separator 2: Product | Vendor
     sep2 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, sep2_x, slot_y + Inches(0.08), Inches(0.015), slot_h - Inches(0.16))
     sep2.shadow.inherit = False
+    strip_shape_shadows(sep2)
     sep2.fill.solid()
     sep2.fill.fore_color.rgb = theme.get_rgb("border")
     sep2.line.fill.background()
@@ -468,6 +482,7 @@ def build_cover_slide(
     else:
         v_badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, vendor_x, slot_y + Inches(0.05), vendor_w, slot_h - Inches(0.10))
         v_badge.shadow.inherit = False
+        strip_shape_shadows(v_badge)
         v_badge.fill.solid()
         v_badge.fill.fore_color.rgb = theme.get_rgb("surface")
         v_badge.line.color.rgb = theme.get_rgb("border")
@@ -663,12 +678,14 @@ def build_hero_cover_slide(
         except Exception:
             fallback_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, plate_x, plate_y, plate_w, plate_h)
             fallback_bg.shadow.inherit = False
+            strip_shape_shadows(fallback_bg)
             fallback_bg.line.fill.background()
             fallback_bg.fill.solid()
             fallback_bg.fill.fore_color.rgb = hex_to_rgb("#0B132B")
     else:
         fallback_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, plate_x, plate_y, plate_w, plate_h)
         fallback_bg.shadow.inherit = False
+        strip_shape_shadows(fallback_bg)
         fallback_bg.line.fill.background()
         fallback_bg.fill.solid()
         fallback_bg.fill.fore_color.rgb = hex_to_rgb("#0B132B")
@@ -676,6 +693,7 @@ def build_hero_cover_slide(
     # 3. Translucent Dark Scrim Overlay (DrawingML Alpha)
     scrim = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, plate_x, plate_y, plate_w, plate_h)
     scrim.shadow.inherit = False
+    strip_shape_shadows(scrim)
     scrim.line.fill.background()
     scrim.fill.solid()
     scrim.fill.fore_color.rgb = scrim_color or hex_to_rgb("#0B132B")
@@ -702,12 +720,14 @@ def build_hero_cover_slide(
     # 4a. Left Brand Accent Stripes (1 Red : 2 Blue)
     red_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.80), content_top, red_w, stripe_h)
     red_bar.shadow.inherit = False
+    strip_shape_shadows(red_bar)
     red_bar.fill.solid()
     red_bar.fill.fore_color.rgb = theme.get_rgb("accent_secondary", default="#DC2626")
     red_bar.line.fill.background()
 
     blue_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.80) + red_w, content_top, blue_w, stripe_h)
     blue_bar.shadow.inherit = False
+    strip_shape_shadows(blue_bar)
     blue_bar.fill.solid()
     blue_bar.fill.fore_color.rgb = theme.get_rgb("accent", default="#0052CC")
     blue_bar.line.fill.background()
@@ -756,6 +776,7 @@ def build_hero_cover_slide(
         Inches(0.015),
     )
     divider.shadow.inherit = False
+    strip_shape_shadows(divider)
     divider.fill.solid()
     divider.fill.fore_color.rgb = theme.get_rgb("border")
     divider.line.fill.background()
@@ -850,6 +871,7 @@ def build_hero_cover_slide(
     # Divider between logos
     logo_sep = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(10.85), slot_y + Inches(0.12), Inches(0.015), slot_h - Inches(0.24))
     logo_sep.shadow.inherit = False
+    strip_shape_shadows(logo_sep)
     logo_sep.fill.solid()
     logo_sep.fill.fore_color.rgb = theme.get_rgb("border")
     logo_sep.line.fill.background()
@@ -933,6 +955,7 @@ def build_agenda_slide(
         num_bg = theme.get_rgb("surface_muted")
         num_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, card_x, card_y, num_w, card_h)
         num_box.shadow.inherit = False
+        strip_shape_shadows(num_box)
         num_box.fill.solid()
         num_box.fill.fore_color.rgb = num_bg
         num_box.line.fill.background()
@@ -1008,12 +1031,14 @@ def build_thank_you_slide(
     # 1. Dual Vertical Brand Stripes (1 Red : 2 Blue ratio)
     s_red = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, stripe_left, stripe_top, red_w, stripe_height)
     s_red.shadow.inherit = False
+    strip_shape_shadows(s_red)
     s_red.fill.solid()
     s_red.fill.fore_color.rgb = theme.get_rgb("accent_secondary", "#DC2626")
     s_red.line.fill.background()
 
     s_blue = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, stripe_left + red_w, stripe_top, blue_w, stripe_height)
     s_blue.shadow.inherit = False
+    strip_shape_shadows(s_blue)
     s_blue.fill.solid()
     s_blue.fill.fore_color.rgb = theme.get_rgb("accent", "#0052CC")
     s_blue.line.fill.background()

@@ -36,24 +36,25 @@ def _resolve_mockup_image(image_path: Optional[Union[str, Path]], theme: Any) ->
         p = Path(image_path)
         if p.exists():
             return p
-        # Check standard relative search paths
+        # Check standard relative search paths from CWD and repo root
+        repo_root = Path(__file__).resolve().parents[3]
         search_dirs = [
             Path.cwd(),
             Path.cwd() / "assets" / "images" / "mockups",
-            Path("/Users/marcelljw/VisualStudioCode/Snowflake/mii-snowflake-morulaivf-ai-usecases/assets/images/mockups"),
-            Path("/Users/marcelljw/VisualStudioCode/enterprise-bench/assets/images/mockups"),
+            repo_root / "assets" / "images" / "mockups",
         ]
         for s_dir in search_dirs:
             candidate = s_dir / p.name
             if candidate.exists():
                 return candidate
 
-    # Standard candidate search
+    # Standard relative candidate search
+    repo_root = Path(__file__).resolve().parents[3]
     fallback_candidates = [
-        Path("/Users/marcelljw/VisualStudioCode/Snowflake/mii-snowflake-morulaivf-ai-usecases/assets/images/mockups/streamlit_treatment_copilot.png"),
-        Path("/Users/marcelljw/VisualStudioCode/enterprise-bench/assets/images/mockups/streamlit_treatment_copilot.png"),
-        Path("/Users/marcelljw/VisualStudioCode/Snowflake/mii-snowflake-morulaivf-ai-usecases/assets/images/mockups/magic_emr_cortex_copilot.png"),
-        Path("/Users/marcelljw/VisualStudioCode/enterprise-bench/assets/images/mockups/magic_emr_cortex_copilot.png"),
+        Path.cwd() / "assets" / "images" / "mockups" / "streamlit_treatment_copilot.png",
+        repo_root / "assets" / "images" / "mockups" / "streamlit_treatment_copilot.png",
+        Path.cwd() / "assets" / "images" / "mockups" / "magic_emr_cortex_copilot.png",
+        repo_root / "assets" / "images" / "mockups" / "magic_emr_cortex_copilot.png",
     ]
     for c in fallback_candidates:
         if c.exists():
@@ -83,7 +84,7 @@ def render_macos_window(
     Renders an authentic macOS desktop browser window mockup as a high-DPI raster picture.
 
     Config schema:
-      url: Optional[str] (e.g. 'https://morulaivf.snowflakecomputing.com/streamlit/uc2-copilot')
+      url: Optional[str] (e.g. 'https://app.enterprise.internal/workspace')
       title: Optional[str] (Window header title)
       theme_mode: Optional[str] ('light' or 'dark', default 'light')
       screenshot_path / image_path: Optional[str] (Path to interface capture PNG/JPG)
@@ -97,7 +98,7 @@ def render_macos_window(
     w_in = _to_inches(width)
     h_in = _to_inches(height)
 
-    url = str(config.get("url", "https://morulaivf.snowflakecomputing.com/streamlit/uc2-copilot"))
+    url = str(config.get("url") or "https://app.enterprise.internal/workspace")
     title = config.get("title")
     theme_mode = str(config.get("theme_mode", "light")).lower()
     raw_img_path = config.get("screenshot_path") or config.get("image_path") or config.get("screenshot")

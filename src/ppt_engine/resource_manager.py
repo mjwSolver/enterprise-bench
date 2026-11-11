@@ -54,14 +54,14 @@ def get_default_resources(root_dir: Path) -> list[ResourceSpec]:
     """Default enterprise presentation assets registry."""
     return [
         ResourceSpec(
-            key="logo_morula_ivf",
-            target_path=root_dir / "assets" / "logos" / "morula_ivf.png",
-            canonical_url="https://www.morulaivf.co.id/wp-content/themes/morulaivf-24/assets/images/logo.svg",
-            fallback_url="https://www.morulaivf.co.id/wp-content/uploads/2019/09/morula-logo.png",
+            key="logo_client",
+            target_path=root_dir / "assets" / "logos" / "client_logo.png",
+            canonical_url=None,
+            fallback_url=None,
             fallback_type="typographic",
-            fallback_text="MORULA IVF",
+            fallback_text="CLIENT ORGANIZATION",
             impacted_slides=["Cover"],
-            recovery_command="uv run bench asset fetch-logo morulaivf.co.id --output assets/logos/morula_ivf.png",
+            recovery_command="uv run bench asset fetch-logo <client-domain> --output assets/logos/client_logo.png",
         ),
         ResourceSpec(
             key="logo_metrodata_square",

@@ -690,8 +690,8 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
   title: "Native Streamlit Copilot Embeds Directly into Existing EMR Workspace"
   subtitle: "Clinicians receive real-time predictive probabilities without leaving their consultation screen."
   image_path: "assets/images/mockups/magic_emr_cortex_copilot.png"
-  mockup_url: "https://emr.morulaivf.co.id/portal/patient/cycle-summary"
-  window_title: "EMR Clinical Workspace — Cortex Intelligence Assistant"
+  mockup_url: "https://app.enterprise.internal/portal/summary"
+  window_title: "Enterprise Clinical Workspace — Analytics Assistant"
   badge: "LIVE PROTOTYPE"
 """,
     },

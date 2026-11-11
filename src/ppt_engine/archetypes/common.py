@@ -70,6 +70,7 @@ def add_slide_with_background(prs: Presentation, theme: Theme) -> Any:
         prs.slide_height,
     )
     bg.shadow.inherit = False
+    strip_shape_shadows(bg)
     bg.fill.solid()
     bg.fill.fore_color.rgb = theme.get_rgb("background")
     bg.line.fill.background()
@@ -195,6 +196,7 @@ def add_card(
 
     card = slide.shapes.add_shape(shape_type, left, top, width, height)
     card.shadow.inherit = False
+    strip_shape_shadows(card)
 
     card.fill.solid()
     card.fill.fore_color.rgb = bg_color or theme.get_rgb("surface")
@@ -242,6 +244,7 @@ def add_card_with_top_stripe(
     st_h = Inches(stripe_height_in or theme.accent_stripe_height_in)
     stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, st_h)
     stripe.shadow.inherit = False
+    strip_shape_shadows(stripe)
     stripe.fill.solid()
     stripe.fill.fore_color.rgb = accent_rgb
     stripe.line.fill.background()
@@ -332,6 +335,7 @@ def add_card_with_harmonized_icon(
             badge_h,
         )
         badge_shape.shadow.inherit = False
+        strip_shape_shadows(badge_shape)
         badge_shape.fill.solid()
         badge_shape.fill.fore_color.rgb = theme.get_rgb("surface_muted")
         badge_shape.line.color.rgb = accent_rgb
@@ -401,6 +405,7 @@ def add_slide_footer(
         Inches(0.015),
     )
     divider.shadow.inherit = False
+    strip_shape_shadows(divider)
     divider.fill.solid()
     divider.fill.fore_color.rgb = theme.get_rgb("border")
     divider.line.fill.background()
@@ -528,6 +533,7 @@ def _add_status_pill(
     shape_type = MSO_SHAPE.ROUNDED_RECTANGLE if theme.corner_radius > 0 else MSO_SHAPE.RECTANGLE
     pill = slide.shapes.add_shape(shape_type, left, top, width, height)
     pill.shadow.inherit = False
+    strip_shape_shadows(pill)
     pill.fill.solid()
     pill.fill.fore_color.rgb = theme.get_rgb(bg_key)
     pill.line.color.rgb = theme.get_rgb(text_key)
@@ -715,6 +721,7 @@ def add_takeaway_bar(
     # 2. Vertical Focus Indicator Stripe on Left
     stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, top_y, Inches(0.06), height)
     stripe.shadow.inherit = False
+    strip_shape_shadows(stripe)
     stripe.fill.solid()
     stripe.fill.fore_color.rgb = acc_rgb
     stripe.line.fill.background()

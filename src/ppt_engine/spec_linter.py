@@ -1132,6 +1132,109 @@ def lint_presentation_spec(
         # ---------------------------------------------------------------------
         _lint_markdown_syntax(slide, idx, arch, report)
 
+        # ---------------------------------------------------------------------
+        # Rule LINT010: Feature Matrix / Harvey Balls Structural & Severity Audit
+        # ---------------------------------------------------------------------
+        if arch in ("feature_matrix", "harvey_balls"):
+            m_raw = slide.get("matrix_data")
+            if not isinstance(m_raw, dict):
+                report.add_issue(
+                    rule_id="LINT010_FEATURE_MATRIX",
+                    severity="ERROR",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message="feature_matrix slide is missing required 'matrix_data' object.",
+                    suggestion="Provide matrix_data: {options: [...], rows: [{category, criteria, scores: {...}}]}.",
+                )
+            else:
+                cols = m_raw.get("columns") or m_raw.get("options") or []
+                m_rows = m_raw.get("rows") or []
+                if not cols or not isinstance(cols, list):
+                    report.add_issue(
+                        rule_id="LINT010_FEATURE_MATRIX",
+                        severity="ERROR",
+                        slide_idx=idx,
+                        archetype=arch,
+                        message="feature_matrix matrix_data requires non-empty 'columns' or 'options'.",
+                        suggestion="Declare option/platform column headers under matrix_data.options.",
+                    )
+                if not m_rows or not isinstance(m_rows, list):
+                    report.add_issue(
+                        rule_id="LINT010_FEATURE_MATRIX",
+                        severity="ERROR",
+                        slide_idx=idx,
+                        archetype=arch,
+                        message="feature_matrix matrix_data requires non-empty 'rows'.",
+                        suggestion="Add evaluation criteria rows under matrix_data.rows.",
+                    )
+                rec_col = m_raw.get("recommended_column") or slide.get("recommended_column")
+                if rec_col and cols and rec_col not in cols:
+                    report.add_issue(
+                        rule_id="LINT010_FEATURE_MATRIX",
+                        severity="ERROR",
+                        slide_idx=idx,
+                        archetype=arch,
+                        message=f"recommended_column '{rec_col}' does not match any column in {cols}.",
+                        suggestion="Ensure recommended_column matches an exact option string in matrix_data.options.",
+                    )
+                if isinstance(m_rows, list) and len(m_rows) > 8:
+                    report.add_issue(
+                        rule_id="LINT010_FEATURE_MATRIX",
+                        severity="WARNING",
+                        slide_idx=idx,
+                        archetype=arch,
+                        message=f"feature_matrix has {len(m_rows)} rows (recommended max <= 8).",
+                        suggestion="Condense criteria or split across two slides to preserve table row readability.",
+                    )
+                impacts: List[str] = []
+                col_set = set(cols) if isinstance(cols, list) else set()
+                for r_idx, mr in enumerate(m_rows if isinstance(m_rows, list) else [], start=1):
+                    if not isinstance(mr, dict):
+                        continue
+                    if not str(mr.get("criteria", "")).strip():
+                        report.add_issue(
+                            rule_id="LINT010_FEATURE_MATRIX",
+                            severity="WARNING",
+                            slide_idx=idx,
+                            archetype=arch,
+                            message=f"feature_matrix row {r_idx} is missing 'criteria'.",
+                            suggestion="Provide concise criterion description text for each row.",
+                        )
+                    scores = mr.get("scores") or {}
+                    if col_set and isinstance(scores, dict):
+                        extra_keys = [k for k in scores.keys() if k not in col_set]
+                        if extra_keys:
+                            report.add_issue(
+                                rule_id="LINT010_FEATURE_MATRIX",
+                                severity="WARNING",
+                                slide_idx=idx,
+                                archetype=arch,
+                                message=f"feature_matrix row {r_idx} has score keys {extra_keys} not in declared columns {cols}.",
+                                suggestion="Align row.scores keys strictly with matrix_data.options / matrix_data.columns.",
+                            )
+                    imp_val = str(mr.get("business_impact") or mr.get("impact") or "").strip().upper()
+                    if imp_val:
+                        impacts.append(imp_val)
+                if len(impacts) >= 3 and len(set(impacts)) == 1 and impacts[0] in ("HIGH", "CRITICAL"):
+                    report.add_issue(
+                        rule_id="LINT010_FEATURE_MATRIX",
+                        severity="WARNING",
+                        slide_idx=idx,
+                        archetype=arch,
+                        message=f"All {len(impacts)} feature_matrix rows repeat '{impacts[0]}' impact (Red Wave anti-pattern).",
+                        suggestion="Calibrate severity tiers across rows or omit business_impact/impact so the IMPACT column stays hidden.",
+                    )
+            fn_text = str((m_raw.get("footnote") if isinstance(m_raw, dict) else None) or slide.get("footnote") or "").strip()
+            if len(fn_text) > 175:
+                report.add_issue(
+                    rule_id="LINT010_FEATURE_MATRIX",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"feature_matrix footnote is {len(fn_text)} chars (> 175) and risks wrapping into footer.",
+                    suggestion="Keep table footnotes concise (<= 175 characters).",
+                )
+
     # -------------------------------------------------------------------------
     # Rule LINT008: Deck-Wide Takeaway Saturation Guardrail (Opt-In Discipline)
     # -------------------------------------------------------------------------

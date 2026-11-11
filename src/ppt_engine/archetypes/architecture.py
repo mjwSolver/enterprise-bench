@@ -111,6 +111,7 @@ def build_browser_mockup_slide(
             hdr_h = Inches(0.32)
             h_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, right_x, right_y, right_w, hdr_h)
             h_card.shadow.inherit = False
+            strip_shape_shadows(h_card)
             h_card.fill.solid()
             h_card.fill.fore_color.rgb = theme.get_rgb("primary")
             h_card.line.fill.background()
@@ -328,6 +329,7 @@ def build_iceberg_concept_slide(
     waterline_h = Inches(0.26)
     wl_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, waterline_y, iceberg_w, waterline_h)
     wl_bar.shadow.inherit = False
+    strip_shape_shadows(wl_bar)
     wl_bar.fill.solid()
     wl_bar.fill.fore_color.rgb = theme.get_rgb("accent")
     wl_bar.line.fill.background()
@@ -779,7 +781,7 @@ def build_open_telemetry_flow_slide(
 
     # Floating Streamlit Interface Mockup (No Card Container!)
     w_cfg = mockup_config or {
-        "url": "https://snowflake.morulaivf.co.id/cortex/clinical-models/live",
+        "url": "https://app.enterprise.internal/models/live",
         "theme_mode": "light",
         "telemetry_badges": ["Snowflake Cortex", "Streamlit Serving", "Zero PII Leak"],
     }

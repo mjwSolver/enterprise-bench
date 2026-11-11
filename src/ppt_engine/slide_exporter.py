@@ -335,6 +335,20 @@ class PurePythonSlideRenderer:
                 width=border_width if border_rgba else 0,
             )
 
+        elif auto_type == MSO_SHAPE.PIE:
+            adjs = getattr(shape, "adjustments", None)
+            # OOXML prst="pie" stores 1/60,000ths deg while python-pptx exposes val / 100,000 -> deg = adj / 0.6
+            start_deg = float(adjs[0]) / 0.6 if adjs and len(adjs) >= 1 else 0.0
+            end_deg = float(adjs[1]) / 0.6 if adjs and len(adjs) >= 2 else 270.0
+            draw.pieslice(
+                [x, y, x + w, y + h],
+                start=start_deg,
+                end=end_deg,
+                fill=fill_rgba,
+                outline=border_rgba,
+                width=border_width if border_rgba else 0,
+            )
+
         elif auto_type == MSO_SHAPE.RECTANGLE:
             draw.rectangle(
                 [x, y, x + w, y + h],

@@ -158,6 +158,7 @@ def build_chevron_process_slide(
             pin_fill = hex_to_rgb(p_col_key) if str(p_col_key).startswith("#") else theme.get_rgb(str(p_col_key))
             pin_badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, pin_x, pin_y, pin_w, pin_h)
             pin_badge.shadow.inherit = False
+            strip_shape_shadows(pin_badge)
             pin_badge.fill.solid()
             pin_badge.fill.fore_color.rgb = pin_fill
             pin_badge.line.fill.background()
@@ -177,6 +178,7 @@ def build_chevron_process_slide(
         # 2. Render top directional chevron banner
         chevron = slide.shapes.add_shape(MSO_SHAPE.CHEVRON, cur_x, chevron_y, step_w, chevron_h)
         chevron.shadow.inherit = False
+        strip_shape_shadows(chevron)
         chevron.fill.solid()
         chevron.fill.fore_color.rgb = step_color
         chevron.line.fill.background()
@@ -404,6 +406,7 @@ def build_timeline_gantt_slide(
     # Time Axis Header Bar
     t_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, grid_left, header_y, grid_width, header_h)
     t_bar.shadow.inherit = False
+    strip_shape_shadows(t_bar)
     t_bar.fill.solid()
     t_bar.fill.fore_color.rgb = theme.get_rgb("primary")
     t_bar.line.fill.background()
@@ -445,6 +448,7 @@ def build_timeline_gantt_slide(
         # Left label container (Sharp Rectangle)
         ws_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, cur_y, Inches(2.90), row_h)
         ws_card.shadow.inherit = False
+        strip_shape_shadows(ws_card)
         ws_card.fill.solid()
         ws_card.fill.fore_color.rgb = RGBColor(255, 255, 255)
         ws_card.line.color.rgb = RGBColor(226, 232, 240)
@@ -455,6 +459,7 @@ def build_timeline_gantt_slide(
         acc_rgb = theme.get_rgb(accent_key) if accent_key in ("primary", "secondary", "accent") else theme.get_rgb("accent")
         stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left_x, cur_y, Inches(0.08), row_h)
         stripe.shadow.inherit = False
+        strip_shape_shadows(stripe)
         stripe.fill.solid()
         stripe.fill.fore_color.rgb = acc_rgb
         stripe.line.fill.background()
@@ -482,6 +487,7 @@ def build_timeline_gantt_slide(
         # Grid row background
         row_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, grid_left, cur_y, grid_width, row_h)
         row_bg.shadow.inherit = False
+        strip_shape_shadows(row_bg)
         row_bg.fill.solid()
         row_bg.fill.fore_color.rgb = RGBColor(248, 250, 252) if ws_idx % 2 == 0 else RGBColor(255, 255, 255)
         row_bg.line.color.rgb = RGBColor(226, 232, 240)
@@ -492,6 +498,7 @@ def build_timeline_gantt_slide(
             cx = grid_left + c_idx * col_width
             vline = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, cur_y, Pt(1), row_h)
             vline.shadow.inherit = False
+            strip_shape_shadows(vline)
             vline.fill.solid()
             vline.fill.fore_color.rgb = RGBColor(226, 232, 240)
             vline.line.fill.background()
@@ -520,6 +527,7 @@ def build_timeline_gantt_slide(
                     my = ty + (task_h - diam_size) / 2.0
                     m_shape = slide.shapes.add_shape(MSO_SHAPE.DIAMOND, mx, my, diam_size, diam_size)
                     m_shape.shadow.inherit = False
+                    strip_shape_shadows(m_shape)
                     m_shape.fill.solid()
                     m_shape.fill.fore_color.rgb = theme.get_rgb("accent")
                     m_shape.line.color.rgb = theme.get_rgb("primary")
@@ -549,6 +557,7 @@ def build_timeline_gantt_slide(
                     # Task duration bar (Sharp Rectangle)
                     t_shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, bar_x, ty, bar_w, task_h)
                     t_shape.shadow.inherit = False
+                    strip_shape_shadows(t_shape)
                     t_shape.fill.solid()
                     t_shape.fill.fore_color.rgb = fill_rgb
                     t_shape.line.color.rgb = RGBColor(255, 255, 255)
@@ -585,6 +594,7 @@ def build_timeline_gantt_slide(
         total_grid_h = num_ws * (row_h + row_gap)
         m_line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, marker_x, header_y, Pt(2), header_h + Inches(0.12) + total_grid_h)
         m_line.shadow.inherit = False
+        strip_shape_shadows(m_line)
         m_line.fill.solid()
         m_line.fill.fore_color.rgb = RGBColor(220, 38, 38)  # Crimson Red
         m_line.line.fill.background()
@@ -594,6 +604,7 @@ def build_timeline_gantt_slide(
         tag_h = Inches(0.24)
         tag_box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, marker_x - tag_w / 2.0, header_y - Inches(0.26), tag_w, tag_h)
         tag_box.shadow.inherit = False
+        strip_shape_shadows(tag_box)
         tag_box.fill.solid()
         tag_box.fill.fore_color.rgb = RGBColor(220, 38, 38)
         tag_box.line.fill.background()
@@ -952,6 +963,7 @@ def build_dense_workstream_runbook_slide(
     # Render Separator Hairline
     sep = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_x + Inches(0.16), header_row_y + Inches(0.20), table_w - Inches(0.32), Pt(0.75))
     sep.shadow.inherit = False
+    strip_shape_shadows(sep)
     sep.fill.solid()
     sep.fill.fore_color.rgb = theme.get_rgb("border")
     sep.line.fill.background()

@@ -132,6 +132,7 @@ def build_split_hero_slide(
         Pt(0.75),
     )
     h_div.shadow.inherit = False
+    strip_shape_shadows(h_div)
     h_div.fill.solid()
     h_div.fill.fore_color.rgb = hex_to_rgb("#334155")
     h_div.line.fill.background()
@@ -215,6 +216,7 @@ def build_split_hero_slide(
                 Inches(0.012),
             )
             div.shadow.inherit = False
+            strip_shape_shadows(div)
             div.fill.solid()
             div.fill.fore_color.rgb = theme.get_rgb("border")
             div.line.fill.background()
@@ -357,6 +359,7 @@ def build_tech_logo_grid_slide(
                 logo_left, logo_top, logo_w, logo_h
             )
             badge_sh.shadow.inherit = False
+            strip_shape_shadows(badge_sh)
             badge_sh.fill.solid()
             badge_sh.fill.fore_color.rgb = theme.get_rgb("surface_muted")
             badge_sh.line.color.rgb = accent_rgb
@@ -471,6 +474,7 @@ def build_card_grid_slide(
             # Left focus indicator bar
             left_stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, cy, Pt(4.5), card_h)
             left_stripe.shadow.inherit = False
+            strip_shape_shadows(left_stripe)
             left_stripe.fill.solid()
             left_stripe.fill.fore_color.rgb = accent_rgb
             left_stripe.line.fill.background()
@@ -512,6 +516,7 @@ def build_card_grid_slide(
             # Vertical divider before metric
             div1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, met_box_x - Inches(0.15), cy + Inches(0.12), Pt(0.75), card_h - Inches(0.24))
             div1.shadow.inherit = False
+            strip_shape_shadows(div1)
             div1.fill.solid()
             div1.fill.fore_color.rgb = theme.get_rgb("border")
             div1.line.fill.background()
@@ -541,6 +546,7 @@ def build_card_grid_slide(
             # Vertical divider before bullets
             div2 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(6.40), cy + Inches(0.12), Pt(0.75), card_h - Inches(0.24))
             div2.shadow.inherit = False
+            strip_shape_shadows(div2)
             div2.fill.solid()
             div2.fill.fore_color.rgb = theme.get_rgb("border")
             div2.line.fill.background()
@@ -676,6 +682,7 @@ def build_card_grid_slide(
             met_div_y = met_box_y + met_box_h + (Inches(0.08) if rows == 1 else Inches(0.04))
             met_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx + Inches(0.18), met_div_y, met_box_w, Pt(0.75))
             met_div.shadow.inherit = False
+            strip_shape_shadows(met_div)
             met_div.fill.solid()
             met_div.fill.fore_color.rgb = theme.get_rgb("border")
             met_div.line.fill.background()

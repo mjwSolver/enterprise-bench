@@ -37,8 +37,8 @@ class FeatureScorecardRow:
     """Represents an evaluation criterion row in a comparison matrix."""
     category: str
     criteria: str
-    scores: Dict[str, str]           # platform -> "FULL", "HALF", "EMPTY", "N/A" or glyphs "●", "◐", "○"
-    business_impact: str = "HIGH"
+    scores: Dict[str, str]           # platform -> "FULL", "PARTIAL", "HALF", "NONE", "EMPTY", "N/A" or glyphs "●", "◐", "○"
+    business_impact: Optional[str] = None
 
 @dataclass
 class FeatureMatrixData:
@@ -119,83 +119,122 @@ def build_feature_matrix_slide(
     bg.fill.solid()
     bg.fill.fore_color.rgb = theme.get_rgb("background")
     bg.line.fill.background()
+    strip_shape_shadows(bg)
 
     # 2. Unified Header Frame
     header_bottom = add_slide_header(slide, theme, tracker=tracker, title=action_title, subtitle=subtitle)
 
-    # 3. Canvas Table Layout Bounds (Dynamic below header + reclaims space if footnote omitted)
+    # 3. Canvas Table Layout Bounds (Contiguous row_gap = 0.0, opt-in IMPACT column & footnote)
     table_left = Inches(0.80)
     table_top = resolve_content_top(header_bottom, gap_in=0.20)
     table_w = Inches(11.733)
-    hdr_h = Inches(0.42)
-    bottom_limit = Inches(6.24 if data.footnote else 6.86)
+    hdr_h = Inches(0.46)
+    footnote_str = str(data.footnote).strip() if data.footnote and str(data.footnote).strip() else ""
+    foot_reserve = (Inches(0.52) if len(footnote_str) > 95 else Inches(0.42)) if footnote_str else Inches(0.0)
+    bottom_limit = Inches(6.86) - foot_reserve
     n_rows = max(1, len(data.rows))
-    row_gap = Inches(0.06)
-    avail_rows_h = max(Inches(2.50), bottom_limit - table_top - hdr_h - row_gap)
-    row_h = min(Inches(0.82), max(Inches(0.42), (avail_rows_h - (row_gap * max(0, n_rows - 1))) / n_rows))
+    avail_rows_h = max(Inches(2.40), bottom_limit - table_top - hdr_h)
+    row_h = min(Inches(0.76), max(Inches(0.42), avail_rows_h / n_rows))
 
     platforms = data.columns
-    cat_w = Inches(2.20)
-    crit_w = Inches(3.30)
-    impact_w = Inches(1.233)
+    has_impact = any(bool(r.business_impact and str(r.business_impact).strip()) for r in data.rows)
+    cat_w = Inches(2.00)
+    crit_w = Inches(3.20) if has_impact else Inches(3.45)
+    impact_w = Inches(1.15) if has_impact else Inches(0.0)
     plat_w = (table_w - cat_w - crit_w - impact_w) / max(1, len(platforms))
 
-    # Header Row (Sharp Rectangle)
+    # Header Band (Single-Line Rule: Muted slate surface + hairline divider, highlighted recommended column in #1E3A8A)
     hdr_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_left, table_top, table_w, hdr_h)
     hdr_bg.fill.solid()
-    hdr_bg.fill.fore_color.rgb = theme.get_rgb("primary")
+    hdr_bg.fill.fore_color.rgb = theme.get_rgb("surface_muted")
     hdr_bg.line.fill.background()
+    strip_shape_shadows(hdr_bg)
+
+    hdr_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_left, table_top + hdr_h, table_w, Pt(1.0))
+    hdr_div.fill.solid()
+    hdr_div.fill.fore_color.rgb = theme.get_rgb("border")
+    hdr_div.line.fill.background()
+    strip_shape_shadows(hdr_div)
 
     # Header cell labels
     def _add_hdr_txt(x: Inches, w: Inches, text: str, align=PP_ALIGN.LEFT, is_rec: bool = False):
-        tb = slide.shapes.add_textbox(x, table_top, w, hdr_h)
+        if is_rec:
+            hdr_hl = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, table_top, w, hdr_h)
+            hdr_hl.fill.solid()
+            hdr_hl.fill.fore_color.rgb = hex_to_rgb("#1E3A8A")
+            hdr_hl.line.fill.background()
+            strip_shape_shadows(hdr_hl)
+        tb = slide.shapes.add_textbox(x + Inches(0.04), table_top + Inches(0.04), max(Inches(0.40), w - Inches(0.08)), hdr_h - Inches(0.08))
         tf = tb.text_frame
         tf.word_wrap = True
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        tf.margin_top = tf.margin_bottom = 0
+        tf.margin_left = tf.margin_right = Pt(3)
+        tf.margin_top = tf.margin_bottom = Pt(1)
         p = tf.paragraphs[0]
         p.alignment = align
         p.text = text
         p.font.name = theme.font_family_header
         p.font.size = Pt(9.0)
         p.font.bold = True
-        p.font.color.rgb = RGBColor(147, 197, 253) if is_rec else RGBColor(255, 255, 255)
+        p.font.color.rgb = RGBColor(255, 255, 255) if is_rec else theme.get_rgb("primary")
 
-    _add_hdr_txt(table_left + Inches(0.12), cat_w - Inches(0.12), "DOMAIN / CATEGORY")
-    _add_hdr_txt(table_left + cat_w + Inches(0.10), crit_w - Inches(0.10), "EVALUATION CRITERIA")
+    _add_hdr_txt(table_left + Inches(0.08), cat_w - Inches(0.08), "DOMAIN / CATEGORY")
+    _add_hdr_txt(table_left + cat_w + Inches(0.06), crit_w - Inches(0.06), "EVALUATION CRITERIA")
 
     for p_idx, plat in enumerate(platforms):
         px = table_left + cat_w + crit_w + p_idx * plat_w
-        is_rec = (plat == data.recommended_column)
+        is_rec = bool(data.recommended_column and plat == data.recommended_column)
         _add_hdr_txt(px, plat_w, plat.upper(), align=PP_ALIGN.CENTER, is_rec=is_rec)
 
-    _add_hdr_txt(table_left + cat_w + crit_w + len(platforms) * plat_w, impact_w, "IMPACT", align=PP_ALIGN.CENTER)
+    if has_impact:
+        _add_hdr_txt(table_left + cat_w + crit_w + len(platforms) * plat_w, impact_w, "IMPACT", align=PP_ALIGN.CENTER)
 
-    # 4. Rows
+    # 4. Contiguous Rows (row_gap = 0.0, zebra fills, hairline dividers, flush highlight column)
     harvey_glyph_map = {
         "FULL": "●",
         "●": "●",
+        "PARTIAL": "◐",
         "HALF": "◐",
         "◐": "◐",
+        "NONE": "○",
         "EMPTY": "○",
         "○": "○",
         "N/A": "-",
     }
 
-    cur_y = table_top + hdr_h + Inches(0.06)
+    cur_y = table_top + hdr_h
     for r_idx, row in enumerate(data.rows):
-        # Row card container (Sharp Rectangle)
-        rc = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_left, cur_y, table_w, row_h)
-        rc.fill.solid()
-        rc.fill.fore_color.rgb = RGBColor(255, 255, 255) if r_idx % 2 == 0 else RGBColor(248, 250, 252)
-        rc.line.color.rgb = RGBColor(226, 232, 240)
-        rc.line.width = Pt(0.75)
+        # Flush alternating row background (white on even rows, muted slate on odd rows)
+        row_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_left, cur_y, table_w, row_h)
+        row_bg.fill.solid()
+        row_bg.fill.fore_color.rgb = RGBColor(255, 255, 255) if r_idx % 2 == 0 else theme.get_rgb("surface_muted")
+        row_bg.line.fill.background()
+        strip_shape_shadows(row_bg)
+
+        # Highlight recommended column as flush full-height band (preserving subtle zebra rhythm)
+        for p_idx, plat in enumerate(platforms):
+            if data.recommended_column and plat == data.recommended_column:
+                px = table_left + cat_w + crit_w + p_idx * plat_w
+                col_hl = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, px, cur_y, plat_w, row_h)
+                col_hl.fill.solid()
+                col_hl.fill.fore_color.rgb = RGBColor(239, 246, 255) if r_idx % 2 == 0 else RGBColor(219, 234, 254)
+                col_hl.line.fill.background()
+                strip_shape_shadows(col_hl)
+
+        # Flush bottom hairline divider
+        row_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, table_left, cur_y + row_h, table_w, Pt(0.5))
+        row_div.fill.solid()
+        row_div.fill.fore_color.rgb = theme.get_rgb("border")
+        row_div.line.fill.background()
+        strip_shape_shadows(row_div)
 
         # Category cell
-        tb_cat = slide.shapes.add_textbox(table_left + Inches(0.12), cur_y + Inches(0.10), cat_w - Inches(0.18), row_h - Inches(0.20))
+        tb_cat = slide.shapes.add_textbox(table_left + Inches(0.10), cur_y + Inches(0.04), cat_w - Inches(0.16), row_h - Inches(0.08))
         tf_cat = tb_cat.text_frame
         tf_cat.word_wrap = True
         tf_cat.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_cat.margin_left = tf_cat.margin_right = Pt(4)
+        tf_cat.margin_top = tf_cat.margin_bottom = Pt(2)
         p_c = tf_cat.paragraphs[0]
         p_c.text = row.category
         p_c.font.name = theme.font_family_header
@@ -204,10 +243,12 @@ def build_feature_matrix_slide(
         p_c.font.color.rgb = theme.get_rgb("primary")
 
         # Criteria cell
-        tb_crit = slide.shapes.add_textbox(table_left + cat_w + Inches(0.10), cur_y + Inches(0.10), crit_w - Inches(0.20), row_h - Inches(0.20))
+        tb_crit = slide.shapes.add_textbox(table_left + cat_w + Inches(0.08), cur_y + Inches(0.04), crit_w - Inches(0.16), row_h - Inches(0.08))
         tf_crit = tb_crit.text_frame
         tf_crit.word_wrap = True
         tf_crit.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_crit.margin_left = tf_crit.margin_right = Pt(4)
+        tf_crit.margin_top = tf_crit.margin_bottom = Pt(2)
         p_cr = tf_crit.paragraphs[0]
         p_cr.text = row.criteria
         p_cr.font.name = theme.font_family
@@ -220,56 +261,100 @@ def build_feature_matrix_slide(
             score_raw = row.scores.get(plat, "-")
             mapped = harvey_glyph_map.get(score_raw.upper().strip() if isinstance(score_raw, str) else "")
             glyph = mapped if mapped is not None else str(score_raw)
-
             is_rec = bool(data.recommended_column and plat == data.recommended_column)
-            if is_rec:
-                col_hl = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, px + Inches(0.04), cur_y + Inches(0.04), plat_w - Inches(0.08), row_h - Inches(0.08))
-                col_hl.fill.solid()
-                col_hl.fill.fore_color.rgb = RGBColor(241, 245, 249)
-                col_hl.line.fill.background()
+            is_harvey = glyph in ("●", "◐", "○")
 
-            tb_sc = slide.shapes.add_textbox(px, cur_y + Inches(0.08), plat_w, row_h - Inches(0.16))
-            tf_sc = tb_sc.text_frame
-            tf_sc.vertical_anchor = MSO_ANCHOR.MIDDLE
-            p_s = tf_sc.paragraphs[0]
-            p_s.alignment = PP_ALIGN.CENTER
-            p_s.text = glyph
-            p_s.font.name = theme.font_family_header
-            p_s.font.size = Pt(16.0 if glyph in ("●", "◐", "○") else 10.5)
-            p_s.font.bold = True
-            if glyph == "●":
-                p_s.font.color.rgb = RGBColor(16, 185, 129) if is_rec else theme.get_rgb("primary")
-            elif glyph == "◐":
-                p_s.font.color.rgb = RGBColor(245, 158, 11)  # Amber
-            elif glyph == "○":
-                p_s.font.color.rgb = RGBColor(148, 163, 184)  # Slate-400
+            if is_harvey:
+                ball_d = Inches(0.20)
+                bx = px + (plat_w - ball_d) / 2
+                by = cur_y + (row_h - ball_d) / 2
+                if glyph == "●":
+                    ball = slide.shapes.add_shape(MSO_SHAPE.OVAL, bx, by, ball_d, ball_d)
+                    ball.fill.solid()
+                    ball.fill.fore_color.rgb = RGBColor(16, 185, 129) if is_rec else theme.get_rgb("primary")
+                    ball.line.fill.background()
+                    strip_shape_shadows(ball)
+                elif glyph == "◐":
+                    ring_color = RGBColor(217, 119, 6)
+                    # Layer 1: Crisp solid white base disc
+                    base_ball = slide.shapes.add_shape(MSO_SHAPE.OVAL, bx, by, ball_d, ball_d)
+                    base_ball.fill.solid()
+                    base_ball.fill.fore_color.rgb = RGBColor(255, 255, 255)
+                    base_ball.line.fill.background()
+                    strip_shape_shadows(base_ball)
+
+                    # Layer 2: Left 180-deg semicircle fill (OOXML pie uses 1/60,000 deg; python-pptx scales *100,000 -> 54.0=90deg, 162.0=270deg)
+                    half_pie = slide.shapes.add_shape(MSO_SHAPE.PIE, bx, by, ball_d, ball_d)
+                    half_pie.adjustments[0] = 54.0
+                    half_pie.adjustments[1] = 162.0
+                    half_pie.fill.solid()
+                    half_pie.fill.fore_color.rgb = ring_color
+                    half_pie.line.fill.background()
+                    strip_shape_shadows(half_pie)
+
+                    # Layer 3: Transparent circular ring border on top for clean edge alignment
+                    outer_ring = slide.shapes.add_shape(MSO_SHAPE.OVAL, bx, by, ball_d, ball_d)
+                    outer_ring.fill.background()
+                    outer_ring.line.color.rgb = ring_color
+                    outer_ring.line.width = Pt(1.5)
+                    strip_shape_shadows(outer_ring)
+                else:
+                    empty_ball = slide.shapes.add_shape(MSO_SHAPE.OVAL, bx, by, ball_d, ball_d)
+                    empty_ball.fill.solid()
+                    empty_ball.fill.fore_color.rgb = RGBColor(255, 255, 255)
+                    empty_ball.line.color.rgb = RGBColor(148, 163, 184)
+                    empty_ball.line.width = Pt(1.5)
+                    strip_shape_shadows(empty_ball)
             else:
-                p_s.font.color.rgb = theme.get_rgb("primary")
+                tb_sc = slide.shapes.add_textbox(px + Inches(0.04), cur_y + Inches(0.04), max(Inches(0.35), plat_w - Inches(0.08)), row_h - Inches(0.08))
+                tf_sc = tb_sc.text_frame
+                tf_sc.word_wrap = True
+                tf_sc.vertical_anchor = MSO_ANCHOR.MIDDLE
+                tf_sc.margin_left = tf_sc.margin_right = Pt(3)
+                tf_sc.margin_top = tf_sc.margin_bottom = Pt(2)
+                p_s = tf_sc.paragraphs[0]
+                p_s.alignment = PP_ALIGN.CENTER
+                p_s.text = glyph
+                p_s.font.name = theme.font_family_header
+                p_s.font.size = Pt(10.0)
+                p_s.font.bold = True
+                p_s.font.color.rgb = hex_to_rgb("#1E3A8A") if is_rec else theme.get_rgb("primary")
 
-        # Impact Badge (Scaled cleanly to 10.0pt to match spacious cells)
-        tb_imp = slide.shapes.add_textbox(table_left + cat_w + crit_w + len(platforms) * plat_w, cur_y + Inches(0.08), impact_w, row_h - Inches(0.16))
-        tf_imp = tb_imp.text_frame
-        tf_imp.vertical_anchor = MSO_ANCHOR.MIDDLE
-        p_im = tf_imp.paragraphs[0]
-        p_im.alignment = PP_ALIGN.CENTER
-        p_im.text = row.business_impact.upper()
-        p_im.font.name = theme.font_family_header
-        p_im.font.size = Pt(10.0)
-        p_im.font.bold = True
-        if row.business_impact.upper() in ("CRITICAL", "HIGH"):
-            p_im.font.color.rgb = RGBColor(220, 38, 38)
-        else:
-            p_im.font.color.rgb = theme.get_rgb("accent")
+        # Opt-in Impact Column with calibrated 3-tier severity
+        if has_impact:
+            imp_str = str(row.business_impact or "").strip().upper()
+            tb_imp = slide.shapes.add_textbox(table_left + cat_w + crit_w + len(platforms) * plat_w + Inches(0.04), cur_y + Inches(0.04), impact_w - Inches(0.08), row_h - Inches(0.08))
+            tf_imp = tb_imp.text_frame
+            tf_imp.word_wrap = True
+            tf_imp.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_imp.margin_left = tf_imp.margin_right = Pt(3)
+            tf_imp.margin_top = tf_imp.margin_bottom = Pt(2)
+            p_im = tf_imp.paragraphs[0]
+            p_im.alignment = PP_ALIGN.CENTER
+            p_im.text = imp_str or "-"
+            p_im.font.name = theme.font_family_header
+            p_im.font.size = Pt(9.5)
+            p_im.font.bold = True
+            if imp_str in ("CRITICAL", "BLOCKER"):
+                p_im.font.color.rgb = RGBColor(220, 38, 38)
+            elif imp_str in ("HIGH", "WARNING"):
+                p_im.font.color.rgb = RGBColor(217, 119, 6)
+            elif imp_str == "MEDIUM":
+                p_im.font.color.rgb = theme.get_rgb("accent")
+            else:
+                p_im.font.color.rgb = theme.get_rgb("muted")
 
-        cur_y += row_h + Inches(0.06)
+        cur_y += row_h
 
     # 5. Strictly Opt-In Footnote / Legend
-    if data.footnote and str(data.footnote).strip():
+    if footnote_str:
         foot_y = cur_y + Inches(0.12)
-        tb_fn = slide.shapes.add_textbox(table_left, foot_y, table_w, Inches(0.30))
+        tb_fn = slide.shapes.add_textbox(table_left, foot_y, table_w, Inches(0.42))
         tf_fn = tb_fn.text_frame
+        tf_fn.word_wrap = True
+        tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
         p_fn = tf_fn.paragraphs[0]
-        p_fn.text = str(data.footnote).strip()
+        p_fn.text = footnote_str
         p_fn.font.name = theme.font_family
         p_fn.font.size = Pt(8.5)
         p_fn.font.italic = True
@@ -324,16 +409,16 @@ def _render_table_row(
     else:
         if is_alt:
             row_bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry, total_w, row_h)
-            row_bg.shadow.inherit = False
             row_bg.fill.solid()
             row_bg.fill.fore_color.rgb = theme.get_rgb("surface_muted")
             row_bg.line.fill.background()
+            strip_shape_shadows(row_bg)
 
         row_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, cur_ry + row_h, total_w, Pt(0.5))
-        row_div.shadow.inherit = False
         row_div.fill.solid()
         row_div.fill.fore_color.rgb = theme.get_rgb("border")
         row_div.line.fill.background()
+        strip_shape_shadows(row_div)
 
     cur_cx = start_x
     dim_idx = 1 if (columns and columns[0].is_index) else 0
@@ -342,10 +427,10 @@ def _render_table_row(
         is_highlighted = getattr(col, "is_highlight", False)
         if is_highlighted and not is_detached:
             cell_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cur_cx, cur_ry, cw, row_h)
-            cell_card.shadow.inherit = False
             cell_card.fill.solid()
             cell_card.fill.fore_color.rgb = RGBColor(238, 246, 255)
             cell_card.line.fill.background()
+            strip_shape_shadows(cell_card)
 
         cell_val = row[c_idx] if c_idx < len(row) else ""
         cell_str = str(cell_val).strip()
@@ -448,17 +533,17 @@ def build_table_slide(
 
     # Header Band (Single-Line Rule: Muted surface with dark bold slate text, eliminating the solid dark banner block)
     hdr_card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, header_y, total_w, header_h)
-    hdr_card.shadow.inherit = False
     hdr_card.fill.solid()
     hdr_card.fill.fore_color.rgb = theme.get_rgb("surface_muted")
     hdr_card.line.fill.background()
+    strip_shape_shadows(hdr_card)
 
     # Clean hairline divider under header row
     hdr_div = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, header_y + header_h, total_w, Pt(1.0))
-    hdr_div.shadow.inherit = False
     hdr_div.fill.solid()
     hdr_div.fill.fore_color.rgb = theme.get_rgb("border")
     hdr_div.line.fill.background()
+    strip_shape_shadows(hdr_div)
 
     cur_x = start_x
     for c_idx, col in enumerate(columns):
@@ -466,10 +551,10 @@ def build_table_slide(
         is_highlighted = getattr(col, "is_highlight", False)
         if is_highlighted:
             hdr_hl = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, cur_x, header_y, cw, header_h)
-            hdr_hl.shadow.inherit = False
             hdr_hl.fill.solid()
             hdr_hl.fill.fore_color.rgb = hex_to_rgb("#1E3A8A")
             hdr_hl.line.fill.background()
+            strip_shape_shadows(hdr_hl)
 
         tb = slide.shapes.add_textbox(cur_x + Inches(0.08), header_y + Inches(0.06), cw - Inches(0.16), header_h - Inches(0.12))
         tf = tb.text_frame

@@ -690,6 +690,15 @@ def ppt_lint_cli(
     if res.returncode != 0:
         raise typer.Exit(code=res.returncode)
 
+    hyg_cmd = [sys.executable, "scripts/lint_engine_hygiene.py"]
+    if strict:
+        hyg_cmd.append("--strict")
+    if files:
+        hyg_cmd.extend(files)
+    hyg_res = subprocess.run(hyg_cmd)
+    if hyg_res.returncode != 0:
+        raise typer.Exit(code=hyg_res.returncode)
+
 
 @ppt_app.command("lint-spec")
 def ppt_lint_spec_cli(
