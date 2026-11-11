@@ -172,11 +172,11 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
   hero_stat_label: "Annualized Value"
   hero_stat_subtext: "Projected 3-year cumulative ROI with 4.2x payback across clinical and ops workflows."
   blocks:
-    - title: "Automated Patient Feature Pipeline"
+    - title: "Automated Customer Feature Pipeline"
       description: "Silver Dynamic Tables refresh features sub-hourly, eliminating 280 hours of monthly manual SQL extraction."
       category_tag: "PIPELINE VELOCITY"
     - title: "Real-Time Cortex Inference"
-      description: "Serverless ML endpoints serve predictive probabilities into EMR before consultation starts."
+      description: "Serverless ML endpoints serve predictive probabilities into enterprise applications in real time."
       category_tag: "PREDICTIVE SERVING"
 """,
     },
@@ -271,7 +271,7 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
             "title (str): Action title stating the register's active reality",
             "subtitle (str): Contextual narrative subtitle",
             "columns (list): Definitions: [{header, width, align ('LEFT'|'CENTER'|'RIGHT'), is_status, is_index, is_highlight}]",
-            "rows (list of lists): Row cell values matching column count",
+            "rows (list of lists): Row cell values matching column count; status cells support str (soft auto green/amber/red/blue) or {text, color: green|amber|red|blue|slate}",
             "footnote (str, optional): Table footnote or telemetry source citation",
             "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
@@ -564,14 +564,14 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       metric: "48 Tables"
       metric_label: "RAW INGESTION"
       description: "Direct append-only CDC feeds from legacy MySQL and Postgres systems."
-      tables: ["RAW_PATIENT_LOGS", "CDC_BILLING_EVENT", "RAW_APPOINTMENT_LOG"]
+      tables: ["RAW_TRANSACTION_LOGS", "CDC_BILLING_EVENT", "RAW_EVENT_LOG"]
       excluded_note: "Direct ML training strictly prohibited to prevent data leakage."
     - tier: "SILVER TIER (CONSOLIDATED)"
       tier_badge: "CERTIFIED"
       metric: "12 Tables"
       metric_label: "FEATURE STAGING"
-      description: "Deduplicated, type-cast, and joined via validated CYCLE_ID keys."
-      tables: ["FCT_CYCLE_SUMMARY", "DIM_PATIENT_ATTRIBUTES", "STG_CLINICAL_OUTCOMES"]
+      description: "Deduplicated, type-cast, and joined via validated primary keys."
+      tables: ["FCT_ORDER_SUMMARY", "DIM_ACCOUNT_ATTRIBUTES", "STG_EVENT_OUTCOMES"]
       excluded_note: "Primary foundation for Cortex model feature store."
     - tier: "GOLD TIER (AGGREGATED)"
       tier_badge: "GOVERNED"
@@ -712,8 +712,8 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
   title: "Predictive Analytics Relies on a Heavy Subsurface Governance Foundation"
   subtitle: "The visible UI assistant is enabled by extensive lakehouse data modeling, masking, and CDC pipelines."
   visible_items:
-    - "Streamlit EMR Copilot UI"
-    - "Real-Time Patient Outcome Predictions"
+    - "Streamlit Enterprise Copilot UI"
+    - "Real-Time Predictive Analytics"
     - "Executive BI Dashboard Metrics"
   subsurface_items:
     - "Dynamic Table Staging & Deterministic Join Keys"

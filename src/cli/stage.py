@@ -222,7 +222,7 @@ def stage_preflight(
 @stage_app.command("manifest")
 def stage_manifest(
     directory: str = typer.Argument("output", help="Directory containing staged deliverables"),
-    target_root: str = typer.Option("BSIM_Migration_Deliverables", "--target-root", "-t", help="Target shared Google Drive root folder name or path"),
+    target_root: str = typer.Option("Deliverables", "--target-root", "-t", help="Target shared Google Drive root folder name or path"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Optional path to output JSON manifest (defaults to <directory>/delivery_manifest.json)"),
     strict: bool = typer.Option(True, "--strict/--no-strict", help="Fail if active locks or corrupted files are present"),
 ) -> None:

@@ -433,8 +433,15 @@ def _render_table_row(
             strip_shape_shadows(cell_card)
 
         cell_val = row[c_idx] if c_idx < len(row) else ""
-        cell_str = str(cell_val).strip()
-        is_status_col = col.is_status or (cell_str.upper() in status_keywords and len(cell_str) <= 20)
+        cell_color_override: Optional[str] = None
+        if isinstance(cell_val, dict):
+            cell_str = str(cell_val.get("text") or cell_val.get("label") or cell_val.get("status") or "").strip()
+            raw_ov = cell_val.get("color") or cell_val.get("status_color") or cell_val.get("badge_color")
+            if isinstance(raw_ov, str) and raw_ov.strip():
+                cell_color_override = raw_ov.strip().lower()
+        else:
+            cell_str = str(cell_val).strip()
+        is_status_col = col.is_status or (cell_str.upper() in status_keywords and len(cell_str) <= 24)
 
         if is_status_col and cell_str:
             pill_w = min(cw - Inches(0.16), max(Inches(1.80), cw * 0.92))
@@ -450,7 +457,7 @@ def _render_table_row(
                 height=pill_h,
                 status=cell_str,
                 font_size_pt=max(8.0, font_size_pt - 1.5),
-                override_color_key="accent" if is_detached else None,
+                override_color_key=cell_color_override or ("accent" if is_detached else None),
             )
         else:
             is_idx_col = col.is_index or (c_idx == 0 and cell_str.isdigit())
@@ -597,6 +604,8 @@ def build_table_slide(
 
     status_keywords = {
         "COMPLETE", "COMPLETED", "IN PROGRESS", "ON TRACK", "RESCHEDULED", "PLANNED",
+        "READY", "NOT READY", "AVAILABLE", "PARTIAL", "PARTIALLY AVAILABLE",
+        "NOT AVAILABLE", "UNAVAILABLE", "REQUIRES VALIDATION",
         "CRITICAL GATE", "MILESTONE GATE", "HIGH", "MEDIUM", "LOW", "SIGNED-OFF",
         "MUTUAL", "DAILY", "WEEKLY", "AS NEEDED", "OPEN", "RESOLVED", "INCLUDE ANYWAY"
     }

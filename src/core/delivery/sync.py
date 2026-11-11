@@ -77,7 +77,7 @@ def discover_google_drive_mounts() -> List[Path]:
 
 
 def resolve_target_drive_root(
-    target_root_name: str = "BSIM_Migration_Deliverables",
+    target_root_name: str = "Deliverables",
     drive_base: Optional[Union[str, Path]] = None,
 ) -> Path:
     """
@@ -165,7 +165,7 @@ class RemoteSyncEngine:
             raise ValueError(f"Failed to parse manifest JSON at '{mpath}': {exc}")
 
         items: List[Dict[str, Any]] = []
-        target_root = data.get("drive_target_root", "BSIM_Migration_Deliverables")
+        target_root = data.get("drive_target_root", "Deliverables")
 
         # Format A: Categorized manifest (doc_output/.staging_manifest.json)
         if "categories" in data and isinstance(data["categories"], dict):
@@ -219,7 +219,7 @@ class RemoteSyncEngine:
 
         Args:
           manifest_path: Path to `.staging_manifest.json` or `delivery_manifest.json`.
-          target_drive_root: Target Google Drive folder name (e.g. 'BSIM_Migration_Deliverables').
+          target_drive_root: Target Google Drive folder name (e.g. 'Deliverables').
           drive_base_dir: Explicit local base mount point for Google Drive.
           categories: Optional list of category names to filter.
           formats: Optional list of file extensions to filter (e.g. ['.pptx']).

@@ -187,24 +187,24 @@ slides:
     subtitle: "Empirical readiness audit across Snowflake TEST schemas, volume, quality fixes, leakage risks, and unverified assumptions."
     columns:
       - header: "Data Domain & Snowflake Source"
-        width: 2.75
+        width: 2.68
         align: "LEFT"
       - header: "Volume & Historical Coverage"
-        width: 3.30
+        width: 3.20
         align: "LEFT"
       - header: "Quality, Leakage Controls & Gaps"
-        width: 3.80
+        width: 3.70
         align: "LEFT"
       - header: "Readiness"
-        width: 1.883
+        width: 2.153
         align: "CENTER"
         is_status: true
     rows:
-      - ["Core Clinical Tables (DM_PATIENT, OPU, EMBRYO, ET/FET)", "11,546 settled (2019-01..2026-05), 8,393 patients, 13 branches", "10-day thaw bridge (88.17% match); 25,029 sentinel 1901-01-01 rows cut; 0 overlap", "Available"]
-      - ["Target Label (FACT_PREGNANCY_OUTCOME)", "27,684 rows (0% NULLs); 45.9% clinical preg modern (33.8% ET / 50.3% FET)", "Deprecated PREGNANT_RESULT (98.1% blank) excluded; 409 >=2026-06 pending rows cut", "Available"]
-      - ["Stimulation & Lab Features (Age, Grade, MII, Dose)", "Embryo grade known 85.8% modern (vs 57.3% pre-2019); SHA2 PII vault intact", "Fixed 291 zero-dose & 1,805 vial-unit outliers via NULLIF & OSI_PROXY <= 500 cap", "Available"]
-      - ["Pre-Cycle Reserve & Genetics (AMH, AFC, PGT-A)", "AMH populated 4.87% overall (23.6% in 2023+); PGT-A 6.96% (24.3% in 2024+)", "High missingness & era shift (0% pre-2023 PGT-A -> 24% test) limits generalization", "Partially Available"]
-      - ["FET Endometrial & Luteal Factors (Lining, Prep, D5/D6, BMI)", "0% structured columns in FACT_FET / FACT_EMBRYO schemas", "Absent for 73.4% Frozen FET volume; caps Frozen temporal ROC-AUC at 0.626", "Not Available"]
+      - ["Core Clinical Tables (DM_PATIENT, OPU, EMBRYO, ET/FET)", "11,546 settled (2019-01..2026-05), 8,393 patients, 13 branches", "10-day thaw bridge (88.17% match); 25,029 sentinel 1901-01-01 rows cut; 0 overlap", "Available (Complete)"]
+      - ["Target Label (FACT_PREGNANCY_OUTCOME)", "27,684 rows (0% NULLs); 45.9% clinical preg modern (33.8% ET / 50.3% FET)", "Deprecated PREGNANT_RESULT (98.1% blank) excluded; 409 >=2026-06 pending rows cut", "Available (Complete)"]
+      - ["Stimulation & Lab Features (Age, Grade, MII, Dose)", "Embryo grade known 85.8% modern (vs 57.3% pre-2019); SHA2 PII vault intact", "Fixed 291 zero-dose & 1,805 vial-unit outliers via NULLIF & OSI_PROXY <= 500 cap", "Available (Complete)"]
+      - ["Pre-Cycle Reserve & Genetics (AMH, AFC, PGT-A)", "AMH populated 4.87% overall (23.6% in 2023+); PGT-A 6.96% (24.3% in 2024+)", "High missingness & era shift (0% pre-2023 PGT-A -> 24% test) limits generalization", "Partial (Caution)"]
+      - ["FET Endometrial & Luteal Factors (Lining, Prep, D5/D6, BMI)", "0% structured columns in FACT_FET / FACT_EMBRYO schemas", "Absent for 73.4% Frozen FET volume; caps Frozen temporal ROC-AUC at 0.626", "Not Avail (Missing)"]
       - ["Clinical Notes & Live EMR Feed (FACT_SOAP_PATIENT)", "195,168 SOAP notes; inline regex AMH appears in only 169 of 9,904 AMH notes", "Assumption: live pre-transfer EMR query latency & clinician workflow need inspection", "Requires Validation"]
 
   # Slide 6: Proposed Solution & Technical Approach

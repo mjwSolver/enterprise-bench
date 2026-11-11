@@ -54,7 +54,7 @@ _MD_LEADING_BULLET_RE = re.compile(r"^\s*[-*+•–]\s+")
 @dataclass
 class LintIssue:
     rule_id: str
-    severity: str  # "ERROR" | "WARNING"
+    severity: str  # "ERROR" | "WARNING" | "INFO"
     slide_idx: int
     archetype: str
     message: str
@@ -68,6 +68,7 @@ class SpecLintReport:
     passed: bool = True
     error_count: int = 0
     warning_count: int = 0
+    info_count: int = 0
 
     def add_issue(
         self,
@@ -93,6 +94,8 @@ class SpecLintReport:
             self.passed = False
         elif severity == "WARNING":
             self.warning_count += 1
+        elif severity == "INFO":
+            self.info_count += 1
 
     def render(self, console: Optional[Console] = None) -> None:
         c = console or Console()
@@ -122,11 +125,12 @@ class SpecLintReport:
         table.add_column("Finding & Recommendation", style="white")
 
         for issue in self.issues:
-            sev_badge = (
-                "[bold red]ERROR[/bold red]"
-                if issue.severity == "ERROR"
-                else "[bold yellow]WARN[/bold yellow]"
-            )
+            if issue.severity == "ERROR":
+                sev_badge = "[bold red]ERROR[/bold red]"
+            elif issue.severity == "WARNING":
+                sev_badge = "[bold yellow]WARN[/bold yellow]"
+            else:
+                sev_badge = "[cyan]SUGGEST[/cyan]"
             slide_str = f"#{issue.slide_idx:02d}" if issue.slide_idx > 0 else "DECK"
             body = (
                 f"{issue.message}\n"
@@ -135,11 +139,13 @@ class SpecLintReport:
             table.add_row(slide_str, issue.archetype, issue.rule_id, sev_badge, body)
 
         c.print(table)
-        status_line = (
-            f"[bold red]FAILED[/bold red] ({self.error_count} errors, {self.warning_count} warnings)"
-            if not self.passed
-            else f"[bold yellow]PASSED WITH WARNINGS[/bold yellow] ({self.warning_count} warnings)"
-        )
+        info_suffix = f", {self.info_count} soft suggestions" if self.info_count > 0 else ""
+        if not self.passed:
+            status_line = f"[bold red]FAILED[/bold red] ({self.error_count} errors, {self.warning_count} warnings{info_suffix})"
+        elif self.warning_count > 0:
+            status_line = f"[bold yellow]PASSED WITH WARNINGS[/bold yellow] ({self.warning_count} warnings{info_suffix})"
+        else:
+            status_line = f"[bold green]PASSED[/bold green] (0 errors, 0 warnings{info_suffix})"
         c.print(f"\n[dim]Audit Summary:[/dim] {status_line}")
 
 
@@ -1233,6 +1239,188 @@ def lint_presentation_spec(
                     archetype=arch,
                     message=f"feature_matrix footnote is {len(fn_text)} chars (> 175) and risks wrapping into footer.",
                     suggestion="Keep table footnotes concise (<= 175 characters).",
+                )
+
+        # ---------------------------------------------------------------------
+        # Rule LINT011: Non-Blocking Soft Suggestion for Monochrome Status Columns
+        # ---------------------------------------------------------------------
+        if arch in ("table", "matrix_table", "milestones_table", "prerequisites_table", "communication_table", "risk_table", "table_matrix"):
+            cols = slide.get("columns") or []
+            t_rows = slide.get("rows") or []
+            if isinstance(cols, list) and isinstance(t_rows, list) and len(t_rows) >= 2:
+                from src.ppt_engine.theme_engine import get_theme
+                t_obj = get_theme("default")
+                for c_idx, col_def in enumerate(cols):
+                    if not isinstance(col_def, dict):
+                        continue
+                    hdr_up = str(col_def.get("header", "")).upper()
+                    is_stat_col = bool(col_def.get("is_status")) or any(w in hdr_up for w in ("STATUS", "READINESS", "HEALTH", "RISK"))
+                    if not is_stat_col:
+                        continue
+                    distinct_labels = set()
+                    resolved_fills = set()
+                    has_override = False
+                    for r in t_rows:
+                        if not isinstance(r, list) or c_idx >= len(r):
+                            continue
+                        cell = r[c_idx]
+                        if isinstance(cell, dict):
+                            has_override = True
+                            lbl = str(cell.get("text") or cell.get("label") or cell.get("status") or "").strip()
+                            ov = str(cell.get("color") or cell.get("status_color") or cell.get("badge_color") or "").strip()
+                            if ov:
+                                resolved_fills.add(ov.lower())
+                        else:
+                            lbl = str(cell).strip()
+                            if lbl:
+                                resolved_fills.add(t_obj.resolve_status_badge_keys(lbl)[0])
+                        if lbl:
+                            distinct_labels.add(lbl.upper())
+                    if len(distinct_labels) >= 2 and resolved_fills == {"badge_blue_fill"} and not has_override:
+                        report.add_issue(
+                            rule_id="LINT011_SOFT_STATUS_SUGGESTION",
+                            severity="INFO",
+                            slide_idx=idx,
+                            archetype=arch,
+                            message=(
+                                f"Column '{col_def.get('header', c_idx + 1)}' has {len(distinct_labels)} distinct status labels "
+                                "that all resolve to monochrome blue."
+                            ),
+                            suggestion=(
+                                "Soft suggestion: use readiness cues (e.g. 'Available'/'Ready' -> green, 'Partial'/'Limited' -> amber, "
+                                "'Not Available'/'Blocked' -> red) or optional {text, color: green|amber|red|blue} cell overrides."
+                            ),
+                        )
+
+        # ---------------------------------------------------------------------
+        # Rule LINT012: Archetype Capacity Overflow (Anti-Silent Truncation Guard)
+        # ---------------------------------------------------------------------
+        # Flags when spec arrays exceed the maximum items rendered by the archetype,
+        # preventing silent Python list slicing (e.g. [:3], [:4]) from dropping user content.
+        if arch in ("iceberg_concept", "iceberg"):
+            v_items = slide.get("visible_items") or []
+            s_items = slide.get("subsurface_items") or []
+            if isinstance(v_items, list) and len(v_items) > 3:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"iceberg_concept provides {len(v_items)} visible_items, but archetype renders at most 3 (items 4+ will be silently dropped).",
+                    suggestion="Condense visible_items to <= 3 items.",
+                )
+            if isinstance(s_items, list) and len(s_items) > 6:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"iceberg_concept provides {len(s_items)} subsurface_items, but archetype renders at most 6 (items 7+ will be silently dropped).",
+                    suggestion="Condense subsurface_items to <= 6 items.",
+                )
+
+        elif arch in ("three_horizons", "horizons"):
+            horizons = slide.get("horizons") or slide.get("items") or []
+            if isinstance(horizons, list) and len(horizons) > 3:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"three_horizons provides {len(horizons)} horizons, but archetype renders at most 3 (items 4+ will be silently dropped).",
+                    suggestion="Limit horizons to <= 3 items.",
+                )
+
+        elif arch in ("strategic_pillars", "three_pillars", "pillars"):
+            pillars = slide.get("pillars") or slide.get("items") or []
+            if isinstance(pillars, list) and len(pillars) > 3:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"strategic_pillars provides {len(pillars)} pillars, but archetype renders at most 3 (items 4+ will be silently dropped).",
+                    suggestion="Limit pillars to <= 3 items.",
+                )
+
+        elif arch in ("quadrant_matrix", "quadrants", "2x2"):
+            quads = slide.get("quadrants") or slide.get("items") or []
+            if isinstance(quads, list) and len(quads) > 4:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"quadrant_matrix provides {len(quads)} quadrants, but archetype renders at most 4 (items 5+ will be silently dropped).",
+                    suggestion="Limit quadrants to exactly 4 items.",
+                )
+            for q_idx, q in enumerate(quads if isinstance(quads, list) else [], start=1):
+                if isinstance(q, dict):
+                    m_list = q.get("metrics") or []
+                    if isinstance(m_list, list) and len(m_list) > 2:
+                        report.add_issue(
+                            rule_id="LINT012_CAPACITY_OVERFLOW",
+                            severity="WARNING",
+                            slide_idx=idx,
+                            archetype=arch,
+                            message=f"quadrant_matrix quadrant {q_idx} provides {len(m_list)} metrics, but archetype renders at most 2.",
+                            suggestion="Limit metrics per quadrant to <= 2.",
+                        )
+
+        elif arch in ("swimlane_timeline", "swimlane_architecture", "swimlane"):
+            s_cols = slide.get("columns") or []
+            if isinstance(s_cols, list) and len(s_cols) > 3:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"swimlane archetype provides {len(s_cols)} columns, but archetype renders at most 3.",
+                    suggestion="Limit swimlane columns to <= 3.",
+                )
+            for sc_idx, sc in enumerate(s_cols if isinstance(s_cols, list) else [], start=1):
+                if isinstance(sc, dict):
+                    sc_nodes = sc.get("nodes") or []
+                    if isinstance(sc_nodes, list) and len(sc_nodes) > 3:
+                        report.add_issue(
+                            rule_id="LINT012_CAPACITY_OVERFLOW",
+                            severity="WARNING",
+                            slide_idx=idx,
+                            archetype=arch,
+                            message=f"swimlane column {sc_idx} provides {len(sc_nodes)} nodes, but archetype renders at most 3.",
+                            suggestion="Limit nodes per swimlane column to <= 3.",
+                        )
+            conns = slide.get("workstream_connectors") or slide.get("connectors") or []
+            if isinstance(conns, list) and len(conns) > 4:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"swimlane provides {len(conns)} workstream_connectors, but archetype renders at most 4.",
+                    suggestion="Limit workstream connectors to <= 4.",
+                )
+
+        elif arch in ("workstream_runbook", "runbook"):
+            r_items = slide.get("items") or []
+            if isinstance(r_items, list) and len(r_items) > 4:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"workstream_runbook provides {len(r_items)} items, but archetype renders at most 4 quadrants.",
+                    suggestion="Limit runbook items to <= 4.",
+                )
+            pic = slide.get("pic_matrix") or []
+            if isinstance(pic, list) and len(pic) > 4:
+                report.add_issue(
+                    rule_id="LINT012_CAPACITY_OVERFLOW",
+                    severity="WARNING",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message=f"workstream_runbook provides {len(pic)} pic_matrix rows, but archetype renders at most 4.",
+                    suggestion="Limit pic_matrix to <= 4 rows.",
                 )
 
     # -------------------------------------------------------------------------

@@ -829,17 +829,17 @@ def build_open_telemetry_flow_slide(
 
     # Data series
     raw_series = (gate_matrix.get("series") if gate_matrix else None) or [
-        {"label": "EMBRYO_VIABILITY_SCORE", "value": 0.994, "display_value": "99.4%", "subtext": "(42.8k calls)", "status": "PASS", "bar_color": "accent"},
-        {"label": "IVF_CYCLE_ATTRITION", "value": 0.962, "display_value": "96.2%", "subtext": "(18.4k calls)", "status": "PASS", "bar_color": "accent"},
-        {"label": "CLINICAL_PROTOCOL_REC", "value": 0.887, "display_value": "88.7%", "subtext": "(6.2k calls)", "status": "WARN", "bar_color": "amber"},
-        {"label": "PATIENT_RESPONSE_ETL", "value": 0.741, "display_value": "74.1%", "subtext": "(92.1k rows)", "status": "AUDIT", "bar_color": "slate"},
+        {"label": "INGESTION_PIPELINE_HEALTH", "value": 0.994, "display_value": "99.4%", "subtext": "(42.8k calls)", "status": "PASS", "bar_color": "accent"},
+        {"label": "SCHEMA_VALIDATION_MATCH", "value": 0.962, "display_value": "96.2%", "subtext": "(18.4k calls)", "status": "PASS", "bar_color": "accent"},
+        {"label": "TRANSFORMATION_ACCURACY", "value": 0.887, "display_value": "88.7%", "subtext": "(6.2k calls)", "status": "WARN", "bar_color": "amber"},
+        {"label": "RECONCILIATION_AUDIT_LOG", "value": 0.741, "display_value": "74.1%", "subtext": "(92.1k rows)", "status": "AUDIT", "bar_color": "slate"},
     ]
 
     total_matrix_h = len(raw_series) * row_h + (len(raw_series) - 1) * row_gap
 
     # Threshold Gate Needles (Triangles + Lines)
     th_specs = [
-        {"pct": 0.85, "label": "85% CLINICAL SLA", "color": "amber", "rgb": _resolve_color("amber", theme), "pill_x": Inches(9.50), "pill_w": Inches(1.15)},
+        {"pct": 0.85, "label": "85% OPERATIONAL SLA", "color": "amber", "rgb": _resolve_color("amber", theme), "pill_x": Inches(9.50), "pill_w": Inches(1.15)},
         {"pct": 0.95, "label": "95% REGULATORY GATE", "color": "emerald", "rgb": _resolve_color("emerald", theme), "pill_x": Inches(10.68), "pill_w": Inches(1.22)},
     ]
 
@@ -1522,24 +1522,24 @@ def build_crisp_dm_gate_slide(
         prep_cards = [
             {
                 "title": "Cohort Extraction",
-                "subtitle": "Verified patient encounters",
+                "subtitle": "Verified enterprise encounters",
                 "metric": "11.9K",
                 "metric_label": "VERIFIED COHORT",
                 "accent_key": "primary",
                 "bullets": [
-                    "Clinical Spine: July 2024–Sept 2026 verified appointments.",
+                    "Transactional Spine: Verified multi-year transactional records.",
                     "Cleaned Grain: Eliminates dummy test rows and admin accounts.",
                 ],
             },
             {
                 "title": "Target Label Resolution",
-                "subtitle": "Silent no-show proxy resolution",
+                "subtitle": "Deterministic target resolution",
                 "metric": "21.0%",
-                "metric_label": "NO-SHOW BASELINE",
+                "metric_label": "BASELINE INCIDENCE",
                 "accent_key": "accent",
                 "bullets": [
-                    "Operational Proxy: REALISASI = 0 indicates patient absence.",
-                    "Separated Cancels: Distinguishes silent no-shows from notified cancels.",
+                    "Operational Proxy: Standard event code flags primary outcome.",
+                    "Separated States: Distinguishes completed from notified cancels.",
                 ],
             },
             {
@@ -1549,7 +1549,7 @@ def build_crisp_dm_gate_slide(
                 "metric_label": "SIGNAL DOMAINS",
                 "accent_key": "primary",
                 "bullets": [
-                    "Clinical Lead Time: Booking horizon, branch, and specialty.",
+                    "Lead Time Features: Booking horizon, branch, and category.",
                     "Billing History: Transaction count, invoice volume, and cadence.",
                 ],
             },
@@ -1560,7 +1560,7 @@ def build_crisp_dm_gate_slide(
                 "metric_label": "LEAKAGE TOLERANCE",
                 "accent_key": "danger",
                 "bullets": [
-                    "Temporal Cutoff: Zero consultation signals past appointment.",
+                    "Temporal Cutoff: Zero post-event signals prior to execution.",
                     "Zero-Tolerance: Pipeline aborts if leakage count exceeds zero.",
                 ],
             },
@@ -1731,11 +1731,11 @@ def build_medallion_tiers_slide(
                 "metric_label": "APPROVED CORPUS",
                 "color": "emerald",
                 "tables": [
-                    "FACT_PATIENT_APPOINTMENT (30,761 rows): Core booking cohort spine.",
-                    "FACT_SOAP_PATIENT (193,694 rows): 95.8% clinical encounter join coverage.",
+                    "FACT_CORE_APPOINTMENT (30,761 rows): Core booking cohort spine.",
+                    "FACT_ENCOUNTER_LOG (193,694 rows): 95.8% operational encounter join coverage.",
                     "FACT_TRANSACTION (8.68M rows): 99.9% billing cadence and payment history.",
                 ],
-                "excluded_note": "FACT_CHAT (126.5K) and CALL_CENTER (8.8K) excluded due to late 2025 start.",
+                "excluded_note": "Unverified legacy channels excluded due to lack of historical baseline.",
             },
             {
                 "tier_name": "Bronze Ingestion Tables",
@@ -1744,7 +1744,7 @@ def build_medallion_tiers_slide(
                 "metric_label": "RAW AUDIT VERSIONS",
                 "color": "amber",
                 "tables": [
-                    "TERAmedik Appointment Logs (19,327 live rows + 266,013 historical audit versions).",
+                    "RAW_SYSTEM_AUDIT_LOGS (19,327 live rows + 266,013 historical audit versions).",
                     "Holds reschedule timestamps and cancellation audit trail uncaptured in Silver snapshot.",
                 ],
                 "excluded_note": "Gated Ingestion: Requires formal DE rationale, written sign-off, and JSON parsing.",
@@ -1756,7 +1756,7 @@ def build_medallion_tiers_slide(
                 "metric_label": "PRE-AGGREGATED MARTS",
                 "color": "danger",
                 "tables": [
-                    "Pre-aggregated BI clinic summary tables and executive dashboard reporting marts.",
+                    "Pre-aggregated BI business summary tables and executive dashboard reporting marts.",
                     "Direct Target Leakage: Monthly aggregates embed future outcome totals into past features.",
                 ],
                 "excluded_note": "Physical RBAC Lock: Target role denies SELECT on all Gold marts and schemas.",

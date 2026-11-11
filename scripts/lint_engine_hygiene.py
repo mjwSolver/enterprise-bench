@@ -21,7 +21,15 @@ from pathlib import Path
 from typing import List, Tuple
 
 WORKSTATION_PATH_RE = re.compile(r"(?:/Users/|/home/|C:\\\\Users\\\\)[^\s\"']+")
-CLIENT_LEAK_RE = re.compile(r"\bmorula(?:ivf)?\b", re.IGNORECASE)
+CLIENT_LEAK_RE = re.compile(
+    r"\b(?:morula(?:ivf)?|bsim(?:_migration)?|toyota|tsusho|teramedik|embryo|oocyte|blastocyst)\b",
+    re.IGNORECASE,
+)
+_PII_SCRUBBER_FILES = {
+    "src/core/slug_registry.py",
+    "src/core/pii/detectors.py",
+    "src/core/pii/engine.py",
+}
 # Aligned with src/ppt_engine/archetypes/common.py EMOJI_PATTERN (excludes U+2794 arrow ➔)
 EMOJI_RE = re.compile(r"[\U0001F300-\U0001FAFF\u2600-\u26FF\u2700-\u2793\u2795-\u27BF\uFE0F]")
 OPT_IN_META_KEYS = {"impact", "business_impact", "tracker", "subtitle"}
@@ -81,7 +89,7 @@ def _lint_file(path: Path) -> Tuple[List[str], List[str]]:
                 errors.append(
                     f"[WORKSTATION_PATH_LEAK] {rel}:{lineno} hardcodes workstation path literal; derive dynamically from repo root or CWD."
                 )
-            if CLIENT_LEAK_RE.search(val):
+            if CLIENT_LEAK_RE.search(val) and rel not in _PII_SCRUBBER_FILES:
                 errors.append(
                     f"[PROJECT_NEUTRALITY_LEAK] {rel}:{lineno} embeds client-specific term inside core src/; move to external YAML specs."
                 )

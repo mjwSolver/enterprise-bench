@@ -249,13 +249,13 @@ class ClosingDeckBuilder:
                 ),
             ),
             subtitle=d.get("subtitle", "Closing & Transition to Maintenance"),
-            client=d.get("client", self.metadata.get("client_name", "PT Toyota Tsusho Indonesia")),
+            client=d.get("client", self.metadata.get("client_name", "Enterprise Client")),
             vendor=d.get("vendor", self.metadata.get("vendor_name", "PT Mitra Integrasi Informatika")),
             product=d.get("product", "Snowflake AI Data Cloud"),
             date_str=d.get("date_str", self.metadata.get("report_date", "01 September 2026")),
             tracker=d.get("tracker", "PROJECT CLOSING & MAINTENANCE TRANSITION"),
             client_sublabel=d.get("client_sublabel", "Steering Committee & Executive Sponsors"),
-            vendor_sublabel=d.get("vendor_sublabel", "Agus Pramono, Project Manager, MII"),
+            vendor_sublabel=d.get("vendor_sublabel", "Project Delivery Team"),
         )
 
     # -------------------------------------------------------------------------

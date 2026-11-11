@@ -519,7 +519,7 @@ def _add_status_pill(
     if override_color_key:
         if override_color_key in ("danger", "red"):
             bg_key, text_key = ("badge_red_fill", "badge_red_text")
-        elif override_color_key in ("warning", "amber", "orange"):
+        elif override_color_key in ("warning", "amber", "orange", "yellow"):
             bg_key, text_key = ("badge_amber_fill", "badge_amber_text")
         elif override_color_key in ("success", "green"):
             bg_key, text_key = ("badge_green_fill", "badge_green_text")

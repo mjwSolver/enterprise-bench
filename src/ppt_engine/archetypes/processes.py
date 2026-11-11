@@ -713,7 +713,7 @@ def build_dense_workstream_runbook_slide(
     notice: str = "Enterprise Architecture & Modernization Practice  |  Confidential & Contractual",
 ) -> Any:
     """
-    Builds a Gear 3 Technical Workstream Runbook slide (BSIM Slide 4 pattern).
+    Builds a Gear 3 Technical Workstream Runbook slide (Workstream Runbook pattern).
     Enforces the 4-quadrant container discipline (Objective, MII Actions, Client Actions,
     Cross-Stream Dependencies) plus a bottom Named Counterpart (PIC) Accountability Matrix.
     """
@@ -1061,7 +1061,7 @@ def build_target_architecture_swimlane_slide(
     notice: Optional[str] = None,
 ) -> Any:
     """
-    Builds a Gear 2 Target Architecture Swimlane slide (BSIM Slide 6 pattern).
+    Builds a Gear 2 Target Architecture Swimlane slide (Swimlane Architecture pattern).
     Enforces a 3-column boundary topology (Source Ingress -> Target Lakehouse -> Consumers),
     with strictly opt-in workstream routing banner and top stripes.
     """

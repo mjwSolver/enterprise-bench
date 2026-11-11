@@ -167,15 +167,29 @@ class Theme:
         if key in ("blue", "metrodata_blue"):
             return self.get_hex("accent", default="#0284C7")
 
-        # Default fallbacks for slate/muted badges if not defined in older palettes
-        if key in ("badge_slate_fill", "badge_neutral_fill", "badge_gray_fill"):
-            return "#F1F5F9"
-        if key in ("badge_slate_text", "badge_neutral_text", "badge_gray_text"):
-            return "#334155"
-        if key in ("badge_muted_fill", "badge_subtle_fill"):
-            return "#F8FAFC"
-        if key in ("badge_muted_text", "badge_subtle_text"):
-            return "#64748B"
+        # Default soft badge fallbacks if omitted in custom/legacy YAML palettes
+        _badge_fallbacks = {
+            "badge_green_fill": "#DCFCE7",
+            "badge_green_text": "#15803D",
+            "badge_amber_fill": "#FEF3C7",
+            "badge_amber_text": "#B45309",
+            "badge_red_fill": "#FEE2E2",
+            "badge_red_text": "#B91C1C",
+            "badge_blue_fill": "#EFF6FF",
+            "badge_blue_text": "#1D4ED8",
+            "badge_slate_fill": "#F1F5F9",
+            "badge_slate_text": "#334155",
+            "badge_neutral_fill": "#F1F5F9",
+            "badge_neutral_text": "#334155",
+            "badge_gray_fill": "#F1F5F9",
+            "badge_gray_text": "#334155",
+            "badge_muted_fill": "#F8FAFC",
+            "badge_muted_text": "#64748B",
+            "badge_subtle_fill": "#F8FAFC",
+            "badge_subtle_text": "#64748B",
+        }
+        if key in _badge_fallbacks:
+            return _badge_fallbacks[key]
 
         if isinstance(default, str) and default.strip():
             return default.strip().upper()
@@ -188,28 +202,40 @@ class Theme:
 
     def resolve_status_badge_keys(self, status: str) -> Tuple[str, str]:
         """
-        Deterministically resolve status badge fill and text theme keys from a status label:
-        - ON TRACK, EXCEEDED, PASSED, COMPLETE, SUCCESS, OPTIMAL -> badge_green_fill, badge_green_text
-        - AT RISK, DELAYED, BLOCKED, FAILED, CRITICAL, BOTTLENECK -> badge_red_fill, badge_red_text
-        - COMMITTED, SCALE, EXPAND, STAGED, STAGE -> badge_slate_fill, badge_slate_text
-        - PLANNED, FUTURE, HORIZON 3, VISION -> badge_muted_fill, badge_muted_text
-        - IN PROGRESS, REVIEW, PENDING, ANALYSIS, ACTIVE -> badge_blue_fill, badge_blue_text
-        - Default -> badge_blue_fill, badge_blue_text
+        Deterministically resolve soft semantic badge fill/text theme keys (soft defaults):
+        1. Negative / Unavailable / Blocked -> badge_red_fill, badge_red_text
+        2. Partial / Caution / Warning -> badge_amber_fill, badge_amber_text
+        3. Ready / Available / Complete -> badge_green_fill, badge_green_text
+        4. Committed / Staged -> badge_slate_fill, badge_slate_text
+        5. Planned / Future -> badge_muted_fill, badge_muted_text
+        6. Validation / Review / Pending / Default -> badge_blue_fill, badge_blue_text
         """
         s = status.strip().upper()
-        if any(k in s for k in ["ON TRACK", "EXCEEDED", "PASSED", "COMPLETE", "SUCCESS", "OPTIMAL"]):
+        # Check negative phrases before positive substrings ("NOT AVAILABLE" contains "AVAILABLE")
+        if any(k in s for k in [
+            "NOT AVAILABLE", "NOT AVAIL", "UNAVAILABLE", "NOT READY", "NOT_AVAILABLE", "NOT_READY",
+            "AT RISK", "DELAY", "BLOCK", "FAIL", "CRITICAL", "BOTTLENECK", "HIGH",
+            "NULL", "MISSING", "ABSENT", "FRACTURE", "SEVER", "DEFICIT",
+            "CARTESIAN", "EXPLOSION", "MULTIPLICATION",
+        ]):
+            return ("badge_red_fill", "badge_red_text")
+        # Check partial/caution phrases before positive substrings ("PARTIALLY AVAILABLE" contains "AVAILABLE")
+        elif any(k in s for k in [
+            "PARTIAL", "LIMITED", "SPARSE", "CONDITIONAL", "INCOMPLETE", "LOW COVERAGE",
+            "AMBER", "WARNING", "RESCHEDULE", "OCCURRED", "MEDIUM",
+            "BERGESER", "SENTINEL", "UNCLOSED", "CAUTION", "ALERT",
+        ]):
+            return ("badge_amber_fill", "badge_amber_text")
+        elif any(k in s for k in [
+            "READY", "AVAILABLE", "ON TRACK", "EXCEEDED", "PASSED",
+            "COMPLETE", "SUCCESS", "OPTIMAL", "VERIFIED", "SUPPORTED", "HEALTHY", "GREEN", "DONE",
+        ]):
             return ("badge_green_fill", "badge_green_text")
-        elif any(k in s for k in ["AT RISK", "DELAY", "BLOCK", "FAIL", "CRITICAL", "BOTTLENECK", "HIGH", "NULL", "MISSING", "FRACTURE", "SEVER", "DEFICIT", "CARTESIAN", "EXPLOSION", "MULTIPLICATION"]):
-            return ("badge_red_fill", "badge_red_text")
-        elif any(k in s for k in ["AMBER", "WARNING", "RESCHEDULE", "OCCURRED", "MEDIUM", "BERGESER", "SENTINEL", "UNCLOSED", "CAUTION", "ALERT"]):
-            if "badge_amber_fill" in self.palette:
-                return ("badge_amber_fill", "badge_amber_text")
-            return ("badge_red_fill", "badge_red_text")
         elif any(k in s for k in ["COMMITTED", "SCALE", "EXPAND", "STAGED", "STAGE", "UNMAPPED", "UNATTRIBUTED", "UNLINKED"]):
             return ("badge_slate_fill", "badge_slate_text")
         elif any(k in s for k in ["PLANNED", "FUTURE", "VISION", "HORIZON 3", "EXPLORATORY"]):
             return ("badge_muted_fill", "badge_muted_text")
-        elif any(k in s for k in ["PROGRESS", "REVIEW", "PENDING", "ANALYSIS", "OPEN", "ACTIVE", "IN EXECUTION"]):
+        elif any(k in s for k in ["REQUIRES VALIDATION", "VALIDATION", "PROGRESS", "REVIEW", "PENDING", "ANALYSIS", "OPEN", "ACTIVE", "IN EXECUTION"]):
             return ("badge_blue_fill", "badge_blue_text")
         return ("badge_blue_fill", "badge_blue_text")
 
