@@ -1625,7 +1625,7 @@ class ReferenceDeckBuilder:
 
         meta = data.get("metadata", {})
         client_name = meta.get("client_name", "[CLIENT_COMPANY_NAME]")
-        vendor_name = meta.get("vendor_name", "PT Metrodata Electronics Tbk")
+        vendor_name = meta.get("vendor_name", "[VENDOR_COMPANY_NAME]")
 
         for slide_cfg in data.get("slides", []):
             archetype = slide_cfg.get("archetype", "")
@@ -1637,9 +1637,10 @@ class ReferenceDeckBuilder:
                 )
                 t_sub = slide_cfg.get(f"subtitle_{locale_name}") or (
                     loc.t("reference_slides.cover.subtitle") if locale_name != "en" and not slide_cfg.get("subtitle")
-                    else (loc.t("reference_slides.cover.subtitle") if locale_name != "en" and "Permanent Project Governance" in str(slide_cfg.get("subtitle", "")) else slide_cfg.get("subtitle", loc.t("reference_slides.cover.subtitle")))
+                    else (loc.t("reference_slides.cover.subtitle") if locale_name != "en" and "Permanent Project Governance" in str(slide_cfg.get("subtitle", "")) else slide_cfg.get("subtitle"))
                 )
-                t_tr = slide_cfg.get(f"tracker_{locale_name}") or loc.t("reference_slides.cover.tracker", slide_cfg.get("tracker", "ENTERPRISE BENCHMARK REFERENCE COLLATERAL"))
+                tr_val = slide_cfg.get(f"tracker_{locale_name}") or slide_cfg.get("tracker")
+                t_tr = loc.t("reference_slides.cover.tracker", tr_val) if tr_val else None
 
                 if archetype in ("hero_cover", "cinematic_cover") or hero_img:
                     builder.add_hero_cover(

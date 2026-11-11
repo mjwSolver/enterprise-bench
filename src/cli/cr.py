@@ -32,7 +32,7 @@ def file_change_request_cli(
     department: str = typer.Option("Consolidated Accounting", "--dept", help="Requester business unit"),
     schedule_days: int = typer.Option(15, "--days", help="Estimated schedule calendar days required"),
     output_dir: Optional[str] = typer.Option(None, "--output-dir", "-o", help="Target output folder for CR package"),
-    project_id: str = typer.Option("TTI_Snowflake_Analytics", "--project", help="Project identifier"),
+    project_id: str = typer.Option(..., "--project", help="Target workspace project identifier"),
     client: Optional[str] = typer.Option(None, "--client", help="Client organization slug/name"),
 ) -> None:
     """

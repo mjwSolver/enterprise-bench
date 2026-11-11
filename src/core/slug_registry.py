@@ -52,8 +52,8 @@ DEFAULT_CLIENT_COMPANY_NAME = "Nusantara Global Logistics"
 DEFAULT_CLIENT_SHORT_NAME = "NGL"
 DEFAULT_CLIENT_ADDRESS = "Gedung Cyber 2, Lt. 18, Jl. H.R. Rasuna Said, Jakarta Selatan"
 DEFAULT_PROJECT_NAME = "Enterprise Financial Intelligence & Cloud Analytics Platform"
-DEFAULT_VENDOR_COMPANY_NAME = "PT Metrodata Electronics Tbk"
-DEFAULT_VENDOR_SHORT_NAME = "Metrodata"
+DEFAULT_VENDOR_COMPANY_NAME = "Enterprise Consulting Partners"
+DEFAULT_VENDOR_SHORT_NAME = "ECP"
 DEFAULT_VENDOR_DIVISION = "Data & AI Modernization Practice"
 
 # Forbidden Legacy Entities for PII Leak Audits
@@ -108,9 +108,9 @@ class EngagementContext(BaseModel):
     client_sponsor_name: str = Field("Hendra Setiawan", description="Executive sponsor")
     client_sponsor_title: str = Field("VP Finance & Technology", description="Sponsor title")
     client_pm_name: str = Field("Dewi Lestari", description="Client Project Manager")
-    client_bpo_lead: str = Field("Agus Pramono", description="Business Process Owner")
+    client_bpo_lead: str = Field("Rina Kusuma", description="Business Process Owner")
     client_it_lead: str = Field("Bambang Wijaya", description="IT Infrastructure Lead")
-    vendor_partner_name: str = Field("Agustino", description="Vendor Engagement Partner")
+    vendor_partner_name: str = Field("Arman Pratama", description="Vendor Engagement Partner")
     vendor_pm_name: str = Field("Budi Pratama, PMP", description="Vendor Project Manager")
     lead_architect_name: str = Field("Fajar Nugraha", description="Lead Solution Architect")
 

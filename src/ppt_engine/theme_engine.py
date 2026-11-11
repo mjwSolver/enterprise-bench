@@ -279,6 +279,26 @@ class Theme:
         """Primary header font family."""
         return str(self.typography.get("font_family_header", self.font_family))
 
+    @staticmethod
+    def _extract_ppt_font(css_stack: str, fallback: str = "Arial") -> str:
+        generic = {"sans-serif", "serif", "monospace", "system-ui", "-apple-system", "blinkmacsystemfont"}
+        for part in str(css_stack or "").split(","):
+            token = part.strip().strip("'\"")
+            if token and token.lower() not in generic:
+                return token
+        return fallback
+
+    @property
+    def ppt_font_family(self) -> str:
+        """Primary single font name usable in PowerPoint DrawingML runs."""
+        diag_font = self.diagram.get("node_font_family") if isinstance(self.diagram, dict) else None
+        return self._extract_ppt_font(str(diag_font or self.font_family))
+
+    @property
+    def ppt_font_family_header(self) -> str:
+        """Primary header single font name usable in PowerPoint DrawingML runs."""
+        return self._extract_ppt_font(self.font_family_header)
+
     @property
     def typography_thresholds(self) -> Dict[str, float]:
         """Dictionary of standard font size thresholds in points."""

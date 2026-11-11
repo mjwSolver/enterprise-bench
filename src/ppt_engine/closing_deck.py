@@ -248,12 +248,12 @@ class ClosingDeckBuilder:
                     "DATA APPLICATION FOR FINANCIAL ANALYTICS WITH SNOWFLAKE",
                 ),
             ),
-            subtitle=d.get("subtitle", "Closing & Transition to Maintenance"),
+            subtitle=d.get("subtitle"),
             client=d.get("client", self.metadata.get("client_name", "Enterprise Client")),
-            vendor=d.get("vendor", self.metadata.get("vendor_name", "PT Mitra Integrasi Informatika")),
+            vendor=d.get("vendor", self.metadata.get("vendor_name", "[VENDOR_COMPANY_NAME]")),
             product=d.get("product", "Snowflake AI Data Cloud"),
             date_str=d.get("date_str", self.metadata.get("report_date", "01 September 2026")),
-            tracker=d.get("tracker", "PROJECT CLOSING & MAINTENANCE TRANSITION"),
+            tracker=d.get("tracker"),
             client_sublabel=d.get("client_sublabel", "Steering Committee & Executive Sponsors"),
             vendor_sublabel=d.get("vendor_sublabel", "Project Delivery Team"),
         )
@@ -269,12 +269,9 @@ class ClosingDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "EXECUTIVE AGENDA"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Project Closing & Maintenance Transition Agenda"),
-            subtitle=d.get(
-                "subtitle",
-                "Structured review of delivered scope, contractual deliverables, closeout sign-off gates, and maintenance operating model.",
-            ),
+            subtitle=d.get("subtitle"),
         )
 
         agenda_items = d.get(
@@ -451,12 +448,9 @@ class ClosingDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "RUANG LINGKUP | SCOPE REVIEW"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Delivered Scope & Multi-Workstream Capability Architecture"),
-            subtitle=d.get(
-                "subtitle",
-                "Comprehensive execution across 7 core contractual workstreams from architectural planning to production cutover.",
-            ),
+            subtitle=d.get("subtitle"),
         )
 
         pillars = d.get(
@@ -652,12 +646,9 @@ class ClosingDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "DELIVERABLES REGISTER"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Contractual Deliverables & Handover Artifact Inventory"),
-            subtitle=d.get(
-                "subtitle",
-                "100% completion across all 19 contractual deliverables spanning documentation, codebases, and test reports.",
-            ),
+            subtitle=d.get("subtitle"),
         )
 
         # Top KPI bar
@@ -665,7 +656,7 @@ class ClosingDeckBuilder:
             {"label": "CONTRACT DELIVERABLES", "value": "19 / 19", "desc": "100% Delivered", "accent": "accent"},
             {"label": "FSD MODULE SPECS", "value": "8 Modules", "desc": "Signed-off Specifications", "accent": "accent_teal"},
             {"label": "QUALITY & TEST SUITES", "value": "SIT & UAT", "desc": "Zero Sev 1/2 Defects", "accent": "success"},
-            {"label": "HANDOVER STATUS", "value": "BAST 1 & 2", "desc": "Signed Off by [CLIENT_SHORT_NAME] & MII", "accent": "accent_purple"},
+            {"label": "HANDOVER STATUS", "value": "BAST 1 & 2", "desc": "Signed Off by [CLIENT_SHORT_NAME] & [VENDOR_SHORT_NAME]", "accent": "accent_purple"},
         ]
 
         kpi_w = Inches(2.75)
@@ -905,12 +896,9 @@ class ClosingDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "PROJECT CLOSING CHECKLIST"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Project Closeout Verification Gates & Repository Access"),
-            subtitle=d.get(
-                "subtitle",
-                "Dynamic sign-off status across 8 contractual closeout gates, verified repository credentials, and CSS link.",
-            ),
+            subtitle=d.get("subtitle"),
         )
 
         checklist_items = d.get(
@@ -1239,12 +1227,9 @@ class ClosingDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "MAINTENANCE TRANSITION"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Transition to Maintenance: Bucket Mandays Operating Model"),
-            subtitle=d.get(
-                "subtitle",
-                "Flexible, capacity-based support structure designed for agile bug remediation, platform health, and minor CRs.",
-            ),
+            subtitle=d.get("subtitle"),
         )
 
         # Top KPI Banner (Clean, concise labels with zero overflow)
@@ -1408,12 +1393,9 @@ class ClosingDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "OPERATIONAL GOVERNANCE"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Maintenance Workflow & Designated Primary Contacts"),
-            subtitle=d.get(
-                "subtitle",
-                "Structured 3-swimlane request lifecycle across client, support triage, and engineering practices.",
-            ),
+            subtitle=d.get("subtitle"),
         )
 
         # ---------------------------------------------------------------------
@@ -1784,12 +1766,9 @@ class ClosingDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "MAINTENANCE DELIVERABLES"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Ongoing Maintenance Reporting & Transparency Artifacts"),
-            subtitle=d.get(
-                "subtitle",
-                "Standard recurring deliverables ensuring complete auditability of mandays utilization, time tracking, and changes.",
-            ),
+            subtitle=d.get("subtitle"),
         )
 
         deliverables = d.get(
@@ -1925,30 +1904,33 @@ class ClosingDeckBuilder:
         tf.word_wrap = True
         tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
 
-        p_tr = tf.paragraphs[0]
-        p_tr.text = d.get("tracker", "PROJECT CLOSING & MAINTENANCE TRANSITION").upper()
-        p_tr.font.name = self.theme.font_family_header
-        p_tr.font.size = Pt(11.0)
-        p_tr.font.bold = True
-        p_tr.font.color.rgb = self.theme.get_rgb("accent")
+        tracker_val = d.get("tracker")
+        if tracker_val and str(tracker_val).strip():
+            p_tr = tf.paragraphs[0]
+            p_tr.text = str(tracker_val).upper()
+            p_tr.font.name = self.theme.font_family_header
+            p_tr.font.size = Pt(11.0)
+            p_tr.font.bold = True
+            p_tr.font.color.rgb = self.theme.get_rgb("accent")
+            p_t = tf.add_paragraph()
+            p_t.space_before = Pt(6)
+        else:
+            p_t = tf.paragraphs[0]
 
-        p_t = tf.add_paragraph()
         p_t.text = d.get("title", "Thank You")
         p_t.font.name = self.theme.font_family_header
         p_t.font.size = Pt(36.0)
         p_t.font.bold = True
         p_t.font.color.rgb = self.theme.get_rgb("primary")
-        p_t.space_before = Pt(6)
 
-        p_s = tf.add_paragraph()
-        p_s.text = d.get(
-            "subtitle",
-            "Empowering Financial Intelligence & Cloud Analytics at [CLIENT_COMPANY_NAME].",
-        )
-        p_s.font.name = self.theme.font_family
-        p_s.font.size = Pt(13.0)
-        p_s.font.color.rgb = self.theme.get_rgb("secondary")
-        p_s.space_before = Pt(10)
+        sub_val = d.get("subtitle")
+        if sub_val and str(sub_val).strip():
+            p_s = tf.add_paragraph()
+            p_s.text = str(sub_val)
+            p_s.font.name = self.theme.font_family
+            p_s.font.size = Pt(13.0)
+            p_s.font.color.rgb = self.theme.get_rgb("secondary")
+            p_s.space_before = Pt(10)
 
         contacts = d.get("contacts")
 
@@ -2084,14 +2066,8 @@ class ClosingDeckBuilder:
             "css_link": None,
         }
 
-        # Resolve spreadsheet path
+        # Resolve spreadsheet path (strictly opt-in; never fall back to client paths)
         c_path = checklist_path or self.config.get("spreadsheets", {}).get("checklist")
-        if not c_path:
-            default_candidate = Path(
-                "clean_workspace/projects/TTI_Snowflake_Analytics/06_closing/5.2_Project_Closeout_Checklist_Template.xlsx"
-            )
-            if default_candidate.exists():
-                c_path = default_candidate
 
         if not c_path:
             logger.info("No checklist spreadsheet provided or found for synchronization.")

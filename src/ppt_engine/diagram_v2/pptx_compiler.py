@@ -311,6 +311,20 @@ class PPTXCompiler:
         )
         self._node_boxes: Dict[str, Box] = {}
         self._container_boxes: Dict[str, Box] = {}
+        self.font_name: str = "Arial"
+        self.header_font_name: str = "Arial"
+        self._primary_hex: str = "#0F172A"
+        self._muted_hex: str = "#64748B"
+        try:
+            from src.ppt_engine.theme_engine import load_theme
+            theme_obj = load_theme(spec.theme) if spec.theme else None
+            if theme_obj is not None:
+                self.font_name = theme_obj.ppt_font_family
+                self.header_font_name = theme_obj.ppt_font_family_header
+                self._primary_hex = theme_obj.get_hex("primary", "#0F172A")
+                self._muted_hex = theme_obj.get_hex("muted", "#64748B")
+        except Exception as ex:
+            logger.debug("Diagram V2 theme load skipped (%s): %s", spec.theme, ex)
 
     def _plan_card(
         self,
@@ -521,7 +535,7 @@ class PPTXCompiler:
                     p.alignment = PP_ALIGN.LEFT
                 else:
                     p.alignment = align
-                p.font.name = "Arial"
+                p.font.name = self.font_name
                 p.font.size = Pt(spec.pt)
                 p.font.bold = spec.bold
                 p.font.color.rgb = _hex_to_rgb(spec.color_hex)
@@ -636,16 +650,16 @@ class PPTXCompiler:
 
         p_title = tf.paragraphs[0]
         p_title.text = h.action_title
-        p_title.font.name = "Arial"
+        p_title.font.name = self.header_font_name
         p_title.font.size = Pt(20)
         p_title.font.bold = True
-        p_title.font.color.rgb = _hex_to_rgb("#0F172A")
+        p_title.font.color.rgb = _hex_to_rgb(self._primary_hex)
 
         p_sub = tf.add_paragraph()
         p_sub.text = h.subtitle
-        p_sub.font.name = "Arial"
+        p_sub.font.name = self.font_name
         p_sub.font.size = Pt(11)
-        p_sub.font.color.rgb = _hex_to_rgb("#64748B")
+        p_sub.font.color.rgb = _hex_to_rgb(self._muted_hex)
         p_sub.space_before = Pt(4)
 
     def _resolve_container_label_x(
@@ -772,7 +786,7 @@ class PPTXCompiler:
             p = tf.paragraphs[0]
             p.text = c.label.upper()
             p.alignment = PP_ALIGN.CENTER if align == "center" else (PP_ALIGN.LEFT if align == "left" else PP_ALIGN.RIGHT)
-            p.font.name = "Arial"
+            p.font.name = self.font_name
             p.font.size = Pt(10)
             p.font.bold = True
             p.font.color.rgb = _hex_to_rgb(c.border_hex if c.border_hex != "#94A3B8" else "#64748B")
@@ -793,7 +807,7 @@ class PPTXCompiler:
             p_b = tf_b.paragraphs[0]
             p_b.text = c.tag_badge.upper()
             p_b.alignment = PP_ALIGN.CENTER
-            p_b.font.name = "Arial"
+            p_b.font.name = self.font_name
             p_b.font.size = Pt(8.5)
             p_b.font.bold = True
             p_b.font.color.rgb = _hex_to_rgb(c.tag_text_hex)
@@ -983,7 +997,7 @@ class PPTXCompiler:
         p = tf.paragraphs[0]
         p.text = b.text
         p.alignment = PP_ALIGN.CENTER
-        p.font.name = "Arial"
+        p.font.name = self.font_name
         p.font.size = Pt(b.font_pt or 9.0)
         p.font.bold = True
         p.font.color.rgb = _hex_to_rgb(b.text_hex)
@@ -1001,7 +1015,7 @@ class PPTXCompiler:
         for i, item in enumerate(bl.items):
             p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
             p.text = f"• {item}"
-            p.font.name = "Arial"
+            p.font.name = self.font_name
             p.font.size = Pt(bl.font_size or 10.0)
             p.font.bold = True
             p.font.color.rgb = _hex_to_rgb(bl.font_color)
@@ -1102,7 +1116,7 @@ class PPTXCompiler:
                 p = tf.paragraphs[0] if li == 0 else tf.add_paragraph()
                 p.text = line_seg
                 p.alignment = PP_ALIGN.CENTER
-                p.font.name = "Arial"
+                p.font.name = self.font_name
                 p.font.size = Pt(flow_font_pt)
                 p.font.bold = True
                 p.font.color.rgb = _hex_to_rgb(f.label_text_hex)

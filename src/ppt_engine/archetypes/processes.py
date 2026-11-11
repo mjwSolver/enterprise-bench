@@ -28,6 +28,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 from .common import (
     add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color, _add_status_pill, _add_bullet_paragraph,
+    bounded_slice,
 )
 
 logger = logging.getLogger(__name__)
@@ -896,7 +897,7 @@ def build_dense_workstream_runbook_slide(
         p_tag.space_before = Pt(1.5)
 
         # Bullet items (tight 8.5pt micro-typography)
-        for itm in q_data.items[:4]:
+        for itm in bounded_slice(q_data.items, 4, "workstream_runbook", f"quadrant[{idx}].items"):
             p_itm = tf.add_paragraph()
             p_itm.text = f"•  {itm}"
             p_itm.font.name = theme.font_family
@@ -941,8 +942,8 @@ def build_dense_workstream_runbook_slide(
     col_widths = [Inches(2.10), Inches(2.30), Inches(2.30), Inches(3.20), Inches(1.10)]
     headers = [
         "TECHNICAL DISCIPLINE",
-        "VENDOR PIC (MII)",
-        "CLIENT PIC (BANK)",
+        "VENDOR PIC",
+        "CLIENT PIC",
         "CONTRACTUAL SCOPE & DELIVERABLES",
         "STATUS",
     ]
@@ -972,7 +973,7 @@ def build_dense_workstream_runbook_slide(
     row_start_y = header_row_y + Inches(0.24)
     row_height = Inches(0.26)
     if runbook_data.pic_matrix:
-        for r_idx, row in enumerate(runbook_data.pic_matrix[:4]):
+        for r_idx, row in enumerate(bounded_slice(runbook_data.pic_matrix, 4, "workstream_runbook", "pic_matrix")):
             curr_y = row_start_y + (r_idx * row_height)
             row_vals = [row.discipline, row.vendor_pic, row.client_pic, row.accountability]
 
@@ -1206,7 +1207,7 @@ def build_target_architecture_swimlane_slide(
         RGBColor(16, 185, 129),  # Emerald/Teal for Consumers
     ]
 
-    for c_idx, col_data in enumerate(swimlane_data.columns[:3]):
+    for c_idx, col_data in enumerate(bounded_slice(swimlane_data.columns, 3, "swimlane_architecture", "columns")):
         cx = col_x_list[c_idx]
         cw = col_w_list[c_idx]
         st_color = stripe_colors[c_idx]
@@ -1270,7 +1271,7 @@ def build_target_architecture_swimlane_slide(
         node_w = cw - Inches(0.32)
         node_x = cx + Inches(0.16)
 
-        for n_idx, node in enumerate(col_data.nodes[:3]):
+        for n_idx, node in enumerate(bounded_slice(col_data.nodes, 3, "swimlane_architecture", f"columns[{c_idx}].nodes")):
             curr_node_y = node_start_y + (n_idx * (node_h + node_gap))
 
             # Out of scope border styling (Amber dashed or warning badge)
@@ -1365,7 +1366,7 @@ def build_target_architecture_swimlane_slide(
         flow_w = Inches(2.70)
         flow_y = banner_y + Inches(0.28)
 
-        for f_idx, conn in enumerate(swimlane_data.workstream_connectors[:4]):
+        for f_idx, conn in enumerate(bounded_slice(swimlane_data.workstream_connectors, 4, "swimlane_architecture", "workstream_connectors")):
             fx = banner_x + flow_x_offsets[f_idx]
             f_box = slide.shapes.add_textbox(fx, flow_y, flow_w, Inches(0.42))
             f_tf = f_box.text_frame

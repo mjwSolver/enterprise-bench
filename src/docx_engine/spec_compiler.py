@@ -6,7 +6,7 @@ user manuals) into professional, audit-compliant Microsoft Word (.docx) delivera
 
 Key Features:
 - Corporate Theme Integration: Inherits brand palettes from EnterpriseTheme.
-- Frontmatter & Metadata Extraction: Cover page with Metrodata dual-stripe branding,
+- Frontmatter & Metadata Extraction: Cover page with theme dual-stripe accent branding,
   document control history, and approval matrices.
 - Shaded Code Callouts: Single-cell OpenXML callout cards with monospace Consolas,
   light slate background, and left accent border bar.
@@ -302,8 +302,10 @@ class SpecCompiler:
         c_blue = stripe_tbl.rows[0].cells[1]
         c_red.width = Inches(0.045)
         c_blue.width = Inches(0.090)
-        set_cell_background(c_red, "DC2626")  # Crimson Red
-        set_cell_background(c_blue, "1E3A8A")  # Metrodata Blue
+        accent_sec_hex = self.theme.accent_secondary.lstrip("#")
+        accent_pri_hex = self.theme.accent_primary.lstrip("#")
+        set_cell_background(c_red, accent_sec_hex)
+        set_cell_background(c_blue, accent_pri_hex)
         set_cell_margins(c_red, top=10, bottom=10, left=10, right=10)
         set_cell_margins(c_blue, top=10, bottom=10, left=10, right=10)
 

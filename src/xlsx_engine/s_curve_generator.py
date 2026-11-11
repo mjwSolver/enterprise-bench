@@ -249,10 +249,21 @@ class SCurveGenerator:
         self,
         template: Optional[Union[str, Path]] = None,
         project_name: str = "Enterprise Modernization Project",
+        font_family: Optional[str] = None,
+        theme_name: Optional[str] = None,
     ):
         self.project_name = project_name
         self.template_ref = template
         self.template_path = self._resolve_template(template) if template else None
+        resolved_font = font_family
+        if not resolved_font and theme_name:
+            try:
+                from src.core.theme import EnterpriseTheme
+                t = EnterpriseTheme.from_yaml(theme_name)
+                resolved_font = t.font_body.split(",")[0].strip().strip("'\"")
+            except Exception:
+                resolved_font = None
+        self.font_family: str = resolved_font or "Calibri"
 
     def _get_health_style(self, health: Optional[str]) -> Dict[str, str]:
         """Resolve fill and text hex colors for a health status string."""
@@ -542,7 +553,7 @@ class SCurveGenerator:
         pool = OpenpyxlStylePool(ws)
         thin_side = Side(border_style="thin", color=self.COLOR_BORDER)
         card_border = Border(top=thin_side, left=thin_side, right=thin_side, bottom=thin_side)
-        label_font = Font(name="Calibri", size=8, bold=True, color="64748B")
+        label_font = Font(name=self.font_family, size=8, bold=True, color="64748B")
         center_align = Alignment(horizontal="center", vertical="center")
         default_fill = PatternFill(start_color=self.COLOR_CARD_BG, end_color=self.COLOR_CARD_BG, fill_type="solid")
 
@@ -599,7 +610,7 @@ class SCurveGenerator:
                 if card_fill_hex
                 else default_fill
             )
-            val_font = Font(name="Calibri", size=13, bold=True, color=card["color"])
+            val_font = Font(name=self.font_family, size=13, bold=True, color=card["color"])
 
             top_sid = pool.get_style_id(font=label_font, alignment=center_align, border=card_border, fill=fill_obj)
             val_sid = pool.get_style_id(font=val_font, alignment=center_align, border=card_border, fill=fill_obj)
@@ -638,15 +649,15 @@ class SCurveGenerator:
             "Key Milestone / Deliverable",
         ]
 
-        header_font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+        header_font = Font(name=self.font_family, size=10, bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color=self.COLOR_HEADER_BG, end_color=self.COLOR_HEADER_BG, fill_type="solid")
         thin_side = Side(border_style="thin", color=self.COLOR_BORDER)
         cell_border = Border(top=thin_side, left=thin_side, right=thin_side, bottom=thin_side)
 
-        font_bold_10 = Font(name="Calibri", size=10, bold=True)
-        font_reg_10 = Font(name="Calibri", size=10, bold=False)
-        font_ms_italic = Font(name="Calibri", size=9, italic=True)
-        font_ms_reg = Font(name="Calibri", size=9, italic=False)
+        font_bold_10 = Font(name=self.font_family, size=10, bold=True)
+        font_reg_10 = Font(name=self.font_family, size=10, bold=False)
+        font_ms_italic = Font(name=self.font_family, size=9, italic=True)
+        font_ms_reg = Font(name=self.font_family, size=9, italic=False)
 
         align_header = Alignment(horizontal="center", vertical="center", wrap_text=True)
         align_center = Alignment(horizontal="center", vertical="center")
@@ -664,7 +675,7 @@ class SCurveGenerator:
 
         health_sids: Dict[str, Any] = {}
         for h_key, h_cfg in self.HEALTH_COLORS.items():
-            h_font = Font(name="Calibri", size=9, bold=True, color=h_cfg["text"])
+            h_font = Font(name=self.font_family, size=9, bold=True, color=h_cfg["text"])
             h_fill = PatternFill(start_color=h_cfg["fill"], end_color=h_cfg["fill"], fill_type="solid")
             health_sids[h_key] = pool.get_style_id(font=h_font, fill=h_fill, alignment=align_center, border=cell_border)
 

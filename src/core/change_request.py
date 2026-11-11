@@ -87,9 +87,11 @@ class ChangeRequestProcessor:
 
     def __init__(
         self,
-        project_id: str = "TTI_Snowflake_Analytics",
+        project_id: Optional[str] = None,
         context: Optional[EngagementContext] = None,
     ):
+        if not project_id or not str(project_id).strip():
+            raise ValueError("project_id is required; hardcoded client defaults are forbidden.")
         self.context = context or EngagementContext.default_ngl()
         self.project_id = project_id
         self.project = WorkspaceRouter.get_project(project_id)

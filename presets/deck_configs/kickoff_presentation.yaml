@@ -3,8 +3,8 @@
 # ==============================================================================
 # Project: Enterprise Financial Intelligence & Cloud Analytics Platform
 # Deliverable: 1.1_Project_Kick-off_Material_Template.pptx (19 Slides Modernized)
-# Client: Nusantara Global Logistics (NGL)
-# Implementation Partner: PT Mitra Integrasi Informatika (MII) / Metrodata
+# Client: [CLIENT_COMPANY_NAME] ([CLIENT_SHORT_NAME])
+# Implementation Partner: [VENDOR_COMPANY_NAME] ([VENDOR_SHORT_NAME])
 # Architecture: Declarative Consulting Deck Builder (PitchDeckBuilder)
 # ==============================================================================
 
@@ -12,11 +12,11 @@ deck_type: kickoff_deck
 
 metadata:
   client_name: "[CLIENT_COMPANY_NAME]"
-  vendor_name: "PT Mitra Integrasi Informatika"
+  vendor_name: "[VENDOR_COMPANY_NAME]"
   product: "Snowflake AI Data Cloud & Streamlit"
   date_str: "16 December 2025"
   confidentiality: "[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Strictly Confidential"
-  division_tagline: "PT Mitra Integrasi Informatika  |  Data & AI Modernization Practice"
+  division_tagline: "[VENDOR_COMPANY_NAME]  |  Data & AI Modernization Practice"
 
 slides:
   # ----------------------------------------------------------------------------
@@ -27,13 +27,13 @@ slides:
     title: "DATA APPLICATION FOR FINANCIAL ANALYTICS WITH SNOWFLAKE"
     subtitle: "Project Kick-off Meeting, Governance Alignment & Phased Implementation Roadmap"
     client: "[CLIENT_COMPANY_NAME]"
-    vendor: "PT Mitra Integrasi Informatika"
+    vendor: "[VENDOR_COMPANY_NAME]"
     product: "Snowflake AI Data Cloud"
     date_str: "16 December 2025"
     prepared_for_label: "PREPARED FOR"
     engagement_partner_label: "IMPLEMENTATION PARTNER"
     client_sublabel: "Executive Leadership & Financial Steering Committee"
-    vendor_sublabel: "Presented by Agus Pramono, Project Manager, MII"
+    vendor_sublabel: "Presented by [VENDOR_PM_NAME], Project Manager"
 
   # ----------------------------------------------------------------------------
   # Slide 02: Agenda / Table of Contents
@@ -184,10 +184,10 @@ slides:
         accent_key: "accent_secondary"
         bullets:
           - "Provides business requirements, KPI definitions, and source data access."
-          - "Provides Snowflake cloud subscription environment for Development via PT MII."
+          - "Provides Snowflake cloud subscription environment for Development via [VENDOR_SHORT_NAME]."
           - "Conducts User Acceptance Testing (UAT) and validates functional calculations."
           - "Holds final acceptance sign-off authority and production Go-Live decision."
-      - title: "PT Mitra Integrasi Informatika"
+      - title: "[VENDOR_COMPANY_NAME]"
         subtitle: "Local Implementation Partner & Consultant"
         icon: "briefcase"
         badge: "DELIVERY PARTNER"
@@ -216,15 +216,15 @@ slides:
     title: "Joint Dual-Pillar Governance Matrix Establishes Clear Escalation & Delivery Ownership"
     subtitle: "Hierarchical project structure connects executive steering committees, PMO leads, and specialized execution pods."
     client_name: "[CLIENT_COMPANY_NAME]"
-    vendor_name: "PT Mitra Integrasi Informatika"
-    tier1_client_text: "Tadahiko Onaka ([CLIENT_SHORT_NAME] SteerCo), Mulyanah ([CLIENT_SHORT_NAME] Project Advisor)  |  Executive budget authorization & strategic sign-offs"
-    tier1_vendor_text: "Rudi Hermawan A. (MII SteerCo), Dian Permata & Ho Herly (Account Managers), Lucky & Herman (Presales)"
-    client_pm_title: "Dewi Lestari - [CLIENT_SHORT_NAME] Project Manager"
+    vendor_name: "[VENDOR_COMPANY_NAME]"
+    tier1_client_text: "[CLIENT_SPONSOR_NAME] ([CLIENT_SHORT_NAME] SteerCo), [CLIENT_ADVISOR_NAME] ([CLIENT_SHORT_NAME] Project Advisor)  |  Executive budget authorization & strategic sign-offs"
+    tier1_vendor_text: "[VENDOR_PARTNER_NAME] ([VENDOR_SHORT_NAME] SteerCo), [VENDOR_AM_NAME] (Account Manager), [VENDOR_PRESALES_NAME] (Presales)"
+    client_pm_title: "[CLIENT_PM_NAME] - [CLIENT_SHORT_NAME] Project Manager"
     client_pm_bullets:
       - "Facilitates internal business access, data extracts, and UAT scheduling."
       - "Coordinates cross-functional reviews across Finance, Accounting, and IT."
       - "Primary client escalation gate for stage-gate approvals and sign-offs."
-    vendor_pm_title: "Agus Pramono - MII Project Manager"
+    vendor_pm_title: "[VENDOR_PM_NAME] - [VENDOR_SHORT_NAME] Project Manager"
     vendor_pm_bullets:
       - "Drives daily delivery cadence, sprint backlog, and milestone tracking."
       - "Maintains RAID logs, weekly progress S-curves, and formal Change Requests."
@@ -236,8 +236,8 @@ slides:
         badge_color: "danger"
         stripe_color: "accent_secondary"
         bullets:
-          - "Andri Agusman, Agung Rachman, Anisah Pratiwi."
-          - "Debby Lutfi Adrianto, Andri Setiawan, Mfikri Farraswan."
+          - "[CLIENT_BPO_LEAD_1], [CLIENT_BPO_LEAD_2], [CLIENT_BPO_LEAD_3]."
+          - "[CLIENT_ANALYST_1], [CLIENT_ANALYST_2], [CLIENT_ANALYST_3]."
           - "Validates formulas (Sales, Opex, Margin, ROIC)."
           - "Executes UAT testing scenarios and signs off acceptance."
       - title: "IT & System Operations"
@@ -246,28 +246,28 @@ slides:
         badge_color: "danger"
         stripe_color: "accent_secondary"
         bullets:
-          - "Fais Praditya, Dini Lianto, Abdul Fitdila."
-          - "Rakha Wardhana, Yayako Fujita."
+          - "[CLIENT_IT_LEAD_1], [CLIENT_IT_LEAD_2], [CLIENT_IT_LEAD_3]."
+          - "[CLIENT_SYSOPS_1], [CLIENT_SYSOPS_2]."
           - "Provisions network, VPN, and SAP CSV export access."
           - "Validates enterprise security and compliance standards."
       - title: "Data & Lakehouse Engineering"
-        org: "PT Mitra Integrasi Informatika"
+        org: "[VENDOR_COMPANY_NAME]"
         badge: "ENGINEERING"
         badge_color: "accent"
         stripe_color: "accent"
         bullets:
-          - "Vicko Bhayyu (Technical Lead)."
-          - "Aditya Putra (Data Engineer)."
+          - "[LEAD_ARCHITECT_NAME] (Technical Lead)."
+          - "[DATA_ENGINEER_NAME] (Data Engineer)."
           - "Deploys Snowflake schema models, RBAC, and storage."
           - "Builds automated staging upload ingestion pipelines."
       - title: "Analytics & Streamlit Apps"
-        org: "PT Mitra Integrasi Informatika"
+        org: "[VENDOR_COMPANY_NAME]"
         badge: "STREAMLIT / AI"
         badge_color: "accent"
         stripe_color: "accent"
         bullets:
-          - "Hendra Setiawan (Snowflake Streamlit Specialist)."
-          - "Reza Pratama (Data Scientist)."
+          - "[APP_SPECIALIST_NAME] (Snowflake Streamlit Specialist)."
+          - "[DATA_SCIENTIST_NAME] (Data Scientist)."
           - "Builds 8 interactive Streamlit financial pages."
           - "Conducts user training and technical knowledge transfer."
 
@@ -777,10 +777,10 @@ slides:
         width: 1.833
         align: "LEFT"
     rows:
-      - ["01", "Mutual Non-Disclosure Agreement (NDA)", "PT MII / [CLIENT_SHORT_NAME]", "Dian Permata", "IN PROGRESS", "Final bilateral legal execution"]
-      - ["02", "Developer Laptops & Security Clearance", "PT MII", "All PIC / Consultants", "COMPLETE", "Hardware & security tools ready"]
-      - ["03", "WhatsApp Group & Microsoft Teams Channels", "PT MII", "Lucky / PMO", "COMPLETE", "Coordination channels active"]
-      - ["04", "SharePoint Document Collaboration Repository", "PT MII", "Agus Pramono (PM)", "COMPLETE", "Artifact workspace provisioned"]
+      - ["01", "Mutual Non-Disclosure Agreement (NDA)", "[VENDOR_SHORT_NAME] / [CLIENT_SHORT_NAME]", "[VENDOR_AM_NAME]", "IN PROGRESS", "Final bilateral legal execution"]
+      - ["02", "Developer Laptops & Security Clearance", "[VENDOR_SHORT_NAME]", "All PIC / Consultants", "COMPLETE", "Hardware & security tools ready"]
+      - ["03", "WhatsApp Group & Microsoft Teams Channels", "[VENDOR_SHORT_NAME]", "PMO Coordinator", "COMPLETE", "Coordination channels active"]
+      - ["04", "SharePoint Document Collaboration Repository", "[VENDOR_SHORT_NAME]", "[VENDOR_PM_NAME] (PM)", "COMPLETE", "Artifact workspace provisioned"]
 
   # ----------------------------------------------------------------------------
   # Slide 15: 13. Communication & Collaboration (Governance Cadence Table)
@@ -809,8 +809,8 @@ slides:
         align: "LEFT"
     rows:
       - ["01", "Weekly Progress Checkpoint", "Weekly (or As Needed)", "1st: Onsite  |  2nd: Online MS Teams", "Joint Project Team & PMO Leads"]
-      - ["02", "Steering Committee Review Meeting", "Milestone Gates / As Needed", "1st: Online  |  2nd: Onsite if Escalated", "Steering Committee Leadership ([CLIENT_SHORT_NAME] & MII)"]
-      - ["03", "Central Document Repository", "Daily Active Access", "Enterprise SharePoint (Provided by MII)", "All Project Stakeholders & Core Team"]
+      - ["02", "Steering Committee Review Meeting", "Milestone Gates / As Needed", "1st: Online  |  2nd: Onsite if Escalated", "Steering Committee Leadership ([CLIENT_SHORT_NAME] & [VENDOR_SHORT_NAME])"]
+      - ["03", "Central Document Repository", "Daily Active Access", "Enterprise SharePoint (Provided by [VENDOR_SHORT_NAME])", "All Project Stakeholders & Core Team"]
       - ["04", "Operational Ad-Hoc Coordination", "Daily Continuous", "Corporate Email, Phone, Teams & WhatsApp", "All Project Stakeholders"]
 
   # ----------------------------------------------------------------------------
@@ -839,9 +839,9 @@ slides:
         width: 1.533
         align: "CENTER"
     rows:
-      - ["01", "Requirement Risk: Risiko penambahan fitur baru pada fase asesmen (planning) yang membuat estimasi timeline proyek bertambah.", "Stick pada requirement baseline; lakukan prioritisasi use case ketat (MoSCoW); rencanakan implementasi fitur sekunder pada fase berikutnya.", "Rebaseline timeline dan alokasi tim jika usulan penambahan fitur disetujui formal di level Steering Committee.", "Agus Pramono (PM)"]
-      - ["02", "Change Risk: Permintaan perubahan spesifikasi sepanjang proyek berjalan setelah baseline disetujui bersama dalam dokumen FSD.", "Sosialisasikan batas ruang lingkup FSD baseline; tegakkan disiplin delivery; lakukan asesmen dampak teknis dan biaya sebelum persetujuan.", "Sesuaikan permintaan perubahan dengan prosedur Change Request resmi melalui addendum kontrak.", "Agus Pramono (PM)"]
-      - ["03", "Data Readiness Risk: Potensi ketidaksesuaian format ekspor CSV dari modul SAP ERP atau keterlambatan penyediaan data bulanan.", "Tetapkan template data dictionary terstandarisasi sejak awal planning; lakukan validasi skema awal pada environment staging.", "Fokus pemrosesan pada mandatory attributes; eskalasi ketidaksesuaian format langsung ke PIC IT [CLIENT_SHORT_NAME].", "Vicko Bhayyu (Tech Lead)"]
+      - ["01", "Requirement Risk: Risiko penambahan fitur baru pada fase asesmen (planning) yang membuat estimasi timeline proyek bertambah.", "Stick pada requirement baseline; lakukan prioritisasi use case ketat (MoSCoW); rencanakan implementasi fitur sekunder pada fase berikutnya.", "Rebaseline timeline dan alokasi tim jika usulan penambahan fitur disetujui formal di level Steering Committee.", "[VENDOR_PM_NAME] (PM)"]
+      - ["02", "Change Risk: Permintaan perubahan spesifikasi sepanjang proyek berjalan setelah baseline disetujui bersama dalam dokumen FSD.", "Sosialisasikan batas ruang lingkup FSD baseline; tegakkan disiplin delivery; lakukan asesmen dampak teknis dan biaya sebelum persetujuan.", "Sesuaikan permintaan perubahan dengan prosedur Change Request resmi melalui addendum kontrak.", "[VENDOR_PM_NAME] (PM)"]
+      - ["03", "Data Readiness Risk: Potensi ketidaksesuaian format ekspor CSV dari modul SAP ERP atau keterlambatan penyediaan data bulanan.", "Tetapkan template data dictionary terstandarisasi sejak awal planning; lakukan validasi skema awal pada environment staging.", "Fokus pemrosesan pada mandatory attributes; eskalasi ketidaksesuaian format langsung ke PIC IT [CLIENT_SHORT_NAME].", "[LEAD_ARCHITECT_NAME] (Tech Lead)"]
 
   # ----------------------------------------------------------------------------
   # Slide 17: 15. Prosedur Change Requests (Scope & Change Control Procedure)
@@ -858,7 +858,7 @@ slides:
     tracker: "SESI DISKUSI | QUESTIONS & EXECUTIVE ALIGNMENT"
     headline: "Questions & Executive Alignment Discussion"
     subtitle: "Open forum for stakeholder inquiries, technical clarifications, and formal kick-off endorsement."
-    division_tagline: "[CLIENT_COMPANY_NAME]  |  PT Mitra Integrasi Informatika"
+    division_tagline: "[CLIENT_COMPANY_NAME]  |  [VENDOR_COMPANY_NAME]"
 
   # ----------------------------------------------------------------------------
   # Slide 19: Closing / Thank You Slide
@@ -867,6 +867,6 @@ slides:
     tracker: "ENGAGEMENT WRAP-UP | THANK YOU"
     title: "Terima Kasih"
     subtitle: "Partnering to accelerate financial data intelligence and analytics velocity with Snowflake Data Cloud."
-    company: "PT Mitra Integrasi Informatika  |  PT Metrodata Electronics Tbk"
-    office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
+    company: "[VENDOR_COMPANY_NAME]"
+    office: "[VENDOR_OFFICE_ADDRESS]"
     contacts: null

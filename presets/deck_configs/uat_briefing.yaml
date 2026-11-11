@@ -9,7 +9,7 @@ theme: "metrodata"
 
 metadata:
   client_name: "[CLIENT_COMPANY_NAME]"
-  vendor_name: "PT Mitra Integrasi Informatika"
+  vendor_name: "[VENDOR_COMPANY_NAME]"
   product: "Snowflake Financial Analytics & Streamlit Application"
   date_str: "20 Februari 2026"
   confidentiality: "Engagement Management Office  |  Bilingual UAT Briefing & Validation Guide"
@@ -402,7 +402,7 @@ slides:
     tracker: "PANDUAN SINGKAT APLIKASI | WALKTHROUGH FITUR"
     headline: "Panduan Interaktif Pengoperasian Aplikasi Streamlit"
     subtitle: "Langkah-langkah autentikasi login MFA, navigasi halaman utama, pengisian variansi, dan verifikasi kontrol data."
-    division_tagline: "PT Mitra Integrasi Informatika"
+    division_tagline: "[VENDOR_COMPANY_NAME]"
     hero_image_path: "assets/images/datacenter_aisle_framed.png"
 
   # ----------------------------------------------------------------------------
@@ -905,7 +905,7 @@ slides:
     title: "Terima Kasih & Selamat Menjalankan UAT"
     subtitle: "Tim Konsultan Berkomitmen Penuh Mendampingi Keberhasilan Pengujian Penerimaan Pengguna."
     company: "[VENDOR_COMPANY_NAME]  |  [CLIENT_COMPANY_NAME]"
-    office: "APL Tower Lantai 37, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
+    office: "[VENDOR_OFFICE_ADDRESS]"
     contacts:
       - name: "Project Manager A"
         role: "Project Manager, Delivery Consulting"

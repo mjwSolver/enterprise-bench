@@ -28,7 +28,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 from .common import (
     add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
-    _add_bullet_paragraph, _fit_image_in_box,
+    _add_bullet_paragraph, _fit_image_in_box, bounded_slice,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ def build_browser_mockup_slide(
 
     # 4. Opt-in Right Column: 1-5 Observation Cards (with optional solid section header bar)
     if takeaways:
-        items = list(takeaways)[:5]
+        items = bounded_slice(takeaways, 5, "browser_mockup", "takeaways")
         right_x = Inches(8.65)
         right_w = Inches(3.88)
         right_y = mockup_y
@@ -288,7 +288,7 @@ def build_iceberg_concept_slide(
 
     n_vis = max(1, min(3, len(visible_items)))
     col_w_above = (iceberg_w - Inches(0.32) - (Inches(0.12) * (n_vis - 1))) / n_vis
-    for i, raw_itm in enumerate(visible_items[:3]):
+    for i, raw_itm in enumerate(bounded_slice(visible_items, 3, "iceberg_concept", "visible_items")):
         itm = raw_itm if isinstance(raw_itm, dict) else {"title": str(raw_itm), "desc": ""}
         ix = left_x + Inches(0.16) + (i * (col_w_above + Inches(0.12)))
         iy = top_y + Inches(0.38)
@@ -377,7 +377,7 @@ def build_iceberg_concept_slide(
     b_item_w = (iceberg_w - Inches(0.32) - (b_gap_x * (b_cols - 1))) / b_cols
     b_item_h = (below_h - Inches(0.44) - (b_gap_y * (b_rows - 1))) / b_rows
 
-    for i, raw_itm in enumerate(subsurface_items[:6]):
+    for i, raw_itm in enumerate(bounded_slice(subsurface_items, 6, "iceberg_concept", "subsurface_items")):
         itm = raw_itm if isinstance(raw_itm, dict) else {"title": str(raw_itm), "desc": ""}
         r_i = i // b_cols
         c_i = i % b_cols
@@ -1079,7 +1079,7 @@ def build_gate_validation_slide(
     header_bottom = add_slide_header(slide, theme, tracker=tracker, action_title=action_title, subtitle=subtitle)
 
     # 1. Top KPI Strip (dynamic 1-6 items; skipped cleanly if empty)
-    kpis_list = list(kpis[:6]) if kpis else []
+    kpis_list = bounded_slice(kpis, 6, "threshold_kpi", "kpis") if kpis else []
     kpi_top = resolve_content_top(header_bottom, gap_in=0.18)
     kpi_h = Inches(0.95)
     total_w = Inches(11.733)

@@ -21,10 +21,15 @@ from pathlib import Path
 from typing import List, Tuple
 
 WORKSTATION_PATH_RE = re.compile(r"(?:/Users/|/home/|C:\\\\Users\\\\)[^\s\"']+")
+# Use non-alphanumeric boundaries so `_`-joined identifiers (e.g. `TTI_Snowflake_Analytics`,
+# `BSIM_Migration_Deliverables`, `EMBRYO_VIABILITY_SCORE`) are caught alongside standalone words.
 CLIENT_LEAK_RE = re.compile(
-    r"\b(?:morula(?:ivf)?|bsim(?:_migration)?|toyota|tsusho|teramedik|embryo|oocyte|blastocyst)\b",
+    r"(?<![A-Za-z0-9])(?:morula(?:ivf)?|bsim|toyota|tsusho|tti|ttlc|teramedik|"
+    r"embryo|oocyte|blastocyst|ivf|agus[\s\u00a0_]+pramono|andri[\s\u00a0_]+agusman|"
+    r"tadahiko[\s\u00a0_]+onaka)(?![A-Za-z0-9])",
     re.IGNORECASE,
 )
+PRESET_SECRET_RE = re.compile(r"(?:clean_workspace/projects/|Metrodata2026!|#F0FDF4)", re.IGNORECASE)
 _PII_SCRUBBER_FILES = {
     "src/core/slug_registry.py",
     "src/core/pii/detectors.py",
@@ -162,27 +167,66 @@ def _lint_file(path: Path) -> Tuple[List[str], List[str]]:
     return errors, warnings
 
 
+def _lint_yaml_file(path: Path) -> Tuple[List[str], List[str]]:
+    """Inspect a declarative YAML preset under `presets/` for client leaks, secrets, or stale workspace paths."""
+    rel = path.as_posix()
+    errors: List[str] = []
+    warnings: List[str] = []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception as e:
+        return [f"{rel}: read failed ({e})"], warnings
+
+    for lineno, line_txt in enumerate(lines, start=1):
+        if "hygiene: ignore" in line_txt:
+            continue
+        if WORKSTATION_PATH_RE.search(line_txt):
+            errors.append(
+                f"[WORKSTATION_PATH_LEAK] {rel}:{lineno} hardcodes workstation path literal; use repo-relative paths."
+            )
+        if CLIENT_LEAK_RE.search(line_txt):
+            errors.append(
+                f"[PROJECT_NEUTRALITY_LEAK] {rel}:{lineno} embeds client/staff leak inside preset YAML."
+            )
+        if PRESET_SECRET_RE.search(line_txt):
+            errors.append(
+                f"[PRESET_HYGIENE_LEAK] {rel}:{lineno} embeds hardcoded workspace path, credential, or forbidden #F0FDF4 hex."
+            )
+    return errors, warnings
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Enforce engine hygiene, project neutrality, and anti-hardcoding invariants.")
-    parser.add_argument("files", nargs="*", help="Specific files to lint; defaults to all *.py under src/.")
+    parser.add_argument("files", nargs="*", help="Specific files to lint; defaults to src/*.py and presets/*.yaml.")
     parser.add_argument("--strict", action="store_true", help="Treat warnings as errors.")
     args = parser.parse_args()
 
-    targets: List[Path] = []
+    py_targets: List[Path] = []
+    yaml_targets: List[Path] = []
     if args.files:
         for f in args.files:
             p = Path(f)
             if p.suffix == ".py" and p.is_file():
-                targets.append(p)
+                py_targets.append(p)
+            elif p.suffix in (".yaml", ".yml") and p.is_file():
+                yaml_targets.append(p)
     else:
         src_dir = Path("src")
         if src_dir.is_dir():
-            targets.extend(sorted(src_dir.rglob("*.py")))
+            py_targets.extend(sorted(src_dir.rglob("*.py")))
+        presets_dir = Path("presets")
+        if presets_dir.is_dir():
+            yaml_targets.extend(sorted(presets_dir.rglob("*.yaml")))
+            yaml_targets.extend(sorted(presets_dir.rglob("*.yml")))
 
     all_errors: List[str] = []
     all_warnings: List[str] = []
-    for p in targets:
+    for p in py_targets:
         errs, warns = _lint_file(p)
+        all_errors.extend(errs)
+        all_warnings.extend(warns)
+    for yp in yaml_targets:
+        errs, warns = _lint_yaml_file(yp)
         all_errors.extend(errs)
         all_warnings.extend(warns)
 

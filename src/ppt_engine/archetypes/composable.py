@@ -33,6 +33,7 @@ from .common import (
     add_slide_footer,
     add_takeaway_bar,
     _fit_image_in_box,
+    bounded_slice,
 )
 from .grids import CardGridItem
 
@@ -302,7 +303,7 @@ def render_card_list_widget(
     widget_stripe_opt = cfg.get("show_stripe", cfg.get("striped"))
     base_default_stripe = bool(widget_stripe_opt) if widget_stripe_opt is not None else (style == "striped")
 
-    items = list(raw_items)[:6]
+    items = bounded_slice(raw_items, 6, "composable_list", "items")
     n_items = len(items)
     gap_y = Inches(0.10 if n_items >= 4 else 0.14) if not is_divided else Inches(0)
     avail_h = bh - (gap_y * (n_items - 1)) if not is_divided else bh
@@ -421,7 +422,7 @@ def render_card_list_widget(
 
             if bullets and isinstance(bullets, list):
                 bullet_gap = 6.0 if body_h >= Inches(0.95) else 3.0
-                for b_idx, b_text in enumerate(bullets[:2]):
+                for b_idx, b_text in enumerate(bounded_slice(bullets, 2, "composable_list", "item.bullets")):
                     p_b = tf_body.paragraphs[0] if b_idx == 0 else tf_body.add_paragraph()
                     p_b.space_before = Pt(bullet_gap) if b_idx > 0 else Pt(0)
                     p_b.space_after = Pt(1.5)
@@ -771,7 +772,7 @@ def render_card_grid_widget(
             p_sub.font.color.rgb = theme.get_rgb("muted_text")
 
         if bullets:
-            for b_idx, b in enumerate(bullets[:2]):
+            for b_idx, b in enumerate(bounded_slice(bullets, 2, "composable_hero_card", "bullets")):
                 p_b = tf.add_paragraph()
                 p_b.space_before = Pt(5.0 if b_idx > 0 else 4.0)
                 p_b.space_after = Pt(2.0)

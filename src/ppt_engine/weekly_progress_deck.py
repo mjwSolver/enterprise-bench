@@ -357,12 +357,12 @@ class WeeklyProgressDeckBuilder:
             prs=self.prs,
             theme=self.theme,
             title=d.get("title", self.metadata.get("project_name", "ENTERPRISE FINANCIAL INTELLIGENCE & CLOUD ANALYTICS PLATFORM")),
-            subtitle=d.get("subtitle", f"Weekly Progress Report #{self.metadata.get('report_number', '01')}"),
+            subtitle=d.get("subtitle"),
             client=d.get("client", self.metadata.get("client_name", "Nusantara Global Logistics")),
-            vendor=d.get("vendor", self.metadata.get("vendor_name", "PT Metrodata Electronics Tbk")),
+            vendor=d.get("vendor", self.metadata.get("vendor_name", "[VENDOR_COMPANY_NAME]")),
             product=d.get("product", "Snowflake AI Data Cloud"),
             date_str=d.get("date_str", self.metadata.get("report_date", "05 Jan 2000")),
-            tracker=d.get("tracker", "PROJECT GOVERNANCE & WEEKLY STATUS"),
+            tracker=d.get("tracker"),
             client_sublabel=d.get("client_sublabel", "Steering Committee & Executive Sponsors"),
             vendor_sublabel=d.get("vendor_sublabel", "Data & AI Modernization Practice"),
         )
@@ -377,9 +377,9 @@ class WeeklyProgressDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "EXECUTIVE SUMMARY | AGENDA"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Project Status & Governance Agenda"),
-            subtitle=d.get("subtitle", "Structured weekly review covering delivery progress, milestones, lookahead, and RAID governance."),
+            subtitle=d.get("subtitle"),
         )
 
         items = d.get("items", [])
@@ -471,9 +471,9 @@ class WeeklyProgressDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "GOVERNANCE FRAMEWORK | SECTION 01"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Project Management Plan Establishes Governance & Quality Baselines"),
-            subtitle=d.get("subtitle", "Penyampaian singkat dokumen Project Management Plan dan kerangka kerja eksekusi."),
+            subtitle=d.get("subtitle"),
         )
 
         cards = d.get("cards", [])
@@ -643,9 +643,9 @@ class WeeklyProgressDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "OVERALL PROGRESS | S-CURVE & SCHEDULE PERFORMANCE"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Progress Tracks Within Tolerable Variance with Phase 1 Transition Underway"),
-            subtitle=d.get("subtitle", "Planned duration 12.6% vs actual completion 12.0% (Gap: -0.6% variance managed under Issue #1)."),
+            subtitle=d.get("subtitle"),
         )
 
         # 1. Top Row: 4 Metric Cards
@@ -877,9 +877,9 @@ class WeeklyProgressDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", f"DETAIL AKTIVITAS MINGGUAN | {self.metadata.get('reporting_period', 'CURRENT WEEK')}"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Completed Activities Focus on Governance Sign-Off & Architecture Assessment"),
-            subtitle=d.get("subtitle", "Pencapaian aktivitas utama fase inisiasi dan asesmen teknis selama periode pelaporan."),
+            subtitle=d.get("subtitle"),
         )
 
         streams = d.get("workstreams", [])
@@ -992,9 +992,9 @@ class WeeklyProgressDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "RENCANA AKTIVITAS MINGGU DEPAN | 2-WEEK LOOKAHEAD"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Two-Week Lookahead Prioritizes FSD Finalization & Data Ingestion Staging"),
-            subtitle=d.get("subtitle", "Rencana eksekusi terfokus pada finalisasi asesmen use case dan persiapan environment staging."),
+            subtitle=d.get("subtitle"),
         )
 
         periods = d.get("periods", [])
@@ -1133,9 +1133,9 @@ class WeeklyProgressDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "STATUS MILESTONE | CONTRACTUAL DELIVERY SCHEDULE"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Baseline Milestones Remain Protected with FSD Buffer Absorption"),
-            subtitle=d.get("subtitle", "Pergeseran jadwal FSD diserap oleh buffer fase development tanpa menggeser target Go-Live."),
+            subtitle=d.get("subtitle"),
         )
 
         milestones = d.get("milestones", [
@@ -1314,9 +1314,9 @@ class WeeklyProgressDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "RISK GOVERNANCE & CONTROL MATRIX | 3-TIER ESCALATION"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Proactive Risk Controls Safeguard Schedule Buffer & Data Readiness"),
-            subtitle=d.get("subtitle", "Structured 3-tier risk governance categorizing active risks with visual scaling meters and preventive mitigations."),
+            subtitle=d.get("subtitle"),
         )
 
         tiers = d.get("risk_tiers", [])
@@ -1554,9 +1554,9 @@ class WeeklyProgressDeckBuilder:
         add_slide_header(
             slide=slide,
             theme=self.theme,
-            tracker=d.get("tracker", "ISSUE GOVERNANCE | ACTIVE ISSUE LOG"),
+            tracker=d.get("tracker"),
             action_title=d.get("title", "Issue #1 Resolution Plan Confines FSD Delay Without Slipping Milestone 4"),
-            subtitle=d.get("subtitle", "Root cause resolved via rescheduled assessment sessions; downstream target go-live protected."),
+            subtitle=d.get("subtitle"),
         )
 
         issues = d.get("issues", [])
@@ -1687,11 +1687,11 @@ class WeeklyProgressDeckBuilder:
         return build_chapter_divider_slide(
             prs=self.prs,
             theme=self.theme,
-            tracker=d.get("tracker", "ENGAGEMENT REVIEW & OPEN FORUM"),
+            tracker=d.get("tracker"),
             title=d.get("title", "Questions & Executive Discussion"),
-            subtitle=d.get("subtitle", "Steering Committee feedback, operational alignments, and immediate decision items."),
-            division_tag=d.get("division_tag", "BAS Division  |  Data & AI Practice"),
-            tagline=d.get("tagline", "PT Metrodata Electronics Tbk"),
+            subtitle=d.get("subtitle"),
+            division_tag=d.get("division_tag"),
+            tagline=d.get("tagline"),
             current_idx=idx,
             total_slides=11,
             show_footer=False,
@@ -1730,27 +1730,33 @@ class WeeklyProgressDeckBuilder:
         tf.word_wrap = True
         tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
 
-        p_tr = tf.paragraphs[0]
-        p_tr.text = d.get("tracker", "ENGAGEMENT WRAP-UP | THANK YOU").upper()
-        p_tr.font.name = self.theme.font_family_header
-        p_tr.font.size = Pt(11.0)
-        p_tr.font.bold = True
-        p_tr.font.color.rgb = self.theme.get_rgb("accent")
+        tracker_val = d.get("tracker")
+        if tracker_val and str(tracker_val).strip():
+            p_tr = tf.paragraphs[0]
+            p_tr.text = str(tracker_val).upper()
+            p_tr.font.name = self.theme.font_family_header
+            p_tr.font.size = Pt(11.0)
+            p_tr.font.bold = True
+            p_tr.font.color.rgb = self.theme.get_rgb("accent")
+            p_t = tf.add_paragraph()
+            p_t.space_before = Pt(6)
+        else:
+            p_t = tf.paragraphs[0]
 
-        p_t = tf.add_paragraph()
         p_t.text = d.get("title", "Thank You")
         p_t.font.name = self.theme.font_family_header
         p_t.font.size = Pt(36.0)
         p_t.font.bold = True
         p_t.font.color.rgb = self.theme.get_rgb("primary")
-        p_t.space_before = Pt(6)
 
-        p_s = tf.add_paragraph()
-        p_s.text = d.get("subtitle", "Delivering Data-Driven Value & Predictive Intelligence with Cloud Analytics Platform.")
-        p_s.font.name = self.theme.font_family
-        p_s.font.size = Pt(13.0)
-        p_s.font.color.rgb = self.theme.get_rgb("secondary")
-        p_s.space_before = Pt(10)
+        sub_val = d.get("subtitle")
+        if sub_val and str(sub_val).strip():
+            p_s = tf.add_paragraph()
+            p_s.text = str(sub_val)
+            p_s.font.name = self.theme.font_family
+            p_s.font.size = Pt(13.0)
+            p_s.font.color.rgb = self.theme.get_rgb("secondary")
+            p_s.space_before = Pt(10)
 
         contacts = d.get("contacts")
 
@@ -1886,11 +1892,7 @@ class WeeklyProgressDeckBuilder:
         }
 
         # 1. Timeline & S-Curve Sync
-        t_path = (
-            timeline_path
-            or self.config.get("spreadsheets", {}).get("timeline")
-            or "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Timeline_Update_Template.xlsx"
-        )
+        t_path = timeline_path or self.config.get("spreadsheets", {}).get("timeline")
         if t_path and Path(t_path).exists():
             try:
                 import openpyxl
@@ -1962,11 +1964,7 @@ class WeeklyProgressDeckBuilder:
                 logger.warning(f"Error synchronizing with timeline spreadsheet {t_path}: {e}")
 
         # 2. Risk Register Sync
-        r_path = (
-            risk_path
-            or self.config.get("spreadsheets", {}).get("risks")
-            or "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.5_Risk_Register_Template.xlsx"
-        )
+        r_path = risk_path or self.config.get("spreadsheets", {}).get("risks")
         if r_path and Path(r_path).exists():
             try:
                 import openpyxl
@@ -2028,11 +2026,7 @@ class WeeklyProgressDeckBuilder:
                 logger.warning(f"Error synchronizing with risk register {r_path}: {e}")
 
         # 3. Issue Log Sync
-        i_path = (
-            issue_path
-            or self.config.get("spreadsheets", {}).get("issues")
-            or "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.6_Issue_Log_Template.xlsx"
-        )
+        i_path = issue_path or self.config.get("spreadsheets", {}).get("issues")
         if i_path and Path(i_path).exists():
             try:
                 import openpyxl

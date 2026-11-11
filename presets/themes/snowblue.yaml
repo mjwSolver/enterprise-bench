@@ -1,5 +1,5 @@
 name: "snowblue"
-description: "Snow Blue: crisp frost #F0FDF4 / #F0F9FF, cobalt #0284C7, cyan accent #06B6D4, surface #FFFFFF, border #BAE6FD, corner_radius 8, soft modern borders"
+description: "Snow Blue: crisp frost #E0F2FE / #F0F9FF, cobalt #0284C7, cyan accent #06B6D4, surface #FFFFFF, border #BAE6FD, corner_radius 8, soft modern borders"
 
 palette:
   background: "#F0F9FF"

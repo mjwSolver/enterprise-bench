@@ -27,7 +27,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 
 from .common import (
     add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe, add_slide_footer,
-    _add_contained_image, _interpolate_color, _get_contrast_text_color, _add_bullet_paragraph, _fit_image_in_box,
+    _add_contained_image, _interpolate_color, _get_contrast_text_color, _add_bullet_paragraph, _fit_image_in_box, bounded_slice,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,13 +35,13 @@ logger = logging.getLogger(__name__)
 def build_chapter_divider_slide(
     prs: Presentation,
     theme: Theme,
-    tracker: str,
+    tracker: Optional[str] = None,
     title: Optional[str] = None,
     subtitle: Optional[str] = None,
     hero_image_path: Optional[Union[str, Path]] = None,
     logo_path: Optional[Union[str, Path]] = None,
     action_title: Optional[str] = None,
-    division_tag: Optional[str] = "BAS Division  |  Data & AI Practice",
+    division_tag: Optional[str] = None,
     tagline: Optional[str] = None,
     scrim_alpha: float = 0.45,
     scrim_color: Optional[RGBColor] = None,
@@ -83,23 +83,26 @@ def build_chapter_divider_slide(
     tf.word_wrap = True
     tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
 
-    # Paragraph 1: Tracker Breadcrumb (10pt bold uppercase, theme accent)
-    p_tr = tf.paragraphs[0]
-    p_tr.text = tracker.upper()
-    p_tr.font.name = theme.font_family_header
-    p_tr.font.size = Pt(thresholds.get("tracker_pt", 10.0))
-    p_tr.font.bold = True
-    p_tr.font.color.rgb = tracker_color or theme.get_rgb("accent")
+    # Paragraph 1: Opt-in Tracker Breadcrumb (10pt bold uppercase, theme accent)
+    if tracker and str(tracker).strip():
+        p_tr = tf.paragraphs[0]
+        p_tr.text = str(tracker).upper()
+        p_tr.font.name = theme.font_family_header
+        p_tr.font.size = Pt(thresholds.get("tracker_pt", 10.0))
+        p_tr.font.bold = True
+        p_tr.font.color.rgb = tracker_color or theme.get_rgb("accent")
+        p_ti = tf.add_paragraph()
+        p_ti.space_before = Pt(12)
+    else:
+        p_ti = tf.paragraphs[0]
 
-    # Paragraph 2: Action Title (32-36pt bold, theme primary, space_before=12pt)
-    p_ti = tf.add_paragraph()
+    # Paragraph 2: Action Title (32-36pt bold, theme primary)
     p_ti.text = effective_title
     p_ti.font.name = theme.font_family_header
     base_title_pt = 34.0 if len(effective_title) <= 45 else 30.0
     p_ti.font.size = Pt(base_title_pt)
     p_ti.font.bold = True
     p_ti.font.color.rgb = theme.get_rgb("primary")
-    p_ti.space_before = Pt(12)
 
     # Paragraph 3: Context Synopsis / Subtitle (11.5pt regular, theme secondary, space_before=14pt)
     if subtitle:
@@ -211,8 +214,8 @@ def build_chapter_divider_slide(
 
     if resolved_logo is not None:
         slide.shapes.add_picture(str(resolved_logo), logo_x, logo_y, logo_w, logo_h)
-    else:
-        # Fallback: High-contrast white typographic pill badge ([ METRODATA ])
+    elif tagline or division_tag:
+        # Neutral typographic badge derived dynamically from active theme (never hardcoded brand string)
         badge_w = Inches(2.8)
         badge_h = Inches(0.65)
         badge_x = Inches(9.0665) - (badge_w / 2)
@@ -229,7 +232,7 @@ def build_chapter_divider_slide(
         badge_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         badge_tf.margin_left = badge_tf.margin_right = badge_tf.margin_top = badge_tf.margin_bottom = 0
         p_bg = badge_tf.paragraphs[0]
-        p_bg.text = "METRODATA"
+        p_bg.text = str(theme.name or "ENTERPRISE").upper()
         p_bg.font.name = theme.font_family_header
         p_bg.font.size = Pt(14.0)
         p_bg.font.bold = True
@@ -276,10 +279,10 @@ def build_cover_slide(
     title: str,
     subtitle: Optional[str] = None,
     client: str = "Enterprise Client",
-    vendor: str = "Metrodata Consulting",
+    vendor: str = "Enterprise Advisory Group",
     product: Optional[str] = "Snowflake AI Data Cloud",
     date_str: Optional[str] = None,
-    tracker: str = "ENTERPRISE TRANSFORMATION BLUEPRINT  |  PROJECT ENGAGEMENT",
+    tracker: Optional[str] = None,
     client_logo_path: Optional[Union[str, Path]] = None,
     vendor_logo_path: Optional[Union[str, Path]] = None,
     product_logo_path: Optional[Union[str, Path]] = None,
@@ -336,17 +339,18 @@ def build_cover_slide(
     blue_bar.fill.fore_color.rgb = theme.get_rgb("accent", default="#0052CC")
     blue_bar.line.fill.background()
 
-    # 2. Category Tracker Breadcrumb
-    tb_cat = slide.shapes.add_textbox(Inches(1.15), Inches(1.8), Inches(7.5), Inches(0.35))
-    tf_cat = tb_cat.text_frame
-    tf_cat.word_wrap = True
-    tf_cat.margin_left = tf_cat.margin_right = tf_cat.margin_top = tf_cat.margin_bottom = 0
-    p_cat = tf_cat.paragraphs[0]
-    p_cat.text = tracker.upper()
-    p_cat.font.name = theme.font_family_header
-    p_cat.font.size = Pt(10.5)
-    p_cat.font.bold = True
-    p_cat.font.color.rgb = theme.get_rgb("accent")
+    # 2. Opt-in Category Tracker Breadcrumb
+    if tracker and str(tracker).strip():
+        tb_cat = slide.shapes.add_textbox(Inches(1.15), Inches(1.8), Inches(7.5), Inches(0.35))
+        tf_cat = tb_cat.text_frame
+        tf_cat.word_wrap = True
+        tf_cat.margin_left = tf_cat.margin_right = tf_cat.margin_top = tf_cat.margin_bottom = 0
+        p_cat = tf_cat.paragraphs[0]
+        p_cat.text = str(tracker).upper()
+        p_cat.font.name = theme.font_family_header
+        p_cat.font.size = Pt(10.5)
+        p_cat.font.bold = True
+        p_cat.font.color.rgb = theme.get_rgb("accent")
 
     # 3. Main Title & Subtitle (Unified Frame for Consistent Spacing)
     tb_header = slide.shapes.add_textbox(Inches(1.15), Inches(2.22), Inches(7.5), Inches(2.35))
@@ -597,10 +601,10 @@ def build_hero_cover_slide(
     title: str,
     subtitle: Optional[str] = None,
     client: str = "[CLIENT_COMPANY_NAME]",
-    vendor: str = "PT Metrodata Electronics Tbk",
+    vendor: str = "[VENDOR_COMPANY_NAME]",
     product: Optional[str] = "Snowflake AI Data Cloud",
     date_str: Optional[str] = "September 2026",
-    tracker: str = "ENTERPRISE TRANSFORMATION BLUEPRINT  |  PROJECT ENGAGEMENT",
+    tracker: Optional[str] = None,
     hero_image_path: Optional[Union[str, Path]] = None,
     hero_height: float = 3.65,
     scrim_alpha: float = 0.28,
@@ -732,17 +736,18 @@ def build_hero_cover_slide(
     blue_bar.fill.fore_color.rgb = theme.get_rgb("accent", default="#0052CC")
     blue_bar.line.fill.background()
 
-    # 4b. Category Tracker Breadcrumb
-    tb_cat = slide.shapes.add_textbox(Inches(1.15), content_top, Inches(11.383), Inches(0.28))
-    tf_cat = tb_cat.text_frame
-    tf_cat.word_wrap = True
-    tf_cat.margin_left = tf_cat.margin_right = tf_cat.margin_top = tf_cat.margin_bottom = 0
-    p_cat = tf_cat.paragraphs[0]
-    p_cat.text = tracker.upper()
-    p_cat.font.name = theme.font_family_header
-    p_cat.font.size = Pt(10.0)
-    p_cat.font.bold = True
-    p_cat.font.color.rgb = theme.get_rgb("accent")
+    # 4b. Opt-in Category Tracker Breadcrumb
+    if tracker and str(tracker).strip():
+        tb_cat = slide.shapes.add_textbox(Inches(1.15), content_top, Inches(11.383), Inches(0.28))
+        tf_cat = tb_cat.text_frame
+        tf_cat.word_wrap = True
+        tf_cat.margin_left = tf_cat.margin_right = tf_cat.margin_top = tf_cat.margin_bottom = 0
+        p_cat = tf_cat.paragraphs[0]
+        p_cat.text = str(tracker).upper()
+        p_cat.font.name = theme.font_family_header
+        p_cat.font.size = Pt(10.0)
+        p_cat.font.bold = True
+        p_cat.font.color.rgb = theme.get_rgb("accent")
 
     # 4c. Main Title & Subtitle (Unified Text Frame)
     tb_header = slide.shapes.add_textbox(Inches(1.15), content_top + Inches(0.32), Inches(11.383), Inches(1.50))
@@ -1009,7 +1014,7 @@ def build_thank_you_slide(
     subtitle: Optional[str] = None,
     contacts: Optional[List[Dict[str, str]]] = None,
     next_steps: Optional[Dict[str, Any]] = None,
-    company: Optional[str] = "PT Metrodata Electronics Tbk  |  PT Mitra Integrasi Informatika",
+    company: Optional[str] = "[VENDOR_COMPANY_NAME]",
     office: Optional[str] = None,
     current_idx: int = 19,
     total_slides: int = 19,
@@ -1157,7 +1162,7 @@ def build_thank_you_slide(
             c_gap = Inches(0.12)
             c_h = (content_h - (num_c - 1) * c_gap) / num_c
 
-            for i, c in enumerate(contacts[:3]):
+            for i, c in enumerate(bounded_slice(contacts, 3, "thank_you", "contacts")):
                 cy = content_y + i * (c_h + c_gap)
                 acc_k = c.get("accent_key", "accent" if i == 0 else "accent_teal")
                 add_card_with_top_stripe(
@@ -1206,7 +1211,7 @@ def build_thank_you_slide(
         card_h = Inches(1.80)
         card_y = Inches(3.85)
 
-        for i, c in enumerate(contacts[:4]):
+        for i, c in enumerate(bounded_slice(contacts, 4, "thank_you", "contacts")):
             cx = text_left + i * (card_w + card_gap)
             acc_key = c.get("accent_key", "accent" if i == 0 else "accent_teal")
             acc_col = theme.get_rgb(acc_key, "#0052CC")

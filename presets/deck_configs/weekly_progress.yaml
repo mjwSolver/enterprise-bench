@@ -3,17 +3,17 @@ theme: metrodata
 metadata:
   project_name: "ENTERPRISE FINANCIAL INTELLIGENCE & CLOUD ANALYTICS PLATFORM"
   client_name: "Nusantara Global Logistics"
-  vendor_name: "PT Metrodata Electronics Tbk"
+  vendor_name: "[VENDOR_COMPANY_NAME]"
   report_number: "01"
   report_date: "05 Jan 2026"
   reporting_period: "15 Dec 2025 - 02 Jan 2026"
   presenter: "Project Leadership Team"
-  confidentiality: "Nusantara Global Logistics & Metrodata Consulting  |  Confidential & Proprietary"
+  confidentiality: "Nusantara Global Logistics & [VENDOR_SHORT_NAME]  |  Confidential & Proprietary"
 
 spreadsheets:
-  timeline: "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.2_Weekly_Progress_Timeline_Update_Template.xlsx"
-  risks: "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.5_Risk_Register_Template.xlsx"
-  issues: "clean_workspace/projects/TTI_Snowflake_Analytics/05_monitoring/4.6_Issue_Log_Template.xlsx"
+  timeline: "presets/templates/4.2_Weekly_Progress_Timeline_Update_Template.xlsx"
+  risks: "presets/templates/4.5_Risk_Register_Template.xlsx"
+  issues: "presets/templates/4.6_Issue_Log_Template.xlsx"
 
 slides:
   # Slide 1: Cover Slide
@@ -21,7 +21,7 @@ slides:
     title: "ENTERPRISE FINANCIAL INTELLIGENCE & CLOUD ANALYTICS PLATFORM"
     subtitle: "Weekly Progress Report #01"
     client: "Nusantara Global Logistics"
-    vendor: "PT Metrodata Electronics Tbk"
+    vendor: "[VENDOR_COMPANY_NAME]"
     product: "Snowflake AI Data Cloud"
     date_str: "05 Jan 2026"
     tracker: "PROJECT GOVERNANCE & WEEKLY STATUS"
@@ -331,7 +331,7 @@ slides:
     title: "Questions & Executive Discussion"
     subtitle: "Steering Committee feedback, operational alignments, and immediate decision items."
     division_tag: "BAS Division  |  Data & AI Practice"
-    tagline: "PT Metrodata Electronics Tbk"
+    tagline: "[VENDOR_COMPANY_NAME]"
 
   # Slide 11: Thank You Slide
   - archetype: thank_you
@@ -339,5 +339,5 @@ slides:
     title: "Thank You"
     subtitle: "Delivering Data-Driven Value & Predictive Intelligence with Cloud Analytics Platform."
     contacts: null
-    company: "PT Metrodata Electronics Tbk"
-    office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
+    company: "[VENDOR_COMPANY_NAME]"
+    office: "[VENDOR_OFFICE_ADDRESS]"

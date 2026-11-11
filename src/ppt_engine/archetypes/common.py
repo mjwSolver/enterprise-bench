@@ -77,6 +77,26 @@ def add_slide_with_background(prs: Presentation, theme: Theme) -> Any:
     return slide
 
 
+def bounded_slice(
+    items: Any,
+    limit: int,
+    archetype: str,
+    field_name: str,
+) -> List[Any]:
+    """Slice items to layout capacity while logging an explicit overflow warning (never silent)."""
+    seq = list(items) if items is not None else []
+    if len(seq) > limit:
+        logger.warning(
+            "[CAPACITY_OVERFLOW] %s.%s received %d items (max capacity %d); truncating trailing %d item(s).",
+            archetype,
+            field_name,
+            len(seq),
+            limit,
+            len(seq) - limit,
+        )
+    return seq[:limit]
+
+
 def _estimate_wrapped_lines(text: str, font_pt: float, box_width_in: float) -> int:
     """Estimate rendered line count conservatively from font size and container width."""
     if not text or not text.strip():

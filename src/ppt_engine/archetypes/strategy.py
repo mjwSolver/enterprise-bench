@@ -28,7 +28,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 from .common import (
     add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
-    _add_status_pill, _add_bullet_paragraph, _fit_image_in_box,
+    _add_status_pill, _add_bullet_paragraph, _fit_image_in_box, bounded_slice,
 )
 
 logger = logging.getLogger(__name__)
@@ -142,7 +142,7 @@ def build_bcg_3_horizon_slide(
     bottom_limit = Inches(5.96 if takeaway else 6.86)
     card_h = max(Inches(3.60), bottom_limit - row_y)
 
-    for i, h_data in enumerate(horizons[:3]):
+    for i, h_data in enumerate(bounded_slice(horizons, 3, "three_horizons", "horizons")):
         cx = start_x + i * (card_w + card_gap)
         accent_rgb = theme.get_rgb(h_data.accent_key)
 
@@ -459,7 +459,7 @@ def build_mckinsey_cascade_slide(
     card_gap = Inches(0.28)
     start_x = Inches(0.8)
 
-    for i, pillar in enumerate(pillars[:3]):
+    for i, pillar in enumerate(bounded_slice(pillars, 3, "strategic_pillars", "pillars")):
         cx = start_x + i * (card_w + card_gap)
         accent_rgb = theme.get_rgb(pillar.accent_key)
 
@@ -751,7 +751,7 @@ def build_balanced_scorecard_slide(
 
     glyph_labels = ["01", "02", "03", "04"]
 
-    for idx, quad_data in enumerate(quadrants[:4]):
+    for idx, quad_data in enumerate(bounded_slice(quadrants, 4, "quadrant_matrix", "quadrants")):
         qx, qy = positions[idx]
         accent_rgb = theme.get_rgb(quad_data.accent_key)
 
@@ -830,7 +830,7 @@ def build_balanced_scorecard_slide(
         row_h = Inches(0.88)
         row_gap = Inches(0.04)
 
-        for m_idx, metric in enumerate(quad_data.metrics[:2]):
+        for m_idx, metric in enumerate(bounded_slice(quad_data.metrics, 2, "quadrant_matrix", f"quadrants[{idx}].metrics")):
             my = metrics_start_y + m_idx * (row_h + row_gap)
             mw = quad_w - Inches(0.40)
             mx = qx + Inches(0.20)

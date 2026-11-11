@@ -111,7 +111,7 @@ def get_default_resources(root_dir: Path) -> list[ResourceSpec]:
             fallback_type="gradient",
             fallback_text="",
             impacted_slides=["Hero Cover"],
-            recovery_command="python -c \"from pptx import Presentation; prs = Presentation('clean_workspace/projects/TTI_Snowflake_Analytics/01_presales/Modernize_Data_Platform_Pitch_Deck_Template.pptx'); open('assets/images/hero/cloud_interchange_night.jpg', 'wb').write(prs.slides[0].shapes[0].image.blob)\"",
+            recovery_command="python -c \"from pptx import Presentation; prs = Presentation('<PITCH_DECK_PATH>'); open('assets/images/hero/cloud_interchange_night.jpg', 'wb').write(prs.slides[0].shapes[0].image.blob)\"",
         ),
     ]
 

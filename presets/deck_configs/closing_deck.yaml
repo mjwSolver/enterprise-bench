@@ -5,13 +5,13 @@ sync_xlsx: true
 metadata:
   project_name: "DATA APPLICATION FOR FINANCIAL ANALYTICS WITH SNOWFLAKE"
   client_name: "[CLIENT_COMPANY_NAME]"
-  vendor_name: "PT Mitra Integrasi Informatika"
+  vendor_name: "[VENDOR_COMPANY_NAME]"
   report_date: "01 September 2026"
-  presenter: "Agus Pramono, Project Manager, MII"
+  presenter: "[VENDOR_PM_NAME], Project Manager"
   confidentiality: "[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Confidential"
 
 spreadsheets:
-  checklist: "clean_workspace/projects/TTI_Snowflake_Analytics/06_closing/5.2_Project_Closeout_Checklist_Template.xlsx"
+  checklist: "presets/templates/5.2_Project_Closeout_Checklist_Template.xlsx"
 
 slides:
   # Slide 1: Cover Slide
@@ -19,12 +19,12 @@ slides:
     title: "DATA APPLICATION FOR FINANCIAL ANALYTICS WITH SNOWFLAKE"
     subtitle: "Project Closing & Transition to Maintenance"
     client: "[CLIENT_COMPANY_NAME]"
-    vendor: "PT Mitra Integrasi Informatika"
+    vendor: "[VENDOR_COMPANY_NAME]"
     product: "Snowflake AI Data Cloud"
     date_str: "01 September 2026"
     tracker: "PROJECT CLOSING & MAINTENANCE TRANSITION"
     client_sublabel: "Steering Committee & Executive Sponsors"
-    vendor_sublabel: "Agus Pramono, Project Manager, MII"
+    vendor_sublabel: "[VENDOR_PM_NAME], Project Manager"
 
   # Slide 2: Table of Contents / Executive Agenda
   - archetype: agenda
@@ -75,7 +75,7 @@ slides:
         icon: "git-pull-request"
         bullets:
           - "4-stage ticket workflow from submission to UAT"
-          - "Primary technical contacts (Adam N. & Vicko B.)"
+          - "Primary technical contacts ([TECH_LEAD_NAME] & [SUPPORT_ENGINEER_NAME])"
           - "Dedicated WhatsApp group & email ticketing"
       - num: "06"
         title: "Maintenance Deliverables"
@@ -266,9 +266,9 @@ slides:
         title: "Customer Satisfaction Survey (CSS) dispatched"
         status: "Yes"
         detail: "Official Microsoft Forms evaluation dispatched to [CLIENT_SHORT_NAME] executive committee"
-    download_link: "https://drive.google.com/file/d/1jbNeQz7FGOoB5V-wnPjvgkLJQ1YiPYGQ/view?usp=sharing"
-    password: "Metrodata2026!"
-    css_link: "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=rgOfXJbVn0q-VTj8N43ujHvqOdLTWpVGqw01JkKQaalUQkVVM0RHVlRCSDFWSlZMUkpRQU81UDNMWS4u"
+    download_link: "<HANDOVER_ARCHIVE_URL>"
+    password: "<ARCHIVE_ACCESS_TOKEN>"
+    css_link: "<CSS_SURVEY_URL>"
 
   # Slide 6: Transition to Maintenance Phase
   - archetype: maintenance_transition
@@ -377,7 +377,7 @@ slides:
     title: "Thank You"
     subtitle: "Empowering Financial Intelligence & Cloud Analytics at [CLIENT_COMPANY_NAME]."
     company: "[VENDOR_COMPANY_NAME]"
-    office: "APL Tower 37th Floor, Jl. Letjen S. Parman Kav. 28, Jakarta Barat 11470"
+    office: "[VENDOR_OFFICE_ADDRESS]"
     notice: "[CLIENT_COMPANY_NAME] & [VENDOR_COMPANY_NAME]  |  Confidential"
     contacts:
       - name: "Project Manager A"
