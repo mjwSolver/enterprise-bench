@@ -296,7 +296,8 @@ def render_card_list_widget(
         or style in ("numbered", "story", "stories", "numbered_cards")
         or any(isinstance(it, dict) and (it.get("number") is not None or it.get("index") is not None) for it in raw_items)
     )
-    default_stripe = bool(cfg.get("show_stripe", cfg.get("striped", style == "striped")))
+    widget_stripe_opt = cfg.get("show_stripe", cfg.get("striped"))
+    base_default_stripe = bool(widget_stripe_opt) if widget_stripe_opt is not None else (style == "striped")
 
     items = list(raw_items)[:6]
     n_items = len(items)
@@ -314,9 +315,11 @@ def render_card_list_widget(
         title = str(item_dict.get("title", f"Item {idx + 1}")).strip()
         desc = item_dict.get("description", item_dict.get("body", ""))
         bullets = item_dict.get("bullets", [])
+        has_explicit_accent = bool(item_dict.get("accent_key"))
         accent_key = item_dict.get("accent_key", "accent")
         accent_rgb = theme.get_rgb(accent_key)
-        use_stripe = bool(item_dict.get("show_stripe", default_stripe))
+        item_default_stripe = base_default_stripe if widget_stripe_opt is not None else (base_default_stripe or has_explicit_accent)
+        use_stripe = bool(item_dict.get("show_stripe", item_default_stripe))
 
         if not is_divided:
             add_card(
@@ -381,9 +384,16 @@ def render_card_list_widget(
 
         card_content_w = to_emu((bx + bw) - text_left - Inches(0.16))
 
-        # Header
-        is_single_line_t = len(title) <= 46
-        title_h = Inches(0.28 if (is_single_line_t and n_items >= 4) else (0.34 if is_single_line_t else 0.44))
+        # Header (width-aware wrapped height matching visual_qa line estimation)
+        card_content_w_in = card_content_w / 914400.0
+        chars_per_title_line = max(4, int(card_content_w_in * 72.0 / (title_pt * 0.55)))
+        title_lines = max(1, (len(title) + chars_per_title_line - 1) // chars_per_title_line)
+        min_title_h_in = (title_pt * 1.25 * title_lines + 3.0) / 72.0 + 0.02
+        base_title_floor = 0.28 if n_items >= 4 else 0.30
+        raw_title_h = Inches(max(base_title_floor, min_title_h_in))
+        has_body = bool((bullets and isinstance(bullets, list)) or desc)
+        max_title_h = max(Inches(0.26), item_h - pad_top - (Inches(0.30) if has_body else Inches(0.08)))
+        title_h = to_emu(min(raw_title_h, max_title_h))
         tb_title = slide.shapes.add_textbox(text_left, to_emu(item_y + pad_top), card_content_w, title_h)
         tf_title = tb_title.text_frame
         tf_title.word_wrap = True

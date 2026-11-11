@@ -1,0 +1,282 @@
+deck_type: pitch_deck
+theme: snowblue
+design_contract: technical_architecture
+metadata:
+  project_name: "ML Use Case Assessment & Technical Approach"
+  client_name: "Morula IVF Indonesia"
+  vendor_name: "Data Science & ML Architecture Team"
+  product: "Snowflake AI Data Cloud"
+  date_str: "November 2026"
+  confidentiality: "ML Use Case Assessment & Technical Approach  |  UC-2 Clinical Pregnancy Prediction"
+
+slides:
+  # Slide 1: Executive Summary
+  - archetype: composable_split
+    tracker: "ML USE CASE ASSESSMENT  |  EXECUTIVE SUMMARY"
+    title: "ML Is Feasible as a Calibrated Prognostic Aid, Capped at 0.656 Temporal ROC-AUC Until FET Covariates Land"
+    subtitle: "ML Use Case Assessment & Technical Approach: Morula IVF Clinical Pregnancy Prediction (N = 11,546 modern transfers, 2019-01 to 2026-05)."
+    split: [34, 66]
+    gap: 0.35
+    panes:
+      - widget: hero_kpi
+        eyebrow: "AUDITED OUT-OF-TIME ROC-AUC"
+        stat: "0.656"
+        stat_label: "Run V2 Temporal Holdout (N = 2,310)"
+        stat_subtext: "Tuned XGBoost on transfers >= 2024-04-29; PR-AUC 0.665, Brier 0.231, Calibration Slope 0.899."
+        card_style: "filled"
+      - widget: card_list
+        header_bar: "30-SECOND PROPOSAL SYNTHESIS"
+        numbered: true
+        style: "cards"
+        items:
+          - title: "Business Problem"
+            description: "Clinicians counsel patients across 13 branches without standardized probability baselines; 73.4% of modern cycles are Frozen FET."
+          - title: "Proposed ML Solution"
+            description: "Calibrated binary classifier (PREGNANT CLINICAL vs NEGATIVE) at transfer grain, exposing TreeSHAP feature attributions."
+          - title: "Expected Business Value"
+            description: "Replaces ad-hoc prognosis during pre-transfer consults and supports SET vs DET framing against a 45.9% modern baseline."
+          - title: "Feasibility & Recommended Direction"
+            description: "Buildable now on Zero-PII Snowflake Silver views, but defer MVP production until missing FET lining and AMH data are captured."
+    takeaway:
+      action: "RECOMMENDED DIRECTION"
+      text: "Run shadow-mode POC for clinical decision support; gate MVP promotion on capturing endometrial thickness, AMH, and D5/D6 day."
+
+  # Slide 2: Business Problem & Current State
+  - archetype: chevron_process
+    tracker: "CURRENT STATE  |  WORKFLOW"
+    title: "Broken Cross-Stage Keys and Unstandardized Counseling Hide Baseline Risk Across 13 Branches"
+    subtitle: "Verified: 88.17% thaw bridge & 45.9% modern preg rate. Unverified assumption: clinicians will act on risk scores (interviews pending)."
+    steps:
+      - num: "01"
+        title: "Intake & Stimulation"
+        status: "SILOED"
+        accent_key: "accent"
+        owner: "DM_PATIENT + FACT_CYCLE"
+        deliverables:
+          - "Verified: 226.8k patients; 15-20 SOAP notes"
+          - "Verified: 291 zero / 1,805 vial-unit doses"
+      - num: "02"
+        title: "OPU Retrieval"
+        status: "DISCONNECTED"
+        accent_key: "accent"
+        owner: "FACT_OPU (38.4k rows)"
+        deliverables:
+          - "Verified: unpopulated cross-stage FKs"
+          - "Verified: naive GROUP_ID joins fan out 760x"
+      - num: "03"
+        title: "Embryology & Freeze"
+        status: "DELAYED"
+        accent_key: "accent"
+        owner: "FACT_EMBRYO (328.4k rows)"
+        deliverables:
+          - "Verified: 25,029 sentinel 1901-01-01 rows"
+          - "Verified: thaw bridge requires <= 10d window"
+      - num: "04"
+        title: "Transfer & Outcome"
+        status: "BASELINE"
+        accent_key: "primary"
+        owner: "ET/FET + OUTCOME (27.7k)"
+        deliverables:
+          - "Verified: 45.9% modern (33.8% ET / 50.3% FET)"
+          - "Assumption: consult risk score alters SET/DET"
+
+  # Slide 3: Use Case Definition & Opportunity
+  - archetype: composable_split
+    tracker: "OPPORTUNITY  |  USE CASE"
+    title: "Transfer-Grain Binary Classification Links Pre-Transfer Inputs to Calibrated Counseling Actions"
+    subtitle: "Target users: Sp.OG clinicians, embryologists, clinic ops. Value hypothesis requires prospective clinical validation."
+    split: [45, 55]
+    gap: 0.35
+    panes:
+      - widget: process_steps
+        direction: "vertical"
+        steps:
+          - step_num: "01"
+            title: "Pre-Transfer Input Variables"
+            description: "Maternal age, prior transfers, OPU mature MII count, best embryo grade, PGT-A flag, and Fresh vs Frozen pathway."
+            accent_key: "primary"
+          - step_num: "02"
+            title: "Binary Classification Formulation"
+            description: "1 row per transfer (N = 11,546 modern); Y = 1 PREGNANT CLINICAL (45.9%) vs Y = 0 NEGATIVE (excludes 7.2% chemical-only)."
+            accent_key: "accent"
+          - step_num: "03"
+            title: "Model Output & Explanations"
+            description: "Calibrated probability P(Pregnancy) in [0, 1] paired with per-patient TreeSHAP feature attribution drivers."
+            accent_key: "accent"
+          - step_num: "04"
+            title: "Clinical Action & Measurable Value"
+            description: "Guides SET vs DET transfer count and patient counseling; measurable target is consistent branch risk calibration."
+            accent_key: "success"
+      - widget: native_chart
+        chart_type: "bar"
+        title: "Top Audited TreeSHAP Drivers (Run V2 Unified, N = 11,546)"
+        subtitle: "Mean |SHAP| impact on clinical pregnancy log-odds across 25 pre-transfer features"
+        categories:
+          - "MATERNAL_AGE_AT_TRANSFER"
+          - "EMBRYO_TRANSFER_COUNT"
+          - "IS_FROZEN"
+          - "GROUP_ID (Branch)"
+          - "FRESH_TRANSFER_DAYS"
+          - "PRIOR_CLINICAL_PREG"
+          - "BEST_EMBRYO_GRADE_NUM"
+          - "MATURE_MII_COUNT"
+        series:
+          - name: "Mean |SHAP|"
+            values: [0.233, 0.218, 0.097, 0.094, 0.090, 0.086, 0.085, 0.076]
+            color: "accent"
+        number_format: "0.000"
+
+  # Slide 4: Model Suitability Assessment
+  - archetype: feature_matrix
+    tracker: "SUITABILITY  |  MODEL CHOICE"
+    title: "Statistical LR and Traditional XGBoost Tie Within 0.001 Temporal AUC; Deep Learning Is Rejected"
+    subtitle: "Comparative suitability across complexity, interpretability, data fit, expected performance, and operational maintenance cost."
+    recommended_column: "Traditional ML (XGB)"
+    matrix_data:
+      categories: ["Problem & Data Fit", "Performance & Clarity", "Operations"]
+      options: ["Business Rules", "Statistical (LR)", "Traditional ML (XGB)", "Deep Learning"]
+      rows:
+        - category: "Problem & Data Fit"
+          criteria: "Captures Multi-Factor Non-Linearity"
+          scores:
+            "Business Rules": "NONE"
+            "Statistical (LR)": "PARTIAL"
+            "Traditional ML (XGB)": "FULL"
+            "Deep Learning": "FULL"
+        - category: "Problem & Data Fit"
+          criteria: "Fit for N = 11,546 Tabular Rows"
+          scores:
+            "Business Rules": "PARTIAL"
+            "Statistical (LR)": "FULL"
+            "Traditional ML (XGB)": "FULL"
+            "Deep Learning": "NONE"
+        - category: "Performance & Clarity"
+          criteria: "Measured Temporal ROC-AUC"
+          scores:
+            "Business Rules": "Rule Only"
+            "Statistical (LR)": "0.6571"
+            "Traditional ML (XGB)": "0.6560"
+            "Deep Learning": "Unproven"
+        - category: "Performance & Clarity"
+          criteria: "PR-AUC & Native Missingness"
+          scores:
+            "Business Rules": "NONE"
+            "Statistical (LR)": "0.652 (Impute)"
+            "Traditional ML (XGB)": "0.665 (Native)"
+            "Deep Learning": "PARTIAL"
+        - category: "Performance & Clarity"
+          criteria: "Clinician Interpretability"
+          scores:
+            "Business Rules": "FULL"
+            "Statistical (LR)": "FULL"
+            "Traditional ML (XGB)": "FULL"
+            "Deep Learning": "NONE"
+        - category: "Operations"
+          criteria: "Low Maintenance & Snowflake Ops"
+          scores:
+            "Business Rules": "Lowest"
+            "Statistical (LR)": "FULL"
+            "Traditional ML (XGB)": "FULL"
+            "Deep Learning": "NONE"
+    footnote: "Technical verdict: Pair Statistical LR with Tuned XGB. Without new FET covariates, LR nearly matches XGB (0.657 vs 0.656 AUC) with lower complexity."
+
+  # Slide 5: Data Assessment & Feasibility
+  - archetype: table
+    tracker: "FEASIBILITY  |  DATA AUDIT"
+    title: "Silver Tables Support POC Training (11,546 Rows), but Missing FET Lining & Sparse AMH Block >0.70 AUC"
+    subtitle: "Empirical readiness audit across Snowflake TEST schemas, volume, quality fixes, leakage risks, and unverified assumptions."
+    columns:
+      - header: "Data Domain & Snowflake Source"
+        width: 2.75
+        align: "LEFT"
+      - header: "Volume & Historical Coverage"
+        width: 3.30
+        align: "LEFT"
+      - header: "Quality, Leakage Controls & Gaps"
+        width: 3.80
+        align: "LEFT"
+      - header: "Readiness"
+        width: 1.883
+        align: "CENTER"
+        is_status: true
+    rows:
+      - ["Core Clinical Tables (DM_PATIENT, OPU, EMBRYO, ET/FET)", "11,546 settled (2019-01..2026-05), 8,393 patients, 13 branches", "10-day thaw bridge (88.17% match); 25,029 sentinel 1901-01-01 rows cut; 0 overlap", "Available"]
+      - ["Target Label (FACT_PREGNANCY_OUTCOME)", "27,684 rows (0% NULLs); 45.9% clinical preg modern (33.8% ET / 50.3% FET)", "Deprecated PREGNANT_RESULT (98.1% blank) excluded; 409 >=2026-06 pending rows cut", "Available"]
+      - ["Stimulation & Lab Features (Age, Grade, MII, Dose)", "Embryo grade known 85.8% modern (vs 57.3% pre-2019); SHA2 PII vault intact", "Fixed 291 zero-dose & 1,805 vial-unit outliers via NULLIF & OSI_PROXY <= 500 cap", "Available"]
+      - ["Pre-Cycle Reserve & Genetics (AMH, AFC, PGT-A)", "AMH populated 4.87% overall (23.6% in 2023+); PGT-A 6.96% (24.3% in 2024+)", "High missingness & era shift (0% pre-2023 PGT-A -> 24% test) limits generalization", "Partially Available"]
+      - ["FET Endometrial & Luteal Factors (Lining, Prep, D5/D6, BMI)", "0% structured columns in FACT_FET / FACT_EMBRYO schemas", "Absent for 73.4% Frozen FET volume; caps Frozen temporal ROC-AUC at 0.626", "Not Available"]
+      - ["Clinical Notes & Live EMR Feed (FACT_SOAP_PATIENT)", "195,168 SOAP notes; inline regex AMH appears in only 169 of 9,904 AMH notes", "Assumption: live pre-transfer EMR query latency & clinician workflow need inspection", "Requires Validation"]
+
+  # Slide 6: Proposed Solution & Technical Approach
+  - archetype: composable_split
+    tracker: "SOLUTION  |  TECHNICAL APPROACH"
+    title: "In-Snowflake Pipeline Executes a 5-Step Baseline-to-ML Strategy Without Infrastructure Bloat"
+    subtitle: "Unified feature store and thin pathway views run inside Snowflake Notebooks (0.92 credits total for V1+V2)."
+    split: [48, 52]
+    gap: 0.35
+    panes:
+      - widget: process_steps
+        direction: "vertical"
+        steps:
+          - step_num: "01"
+            title: "Data Ingestion & Thaw Bridge"
+            description: "Read Silver facts via read-only roles; enforce 10-day FET thaw bridge, sentinel date exclusion, and SHA2 PII vault."
+            accent_key: "primary"
+          - step_num: "02"
+            title: "Preprocessing & Era Hygiene"
+            description: "Isolate 2019-01..2026-05 settled window; apply NULLIF on zero/vial doses; block Gold tables to prevent leakage."
+            accent_key: "accent"
+          - step_num: "03"
+            title: "EDA & Feature Engineering"
+            description: "Materialize 25 pre-transfer features (age, dose, MII rate, grade, PGT-A, OSI proxy) in VW_UC2_MODELING_INPUT_RUN_V2."
+            accent_key: "accent"
+          - step_num: "04"
+            title: "Training, Tuning & Calibration"
+            description: "Run 5-fold StratifiedGroupKFold + temporal holdout with Optuna tuning, Platt scaling, and exact TreeSHAP."
+            accent_key: "accent"
+          - step_num: "05"
+            title: "Inference & App Integration"
+            description: "Serve batch/on-demand scores on WH_ML (XS) into ML.UC2_JOURNEY.T_SCORES for Streamlit Patient 360 display."
+            accent_key: "success"
+      - widget: card_list
+        header_bar: "INITIAL MODELING STRATEGY & RECOMMENDED STACK"
+        style: "cards"
+        items:
+          - title: "5-Step Progressive Modeling Strategy"
+            description: "**1. Naive/Rule Baseline:** Cohort rate (45.9%) & age tiers. **2. Statistical Benchmark:** L2 Logistic Regression. **3. ML Candidates:** Default & Optuna XGBoost. **4. Compare:** CV vs temporal AUC, PR-AUC, Brier. **5. Select:** Pick simplest model passing calibration & ops gates."
+          - title: "Single Feature Store vs Split Models"
+            description: "**Zero Duplicate ETL:** Dedicated Fresh ET (0.699 CV) & Frozen FET (0.656 CV) tie Unified OOF (0.685); serve pathway slices via thin SQL views."
+          - title: "Right-Sized Snowflake Stack"
+            description: "**No Spark/K8s Complexity:** Snowflake SQL Views + Snowflake Notebook Python (pandas, scikit-learn, xgboost, optuna, shap) + Streamlit in Snowflake."
+
+  # Slide 7: Evaluation Strategy & Success Criteria
+  - archetype: composable_split
+    tracker: "EVALUATION  |  SUCCESS GATES"
+    title: "Out-of-Time Holdout (0.656 AUC) Trails the 0.72 MVP Gate, Triggering a Hold Pending New FET Features"
+    subtitle: "Run V2 5-fold CV (N = 11,546) & temporal holdout (N = 2,310, >= 2024-04-29) vs target POC acceptance thresholds."
+    split: [53, 47]
+    gap: 0.35
+    panes:
+      - widget: table
+        headers: ["Model / Benchmark Gate", "CV AUC", "Temp AUC", "PR-AUC / Brier"]
+        column_widths: [44, 15, 17, 24]
+        zebra: true
+        rows:
+          - ["Naive Cohort Prior (53.0% Test Pos)", "0.500", "0.500", "0.530 pos rate"]
+          - ["Statistical Logistic Regression (V2)", "0.677", "0.657", "0.652 / 0.231"]
+          - ["Baseline XGBoost (V2, Default)", "0.683", "Not run", "0.627 / 0.222"]
+          - ["Tuned XGBoost (V2 Measured)", "0.685", "0.656", "0.665 / 0.231"]
+          - ["Target POC Gate (MVP Entry)", ">= 0.70", ">= 0.72", ">= 0.70 / <= 0.21"]
+      - widget: card_list
+        header_bar: "METHODOLOGY, METRICS & POC-TO-MVP CRITERIA"
+        style: "cards"
+        items:
+          - title: "A. Validation & Leakage Prevention"
+            description: "**Patient-Grouped + Temporal:** 5-fold StratifiedGroupKFold (0 patient overlap) + out-of-time test (>= 2024-04-29, N=2,310). Pre-transfer Silver features only; <= 2026-05-31 cutoff."
+          - title: "B. Task-Relevant Classification Metrics"
+            description: "**Omitted Irrelevant Metrics:** Evaluate ROC-AUC (ranking), PR-AUC (yield precision), Brier & Cal. Slope (0.899 measured), and F1/Recall @ Youden J (0.679 / 0.749)."
+          - title: "D. Explicit POC-to-MVP Go / No-Go Criteria"
+            description: "**Hold MVP Until Cleared:** Must hit >= 0.72 temporal ROC-AUC (+0.03 lift over LR), Cal. Slope 0.90-1.10, < 500ms UI scoring latency, and Sp.OG blind-review sign-off."
+    takeaway:
+      action: "POC-TO-MVP VERDICT"
+      text: "Pipeline passes engineering & zero-leakage audits, but measured 0.656 AUC holds MVP; add FET lining & AMH data to re-test gate."
