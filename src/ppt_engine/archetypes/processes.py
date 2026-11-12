@@ -63,6 +63,7 @@ def build_chevron_process_slide(
     total_slides: int = 1,
     notice: Optional[str] = None,
     section_label: str = "KEY DELIVERABLES",
+    show_status: bool = False,
 ) -> Any:
     """
     Renders an executive stepped process flow using interconnected horizontal chevrons.
@@ -150,7 +151,7 @@ def build_chevron_process_slide(
         if s.duration_badge:
             h_in += 14.0 / 72.0
             has_head = True
-        if s.status and str(s.status).strip():
+        if show_status and s.status and str(s.status).strip():
             h_in += (14.0 if has_head else 12.0) / 72.0
             has_head = True
         if getattr(s, "owner", None) and str(s.owner).strip() and s.owner != s.duration_badge:
@@ -260,8 +261,8 @@ def build_chevron_process_slide(
             p_badge.font.color.rgb = theme.get_rgb("primary")
             has_card_head = True
 
-        # Strictly Conditional Status Row (clean uppercase eyebrow without bracket crutches)
-        if step.status and str(step.status).strip():
+        # Opt-in Status Row (omitted by default to keep cards noise-free)
+        if show_status and step.status and str(step.status).strip():
             p_st = inner_tf.add_paragraph() if has_card_head else inner_tf.paragraphs[0]
             p_st.text = step_status_u
             if step_status_u == "COMPLETED":

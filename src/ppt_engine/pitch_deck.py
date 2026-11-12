@@ -765,6 +765,7 @@ class PitchDeckBuilder:
                 total_slides=total,
                 notice=self.notice,
                 section_label=str(cfg.get("section_label", "KEY DELIVERABLES")),
+                show_status=bool(cfg.get("show_status", False)),
             )
 
         elif arch in ("timeline_gantt", "delivery_gantt", "gantt"):
