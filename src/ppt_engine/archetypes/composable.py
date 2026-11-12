@@ -400,7 +400,28 @@ def render_card_list_widget(
         has_body = bool((bullets and isinstance(bullets, list)) or desc)
         max_title_h = max(Inches(0.26), item_h - pad_top - (Inches(0.30) if has_body else Inches(0.08)))
         title_h = to_emu(min(raw_title_h, max_title_h))
-        tb_title = slide.shapes.add_textbox(text_left, to_emu(item_y + pad_top), card_content_w, title_h)
+
+        # Dynamically vertically center sparse (title + body) blocks inside the cell,
+        # falling back to min pad_top when content is dense so full cell height is available.
+        chars_per_body_line = max(4, int(card_content_w_in * 72.0 / (body_pt * 0.55)))
+        est_body_h_in = 0.0
+        if bullets and isinstance(bullets, list):
+            sliced_bullets = bounded_slice(bullets, 2, "composable_list", "item.bullets")
+            total_b_lines = sum(
+                max(1, (len(f"•  {str(b).replace('**', '')}") + chars_per_body_line - 1) // chars_per_body_line)
+                for b in sliced_bullets
+            )
+            est_gap_pt = 6.0 if (item_h - pad_top - title_h) >= Inches(1.0) else 3.0
+            est_body_h_in = (body_pt * 1.25 * total_b_lines + max(0, len(sliced_bullets) - 1) * est_gap_pt + len(sliced_bullets) * 1.5) / 72.0
+        elif desc:
+            clean_desc = str(desc).replace("**", "")
+            d_lines = max(1, (len(clean_desc) + chars_per_body_line - 1) // chars_per_body_line)
+            est_body_h_in = (body_pt * 1.25 * d_lines) / 72.0
+
+        total_content_h = title_h + (Inches(0.02) + Inches(est_body_h_in) if has_body else Inches(0))
+        effective_pad_top = to_emu(max(pad_top, (item_h - total_content_h) / 2))
+
+        tb_title = slide.shapes.add_textbox(text_left, to_emu(item_y + effective_pad_top), card_content_w, title_h)
         tf_title = tb_title.text_frame
         tf_title.word_wrap = True
         tf_title.margin_left = tf_title.margin_right = tf_title.margin_top = tf_title.margin_bottom = 0
@@ -412,7 +433,7 @@ def render_card_list_widget(
         p_t.font.color.rgb = theme.get_rgb("primary")
 
         # Body: Description or Bullets
-        body_y = to_emu(item_y + pad_top + title_h + Inches(0.02))
+        body_y = to_emu(item_y + effective_pad_top + title_h + Inches(0.02))
         body_h = to_emu(item_h - (body_y - item_y) - Inches(0.06))
         if body_h > Inches(0.22):
             tb_body = slide.shapes.add_textbox(text_left, body_y, card_content_w, body_h)

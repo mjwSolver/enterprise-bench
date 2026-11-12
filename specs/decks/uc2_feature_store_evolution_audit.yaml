@@ -1,0 +1,390 @@
+deck_type: pitch_deck
+theme: snowblue
+design_contract: technical_architecture
+metadata:
+  project_name: "UC-2 Data & Feature-Store Evolution (V1 -> V2 -> V3A -> V4A)"
+  client_name: "Morula IVF Indonesia"
+  vendor_name: "Data Science & ML Architecture Team"
+  product: "Snowflake AI Data Cloud (DM-V2 -> DM-V4)"
+  date_str: "November 2026"
+  confidentiality: "UC-2 Feature-Store History  |  V1 -> V2 -> V3A -> V4A"
+
+slides:
+  # =========================================================================
+  # PART 1: ONBOARDING NARRATIVE (SLIDES 1-7)
+  # =========================================================================
+
+  # Slide 1: Cover + Upfront Validation Lens Caption
+  - archetype: cover
+    tracker: "UC-2 FEATURE-STORE STORY  |  NOV 10 - NOV 12, 2026"
+    title: "How Our IVF Data Mart Evolved Into a Clean 14-Clinic Feature Store"
+    subtitle: "Validation Lens Notice: Clinical Pregnancy is used here as an end-to-end functional test spanning all scientific tables to verify data hygiene and cross-clinic portability—not as a replacement for the POSEIDON stimulation protocol suggestion service."
+    client: "Morula IVF Indonesia"
+    vendor: "Data Science & ML Architecture Team"
+    product: "Snowflake Feature Store (V1 -> V2 -> V3A -> V4A)"
+    date_str: "November 2026"
+
+  # Slide 2: Why the Data Mart Was Needed in the First Place (Visual Flow)
+  - archetype: chevron_process
+    tracker: "BACKGROUND  |  WHY WE BUILT THE DATA MART"
+    title: "We Stitched Four Siloed Stage Tables Into One Mart and Used Clinical Pregnancy as a Smoke Test"
+    subtitle: "Before building any model, we unified Stimulation, OPU, Embryo, and Transfer records with anonymized IDs and zero future leakage—purely to test data integrity, not to replace POSEIDON."
+    steps:
+      - num: "01"
+        title: "Stimulation & OPU"
+        status: "SILOED"
+        accent_key: "accent"
+        owner: "Raw Hormone & Egg Logs"
+        deliverables:
+          - "Separate stage tables with inconsistent join keys"
+          - "Mixed hormone units (IU, MCG, vials)"
+      - num: "02"
+        title: "Embryo & Freeze"
+        status: "DISCONNECTED"
+        accent_key: "accent"
+        owner: "Lab Grading & Thaw"
+        deliverables:
+          - "Bad clinic joins multiply rows 760x"
+          - "Frozen cycles lacked clean thaw linkage"
+      - num: "03"
+        title: "Unified Transfer Mart"
+        status: "DM-V2"
+        accent_key: "primary"
+        owner: "1 Row Per Transfer"
+        deliverables:
+          - "Anonymized IDs & post-outcome tables blocked"
+          - "Pre-transfer facts only—no future leakage"
+      - num: "04"
+        title: "Pregnancy Smoke Test"
+        status: "VALIDATION LENS"
+        accent_key: "success"
+        owner: "End-to-End Audit"
+        deliverables:
+          - "Forces every upstream join & unit to work"
+          - "Distinct from POSEIDON protocol suggestion"
+
+  # Slide 3: Run V1 (Nov 10, 2026 - 14:47 WIB) — Hero KPI + Caught Mistakes
+  - archetype: composable_split
+    tracker: "ITERATION 1  |  NOV 10, 2026 (14:47 WIB)"
+    title: "Version 1 Looked Strong (0.77) Until Newer Data Exposed a -0.125 Missing-Data Illusion"
+    subtitle: "Training on all 22,125 historical transfers (2000-2026) taught the model to spot old, incomplete records rather than human biology."
+    split: [35, 65]
+    gap: 0.35
+    panes:
+      - widget: hero_kpi
+        eyebrow: "V1 REALITY CHECK (PAST VS. NEWER)"
+        stat: "-0.125"
+        stat_label: "0.767 Past Score Dropped to 0.642 on Newer Data"
+        stat_subtext: "22,125 all-years rows (2000-2026). No patient IDs leaked, but trees cheated on old missing data."
+        card_style: "filled"
+      - widget: card_list
+        header_bar: "CAUGHT AFTER TRAINING V1  ->  FIXED FOR V2"
+        style: "cards"
+        items:
+          - title: "Caught #1: 42.7% Blank Pre-2019 Embryo Grades"
+            description: "**Missingness = Failure Shortcut:** Pre-2019 transfers lacked lab grades, so trees simply predicted 'missing old data = failed cycle.'"
+          - title: "Caught #2: 80,000 Response Spikes From '1 Vial' Logs"
+            description: "**Broken Dose Units:** Old '1 vial' entries blew up ovarian response scores to 80,000 and misled the model."
+          - title: "Caught #3: Unsettled Late-2026 Outcomes  ->  V2 Fix"
+            description: "**Modern Window Cutoff:** Dropped all pre-2019 legacy rows and unsettled late-2026 transfers to keep only clean, settled cycles."
+
+  # Slide 4: Run V2 (Nov 10, 2026 - 17:44 WIB) — Hero KPI + Native Chart
+  - archetype: composable_split
+    tracker: "ITERATION 2  |  NOV 10, 2026 (17:44 WIB)"
+    title: "Version 2 Cleaned the Timeline (0.656), but Checks Caught the Model Cheating With Clinic Location"
+    subtitle: "Restricting to 11,546 modern transfers (2019-2026) fixed old missing data—then feature checks showed Clinic Branch was the #1 Fresh driver."
+    split: [34, 66]
+    gap: 0.35
+    panes:
+      - widget: hero_kpi
+        eyebrow: "ILLEGAL SHORTCUT CAUGHT IN V2"
+        stat: "#1"
+        stat_label: "Clinic Branch Topped Fresh Decision Factors"
+        stat_subtext: "Clinic Branch (0.307 impact) beat Maternal Age (0.273). Also caught staff-entry flags & missing grades saved as 0 (below Poor)."
+        card_style: "filled"
+      - widget: native_chart
+        chart_type: "bar"
+        title: "Caught After V2 Training: Top Fresh Decision Factors (N = 3,068)"
+        subtitle: "Clinic Branch outweighed real patient biology—making Version 2 unsafe across branches"
+        categories:
+          - "Clinic Branch"
+          - "Maternal Age"
+          - "Fresh Transfer Days"
+          - "Embryo Transfer Count"
+          - "Prior Clinical Pregnancy"
+          - "Prior Transfer Count"
+        series:
+          - name: "Impact Score"
+            values: [0.307, 0.273, 0.195, 0.190, 0.134, 0.082]
+            color: "danger"
+        number_format: "0.000"
+    footnote: "Fixed for V3A: Removed Clinic Branch and staff-entry flags from inputs, stored missing Grade as blank (not 0), and fixed unresolved genetic-test labels."
+
+  # Slide 5: Run V3A (Nov 11, 2026 - 22:22 WIB) — Top KPI Strip + 3-Bucket Triage & Exposed Bugs
+  - archetype: composable_split
+    tracker: "ITERATION 3  |  NOV 11, 2026 (22:22 WIB)"
+    title: "Version 3 Sorted Features Into 3 Buckets—Proving Biology Held (0.652) While Exposing 2 Data Bugs"
+    subtitle: "Stripping shortcuts confirmed real biological signal, while audit checks revealed single-clinic lock-in and drug pollution."
+    top_kpis:
+      - stat: "12"
+        label: "Bucket A: Kept"
+        subtext: "Core biological features"
+        color: "success"
+      - stat: "7+"
+        label: "Bucket B: Kicked Out"
+        subtext: "Clinic ID & logging flags"
+        color: "danger"
+      - stat: "3"
+        label: "Bucket C: Omitted"
+        subtext: "Sparse AMH, AFC, PGT-A"
+        color: "warning"
+      - stat: "98.6%"
+        label: "Caught After V3A"
+        subtext: "Frozen stuck in Jakarta 1400"
+        color: "danger"
+    split: [50, 50]
+    gap: 0.35
+    panes:
+      - widget: card_list
+        header_bar: "THE 3-BUCKET FEATURE TRIAGE"
+        style: "cards"
+        items:
+          - title: "Bucket A — Keep (12 Core Features)"
+            description: "**True Biology:** Age, egg yield, maturity, grade, history, and hormone response with blanks left empty."
+          - title: "Bucket B — Kick Out Permanently"
+            description: "**Illegal Shortcuts:** Deleted Clinic Branch, staff-entry flags, duplicate counters, and broken genetic-test flags."
+          - title: "Bucket C — Omit on Purpose"
+            description: "**Sparse Recent Labs (AMH, AFC, PGT-A):** Too few rows—sends mixed/empty signals and wastes feature space."
+      - widget: card_list
+        header_bar: "CAUGHT AFTER TRAINING V3A  ->  TRIGGERED V4"
+        style: "cards"
+        items:
+          - title: "Biology Survived Without Cheating (0.652)"
+            description: "**Real Signal Confirmed:** Removing Clinic Branch barely moved Unified or Frozen scores—proving the underlying biology is genuine."
+          - title: "Caught Bug #1: 98.6% Frozen Stuck in Jakarta 1400"
+            description: "**12 Clinics Dropped:** The old Frozen join silently lost regional clinics."
+          - title: "Caught Bug #2: 56.5% Non-Hormone Drug Pollution"
+            description: "**Blind Dose Sum:** Source query lumped oral pills, progesterone, and triggers into 'gonadotropins.'"
+
+  # Slide 6: Run V4A (Nov 12, 2026 - 14:53 WIB) — Hero KPI + Native Chart
+  - archetype: composable_split
+    tracker: "ITERATION 4  |  NOV 12, 2026 (14:53 WIB)"
+    title: "Version 4 Rebuilt the Upstream Mart, Recovering +6,166 Frozen Transfers Across 14 Clinics"
+    subtitle: "Repairing the Frozen thaw link and keeping only real stimulation hormones lifted unseen-clinic accuracy across both pathways."
+    split: [35, 65]
+    gap: 0.35
+    panes:
+      - widget: hero_kpi
+        eyebrow: "VERSION 4 MULTI-CLINIC RECOVERY"
+        stat: "+6,166"
+        stat_label: "Frozen Transfers Restored (14 Clinics)"
+        stat_subtext: "Frozen grew 8,478 -> 14,644 (17,712 total). Kept only real hormones (IU/MCG); Ovarian Response Score jumped to #7 driver."
+        card_style: "filled"
+      - widget: native_chart
+        chart_type: "column"
+        title: "Unseen-Clinic Accuracy (0.50 = Random): V3A vs V4A"
+        subtitle: "Holding out entire clinics proves Version 4 works across all 14 branches without Clinic ID"
+        categories:
+          - "Frozen Transfers (Unseen Clinics)"
+          - "Fresh Transfers (Unseen Clinics)"
+        series:
+          - name: "V3A (Before Fix)"
+            values: [0.500, 0.551]
+            color: "muted"
+          - name: "V4A (After Fix)"
+            values: [0.559, 0.594]
+            color: "success"
+        number_format: "0.000"
+    footnote: "Adding clean genetic-test labels in a separate side-test lifted unseen-clinic score to 0.603 and newer-patient score to 0.646 (+0.008)."
+
+  # Slide 7: Conclusion — Hero KPI + Crisp 2-Card Verdict
+  - archetype: composable_split
+    tracker: "CONCLUSION  |  WHERE WE STAND"
+    title: "The Feature Store Is Now Clean and Portable—But Not Ready for POSEIDON Protocol Suggestion"
+    subtitle: "Four rapid iterations (Nov 10-12, 2026) proved the data foundation is trustworthy; readiness gates for POSEIDON are tracked separately."
+    split: [34, 66]
+    gap: 0.35
+    panes:
+      - widget: hero_kpi
+        eyebrow: "POSEIDON PROTOCOL READINESS"
+        stat: "NOT YET"
+        stat_label: "Clean 14-Clinic Foundation, Missing Pre-OPU Gates"
+        stat_subtext: "Clinical Pregnancy proved table joins & clinic portability across Nov 10-12—keep updating the Version 4 dataset as new data lands."
+        card_style: "filled"
+      - widget: card_list
+        header_bar: "FINAL TAKEAWAY FROM THIS 4-RUN AUDIT"
+        style: "cards"
+        items:
+          - title: "What This Proxy Test Proved (Continue Iterating)"
+            description: "**Zero Shortcuts Left:** Old missingness, clinic memorization, single-clinic lock-in, and drug pollution are fixed. Paused lab tests can promote as 2025-2026 coverage matures."
+          - title: "Why It Is Not Ready for POSEIDON Yet"
+            description: "**Different Clinical Question:** Predicting transfer outcome tests downstream joins; suggesting stimulation protocols for POSEIDON patients requires pre-cycle AMH/AFC & protocol gates (tracked in the separate assessment deck)."
+
+  # =========================================================================
+  # PART 2: TECHNICAL APPENDIX (CHAPTER DIVIDER + EXISTING 6 AUDIT SLIDES)
+  # =========================================================================
+
+  # Slide 8: Chapter Divider
+  - archetype: chapter_divider
+    tracker: "PART 2  |  TECHNICAL APPENDIX"
+    title: "Technical Appendix: Empirical Audit, Charts & Benchmarks"
+    subtitle: "Detailed version chronology, matplotlib diagnostics, TreeSHAP shifts, and GroupKFold benchmarks (V1 -> V4A)"
+    division_tagline: "Snowflake TEMP.ME_MARCELL Audit Trail"
+
+  # Slide 9 (Prev Slide 2): Validation Scope & Master Chronology Table (V1 -> V2 -> V3A -> V4A)
+  - archetype: composable_split
+    tracker: "AUDIT TRAIL  |  CHRONOLOGY"
+    title: "Four Iterations Transformed a Broken All-Years Baseline Into a 14-Clinic Pharmacologically Clean Feature Store"
+    subtitle: "Validation scope: Clinical Pregnancy (PREGNANT CLINICAL vs NEGATIVE) tests all Silver scientific tables end-to-end for feature hygiene and GroupKFold portability, separate from the POSEIDON stimulation protocol suggestion service."
+    split: [32, 68]
+    gap: 0.35
+    panes:
+      - widget: card_list
+        header_bar: "VALIDATION LENS & GOVERNANCE"
+        style: "cards"
+        items:
+          - title: "End-to-End Validation Lens"
+            description: "**Not Replacing POSEIDON:** Clinical Pregnancy audits cross-table joins, unit hygiene, and clinic portability across all scientific tables."
+          - title: "Zero-PII & Silver-Only Contract"
+            description: "**Leakage Controls:** Built strictly on Silver pre-transfer facts with SHA2 patient keys (0 overlap) and Gold tables blocked."
+          - title: "Headline Audit Outcome"
+            description: "**17,712 Modern Rows:** Recovered +6,166 Frozen FET transfers across 12 clinics and lifted Frozen GroupKFold from 0.500 to 0.559."
+      - widget: table
+        headers: ["Run", "Cohort (N)", "Core Correction", "Exposed Defect / Trigger", "Temp AUC"]
+        column_widths: [10, 18, 28, 29, 15]
+        zebra: true
+        rows:
+          - ["**V1**", "22,125 (All Yrs)", "Unified mart; 0 PII leak", "Pre-2019 gaps; 80k OSI", "0.6422"]
+          - ["**V2**", "11,546 (2019+)", "2019+ window; OSI>=50", "GROUP_ID #1; Grade=0", "0.6560"]
+          - ["**V3A**", "11,546 (2019+)", "Bucket A; GROUP_ID audit", "98.6% 1400; 56.5% co-meds", "0.6517"]
+          - ["**V4A**", "17,712 (14 Clinics)", "DM-V4 thaw; rFSH/hMG IU", "PGT-A +0.008; AMH sparse", "0.638 / 0.646"]
+    footnote: "V4A Unified Temporal AUC = 0.6383 (14 feats); V4A + PGT-A (V3B+V4A, 15 feats) = 0.6463 (+0.0080). All runs executed in TEMP.ME_MARCELL."
+
+  # Slide 10 (Prev Slide 3): V1 -> V2 -> V3A Hygiene Progression
+  - archetype: composable_split
+    tracker: "HYGIENE PROGRESSION  |  V1 TO V3A"
+    title: "Stripping Historical Missingness and Clinic Shortcuts Closed the 0.125 CV Illusion Gap"
+    subtitle: "Each run exposed hidden tree-model shortcuts—first era missingness (V1), then clinic-branch memorization (V2), then drug contamination (V3A)."
+    split: [46, 54]
+    gap: 0.35
+    panes:
+      - widget: process_steps
+        direction: "vertical"
+        steps:
+          - step_num: "01"
+            title: "Run V1: The Blind Aggregation Trap"
+            description: "22,125 all-years rows scored 0.7671 CV but collapsed to 0.6422 temporal (-0.1249) as trees exploited 42.7% pre-2019 missing grades and 80k vial OSI."
+            accent_key: "accent"
+          - step_num: "02"
+            title: "Run V2: Modern Settled Era Gate"
+            description: "Restricting to 2019-01..2026-05 (N=11,546) raised graded coverage to 85.8% and lifted V1-era holdout to 0.6757 (+0.0335), eliminating late-2026 lag."
+            accent_key: "primary"
+          - step_num: "03"
+            title: "Run V3A: Bucket A Clean Core"
+            description: "Moved GROUP_ID to audit-only, applied NULLIF(Grade, 0), masked <50 dose to NULL, and quarantined sparse AMH/AFC."
+            accent_key: "success"
+      - widget: card_list
+        header_bar: "WHAT V3A EMPIRICALLY PROVED"
+        style: "cards"
+        items:
+          - title: "Fresh ET Shortcut Quantified (-0.020 to -0.030)"
+            description: "**Clinic Memorization Removed:** Dropping GROUP_ID (#1 Fresh SHAP 0.3066 in V2) cut Fresh CV 0.6991 -> 0.6691 and temporal 0.6929 -> 0.6729."
+          - title: "Biological Signal Survived Intact"
+            description: "**Minimal Drop in Unified & Frozen:** Unified temporal held at 0.6517 (-0.0043 vs V2) and Frozen FET held at 0.6258 (-0.0005 vs V2)."
+          - title: "Two Upstream Mart Defects Exposed"
+            description: "**Triggered DM-V4 Rebuild:** Audit metadata exposed 98.6% Frozen concentration in Jakarta 1400 and 56.48% non-gonadotropin co-meds in dose sums."
+
+  # Slide 11 (Prev Slide 4): Chart 1 — Multi-Clinic Frozen FET Recovery (+6,166 rows)
+  - archetype: composable_split
+    tracker: "UPSTREAM RECOVERY  |  DM-V4 THAW BRIDGE"
+    title: "DM-V4 10-Day Thaw Bridge Recovered +6,166 Frozen FET Transfers Across 12 Clinics"
+    subtitle: "Fixing the Frozen FET thaw linkage in MART_UC2_PREGNANCY_FEATURE_STORE_V4 expanded Frozen FET from 8,478 to 14,644 rows across all 14 clinic branches."
+    split: [62, 38]
+    gap: 0.35
+    panes:
+      - widget: image
+        image_path: "assets/charts/uc2_evolution/chart1_fet_recovery.png"
+        show_card: true
+      - widget: card_list
+        header_bar: "DM-V4 COHORT RECOVERY AUDIT"
+        style: "cards"
+        items:
+          - title: "Thaw-to-FET Bridge Root Cause"
+            description: "**10-Day Window Restored:** DM-V2 dropped non-1400 Frozen FET; DM-V4 joins ABS(DATEDIFF('day', DATE_THAWING, DATE_FET)) <= 10 with 0 missing OOCYTES_RETRIEVED."
+          - title: "Multi-Clinic Heterogeneity Restored"
+            description: "**2 -> 14 Clinic Branches:** Frozen FET grew +72.7% (8,478 -> 14,644) across 12,651 unique patients; Fresh ET held steady at 3,068 rows."
+          - title: "Baseline Rate Recalibration"
+            description: "**45.94% -> 42.82% Global Pos:** Adding 12 regional clinics corrected Jakarta-1400 volume bias (87.2% Unified / 98.6% Frozen in V3A)."
+
+  # Slide 12 (Prev Slide 5): Chart 2 — GroupKFold(GROUP_ID) + Temporal Holdout Improvements
+  - archetype: composable_split
+    tracker: "PORTABILITY & GENERALIZATION  |  GROUPKFOLD"
+    title: "Multi-Clinic Recovery Lifted Frozen GroupKFold +0.0591 While PGT-A Added +0.0080 Temporal AUC"
+    subtitle: "Evaluating unseen clinics via GroupKFold(GROUP_ID) and unseen future transfers (>= 2024-10-16) confirms real cross-branch portability."
+    split: [62, 38]
+    gap: 0.35
+    panes:
+      - widget: image
+        image_path: "assets/charts/uc2_evolution/chart2_groupkfold_temporal.png"
+        show_card: true
+      - widget: card_list
+        header_bar: "PORTABILITY & TEMPORAL BENCHMARKS"
+        style: "cards"
+        items:
+          - title: "Frozen FET Portability (+0.0591)"
+            description: "**0.4998 -> 0.5589 GroupKFold:** V3A collapsed to random coin-flip when holding out 98.6% clinic 1400; DM-V4 restored multi-clinic generalization and +0.0057 temporal."
+          - title: "Fresh ET Portability (+0.0426)"
+            description: "**0.5511 -> 0.5937 GroupKFold:** Pharmacological dose cleaning improved unseen-clinic Fresh ET ranking without using GROUP_ID as a feature."
+          - title: "PGT-A Ablation Gain (+0.0080 Temp)"
+            description: "**V4A + PGT-A (15 Feats):** Adding PGTA_DIAGNOSIS_TRANSFER (1,187 tested) lifted Unified temporal 0.6383 -> 0.6463 and GroupKFold 0.5884 -> 0.6025."
+
+  # Slide 13 (Prev Slide 6): Chart 3 — OSI_PROXY SHAP Shift & Pharmacological Precision
+  - archetype: composable_split
+    tracker: "PHARMACOLOGICAL PRECISION  |  SHAP AUDIT"
+    title: "Whitelisting rFSH/hMG and Isolating Rekovelle Elevated OSI_PROXY From #10 to #7 TreeSHAP"
+    subtitle: "Stripping 55.97% non-gonadotropin co-medications (Utrogestan, Diphthen, Ovidrel) sharpened ovarian sensitivity signal across all arms."
+    split: [62, 38]
+    gap: 0.35
+    panes:
+      - widget: image
+        image_path: "assets/charts/uc2_evolution/chart3_osi_shap_shift.png"
+        show_card: true
+      - widget: card_list
+        header_bar: "DOSE UNIT & DRUG HYGIENE"
+        style: "cards"
+        items:
+          - title: "Exogenous Gonadotropin Whitelist"
+            description: "**13,271 Clean IU Rows:** Restricted TOTAL_GONADOTROPIN_IU (>= 50 IU) to 9 rFSH/hMG brands (Gonal, Pergoveris, Menopur, Puregon, Elonva, etc.)."
+          - title: "Rekovelle MCG Isolation"
+            description: "**903 Modern MCG Rows:** Separated REKOVELLE_TOTAL_MCG and HAS_REKOVELLE_FLAG to prevent IU-vs-MCG scale distortion (0.6156 slice OOF AUC)."
+          - title: "OSI_PROXY Signal Sharpening"
+            description: "**+56.5% Unified SHAP Lift:** Mean |SHAP| rose 0.0543 (#10) -> 0.0850 (#7) in Unified and 0.0723 -> 0.0886 (#6) in Frozen FET."
+
+  # Slide 14 (Prev Slide 7): Biological Ceiling & Next Feature-Store Gates
+  - archetype: composable_split
+    tracker: "BIOLOGICAL CEILING  |  NEXT GATES"
+    title: "Routine Morphology Plateaus at 0.64-0.66 AUC Across 14 Clinics; Pre-Transfer Covariates Gate >0.70"
+    subtitle: "V4A confirms the feature store is scientifically clean and portable; breaking the ~0.66 ceiling requires structured endometrial, biomarker, and sub-grade capture."
+    split: [54, 46]
+    gap: 0.35
+    panes:
+      - widget: table
+        headers: ["Feature Domain", "V4A Status", "Audited Impact / Gap", "Next Action"]
+        column_widths: [27, 17, 32, 24]
+        zebra: true
+        rows:
+          - ["Bucket A (14 Feats)", "In DM-V4", "0.657 CV / 0.638 Temp", "Locked baseline"]
+          - ["PGT-A (V3B+V4A)", "Validated", "+0.008 Temp / +0.014 GKF", "Promote to V4B"]
+          - ["AMH / AFC", "Quarantined", "95.1% missing (2025+)", "Backfill LIS/EMR"]
+          - ["FET Lining & Prep", "Missing (0%)", "Absent in 14,644 FET", "Ingest USG/prep"]
+          - ["D5/D6 & Male DFI", "Missing (0%)", "Coarse grade only", "Parse sub-grades"]
+      - widget: card_list
+        header_bar: "AUDIT CONCLUSIONS & DEPLOYMENT POSTURE"
+        style: "cards"
+        items:
+          - title: "Feature-Store Audit Passed"
+            description: "**Zero Shortcuts Remaining:** All 14 V4A features are pre-transfer biological or pharmacological signals with 0 PII and 0 patient leakage."
+          - title: "Branch Calibration Over Tree Memorization"
+            description: "**Post-Hoc Calibration:** Never re-insert GROUP_ID into trees; apply clinic-level baseline calibration if deploying across 14 branches."
+          - title: "Separation From POSEIDON Service"
+            description: "**Distinct Clinical Target:** UC-2 Clinical Pregnancy validated DM-V4 table integrity; POSEIDON protocol suggestion continues on its own stimulation target."
