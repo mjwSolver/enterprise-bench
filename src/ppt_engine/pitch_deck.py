@@ -748,6 +748,8 @@ class PitchDeckBuilder:
                         is_current=bool(s.get("is_current", False)),
                         pin_label=s.get("pin_label"),
                         pin_color=s.get("pin_color"),
+                        owner=s.get("owner"),
+                        section_label=s.get("section_label"),
                     ))
             build_chevron_process_slide(
                 self.prs,
@@ -762,6 +764,7 @@ class PitchDeckBuilder:
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
+                section_label=str(cfg.get("section_label", "KEY DELIVERABLES")),
             )
 
         elif arch in ("timeline_gantt", "delivery_gantt", "gantt"):

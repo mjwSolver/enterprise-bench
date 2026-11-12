@@ -45,6 +45,8 @@ class ProcessChevronStep:
     is_current: bool = False                # Explicit active-phase marker
     pin_label: Optional[str] = None         # Custom marker text
     pin_color: Optional[str] = None         # Theme color key or hex override
+    owner: Optional[str] = None             # Optional sub-header / owner / scope label
+    section_label: Optional[str] = None     # Optional override for deliverables section header
 
 
 def build_chevron_process_slide(
@@ -60,6 +62,7 @@ def build_chevron_process_slide(
     current_idx: int = 1,
     total_slides: int = 1,
     notice: Optional[str] = None,
+    section_label: str = "KEY DELIVERABLES",
 ) -> Any:
     """
     Renders an executive stepped process flow using interconnected horizontal chevrons.
@@ -135,7 +138,34 @@ def build_chevron_process_slide(
     step_w = (total_w - (n_steps - 1) * gap) / n_steps
     card_y = chevron_y + chevron_h + Inches(0.08)
     bottom_limit = Inches(6.14 if takeaway else 6.86)
-    card_h = max(Inches(3.20), bottom_limit - card_y)
+    max_avail_h = max(Inches(2.10), bottom_limit - card_y)
+
+    # Size card_h proportionally to actual step content so sparse flows don't leave ~65% blank void.
+    step_inner_w_in = max(1.2, (step_w - Inches(0.30)) / 914400.0)
+    chars_per_deliv_line = max(8, int(step_inner_w_in * 72.0 / (9.5 * 0.54)))
+    max_est_h_in = 0.0
+    for s in steps:
+        h_in = 0.0
+        has_head = False
+        if s.duration_badge:
+            h_in += 14.0 / 72.0
+            has_head = True
+        if s.status and str(s.status).strip():
+            h_in += (14.0 if has_head else 12.0) / 72.0
+            has_head = True
+        if getattr(s, "owner", None) and str(s.owner).strip() and s.owner != s.duration_badge:
+            h_in += (18.0 if has_head else 15.0) / 72.0
+            has_head = True
+        s_sec = s.section_label if getattr(s, "section_label", None) is not None else section_label
+        if s_sec and str(s_sec).strip():
+            h_in += (20.0 if has_head else 12.0) / 72.0
+        for d in (s.deliverables or []):
+            d_lines = max(1, (len(f"•  {d.strip()}") + chars_per_deliv_line - 1) // chars_per_deliv_line)
+            h_in += (9.5 * 1.3 * d_lines + 4.0) / 72.0
+        max_est_h_in = max(max_est_h_in, h_in)
+
+    card_h = min(max_avail_h, max(Inches(2.10), Inches(max_est_h_in + 0.52)))
+    chevron_pt = 10.5 if n_steps <= 3 else (10.0 if n_steps == 4 else 9.5)
 
     base_primary = theme.get_rgb("primary")
     light_tint = _interpolate_color(RGBColor(241, 245, 249), base_primary, 0.28)
@@ -188,14 +218,14 @@ def build_chevron_process_slide(
         c_tf = chevron.text_frame
         c_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         c_tf.word_wrap = True
-        c_tf.margin_left = Inches(0.12)
-        c_tf.margin_right = Inches(0.25)  # Offset for chevron arrow tip
+        c_tf.margin_left = Inches(0.10)
+        c_tf.margin_right = Inches(0.20)  # Offset for chevron arrow tip
         c_tf.margin_top = c_tf.margin_bottom = 0
 
         p_ch = c_tf.paragraphs[0]
         p_ch.text = f"{step.phase_number}  |  {step.title}"
         p_ch.font.name = theme.font_family_header
-        p_ch.font.size = Pt(11.0)
+        p_ch.font.size = Pt(chevron_pt)
         p_ch.font.bold = True
         p_ch.font.color.rgb = RGBColor(255, 255, 255)
 
@@ -213,9 +243,10 @@ def build_chevron_process_slide(
             border_width_pt=2.0 if is_active else 1.0,
         )
 
-        # 4. Populate Card Content
-        inner_tb = slide.shapes.add_textbox(cur_x + Inches(0.15), card_y + Inches(0.18), step_w - Inches(0.30), card_h - Inches(0.36))
+        # 4. Populate Card Content (vertically centered when sparse)
+        inner_tb = slide.shapes.add_textbox(cur_x + Inches(0.15), card_y + Inches(0.14), step_w - Inches(0.30), card_h - Inches(0.28))
         inner_tf = inner_tb.text_frame
+        inner_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         inner_tf.word_wrap = True
         inner_tf.margin_left = inner_tf.margin_right = inner_tf.margin_top = inner_tf.margin_bottom = 0
 
@@ -224,43 +255,58 @@ def build_chevron_process_slide(
             p_badge = inner_tf.paragraphs[0]
             p_badge.text = step.duration_badge
             p_badge.font.name = theme.font_family_header
-            p_badge.font.size = Pt(10.5)
+            p_badge.font.size = Pt(10.0)
             p_badge.font.bold = True
             p_badge.font.color.rgb = theme.get_rgb("primary")
             has_card_head = True
 
-        # Strictly Conditional Status Row (omitted cleanly when step.status is unset)
+        # Strictly Conditional Status Row (clean uppercase eyebrow without bracket crutches)
         if step.status and str(step.status).strip():
             p_st = inner_tf.add_paragraph() if has_card_head else inner_tf.paragraphs[0]
+            p_st.text = step_status_u
             if step_status_u == "COMPLETED":
-                p_st.text = "[ COMPLETED ]"
                 p_st.font.color.rgb = hex_to_rgb("#059669")
             elif step_status_u == "IN PROGRESS":
-                p_st.text = "[ IN PROGRESS ]"
                 p_st.font.color.rgb = hex_to_rgb("#0052CC")
             else:
-                p_st.text = f"[ {step_status_u} ]"
                 p_st.font.color.rgb = hex_to_rgb("#64748B")
             p_st.font.name = theme.font_family_header
-            p_st.font.size = Pt(9.5)
+            p_st.font.size = Pt(9.0)
             p_st.font.bold = True
             if has_card_head:
                 p_st.space_before = Pt(2)
             has_card_head = True
 
-        # Deliverables Section Header
-        p_dh = inner_tf.add_paragraph() if has_card_head else inner_tf.paragraphs[0]
-        p_dh.text = "KEY DELIVERABLES"
-        p_dh.font.name = theme.font_family_header
-        p_dh.font.size = Pt(10.0)
-        p_dh.font.bold = True
-        p_dh.font.color.rgb = theme.get_rgb("accent")
-        p_dh.space_before = Pt(8 if has_card_head else 0)
+        # Optional Owner / Scope Sub-Header
+        step_owner = getattr(step, "owner", None)
+        if step_owner and str(step_owner).strip() and step_owner != step.duration_badge:
+            p_own = inner_tf.add_paragraph() if has_card_head else inner_tf.paragraphs[0]
+            p_own.text = str(step_owner).strip()
+            p_own.font.name = theme.font_family_header
+            p_own.font.size = Pt(10.5)
+            p_own.font.bold = True
+            p_own.font.color.rgb = theme.get_rgb("primary")
+            if has_card_head:
+                p_own.space_before = Pt(3)
+            has_card_head = True
+
+        # Deliverables Section Header (configurable; omit when set to "")
+        sec_lbl = step.section_label if getattr(step, "section_label", None) is not None else section_label
+        if sec_lbl and str(sec_lbl).strip():
+            p_dh = inner_tf.add_paragraph() if has_card_head else inner_tf.paragraphs[0]
+            p_dh.text = str(sec_lbl).strip().upper()
+            p_dh.font.name = theme.font_family_header
+            p_dh.font.size = Pt(9.5)
+            p_dh.font.bold = True
+            p_dh.font.color.rgb = theme.get_rgb("accent")
+            p_dh.space_before = Pt(8 if has_card_head else 0)
+            has_card_head = True
 
         # Deliverables Checklist (Balanced 9.5pt typography)
         for deliv in step.deliverables:
-            p_item = inner_tf.add_paragraph()
-            p_item.space_before = Pt(4)
+            p_item = inner_tf.add_paragraph() if has_card_head else inner_tf.paragraphs[0]
+            p_item.space_before = Pt(4 if has_card_head else 0)
+            has_card_head = True
             p_item.font.name = theme.font_family
             p_item.font.size = Pt(9.5)
 
