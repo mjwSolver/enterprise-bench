@@ -28,7 +28,7 @@ from src.ppt_engine.theme_engine import Theme, get_theme, hex_to_rgb, rgb_to_hex
 from .common import (
     add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
-    _add_bullet_paragraph, _fit_image_in_box,
+    _add_bullet_paragraph, _fit_image_in_box, resolve_accent_color, draw_hairline,
 )
 
 logger = logging.getLogger(__name__)
@@ -407,7 +407,6 @@ def build_tech_logo_grid_slide(
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
 
-
 def build_card_grid_slide(
     prs: Presentation,
     theme: Theme,
@@ -748,7 +747,6 @@ def build_card_grid_slide(
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
 
-
 def build_badge_matrix_slide(
     prs: Presentation,
     theme: Theme,
@@ -887,4 +885,145 @@ def build_badge_matrix_slide(
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
+
+
+def build_takeaway_columns_slide(
+    prs_or_slide: Any,
+    theme: Optional[Theme] = None,
+    tracker: Optional[str] = None,
+    action_title: str = "Executive Summary",
+    subtitle: Optional[str] = None,
+    columns: Optional[List[Dict[str, Any]]] = None,
+    footnote: Optional[str] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: Optional[str] = None,
+    source: Optional[str] = None,
+) -> Any:
+    """
+    McKinsey-style open-canvas multi-column executive takeaway slide (Batch 1, Image 1).
+    Borderless columns with circular header badges, hairline rules, and bold-lead takeaway paragraphs.
+    """
+    if theme is None:
+        theme = get_theme("default")
+
+    if hasattr(prs_or_slide, "slides"):
+        slide = add_slide_with_background(prs_or_slide, theme)
+    else:
+        slide = prs_or_slide
+
+    header_bottom = add_slide_header(
+        slide,
+        theme,
+        tracker=tracker,
+        action_title=action_title,
+        subtitle=subtitle,
+    )
+    top_y_in = max(1.02, header_bottom + 0.16)
+    left_margin_in = 0.80
+    total_w_in = 11.733
+
+    cols = list(columns or [])[:4]
+    if not cols:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+        return slide
+
+    gap_in = 0.42
+    col_w_in = (total_w_in - gap_in * (len(cols) - 1)) / len(cols)
+    col_top_in = top_y_in + 0.20
+    max_bottom_in = 6.55 if footnote else 6.85
+
+    for idx, col in enumerate(cols):
+        cx_in = left_margin_in + idx * (col_w_in + gap_in)
+        col_accent = resolve_accent_color(col.get("accent_color"), theme, "accent")
+        badge_text = str(col.get("badge") or col.get("index") or f"{idx + 1:02d}")
+        col_title = str(col.get("title") or "")
+        points = list(col.get("points") or col.get("bullets") or [])
+
+        # Circular badge
+        badge_d_in = 0.42
+        circ = slide.shapes.add_shape(
+            MSO_SHAPE.OVAL,
+            Inches(cx_in),
+            Inches(col_top_in),
+            Inches(badge_d_in),
+            Inches(badge_d_in),
+        )
+        circ.shadow.inherit = False
+        strip_shape_shadows(circ)
+        circ.fill.solid()
+        circ.fill.fore_color.rgb = col_accent
+        circ.line.fill.background()
+        tf_c = circ.text_frame
+        tf_c.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_c.margin_left = tf_c.margin_right = tf_c.margin_top = tf_c.margin_bottom = 0
+        p_c = tf_c.paragraphs[0]
+        p_c.text = badge_text[:3]
+        p_c.alignment = PP_ALIGN.CENTER
+        p_c.font.name = theme.font_family_header
+        p_c.font.size = Pt(11.0)
+        p_c.font.bold = True
+        p_c.font.color.rgb = RGBColor(255, 255, 255)
+
+        # Column title next to badge
+        tb_t = slide.shapes.add_textbox(
+            Inches(cx_in + badge_d_in + 0.14),
+            Inches(col_top_in),
+            Inches(col_w_in - badge_d_in - 0.14),
+            Inches(badge_d_in),
+        )
+        tf_t = tb_t.text_frame
+        tf_t.word_wrap = True
+        tf_t.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_t.margin_left = tf_t.margin_right = tf_t.margin_top = tf_t.margin_bottom = 0
+        p_t = tf_t.paragraphs[0]
+        p_t.text = col_title
+        p_t.font.name = theme.font_family_header
+        p_t.font.size = Pt(13.5)
+        p_t.font.bold = True
+        p_t.font.color.rgb = theme.get_rgb("primary")
+
+        # Hairline under column header
+        rule_y_in = col_top_in + badge_d_in + 0.12
+        draw_hairline(slide, Inches(cx_in), Inches(rule_y_in), Inches(col_w_in), col_accent, width_pt=1.0)
+
+        # Body paragraphs
+        body_y_in = rule_y_in + 0.14
+        tb_b = slide.shapes.add_textbox(
+            Inches(cx_in),
+            Inches(body_y_in),
+            Inches(col_w_in),
+            Inches(max_bottom_in - body_y_in),
+        )
+        tf_b = tb_b.text_frame
+        tf_b.word_wrap = True
+        tf_b.margin_left = tf_b.margin_right = tf_b.margin_top = tf_b.margin_bottom = 0
+
+        font_pt = 10.5 if len(points) <= 4 else 9.5
+        for p_i, pt_text in enumerate(points):
+            p_b = tf_b.paragraphs[0] if p_i == 0 else tf_b.add_paragraph()
+            if p_i > 0:
+                p_b.space_before = Pt(8 if len(points) <= 4 else 6)
+            append_formatted_runs(
+                paragraph=p_b,
+                text=str(pt_text),
+                font_name=theme.font_family,
+                font_size_pt=font_pt,
+                font_color=theme.get_rgb("secondary"),
+            )
+
+    if footnote:
+        tb_fn = slide.shapes.add_textbox(Inches(left_margin_in), Inches(6.65), Inches(total_w_in), Inches(0.24))
+        tf_fn = tb_fn.text_frame
+        tf_fn.word_wrap = False
+        tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
+        p_fn = tf_fn.paragraphs[0]
+        p_fn.text = footnote
+        p_fn.font.name = theme.font_family
+        p_fn.font.size = Pt(8.5)
+        p_fn.font.color.rgb = theme.get_rgb("muted")
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+    return slide
+
 

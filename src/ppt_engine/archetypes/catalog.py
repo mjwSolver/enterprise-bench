@@ -183,14 +183,17 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     "composable_split": {
         "family": "Grids",
         "aliases": ["split_canvas", "composable", "multi_pane", "composite_layout"],
-        "purpose": "Composable multi-widget split canvas partitioning the slide into collision-free relative columns hosting modular widgets (hero KPI, card list, card grid, table, process steps) without raw DrawingML coordinates.",
+        "purpose": "Composable multi-widget split canvas partitioning the slide into collision-free columns (`direction: horizontal`) or rows (`direction: vertical` / `rows`) hosting modular or nested `vertical_stack` widgets without raw DrawingML coordinates.",
         "keys": [
-            "tracker (str): Category eyebrow tag",
+            "tracker (str, opt-in): Category eyebrow tag",
             "title (str): Action headline expressing analytical conclusion",
-            "subtitle (str): Contextual narrative subtitle",
-            "split (list|str, optional): Column widths/fractions (e.g. [35, 65], [25, 50, 25], default equal)",
-            "gap (float, optional): Gutter width between columns in inches (default: 0.35)",
-            "panes (list): Child widgets: [{widget: 'hero_kpi'|'card_list'|'table'|'process_steps'|'card_grid', ...}]; hero_kpi requires audited stat+stat_label; card_list supports 1-6 items, numbered:true story cards, and header_bar",
+            "subtitle (str, opt-in): Contextual narrative subtitle",
+            "direction (str, optional): 'horizontal' (default) or 'vertical'",
+            "split (list|str, optional): Column or row fractions (e.g. [35, 65], [38, 62], default equal)",
+            "gap (float, optional): Gutter width/height in inches (default: 0.35 horizontal, 0.22 vertical)",
+            "panes (list): Child widgets: [{widget: 'hero_kpi'|'card_list'|'table'|'process_steps'|'process_flow'|'card_grid'|'native_chart'|'stacked_column_exhibit'|'code_block'|'image'|'vertical_stack'|'horizontal_stack', ...}]; process_steps supports horizontal owner sub-labels, branch (Yes/No), and caption; vertical_stack nests rows inside a column",
+            "rows (list, optional): Alias for panes that automatically sets direction: 'vertical'",
+            "footnote (str, opt-in): Bottom attribution or evaluation window note",
             "takeaway (str|dict, opt-in): Omit by default; bottom bar ONLY for a distinct decision gate or capital lever",
         ],
         "example_yaml": """- archetype: composable_split
@@ -330,6 +333,165 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       - category: "Security"
         criteria: "In-VPC Role-Based Masking"
         scores: {"Snowflake Cortex": "FULL", "Legacy DIY Clusters": "PARTIAL", "Third-Party SaaS": "NONE"}
+""",
+    },
+    "narrative_row_list": {
+        "family": "Tables",
+        "aliases": ["open_text_list", "row_feature_list"],
+        "purpose": "Open-canvas, hairline-separated qualitative row list with optional left rail, numbered/colored badges, vertical flag stripes, and per-section/per-row accent overrides.",
+        "keys": [
+            "title (str, OBLIGATED): Action title stating the slide's active finding",
+            "rows (list of dicts, OBLIGATED if sections omitted): [{title, description|bullets, index, lead_in, accent_color, flag_stripe}]",
+            "sections (list of dicts, optional): Grouped sections [{title, accent_color, flag_stripe, rows: [...]}] for mixing themes (e.g. brickred top + snowblue bottom)",
+            "tracker (str, opt-in): Category eyebrow tag",
+            "subtitle (str, opt-in): Contextual narrative subtitle",
+            "sidebar_title (str, opt-in): Optional left-rail headline (McKinsey debate style)",
+            "sidebar_note (str, opt-in): Optional left-rail muted footnote",
+            "show_index (bool, opt-in): Auto-number rows 1..N with circular badges",
+            "flag_stripe (bool, opt-in): Draw vertical accent flag stripe on left edge of rows",
+            "footer_callout (str, opt-in): Subtle bottom hairline + callout text",
+        ],
+        "example_yaml": """- archetype: narrative_row_list
+  title: "Five Core Capabilities Anchor Modern Retail POS Modernization"
+  show_index: true
+  flag_stripe: true
+  sections:
+    - title: "Storefront & Checkout Operations (Brick Red)"
+      accent_color: "brickred"
+      rows:
+        - title: "Offline Queueing"
+          description: "Local SQLite journal buffers card-present tokens during WAN outages."
+    - title: "Cloud Inventory & Analytics (Snow Blue)"
+      accent_color: "snowblue"
+      rows:
+        - title: "Real-Time Stock"
+          description: "Sub-second CDC events sync SKU counts across all regional stores."
+""",
+    },
+    "takeaway_columns": {
+        "family": "Grids",
+        "aliases": ["executive_summary_columns"],
+        "purpose": "McKinsey-style open-canvas 2-4 column executive summary with circular badges, hairline rules, and bold-lead paragraphs.",
+        "keys": [
+            "title (str): Action title",
+            "columns (list): [{title, badge, accent_color, points: [str]}]",
+            "tracker (str, opt-in): Category eyebrow tag",
+            "subtitle (str, opt-in): Narrative subtitle",
+            "footnote (str, opt-in): Bottom source note",
+        ],
+        "example_yaml": """- archetype: takeaway_columns
+  title: "Executive Summary: Storefront Speed, Payment Mix, and Cloud Sync"
+  columns:
+    - title: "Checkout Speed"
+      badge: "01"
+      points:
+        - "**Sub-2s scans** cut peak queue times by 34% across flagship lanes."
+""",
+    },
+    "tiered_priority_ladder": {
+        "family": "Tables",
+        "aliases": ["grouped_action_list"],
+        "purpose": "BCG-style asymmetric 2-column action ladder pairing grouped left tier blocks with numbered circular action items.",
+        "keys": [
+            "title (str): Action title",
+            "tiers (list): [{label, accent_color, items: [str|{index, text}]}]",
+            "left_header (str, optional): Left column header (default 'Priority')",
+            "right_header (str, optional): Right column header (default 'Recommendation')",
+            "tracker, subtitle, footnote (opt-in)",
+        ],
+        "example_yaml": """- archetype: tiered_priority_ladder
+  title: "Seven Sequenced Actions Modernize Store POS Operations"
+  tiers:
+    - label: "Foundation"
+      items:
+        - "Deploy local SQLite offline transaction journal on all lane terminals"
+""",
+    },
+    "bubble_matrix": {
+        "family": "Tables",
+        "aliases": ["proportional_dot_matrix"],
+        "purpose": "BCG proportional bubble matrix plotting data-scaled circles across entities and metrics with optional qualitative delta rows.",
+        "keys": [
+            "title (str): Action title",
+            "entities (list of str): Column entity headers",
+            "rows (list of dicts): [{label, type: 'bubble'|'text', unit, accent_color, values: [...]}]",
+            "tracker, subtitle, footnote (opt-in)",
+        ],
+        "example_yaml": """- archetype: bubble_matrix
+  title: "Checkout Latency Pressure Peaks in High-Volume Mall Formats"
+  entities: ["Flagship", "Metro Mall", "Suburban", "Express"]
+  rows:
+    - label: "Peak Wait (sec)"
+      type: "bubble"
+      unit: "s"
+      values: [42, 58, 24, 18]
+""",
+    },
+    "ranked_bar_scorecard": {
+        "family": "Tables",
+        "aliases": ["ranked_bars"],
+        "purpose": "Distilled horizontal ranked bar scorecard with clean trend delta glyphs (UP/DOWN/FLAT/N/A) and zero chart clutter.",
+        "keys": [
+            "title (str): Action title",
+            "panels (list of dicts): [{title, unit, accent_color, bars: [{label, value, delta, highlight}]}]",
+            "callout (str, opt-in): Bottom takeaway banner",
+            "tracker, subtitle, footnote (opt-in)",
+        ],
+        "example_yaml": """- archetype: ranked_bar_scorecard
+  title: "QRIS and Card-Present Contactless Drive 78% of Store Tender"
+  panels:
+    - title: "Tender Share (%)"
+      unit: "%"
+      bars:
+        - label: "QRIS / E-Wallet"
+          value: 44
+          delta: "UP"
+          highlight: true
+""",
+    },
+    "horizon_maturity_matrix": {
+        "family": "Strategy",
+        "aliases": ["maturity_matrix"],
+        "purpose": "2D capability x time-horizon matrix with left-edge semantic maturity color stripes and top-right maturity legend.",
+        "keys": [
+            "title (str): Action title",
+            "horizons (list of dicts): [{title, subtitle}]",
+            "capabilities (list of dicts): [{name, subtitle, cells: [{text, maturity: 'low'|'medium'|'high'}]}]",
+            "maturity_legend (list, optional): [{label, color}]",
+            "tracker, subtitle, footnote (opt-in)",
+        ],
+        "example_yaml": """- archetype: horizon_maturity_matrix
+  title: "POS Capabilities Scale from Local Resilience to Autonomous Replenishment"
+  horizons:
+    - title: "Near term"
+      subtitle: "0-6 months"
+  capabilities:
+    - name: "Checkout"
+      cells:
+        - text: "**Offline queue** protects card-present sales during WAN drops."
+          maturity: "low"
+""",
+    },
+    "comparative_forecast_columns": {
+        "family": "Strategy",
+        "aliases": ["tri_metric_trajectory"],
+        "purpose": "3-column entity trend trajectory with native vector slope lines, analytical narrative, and bottom KPI/lead-time callouts.",
+        "keys": [
+            "title (str): Action title",
+            "columns (list of dicts): [{title, badge, accent_color, points: [{label, value, highlight}], analysis, kpi_label, kpi_value}]",
+            "tracker, subtitle, footnote (opt-in)",
+        ],
+        "example_yaml": """- archetype: comparative_forecast_columns
+  title: "Transaction Volume Growth Demands Edge Caching by 2028"
+  columns:
+    - title: "Store POS"
+      badge: "POS"
+      points:
+        - {label: "2024", value: 120}
+        - {label: "2028", value: 310, highlight: true}
+      analysis: "**2.6x surge** in peak-hour SKU scans."
+      kpi_label: "Rollout lead time:"
+      kpi_value: "3 - 6 mos"
 """,
     },
 
@@ -480,6 +642,55 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       bullets:
         - "**Closed-loop feedback:** Automated retraining triggers."
         - "**Multi-tenant governance:** Zero-trust cross-clinic data sharing."
+""",
+    },
+    "waterfall_bridge": {
+        "family": "Strategy",
+        "aliases": ["waterfall", "bridge_chart", "variance_bridge"],
+        "purpose": "Sequential waterfall bridge showing how a baseline metric transitions through positive and negative drivers to a target total (cost bridges, latency SLA budgets, capacity reconciliations).",
+        "keys": [
+            "tracker (str, opt-in): Category eyebrow tag",
+            "title (str): Action headline expressing the net bridge conclusion",
+            "subtitle (str, opt-in): Contextual narrative subtitle",
+            "steps (list): Bridge steps: [{label, value, kind: 'start'|'delta'|'subtotal'|'end', display, sublabel, color}]",
+            "value_prefix / value_suffix / unit (str, optional): Numeric formatting tokens (e.g. '$', 'ms', 'M')",
+            "positive_is_good (bool, optional): True for revenue/savings (+ is green), False for cost/latency (- is green)",
+            "show_connectors (bool, optional): Draw hairline bridge connectors between steps (default: true)",
+            "right_panel (dict, optional): Compact driver summary card: {title, bullets: [...]}",
+            "takeaway (str|dict, opt-in): Bottom bar ONLY for a distinct decision gate or capital lever",
+            "footnote (str, opt-in): Source or methodology note",
+        ],
+        "example_yaml": """- archetype: waterfall_bridge
+  tracker: "FINOPS | INFRASTRUCTURE COST BRIDGE"
+  title: "Compute Rightsizing and Tiered Storage Cut Annual Run-Rate by $1.8M"
+  subtitle: "Annualized cloud platform spend bridge from FY24 baseline to FY25 target architecture."
+  value_prefix: "$"
+  value_suffix: "M"
+  positive_is_good: false
+  steps:
+    - label: "FY24 Baseline"
+      value: 6.4
+      kind: "start"
+    - label: "Traffic Growth"
+      value: 0.9
+      kind: "delta"
+    - label: "Spot & Rightsizing"
+      value: -1.6
+      kind: "delta"
+    - label: "Cold Tiering"
+      value: -0.7
+      kind: "delta"
+    - label: "Cache Offload"
+      value: -0.4
+      kind: "delta"
+    - label: "FY25 Target"
+      value: 4.6
+      kind: "end"
+  right_panel:
+    title: "Primary Optimization Levers"
+    bullets:
+      - "**Compute Rightsizing:** Idle cluster autoscaling eliminates 34% peak over-provisioning."
+      - "**Storage Tiering:** Lifecycle policies move >90-day logs to cold object storage."
 """,
     },
     "gap_analysis": {
@@ -640,6 +851,163 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
     - name: "Dynamic Table Staging"
       type: "TRANSFORM"
       status: "HEALTHY"
+""",
+    },
+    "process_with_cards": {
+        "family": "Processes",
+        "aliases": ["flow_with_cards", "process_cards"],
+        "purpose": "Top-to-bottom split pairing a horizontal connected process/decision flow (with optional Yes/No branch and owner sub-labels) on top with a structured 2-3 card explanation strip below.",
+        "keys": [
+            "tracker (str, opt-in): Category eyebrow tag",
+            "title (str): Action title asserting workflow or operational impact",
+            "subtitle (str, opt-in): Contextual subtitle",
+            "steps (list): Linear horizontal nodes: [{step_num|num, title, owner, accent_key, is_current}]",
+            "branch (dict, opt-in): Optional decision gate + Yes/No fork: {question, owner, accent_key, yes: {label, title, accent_key}, no: {label, title, accent_key}}",
+            "caption (str, opt-in): Muted operational caveat directly below the flow diagram",
+            "cards (list): Bottom cards: [{title, description|bullets, number, is_focal, accent_key}]",
+            "columns (int, default 3): Number of columns in bottom card strip",
+            "show_numbers (bool, default false): Render circular numbered indices on bottom cards",
+            "split (list, default [38, 62]): Vertical height split between flow and card strip",
+            "takeaway / footnote (opt-in)",
+        ],
+        "example_yaml": """- archetype: process_with_cards
+  tracker: "1 BUSINESS UNDERSTANDING"
+  title: "Prioritized Outreach Concentrates Daily Capacity on Highest-Risk Renewals"
+  steps:
+    - step_num: "01"
+      title: "Active renewal queue"
+      owner: "CRM Snapshot"
+    - step_num: "02"
+      title: "Model scores risk"
+      is_current: true
+      owner: "Batch Pipeline"
+    - step_num: "03"
+      title: "Call riskiest third"
+      owner: "Account Managers"
+  branch:
+    question: "Account saved?"
+    yes:
+      label: "Yes"
+      title: "Renewal locked"
+    no:
+      label: "No"
+      title: "Escalate retention offer"
+  cards:
+    - title: "Capacity constraint"
+      is_focal: true
+      description: "**Limited outreach hours:** Team can contact only 33% of open renewals each week."
+    - title: "Multi-signal scoring"
+      description: "**Combined indicators:** Usage drop, support backlog, and billing cadence jointly predict churn."
+    - title: "Low false-positive cost"
+      description: "**Human-in-the-loop:** Score only changes call order; reps still verify account context."
+""",
+    },
+    "cohort_funnel": {
+        "family": "Architecture",
+        "aliases": ["attrition_funnel", "data_funnel"],
+        "purpose": "Data preparation cohort attrition funnel showing ordered horizontal exclusion bars from source records to final modeling cohort alongside unit/target definition cards and a segmented Train/Validation/Test temporal split bar.",
+        "keys": [
+            "tracker (str, opt-in): Category eyebrow tag",
+            "title (str): Action title stating cohort scope and grain",
+            "subtitle (str, opt-in): Contextual subtitle",
+            "source_count (int|float|str): Starting raw record count",
+            "source_label (str): Description of starting table/population",
+            "exclusions_caption (str, opt-in): Counting rule caption above exclusion bars",
+            "exclusions (list): Ordered exclusions: [{label, count, pct, accent_key}]",
+            "final_count (int|float|str): Surviving cohort count",
+            "final_label (str): Description of final modeling unit",
+            "definition_cards (list): Right-hand stacked cards (1-3): [{title, description|bullets, accent_key}]",
+            "split_segments (list, opt-in): Bottom split bar segments: [{label, count|value, display, accent_key|color}]",
+            "split_caption (str, opt-in): Date window / holdout policy note under the split bar",
+            "takeaway / footnote (opt-in)",
+        ],
+        "example_yaml": """- archetype: cohort_funnel
+  tracker: "2 DATA UNDERSTANDING | 3 DATA PREPARATION"
+  title: "Ordered Exclusions Distill 240,000 Raw Events into 48,500 Eligible Account-Days"
+  source_count: 240000
+  source_label: "raw subscription event records"
+  exclusions_caption: "Records removed, counted under the first exclusion rule that applies"
+  exclusions:
+    - label: "Outside active observation window"
+      count: 82400
+    - label: "Same-day self-serve renewals"
+      count: 54100
+    - label: "Missing primary account identifier"
+      count: 31200
+    - label: "Duplicate account-date snapshots"
+      count: 23800
+  final_count: 48500
+  final_label: "account-days in modeling cohort"
+  definition_cards:
+    - title: "Unit: account and cutoff day"
+      description: "**One row per active account:** Snapshot frozen at midnight before outreach scheduling."
+      accent_key: "accent"
+    - title: "Target label definition"
+      description: "**Non-renewal within 30 days:** Accounts with no signed renewal or billing activity; recent rows stay unknown."
+      accent_key: "warning"
+  split_segments:
+    - label: "Train"
+      count: 27160
+      accent_key: "primary"
+    - label: "Validation"
+      count: 8730
+      accent_key: "accent"
+    - label: "Test"
+      count: 12610
+      accent_key: "warning"
+  split_caption: "48,500 rows split strictly by date; test holdout evaluated once after final model freeze."
+""",
+    },
+    "ml_benchmark": {
+        "family": "Architecture",
+        "aliases": ["model_benchmark", "lift_benchmark"],
+        "purpose": "Composite ML evaluation slide pairing a multi-cutoff lift/capture grouped column chart (left) with a compact benchmark summary table (top-right) and focal hero lift ratio vs. pass-gate KPI card (bottom-right).",
+        "keys": [
+            "tracker (str, opt-in): Category eyebrow tag",
+            "title (str): Action title stating audited lift or capture result",
+            "subtitle (str, opt-in): Contextual subtitle",
+            "chart (dict): Left native_chart config: {title, subtitle, chart_type, categories, series: [{name, values, color}], number_format}",
+            "benchmark_table (dict): Top-right table config: {columns|headers, rows, highlight_row}",
+            "hero_kpi (dict): Bottom-right hero_kpi config: {eyebrow, stat, stat_label, stat_subtext, card_style}",
+            "split (list, default [62, 38]): Horizontal split between chart and right stack",
+            "right_split (list, default [52, 48]): Vertical split between table and hero KPI",
+            "footnote / takeaway (opt-in)",
+        ],
+        "example_yaml": """- archetype: ml_benchmark
+  tracker: "4 MODELING | 5 EVALUATION"
+  title: "Model Captures 68% of At-Risk Renewals in the Top Third, 1.5x the Best Rule"
+  chart:
+    title: "At-Risk Renewal Capture by Call-List Size (%)"
+    chart_type: "column"
+    categories: ["Top 10%", "Top 20%", "Top 33%"]
+    number_format: "0'%'"
+    series:
+      - name: "Random order"
+        values: [10, 20, 33]
+        color: "#CBD5E1"
+      - name: "Best simple rule"
+        values: [19, 30, 44]
+        color: "#64748B"
+      - name: "ML model"
+        values: [38, 53, 68]
+        color: "accent"
+  benchmark_table:
+    columns:
+      - {header: "Method (Top 33%)", width: 52, align: "LEFT"}
+      - {header: "Found", width: 24, align: "RIGHT"}
+      - {header: "Hits/100", width: 24, align: "RIGHT"}
+    highlight_row: "last"
+    rows:
+      - ["Random order", "465", "11"]
+      - ["Best simple rule", "620", "15"]
+      - ["ML model", "958", "23"]
+  hero_kpi:
+    eyebrow: "LIFT VS. BEST SIMPLE RULE"
+    stat: "1.54x"
+    stat_label: "Capture Advantage at Top 33%"
+    stat_subtext: "90% CI: 1.48x to 1.60x | Pass Gate: >= 1.25x (PASSED)"
+    card_style: "filled"
+  footnote: "Out-of-time test window (N = 12,610 account-days), evaluated once after final fit."
 """,
     },
     "crisp_dm_gate": {

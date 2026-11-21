@@ -1072,23 +1072,45 @@ def lint_presentation_spec(
         for item_idx, itm in enumerate(slide.get("items") or []):
             if isinstance(itm, dict):
                 _flag_floating_card_badge(itm, f"card {item_idx + 1}")
-        for pane_idx, pane in enumerate(slide.get("panes") or []):
+        for item_idx, itm in enumerate(slide.get("cards") or []):
+            if isinstance(itm, dict):
+                _flag_floating_card_badge(itm, f"card {item_idx + 1}")
+
+        def _lint_pane_recursive(pane: Dict[str, Any], label_prefix: str) -> None:
+            _flag_floating_card_badge(pane, label_prefix)
+            w_type = str(pane.get("widget", "")).lower().strip()
+            if w_type in ("hero_kpi", "hero_stat", "kpi", "kpi_block"):
+                if not (pane.get("stat") or pane.get("hero_stat")) or not (pane.get("stat_label") or pane.get("label")):
+                    report.add_issue(
+                        rule_id="LINT009_EMPIRICAL_KPI",
+                        severity="ERROR",
+                        slide_idx=idx,
+                        archetype=arch,
+                        message=f"hero_kpi widget on {label_prefix} is missing required 'stat' or 'stat_label'.",
+                        suggestion="Provide explicit verified 'stat' and 'stat_label' values instead of relying on fallbacks.",
+                    )
+            for item_idx, itm in enumerate(pane.get("items") or pane.get("cards") or []):
+                if isinstance(itm, dict):
+                    _flag_floating_card_badge(itm, f"{label_prefix} card {item_idx + 1}")
+            for sub_idx, sub_pane in enumerate(pane.get("panes") or pane.get("rows") or pane.get("children") or []):
+                if isinstance(sub_pane, dict):
+                    _lint_pane_recursive(sub_pane, f"{label_prefix}.{sub_idx + 1}")
+
+        for pane_idx, pane in enumerate(slide.get("panes") or slide.get("rows") or []):
             if isinstance(pane, dict):
-                _flag_floating_card_badge(pane, f"pane {pane_idx + 1}")
-                w_type = str(pane.get("widget", "")).lower().strip()
-                if w_type in ("hero_kpi", "hero_stat", "kpi", "kpi_block"):
-                    if not (pane.get("stat") or pane.get("hero_stat")) or not (pane.get("stat_label") or pane.get("label")):
-                        report.add_issue(
-                            rule_id="LINT009_EMPIRICAL_KPI",
-                            severity="ERROR",
-                            slide_idx=idx,
-                            archetype=arch,
-                            message=f"hero_kpi widget on pane {pane_idx + 1} is missing required 'stat' or 'stat_label'.",
-                            suggestion="Provide explicit verified 'stat' and 'stat_label' values instead of relying on fallbacks.",
-                        )
-                for item_idx, itm in enumerate(pane.get("items") or []):
-                    if isinstance(itm, dict):
-                        _flag_floating_card_badge(itm, f"pane {pane_idx + 1} card {item_idx + 1}")
+                _lint_pane_recursive(pane, f"pane {pane_idx + 1}")
+
+        if arch in ("ml_benchmark", "model_benchmark", "lift_benchmark"):
+            hk = slide.get("hero_kpi")
+            if not isinstance(hk, dict) or not (hk.get("stat") or hk.get("hero_stat")) or not (hk.get("stat_label") or hk.get("label")):
+                report.add_issue(
+                    rule_id="LINT009_EMPIRICAL_KPI",
+                    severity="ERROR",
+                    slide_idx=idx,
+                    archetype=arch,
+                    message="ml_benchmark hero_kpi is missing required 'stat' or 'stat_label'.",
+                    suggestion="Provide explicit verified 'stat' and 'stat_label' values in hero_kpi.",
+                )
 
         # ---------------------------------------------------------------------
         # Rule LINT006: Design Contract Enforcement (Modular Ceilings)

@@ -733,8 +733,8 @@ def add_takeaway_bar(
         width,
         height,
         force_rectangle=True,
-        bg_color=hex_to_rgb("#F8FAFC"),
-        border_color=hex_to_rgb("#BAE6FD"),
+        bg_color=theme.get_rgb("surface"),
+        border_color=theme.get_rgb("border"),
         border_width_pt=0.75,
     )
 
@@ -813,5 +813,68 @@ def add_takeaway_bar(
                 font_color=theme.get_rgb("primary"),
             )
     return slide
+
+
+_SHARED_ACCENT_HEX: Dict[str, str] = {
+    "brickred": "#DC2626",
+    "brick_red": "#DC2626",
+    "snowblue": "#0284C7",
+    "snow_blue": "#0284C7",
+    "maroon": "#800000",
+    "maroon_red": "#800000",
+    "crimson": "#991B1B",
+    "coral": "#F43F5E",
+    "red": "#DC2626",
+    "blue": "#0284C7",
+    "amber": "#D97706",
+    "green": "#16A34A",
+    "teal": "#0F766E",
+    "slate": "#475569",
+    "low": "#DC2626",
+    "medium": "#D97706",
+    "high": "#0284C7",
+    "mature": "#16A34A",
+}
+
+
+def resolve_accent_color(
+    color_spec: Optional[Union[str, RGBColor]],
+    theme: Theme,
+    default_key: str = "accent",
+) -> RGBColor:
+    """Resolve a hex string, named preset (brickred, snowblue, maroon, etc.), or theme token into RGBColor."""
+    if isinstance(color_spec, RGBColor):
+        return color_spec
+    if isinstance(color_spec, str) and color_spec.strip():
+        clean = color_spec.strip()
+        low = clean.lower().replace("-", "_")
+        if low in _SHARED_ACCENT_HEX:
+            return hex_to_rgb(_SHARED_ACCENT_HEX[low])
+        if clean.startswith("#") and len(clean) in (4, 7):
+            return hex_to_rgb(clean)
+        try:
+            return theme.get_rgb(low)
+        except Exception:
+            pass
+    return theme.get_rgb(default_key)
+
+
+def draw_hairline(
+    slide: Any,
+    left: Inches,
+    top: Inches,
+    width: Inches,
+    color: RGBColor,
+    width_pt: float = 0.75,
+) -> Any:
+    """Draw a flat horizontal hairline divider with zero shadow."""
+    line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, Pt(width_pt))
+    line.shadow.inherit = False
+    strip_shape_shadows(line)
+    line.fill.solid()
+    line.fill.fore_color.rgb = color
+    line.line.fill.background()
+    return line
+
 
 

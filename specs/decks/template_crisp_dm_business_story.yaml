@@ -1,0 +1,670 @@
+deck_type: pitch_deck
+theme: snowblue
+metadata:
+  project_name: "CRISP-DM Business Story & Technical Appendix Template"
+  client_name: "Enterprise Operations Leadership"
+  vendor_name: "Data Science & Analytics Practice"
+  product: "Predictive Prioritization Model"
+  date_str: "November 2026"
+  confidentiality: "CRISP-DM Business Story Template  |  Project-Neutral Reference"
+
+slides:
+  # ===========================================================================
+  # S1: Answer-First Executive Summary (CRISP-DM 4-Part Synthesis)
+  # ===========================================================================
+  - archetype: narrative_row_list
+    tracker: "ML USE CASE BRIEF  |  EXECUTIVE SUMMARY"
+    title: "Pilot a Ranked Day-Before Outreach List to Recover High-Risk Renewals"
+    subtitle: "Proposal summary across the six CRISP-DM stages, pairing business impact with audited holdout performance."
+    show_index: true
+    flag_stripe: true
+    rows:
+      - title: "1. Business Understanding"
+        accent_color: "primary"
+        description: "**11.2% baseline risk:** Roughly one in nine scheduled renewals misses follow-up, leaving team capacity under-utilized."
+      - title: "2. Data Understanding"
+        accent_color: "accent"
+        description: "**Identifiable risk clusters:** Missed renewals concentrate in observable behavior and billing segments known the day before."
+      - title: "3. Modeling & Evaluation"
+        accent_color: "accent"
+        description: "**1.54x rule advantage:** The candidate model captures 68% of misses in the riskiest third versus 44% for the best heuristic."
+      - title: "4. Deployment"
+        accent_color: "success"
+        description: "**Three readiness decisions:** Confirming source definitions, pilot owner, and daily call capacity unlocks a controlled trial."
+    footer_callout: "Status: Proposed pilot. Causal uplift from outreach calls is not yet measured and will be tested during the trial."
+
+  # ===========================================================================
+  # S2: 1 Business Understanding — Problem Framing & Hero Metric
+  # ===========================================================================
+  - archetype: composable_split
+    tracker: "1 BUSINESS UNDERSTANDING"
+    title: "One in Nine Scheduled Renewals Misses Engagement Without Early Outreach"
+    subtitle: "Account teams lack a risk-ranked queue, spreading limited outreach hours evenly across low- and high-risk accounts."
+    split: [35, 65]
+    gap: 0.35
+    panes:
+      - widget: hero_kpi
+        eyebrow: "AUDITED BASELINE RATE"
+        stat: "11.2%"
+        stat_label: "Missed Renewal Rate in Test Window"
+        stat_subtext: "Observed across 12,610 out-of-time account-days (June–September 2026); earlier training months averaged 8.9%."
+        card_style: "filled"
+      - widget: card_list
+        numbered: true
+        style: "cards"
+        items:
+          - title: "Unrecoverable Coordinator Capacity"
+            description: "**Fixed daily bandwidth:** Once a scheduled check-in or renewal window passes unused, specialist hours cannot be reclaimed."
+            accent_key: "primary"
+          - title: "Direct Recurring Revenue Leakage"
+            description: "**Preventable churn:** Each unaddressed miss delays contract signature or triggers silent downgrades at cycle end."
+            accent_key: "accent"
+          - title: "Downstream Onboarding Delays"
+            description: "**Sequential dependencies:** Missed milestones push back provisioning, training, and expansion milestones for the account."
+            accent_key: "accent"
+    takeaway:
+      title: "Intended Users & Current Baseline"
+      description: "**Users:** Customer Success specialists, regional managers, and operations leads. **Current state (assumed):** Unranked chronological queue with no logged call outcomes."
+      accent_key: "accent"
+
+  # ===========================================================================
+  # S3: 1 Business Understanding — Operational Workflow & Why Ranking Works
+  # ===========================================================================
+  - archetype: process_with_cards
+    tracker: "1 BUSINESS UNDERSTANDING"
+    title: "Risk-Ranked Prioritization Focuses Daily Calls Where Intervention Matters Most"
+    subtitle: "Reordering the existing day-before queue requires zero new customer touchpoints and keeps human judgment in the loop."
+    split: [40, 60]
+    steps:
+      - step_num: "01"
+        title: "Day-before active queue"
+        owner: "CRM Snapshot"
+      - step_num: "02"
+        title: "Model ranks accounts"
+        owner: "Batch Pipeline"
+        is_current: true
+      - step_num: "03"
+        title: "Call riskiest third first"
+        owner: "Operations Team"
+    branch:
+      eyebrow: "DECISION GATE"
+      question: "Account confirms?"
+      owner: "Logged Outcome"
+      yes:
+        label: "Yes"
+        title: "Renewal retained"
+        accent_key: "success"
+      no:
+        label: "No"
+        title: "Slot reallocated"
+        accent_key: "danger"
+    caption: "Note: Call outcomes are not systematically logged today (assumed); structured outcome capture is built into the pilot."
+    columns: 3
+    cards:
+      - title: "Outreach capacity is capped"
+        is_focal: true
+        description: "**Targeted reach:** Specialists can contact roughly one-third of the daily queue, so random order misses most high-risk accounts."
+      - title: "No single rule captures risk"
+        description: "**Multi-factor patterns:** Miss rates span 4% to 34% across segments; the model combines schedule, usage, and billing signals."
+      - title: "Low cost of a wrong score"
+        description: "**Reordering only:** A false alarm simply shifts call priority; a human specialist still reviews the account before outreach."
+
+  # ===========================================================================
+  # S4: 2 Data Understanding, 3 Data Preparation — Cohort Funnel & Split
+  # ===========================================================================
+  - archetype: cohort_funnel
+    tracker: "2 DATA UNDERSTANDING  |  3 DATA PREPARATION"
+    title: "Ordered Exclusions Distill 240,000 Raw Events into 48,500 Account-Days"
+    subtitle: "Strict cutoff filtering ensures the training cohort matches exactly what the outreach team sees at midnight."
+    source_count: 240000
+    source_label: "raw event records in source table"
+    exclusions_caption: "Records removed sequentially under the first exclusion rule that applies"
+    exclusions:
+      - label: "Created same day as check-in"
+        count: 74200
+        accent_key: "accent"
+      - label: "Outside observation date window"
+        count: 48600
+        accent_key: "accent"
+      - label: "Closed before midnight cutoff"
+        count: 34100
+        accent_key: "accent"
+      - label: "Missing primary account key"
+        count: 14900
+        accent_key: "slate"
+      - label: "New trial account (< 14 days)"
+        count: 10800
+        accent_key: "slate"
+      - label: "Same account, same date duplicate"
+        count: 8900
+        accent_key: "slate"
+    final_count: 48500
+    final_label: "account-days in final modeling cohort"
+    definition_cards:
+      - title: "Unit of Analysis: Account and Day"
+        accent_key: "accent"
+        description: "**One row per account-date:** Represents the exact active queue snapshot frozen at 23:59 the evening before outreach."
+      - title: "Target Label Definition"
+        accent_key: "warning"
+        description: "**Missed engagement:** Zero check-in, support note, or billing confirmation on the target date; pending windows stay unknown."
+    split_segments:
+      - label: "Train"
+        count: 27160
+        accent_key: "primary"
+      - label: "Validation"
+        count: 8730
+        accent_key: "accent"
+      - label: "Test (Holdout)"
+        count: 12610
+        accent_key: "warning"
+    split_caption: "48,500 labeled rows partitioned strictly by calendar date (July 2024 – September 2026); test window evaluated once."
+
+  # ===========================================================================
+  # S5: 2 Data Understanding — Cohort Risk Segments (Chart + Insights)
+  # ===========================================================================
+  - archetype: composable_split
+    tracker: "2 DATA UNDERSTANDING"
+    title: "Missed Engagement Clusters Sharply Across Predictable Operating Cohorts"
+    subtitle: "Observed training miss rates (%) across two regional operating tiers; single-factor rates show signal, not causation."
+    split: [64, 36]
+    gap: 0.30
+    panes:
+      - widget: native_chart
+        chart_type: "bar"
+        title: "Observed Miss Rate by Segment & Region (%)"
+        subtitle: "Training window baseline = 8.9% overall"
+        number_format: "0.0'%'"
+        show_gridlines: true
+        show_value_axis: true
+        categories:
+          - "Active support cadence"
+          - "Multi-seat enterprise"
+          - "Standard contract"
+          - "All scheduled accounts"
+          - "Late-afternoon slot"
+          - "No recent usage logged"
+          - "No payment in 90 days"
+          - "Re-booked within 7 days"
+        series:
+          - name: "Tier A Regions"
+            values: [2.4, 3.1, 6.2, 6.8, 14.5, 13.8, 15.2, 24.6]
+            color: "#64748B"
+          - name: "Tier B Regions"
+            values: [8.8, 9.4, 12.6, 13.4, 19.8, 21.0, 23.4, 38.2]
+            color: "accent"
+      - widget: card_list
+        style: "cards"
+        items:
+          - title: "Consistent Ranking Across Regions"
+            description: "**Parallel risk ordering:** Tier B regions experience higher baseline misses in every group, yet the exact same risk segments stand out."
+            accent_key: "accent"
+          - title: "U-Shaped Tenure Curve"
+            description: "**Early and legacy churn:** Mid-tenure accounts (12–36 months) miss least (7.2%), while brand-new and >48-month accounts exceed 10.5%."
+            accent_key: "primary"
+    footnote: "Computed over training window (N = 27,160); univariate slices reflect observed correlation prior to multivariate modeling."
+
+  # ===========================================================================
+  # S6: 2 Data Understanding — Pattern-to-Feature Hypothesis Table
+  # ===========================================================================
+  - archetype: table
+    tracker: "2 DATA UNDERSTANDING"
+    title: "Every Observed Behavioral Pattern Maps to an Auditable Model Input"
+    subtitle: "Candidate signals evaluated against domain mechanism, midnight availability, and baseline inclusion status."
+    columns:
+      - header: "Observed Pattern"
+        width: 3.2
+        align: "LEFT"
+      - header: "Operational Mechanism"
+        width: 5.6
+        align: "LEFT"
+      - header: "Model Inclusion"
+        width: 2.9
+        align: "CENTER"
+        is_status: true
+    rows:
+      - ["Recent active touchpoints", "Ongoing engagement keeps account stakeholders responsive", {text: "INCLUDED", color: "green"}]
+      - ["Prior missed check-ins", "Unresolved scheduling friction tends to repeat across cycles", {text: "INCLUDED", color: "green"}]
+      - ["Late-day appointment slot", "End-of-day windows are more frequently deferred or skipped", {text: "REQUIRES VALIDATION", color: "amber"}]
+      - ["No billing activity in 90 days", "Dormant billing indicates lower commercial commitment", {text: "INCLUDED", color: "green"}]
+      - ["Open onboarding milestone", "Accounts in active implementation rarely miss check-ins", {text: "PLANNED", color: "blue"}]
+      - ["Re-booked within 7 days", "Short-horizon rebookings often reflect manual reschedules", {text: "PLANNED", color: "blue"}]
+      - ["Approximate travel proxy", "Coarse text-matched region showed no monotonic pattern", {text: "NOT AVAILABLE", color: "red"}]
+
+  # ===========================================================================
+  # S7: 2 Data Understanding — Negative / Null Signal Verification
+  # ===========================================================================
+  - archetype: composable_split
+    tracker: "2 DATA UNDERSTANDING"
+    title: "Coarse Distance Proxy Shows Flat Miss Rates and Was Excluded"
+    subtitle: "Testing and retiring weak proxy features prevents noise from entering the production feature pipeline."
+    split: [58, 42]
+    gap: 0.30
+    panes:
+      - widget: native_chart
+        chart_type: "column"
+        title: "Miss Rate by Proximity Proxy (%)"
+        subtitle: "Training cohort breakdown across mapped regions"
+        number_format: "0.0'%'"
+        show_gridlines: true
+        show_value_axis: true
+        categories: ["Same city", "Same metro area", "Outer region"]
+        series:
+          - name: "Tier A Regions"
+            values: [6.4, 6.9, 6.2]
+            color: "#64748B"
+          - name: "Tier B Regions"
+            values: [13.2, 13.8, 12.9]
+            color: "accent"
+      - widget: card_list
+        numbered: true
+        style: "cards"
+        items:
+          - title: "No Exact Coordinates Stored"
+            description: "**Missing geocodes:** Source tables record office city and free-text address strings rather than latitude or longitude."
+            accent_key: "slate"
+          - title: "Rule-Based Region Matching"
+            description: "**Proxy test:** Account text labels were mapped into three broad proximity tiers for initial hypothesis testing."
+            accent_key: "accent"
+          - title: "Flat Empirical Gradient"
+            description: "**Signal absent:** Miss rates remained flat across proximity tiers in both operating groups, so the proxy was dropped."
+            accent_key: "primary"
+    takeaway:
+      title: "Measurement Limitation"
+      description: "**Proxy vs. proof:** True commute distance remains untested until verified postal geocodes are captured in CRM intake."
+      accent_key: "amber"
+
+  # ===========================================================================
+  # S8: 4 Modeling, 5 Evaluation — ML Benchmark & Pass Gate
+  # ===========================================================================
+  - archetype: ml_benchmark
+    tracker: "4 MODELING  |  5 EVALUATION"
+    title: "Candidate Model Captures 68% of Misses in the Top Third, 1.54x the Best Rule"
+    subtitle: "Single-read out-of-time evaluation (N = 12,610 account-days) against random calling and simple business rules."
+    split: [62, 38]
+    right_split: [52, 48]
+    chart:
+      title: "Share of Missed Renewals Captured by List Size (%)"
+      subtitle: "Cumulative capture across risk-ranked call cutoffs"
+      chart_type: "column"
+      number_format: "0'%'"
+      show_gridlines: true
+      show_value_axis: true
+      categories: ["Top 10% list", "Top 20% list", "Top 33% list"]
+      series:
+        - name: "Random order"
+          values: [10.2, 20.1, 33.4]
+          color: "#CBD5E1"
+        - name: "Prior-miss rule"
+          values: [14.5, 23.8, 35.9]
+          color: "#94A3B8"
+        - name: "Lead-time rule"
+          values: [18.9, 29.8, 44.1]
+          color: "#64748B"
+        - name: "ML model"
+          values: [38.2, 53.0, 68.0]
+          color: "accent"
+    benchmark_table:
+      columns:
+        - {header: "Method (Top 33%)", width: 50, align: "LEFT"}
+        - {header: "Found", width: 24, align: "RIGHT"}
+        - {header: "Hits/100", width: 26, align: "RIGHT"}
+      highlight_row: "last"
+      rows:
+        - ["Random order", "472", "11"]
+        - ["Prior-miss rule", "507", "12"]
+        - ["Lead-time rule", "623", "15"]
+        - ["ML model", "960", "23"]
+    hero_kpi:
+      eyebrow: "LIFT VS. BEST SIMPLE RULE"
+      stat: "1.54x"
+      stat_label: "Capture Advantage at Top 33%"
+      stat_subtext: "90% bootstrap interval: 1.48x to 1.60x. Evaluation pass gate: >= 1.25x (PASSED)."
+      card_style: "filled"
+    footnote: "Test window: June–September 2026 (1,412 missed renewals total). Riskiest third = top 33% ranked accounts per day."
+
+  # ===========================================================================
+  # S9: 5 Evaluation — Open Risks & Pre-Scale Caveats (2x2 Grid)
+  # ===========================================================================
+  - archetype: card_grid
+    tracker: "5 EVALUATION"
+    title: "Four Open Risks Require Controlled Pilot Validation Before Scaling"
+    subtitle: "Technical evaluation passed the lift gate, yet operational and distributional caveats constrain immediate full rollout."
+    columns: 2
+    items:
+      - title: "Regional Mix Shift Between Train and Test"
+        accent_key: "warning"
+        bullets:
+          - "**Higher baseline volume:** Tier B accounts rose to 54% of test rows with a 13.4% miss rate versus 6.8% in Tier A."
+          - "**Mitigation:** Pilot evaluation tracks capture lift separately by region tier before setting global thresholds."
+      - title: "Unobserved Snapshot Reconstruction"
+        accent_key: "accent"
+        bullets:
+          - "**Rebuilt history:** Training rows reconstruct midnight snapshots from audit timestamps rather than immutable daily logs."
+          - "**Mitigation:** Production scoring reads directly from the live nightly queue table and logs frozen feature snapshots."
+      - title: "Seasonality & Regime Drift"
+        accent_key: "accent"
+        bullets:
+          - "**Rising miss rate:** Overall missed renewals shifted from 8.9% in training months to 11.2% in the recent holdout."
+          - "**Mitigation:** Monitor weekly calibration and retrain on rolling 12-month windows post-pilot."
+      - title: "Outreach Uplift Remains Unproven"
+        accent_key: "danger"
+        bullets:
+          - "**Prediction vs. intervention:** The model ranks miss likelihood; it does not prove a reminder call prevents churn."
+          - "**Mitigation:** Hold out a 10% deterministic control slice during the pilot to measure net slots saved."
+
+  # ===========================================================================
+  # S10: 6 Deployment — Rollout Roadmap & Immediate Decisions
+  # ===========================================================================
+  - archetype: process_with_cards
+    tracker: "6 DEPLOYMENT"
+    title: "Three Business Sign-Offs Unlock the Controlled Production Pilot"
+    subtitle: "Model registration is complete; remaining gates belong to source data owners and regional operations leads."
+    split: [36, 64]
+    steps:
+      - step_num: "01"
+        title: "Model registered"
+        owner: "Data Science (Done)"
+        is_current: true
+      - step_num: "02"
+        title: "Confirm data rules"
+        owner: "Data Owners"
+      - step_num: "03"
+        title: "Agree KPI & quota"
+        owner: "Business Owner"
+      - step_num: "04"
+        title: "Execute pilot"
+        owner: "Ops Managers"
+      - step_num: "05"
+        title: "Measure uplift"
+        owner: "Joint Team"
+      - step_num: "06"
+        title: "Scale decision"
+        owner: "Business Owner"
+    columns: 3
+    show_numbers: true
+    cards:
+      - number: "1"
+        title: "Confirm Source Table Rules"
+        is_focal: true
+        bullets:
+          - "**Status logging:** Verify how Tier B regions stamp missed check-ins and same-day reschedules."
+          - "**Audit timestamps:** Confirm midnight snapshot cutoff matches operational batch export."
+      - number: "2"
+        title: "Assign Pilot Decision Owner"
+        bullets:
+          - "**Success gate:** Sign off on primary uplift metric (saved slots per 100 scored accounts)."
+          - "**Feature policy:** Confirm whether account tenure and segment attributes remain eligible inputs."
+      - number: "3"
+        title: "Select Pilot Regions & Capacity"
+        bullets:
+          - "**Initial scope:** Nominate 2–3 pilot regions with dedicated specialist call logging."
+          - "**Daily call cap:** Confirm realistic daily call quota so list cutoffs align with staffing."
+
+  # ===========================================================================
+  # S11: APPENDIX A1 — Cohort & Label Definitions
+  # ===========================================================================
+  - archetype: card_grid
+    tracker: "APPENDIX A1  |  DEFINITIONS"
+    title: "Cohort Membership and Target Outcomes Follow Explicit Cutoff Rules"
+    subtitle: "Formal boundary definitions used across data extraction, modeling, and pilot evaluation."
+    columns: 2
+    items:
+      - title: "Who Enters the Scored Queue"
+        accent_key: "primary"
+        bullets:
+          - "**Eligible accounts:** Existing active accounts scheduled at least two days ahead and open at midnight."
+          - "**Exclusions:** Same-day bookings, unlinked records, and duplicate same-day entries."
+      - title: "What Counts as a Missed Event"
+        accent_key: "accent"
+        bullets:
+          - "**Negative outcome:** Zero check-in, clinical/service note, or billing confirmation on the scheduled date."
+          - "**Right-censoring guard:** Recent dates without finalized reconciliation remain labeled unknown."
+      - title: "Three Observed Miss Pathways"
+        accent_key: "accent"
+        bullets:
+          - "**Same-day cancellation:** Account cancels after the midnight outreach cutoff."
+          - "**Same-day deferral or no-show:** Account moves the date late or never attends."
+      - title: "Assumed Rules Pending Sign-Off"
+        accent_key: "warning"
+        bullets:
+          - "**Timestamp semantics:** How source tables date status transitions and re-bookings requires owner confirmation."
+          - "**Call outcome gap:** Historical outreach logs are treated as unrecorded prior to pilot."
+
+  # ===========================================================================
+  # S12: APPENDIX A2 — Plain-English Glossary
+  # ===========================================================================
+  - archetype: table
+    tracker: "APPENDIX A2  |  GLOSSARY"
+    title: "Seven Core Terms Define Every Metric Reported Across This Deck"
+    subtitle: "Standardized vocabulary aligning business stakeholders, operations managers, and data science teams."
+    columns:
+      - header: "Term"
+        width: 3.2
+        align: "LEFT"
+      - header: "Operational Definition"
+        width: 8.5
+        align: "LEFT"
+    rows:
+      - ["Account-day", "One unique account on one scheduled follow-up date (modeling unit of analysis)"]
+      - ["Midnight cutoff", "23:59 on the evening before the scheduled date when the call list is frozen"]
+      - ["Capture rate", "Percentage of all actual missed events that appear inside the prioritized call slice"]
+      - ["Hits per 100 calls", "Number of true missed events found per 100 outreach calls placed"]
+      - ["Lift ratio vs. rule", "Model capture divided by the capture of the best single-feature heuristic rule"]
+      - ["Go / No-Go gate", "Minimum lift ratio of 1.25x required on the holdout window to authorize pilot"]
+      - ["Test window", "Out-of-time June–September 2026 slice evaluated exactly once after model freeze"]
+
+  # ===========================================================================
+  # S13: APPENDIX A3 — Model Feature Groups
+  # ===========================================================================
+  - archetype: card_grid
+    tracker: "APPENDIX A3  |  FEATURES"
+    title: "Fourteen Audited Columns Known at Midnight Feed the Production Model"
+    subtitle: "Zero post-cutoff columns enter the feature matrix; excluded fields remain documented for traceability."
+    columns: 2
+    items:
+      - title: "Schedule & Operating Context"
+        accent_key: "primary"
+        bullets:
+          - "**Temporal attributes:** Booking lead-time bucket, day of week, and scheduled hour."
+          - "**Service context:** Operating region, assigned specialist ID, and service line."
+      - title: "Account Interaction History"
+        accent_key: "accent"
+        bullets:
+          - "**Attendance history:** Prior completed check-ins, prior no-shows, and prior cancellations."
+          - "**Recency:** Days elapsed since the last recorded account service note."
+      - title: "Billing & Contact Signals"
+        accent_key: "accent"
+        bullets:
+          - "**Commercial cadence:** Active billing days, cumulative amount, and days since last payment."
+          - "**Contact flag:** Indicator for shared vs. dedicated account contact channel."
+      - title: "Explicitly Excluded Signals"
+        accent_key: "slate"
+        bullets:
+          - "**Leakage/noisy fields:** Post-cutoff chat counts, raw queue row counts, and reschedules."
+          - "**Validation filter:** Features failing out-of-time stability checks are held out."
+
+  # ===========================================================================
+  # S14: APPENDIX A4 — Robustness & Leakage Checks
+  # ===========================================================================
+  - archetype: card_grid
+    tracker: "APPENDIX A4  |  ROBUSTNESS"
+    title: "Candidate Model Passes Leakage, Slice-Stability, and Ablation Audits"
+    subtitle: "Sensitivity runs confirm lift holds across time periods, regions, and reduced feature sets."
+    columns: 2
+    items:
+      - title: "Zero Temporal Leakage Detected"
+        accent_key: "success"
+        bullets:
+          - "**Timestamp audit:** Automated check returned zero rows with post-cutoff feature timestamps."
+          - "**Audit scope:** Covers all rolling history and billing aggregations prior to midnight."
+      - title: "Consistent Wins Across Five Time Slices"
+        accent_key: "accent"
+        bullets:
+          - "**Time-series CV:** Model capture spans 0.65 to 0.75 versus 0.43 to 0.44 for the best rule."
+          - "**Regional split:** Advantage persists both with and without Tier B regions included."
+      - title: "Resilience Under Feature Ablation"
+        accent_key: "accent"
+        bullets:
+          - "**Dropping top IDs:** Removing region, specialist, service line, and hour still keeps lift >= 1.30x."
+          - "**Implication:** Predictive signal rests on behavioral history, not static routing quirks."
+      - title: "Seed & Re-Fit Stability"
+        accent_key: "primary"
+        bullets:
+          - "**Three independent fits:** Repeated runs produced lift ratios of 1.50x, 1.54x, and 1.53x."
+          - "**Variance check:** Top-five driver ordering stayed stable across all three fits."
+
+  # ===========================================================================
+  # S15: APPENDIX A5 — Full Cohort Attrition Table
+  # ===========================================================================
+  - archetype: composable_split
+    tracker: "APPENDIX A5  |  COHORT AUDIT"
+    title: "Step-by-Step Waterfall Reconciles 240,000 Raw Rows to 48,500 Cohort Rows"
+    subtitle: "Exact accounting of sequential record exclusions and final date-split counts."
+    split: [68, 32]
+    gap: 0.30
+    panes:
+      - widget: table
+        columns:
+          - {header: "Filtering Step", width: 56, align: "LEFT"}
+          - {header: "Removed", width: 22, align: "RIGHT"}
+          - {header: "Remaining", width: 22, align: "RIGHT"}
+        highlight_row: "last"
+        rows:
+          - ["Raw source event records", "-", "240,000"]
+          - ["Created same day as check-in", "74,200", "165,800"]
+          - ["Outside observation date window", "48,600", "117,200"]
+          - ["Closed before midnight cutoff", "34,100", "83,100"]
+          - ["Missing primary account key", "14,900", "68,200"]
+          - ["New trial account (< 14 days)", "10,800", "57,400"]
+          - ["Same account, same date duplicate", "8,900", "48,500"]
+          - ["Final eligible modeling cohort", "-", "48,500"]
+      - widget: card_list
+        style: "cards"
+        items:
+          - title: "Strict Date Partitioning"
+            description: "**Train:** 27,160 rows | **Validation:** 8,730 rows | **Test:** 12,610 rows across July 2024 – September 2026."
+            accent_key: "primary"
+          - title: "History Warm-Up Exclusion"
+            description: "**Lookback buffer:** Early warm-up months feed rolling history features only and are excluded from model loss."
+            accent_key: "accent"
+
+  # ===========================================================================
+  # S16: APPENDIX A6 — Detailed Benchmark Table
+  # ===========================================================================
+  - archetype: table
+    tracker: "APPENDIX A6  |  BENCHMARK DETAIL"
+    title: "Candidate Model Leads the Best Simple Rule at Every Outreach List Size"
+    subtitle: "Full operating-curve comparison across 1,412 missed events in the out-of-time test window."
+    columns:
+      - header: "Call-List Cutoff"
+        width: 3.1
+        align: "LEFT"
+      - header: "Rule Capture"
+        width: 2.0
+        align: "RIGHT"
+      - header: "Model Capture"
+        width: 2.2
+        align: "RIGHT"
+        is_highlight: true
+      - header: "Rule Hits / 100"
+        width: 2.2
+        align: "RIGHT"
+      - header: "Model Hits / 100"
+        width: 2.2
+        align: "RIGHT"
+        is_highlight: true
+    rows:
+      - ["Riskiest 10% of queue", "18.9%", "38.2%", "14.2", "28.6"]
+      - ["Riskiest 20% of queue", "29.8%", "53.0%", "13.6", "24.1"]
+      - ["Riskiest 33% of queue", "44.1%", "68.0%", "12.9", "20.1"]
+      - ["Calling at random (baseline)", "-", "-", "11.2", "11.2"]
+    footnote: "Evaluated once on June–September 2026 holdout (N = 12,610 account-days). Rule benchmark is the lead-time heuristic."
+
+  # ===========================================================================
+  # S17: APPENDIX A7 — Subgroup Breakdown & Governance
+  # ===========================================================================
+  - archetype: composable_split
+    tracker: "APPENDIX A7  |  SUBGROUP ANALYSIS"
+    title: "Miss Rates Follow a U-Shaped Tenure Curve Across Account Cohorts"
+    subtitle: "Subgroup monitoring ensures fairness and transparency even when protected or sensitive attributes are excluded."
+    split: [62, 38]
+    gap: 0.30
+    panes:
+      - widget: native_chart
+        chart_type: "column"
+        title: "Observed Miss Rate by Account Tenure (%)"
+        subtitle: "Training cohort rate across six tenure brackets"
+        number_format: "0.0'%'"
+        show_gridlines: true
+        show_value_axis: true
+        categories: ["< 6m", "6–12m", "12–24m", "24–36m", "36–48m", "48m+"]
+        series:
+          - name: "Miss Rate (%)"
+            values: [10.6, 8.5, 7.2, 7.4, 10.1, 10.8]
+            color: "accent"
+      - widget: card_list
+        style: "cards"
+        items:
+          - title: "Highest Risk at Tenure Extremes"
+            description: "**Early vs. legacy churn:** Accounts under 6 months (10.6%) and over 36 months (10.1%–10.8%) miss significantly more often than mid-tenure peers."
+            accent_key: "accent"
+          - title: "Excluded From Scoring Inputs"
+            description: "**Governance guardrail:** Sensitive demographic or segment tags are excluded from model inputs; subgroup capture parity is monitored in pilot."
+            accent_key: "primary"
+
+  # ===========================================================================
+  # S18: APPENDIX A8 — Controlled Pilot Design
+  # ===========================================================================
+  - archetype: card_grid
+    tracker: "APPENDIX A8  |  PILOT DESIGN"
+    title: "A Deterministic Holdout Control Group Measures True Outreach Uplift"
+    subtitle: "Proposed experimental design isolating causal call impact from baseline risk prediction."
+    columns: 2
+    items:
+      - title: "Who Is Scored (Proposed)"
+        accent_key: "primary"
+        bullets:
+          - "**Eligible slice:** Existing active accounts scheduled >= 2 days ahead, scored nightly at midnight."
+          - "**Excluded:** Inbound escalation tickets already assigned to dedicated crisis queues."
+      - title: "Control Group Design (Proposed)"
+        accent_key: "accent"
+        bullets:
+          - "**10% uncalled slice:** Randomly hold out 10% of the high-risk third using a deterministic hash rule."
+          - "**Reproducibility:** Fixed seed assignment keeps holdout auditing repeatable across regions."
+      - title: "Primary Comparison Metric"
+        accent_key: "accent"
+        bullets:
+          - "**Operational KPI:** Net missed renewals per 100 scored accounts (called treatment vs. uncalled control)."
+          - "**Model gate:** Ranked lift must remain >= 1.25x the simple rule throughout the pilot."
+      - title: "Prerequisites Before Launch"
+        accent_key: "warning"
+        bullets:
+          - "**Capacity & logging:** Confirmed daily call quota per region and structured disposition tracking."
+          - "**Governance sign-off:** Explicit approval to retain the 10% uncalled control slice."
+
+  # ===========================================================================
+  # S19: APPENDIX A9 — Permutation Feature Importance
+  # ===========================================================================
+  - archetype: ranked_bar_scorecard
+    tracker: "APPENDIX A9  |  FEATURE IMPORTANCE"
+    title: "Service Line, Region, and Schedule Timing Drive Most Model Lift"
+    subtitle: "Permutation importance on the test window (average precision drop x 100 across 3 shuffles); reflects predictive contribution, not causation."
+    panels:
+      - title: "Permutation Importance (AP Drop x 100)"
+        unit: " pts"
+        accent_color: "accent"
+        bars:
+          - {label: "Service line", value: 18.1, highlight: true}
+          - {label: "Operating region", value: 9.8, highlight: true}
+          - {label: "Scheduled hour", value: 7.3, highlight: true}
+          - {label: "Lead-time group", value: 6.8, highlight: true}
+          - {label: "Payment amount", value: 5.3, highlight: true}
+          - {label: "Days since note", value: 3.6}
+          - {label: "Prior visits", value: 2.6}
+          - {label: "Prior no-shows", value: 1.4}
+          - {label: "Day of week", value: 0.4}
+          - {label: "Prior cancels", value: 0.1}
+        notes:
+          - "**Top 5 drivers:** Service line, operating region, scheduled hour, lead-time group, and payment amount account for >80% of total importance."
+          - "**Near-zero impact:** Day of week and prior cancels add minimal incremental lift once schedule and recency features are present."
+    footnote: "Evaluated on 12,610 out-of-time test rows with 3 permutation repeats per feature."

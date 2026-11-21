@@ -98,23 +98,34 @@ from src.ppt_engine.consulting_archetypes import (
     build_card_grid_slide,
     build_chapter_divider_slide,
     build_chevron_process_slide,
+    build_cohort_funnel_slide,
     build_composable_split_slide,
     build_cover_slide,
     build_crisp_dm_gate_slide,
     build_equity_corporate_tree_slide,
+    build_bubble_matrix_slide,
+    build_comparative_forecast_columns_slide,
     build_feature_matrix_slide,
     build_gap_analysis_slide,
     build_gate_validation_slide,
     build_hero_cover_slide,
+    build_horizon_maturity_matrix_slide,
     build_iceberg_concept_slide,
     build_mckinsey_cascade_slide,
     build_medallion_tiers_slide,
+    build_ml_benchmark_slide,
+    build_narrative_row_list_slide,
     build_open_telemetry_flow_slide,
+    build_process_with_cards_slide,
+    build_ranked_bar_scorecard_slide,
     build_split_hero_slide,
     build_table_slide,
+    build_takeaway_columns_slide,
     build_tech_logo_grid_slide,
     build_thank_you_slide,
+    build_tiered_priority_ladder_slide,
     build_timeline_gantt_slide,
+    build_waterfall_bridge_slide,
     create_presentation,
 )
 from src.ppt_engine.reference_slides import (
@@ -474,13 +485,84 @@ class PitchDeckBuilder:
                 subtitle=cfg.get("subtitle"),
                 split=cfg.get("split"),
                 panes=cfg.get("panes", cfg.get("columns", cfg.get("regions"))),
+                rows=cfg.get("rows"),
+                direction=str(cfg.get("direction", "horizontal")),
                 top_kpis=cfg.get("top_kpis"),
-                gap=float(cfg.get("gap", 0.35)),
+                gap=float(cfg["gap"]) if cfg.get("gap") is not None else None,
+                pane_divider=bool(cfg.get("pane_divider", False)),
                 takeaway=cfg.get("takeaway"),
+                footnote=cfg.get("footnote"),
                 source=cfg.get("source"),
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
+            )
+
+        elif arch in ("process_with_cards", "flow_with_cards", "process_cards"):
+            build_process_with_cards_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", cfg.get("action_title", "Sequenced Process Flow Anchors Operational Execution")),
+                subtitle=cfg.get("subtitle"),
+                steps=cfg.get("steps"),
+                branch=cfg.get("branch"),
+                caption=cfg.get("caption"),
+                cards=cfg.get("cards") or cfg.get("items"),
+                columns=int(cfg.get("columns", 3)),
+                show_numbers=bool(cfg.get("show_numbers", False)),
+                show_top_stripes=bool(cfg.get("show_top_stripes", False)),
+                split=cfg.get("split"),
+                takeaway=cfg.get("takeaway"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("cohort_funnel", "attrition_funnel", "data_funnel"):
+            build_cohort_funnel_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", cfg.get("action_title", "Ordered Exclusions Distill Raw Records into the Final Modeling Cohort")),
+                subtitle=cfg.get("subtitle"),
+                source_count=cfg.get("source_count", 100000),
+                source_label=cfg.get("source_label", "Total source records"),
+                exclusions_caption=cfg.get("exclusions_caption"),
+                exclusions=cfg.get("exclusions"),
+                final_count=cfg.get("final_count", 20000),
+                final_label=cfg.get("final_label", "Final modeling cohort"),
+                definition_cards=cfg.get("definition_cards") or cfg.get("cards"),
+                split_segments=cfg.get("split_segments") or cfg.get("temporal_splits"),
+                split_caption=cfg.get("split_caption"),
+                takeaway=cfg.get("takeaway"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("ml_benchmark", "model_benchmark", "lift_benchmark"):
+            build_ml_benchmark_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", cfg.get("action_title", "Candidate Model Outperforms Heuristic Baselines Across Every Operating Cutoff")),
+                subtitle=cfg.get("subtitle"),
+                chart=cfg.get("chart"),
+                benchmark_table=cfg.get("benchmark_table") or cfg.get("table"),
+                hero_kpi=cfg.get("hero_kpi"),
+                split=cfg.get("split"),
+                right_split=cfg.get("right_split"),
+                takeaway=cfg.get("takeaway"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
             )
 
         elif arch in ("snowflake_platform_architecture", "platform_architecture"):
@@ -952,6 +1034,147 @@ class PitchDeckBuilder:
                 current_idx=idx,
                 total_slides=total,
                 notice=self.notice,
+            )
+
+        elif arch in ("narrative_row_list", "open_text_list", "row_feature_list"):
+            build_narrative_row_list_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Open-Canvas Narrative Breakdown"),
+                subtitle=cfg.get("subtitle"),
+                rows=cfg.get("rows"),
+                sections=cfg.get("sections"),
+                sidebar_title=cfg.get("sidebar_title"),
+                sidebar_note=cfg.get("sidebar_note"),
+                show_index=bool(cfg.get("show_index", False)),
+                flag_stripe=bool(cfg.get("flag_stripe", False)),
+                footer_callout=cfg.get("footer_callout"),
+                obligated_color=cfg.get("obligated_color"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("takeaway_columns", "executive_summary_columns"):
+            build_takeaway_columns_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Executive Summary"),
+                subtitle=cfg.get("subtitle"),
+                columns=cfg.get("columns"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("tiered_priority_ladder", "grouped_action_list"):
+            build_tiered_priority_ladder_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Strategic Priority Action Ladder"),
+                subtitle=cfg.get("subtitle"),
+                left_header=cfg.get("left_header", "Priority"),
+                right_header=cfg.get("right_header", "Recommendation"),
+                tiers=cfg.get("tiers"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("bubble_matrix", "proportional_dot_matrix"):
+            build_bubble_matrix_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Proportional Entity & Metric Matrix"),
+                subtitle=cfg.get("subtitle"),
+                entities=cfg.get("entities"),
+                rows=cfg.get("rows"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("ranked_bar_scorecard", "ranked_bars"):
+            build_ranked_bar_scorecard_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Ranked Performance & Delta Scorecard"),
+                subtitle=cfg.get("subtitle"),
+                panels=cfg.get("panels"),
+                callout=cfg.get("callout") or cfg.get("takeaway"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("horizon_maturity_matrix", "maturity_matrix"):
+            build_horizon_maturity_matrix_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Capability Maturity Across Time Horizons"),
+                subtitle=cfg.get("subtitle"),
+                horizons=cfg.get("horizons"),
+                capabilities=cfg.get("capabilities"),
+                maturity_legend=cfg.get("maturity_legend"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("comparative_forecast_columns", "tri_metric_trajectory"):
+            build_comparative_forecast_columns_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", "Comparative Trajectory & Operational Impact"),
+                subtitle=cfg.get("subtitle"),
+                columns=cfg.get("columns"),
+                callout=cfg.get("callout") or cfg.get("takeaway"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("waterfall_bridge", "waterfall", "bridge_chart", "variance_bridge"):
+            build_waterfall_bridge_slide(
+                self.prs,
+                self.theme,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title", cfg.get("action_title", "Sequential Bridge Explains Net Variance Across Key Drivers")),
+                subtitle=cfg.get("subtitle"),
+                steps=cfg.get("steps"),
+                value_prefix=str(cfg.get("value_prefix", "")),
+                value_suffix=str(cfg.get("value_suffix", "")),
+                unit=str(cfg.get("unit", "")),
+                positive_is_good=bool(cfg.get("positive_is_good", True)),
+                show_connectors=bool(cfg.get("show_connectors", True)),
+                show_legend=bool(cfg.get("show_legend", True)),
+                right_panel=cfg.get("right_panel"),
+                takeaway=cfg.get("takeaway"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
             )
 
         else:

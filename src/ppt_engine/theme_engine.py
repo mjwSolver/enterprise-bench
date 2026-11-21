@@ -131,6 +131,8 @@ class Theme:
     # -------------------------------------------------------------------------
     def get_hex(self, key: str, default: str = "#000000") -> str:
         """Get uppercase hex color string for the given palette or diagram key."""
+        if isinstance(key, str) and key.strip().startswith("#"):
+            return key.strip().upper()
         val = self.palette.get(key)
         if isinstance(val, str) and val.strip():
             return val.strip().upper()

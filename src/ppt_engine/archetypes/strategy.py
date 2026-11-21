@@ -29,6 +29,7 @@ from .common import (
     add_slide_with_background, add_slide_header, resolve_content_top, add_card, add_card_with_top_stripe,
     add_card_with_harmonized_icon, add_slide_footer, add_takeaway_bar, _interpolate_color, _get_contrast_text_color,
     _add_status_pill, _add_bullet_paragraph, _fit_image_in_box, bounded_slice,
+    resolve_accent_color, draw_hairline,
 )
 
 logger = logging.getLogger(__name__)
@@ -1919,4 +1920,876 @@ def build_equity_corporate_tree_slide(
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
+
+
+def build_horizon_maturity_matrix_slide(
+    prs_or_slide: Any,
+    theme: Optional[Theme] = None,
+    tracker: Optional[str] = None,
+    action_title: str = "Capability Maturity Across Implementation Horizons",
+    subtitle: Optional[str] = None,
+    horizons: Optional[List[Dict[str, Any]]] = None,
+    capabilities: Optional[List[Dict[str, Any]]] = None,
+    maturity_legend: Optional[List[Dict[str, Any]]] = None,
+    footnote: Optional[str] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: Optional[str] = None,
+    source: Optional[str] = None,
+) -> Any:
+    """
+    McKinsey-style 2D horizon maturity matrix (Batch 3, Image 4).
+    Open-canvas grid with colored left-edge maturity stripes per cell and a top-right maturity legend.
+    """
+    if theme is None:
+        theme = get_theme("default")
+
+    if hasattr(prs_or_slide, "slides"):
+        slide = add_slide_with_background(prs_or_slide, theme)
+    else:
+        slide = prs_or_slide
+
+    header_bottom = add_slide_header(
+        slide,
+        theme,
+        tracker=tracker,
+        action_title=action_title,
+        subtitle=subtitle,
+    )
+    top_y_in = max(1.02, header_bottom + 0.14)
+    left_margin_in = 0.8
+    total_w_in = 11.733
+
+    legend_items = list(
+        maturity_legend
+        or [
+            {"label": "Early", "color": "coral"},
+            {"label": "Scaling", "color": "amber"},
+            {"label": "Mature", "color": "snowblue"},
+        ]
+    )
+    leg_w_in = 3.6
+    leg_x_in = left_margin_in + total_w_in - leg_w_in
+    leg_y_in = top_y_in + 0.08
+    tb_lg = slide.shapes.add_textbox(Inches(leg_x_in), Inches(leg_y_in), Inches(leg_w_in), Inches(0.2))
+    tf_lg = tb_lg.text_frame
+    tf_lg.margin_left = tf_lg.margin_right = tf_lg.margin_top = tf_lg.margin_bottom = 0
+    p_lg = tf_lg.paragraphs[0]
+    p_lg.text = "Maturity level"
+    p_lg.alignment = PP_ALIGN.RIGHT
+    p_lg.font.name = theme.font_family_header
+    p_lg.font.size = Pt(8.5)
+    p_lg.font.bold = True
+    p_lg.font.color.rgb = theme.get_rgb("muted")
+
+    seg_w_in = 0.8
+    seg_start_x = left_margin_in + total_w_in - len(legend_items) * (seg_w_in + 0.06)
+    for l_i, l_item in enumerate(legend_items):
+        sx = seg_start_x + l_i * (seg_w_in + 0.06)
+        l_rgb = resolve_accent_color(l_item.get("color"), theme, "accent")
+        bar = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(sx), Inches(leg_y_in + 0.22), Inches(seg_w_in), Inches(0.08)
+        )
+        bar.shadow.inherit = False
+        strip_shape_shadows(bar)
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = l_rgb
+        bar.line.fill.background()
+
+        tb_ll = slide.shapes.add_textbox(Inches(sx), Inches(leg_y_in + 0.31), Inches(seg_w_in), Inches(0.18))
+        tf_ll = tb_ll.text_frame
+        tf_ll.margin_left = tf_ll.margin_right = tf_ll.margin_top = tf_ll.margin_bottom = 0
+        p_ll = tf_ll.paragraphs[0]
+        p_ll.text = str(l_item.get("label") or "")
+        p_ll.alignment = PP_ALIGN.CENTER
+        p_ll.font.name = theme.font_family
+        p_ll.font.size = Pt(8.0)
+        p_ll.font.color.rgb = theme.get_rgb("muted")
+
+    hz_list = list(horizons or [])
+    cap_list = list(capabilities or [])
+    if not hz_list or not cap_list:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
+        return slide
+
+    rail_w_in = 1.85
+    col_gap_in = 0.28
+    hz_w_in = (total_w_in - rail_w_in - col_gap_in * len(hz_list)) / len(hz_list)
+    hz_hdr_y_in = top_y_in + 0.6
+
+    for h_i, hz in enumerate(hz_list):
+        hx_in = left_margin_in + rail_w_in + col_gap_in * (h_i + 1) + h_i * hz_w_in
+        tb_hz = slide.shapes.add_textbox(Inches(hx_in), Inches(hz_hdr_y_in), Inches(hz_w_in), Inches(0.5))
+        tf_hz = tb_hz.text_frame
+        tf_hz.word_wrap = True
+        tf_hz.margin_left = tf_hz.margin_right = tf_hz.margin_top = tf_hz.margin_bottom = 0
+        p_h1 = tf_hz.paragraphs[0]
+        p_h1.text = str(hz.get("title") or "")
+        p_h1.font.name = theme.font_family_header
+        p_h1.font.size = Pt(12.0)
+        p_h1.font.bold = True
+        p_h1.font.color.rgb = theme.get_rgb("primary")
+        if hz.get("subtitle"):
+            p_h2 = tf_hz.add_paragraph()
+            p_h2.text = str(hz["subtitle"])
+            p_h2.font.name = theme.font_family
+            p_h2.font.size = Pt(9.5)
+            p_h2.font.color.rgb = theme.get_rgb("muted")
+
+    grid_top_in = hz_hdr_y_in + 0.54
+    max_bottom_in = 6.52 if footnote else 6.84
+    row_gap_in = 0.24
+    row_h_in = (max_bottom_in - grid_top_in - row_gap_in * (len(cap_list) - 1)) / len(cap_list)
+
+    for c_i, cap in enumerate(cap_list):
+        cy_in = grid_top_in + c_i * (row_h_in + row_gap_in)
+        cap_name = str(cap.get("name") or cap.get("title") or "")
+        cap_sub = cap.get("subtitle")
+        cells = list(cap.get("cells") or [])
+
+        tb_cap = slide.shapes.add_textbox(Inches(left_margin_in), Inches(cy_in), Inches(rail_w_in), Inches(row_h_in))
+        tf_cap = tb_cap.text_frame
+        tf_cap.word_wrap = True
+        tf_cap.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_cap.margin_left = tf_cap.margin_right = tf_cap.margin_top = tf_cap.margin_bottom = 0
+        p_cap = tf_cap.paragraphs[0]
+        p_cap.text = cap_name
+        p_cap.font.name = theme.font_family_header
+        p_cap.font.size = Pt(13.0)
+        p_cap.font.bold = True
+        p_cap.font.color.rgb = theme.get_rgb("primary")
+        if cap_sub:
+            p_cs = tf_cap.add_paragraph()
+            p_cs.space_before = Pt(3)
+            p_cs.text = str(cap_sub)
+            p_cs.font.name = theme.font_family
+            p_cs.font.size = Pt(9.0)
+            p_cs.font.color.rgb = theme.get_rgb("muted")
+
+        for h_i in range(len(hz_list)):
+            cell = cells[h_i] if h_i < len(cells) else {}
+            if isinstance(cell, str):
+                cell = {"text": cell, "maturity": "medium"}
+            hx_in = left_margin_in + rail_w_in + col_gap_in * (h_i + 1) + h_i * hz_w_in
+            mat_rgb = resolve_accent_color(cell.get("color") or cell.get("maturity"), theme, "accent")
+
+            stripe = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(hx_in),
+                Inches(cy_in + 0.04),
+                Pt(4.0),
+                Inches(max(0.4, row_h_in - 0.08)),
+            )
+            stripe.shadow.inherit = False
+            strip_shape_shadows(stripe)
+            stripe.fill.solid()
+            stripe.fill.fore_color.rgb = mat_rgb
+            stripe.line.fill.background()
+
+            tb_cell = slide.shapes.add_textbox(
+                Inches(hx_in + 0.14),
+                Inches(cy_in + 0.02),
+                Inches(hz_w_in - 0.14),
+                Inches(row_h_in - 0.04),
+            )
+            tf_cell = tb_cell.text_frame
+            tf_cell.word_wrap = True
+            tf_cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_cell.margin_left = tf_cell.margin_right = tf_cell.margin_top = tf_cell.margin_bottom = 0
+            p_cell = tf_cell.paragraphs[0]
+            append_formatted_runs(
+                paragraph=p_cell,
+                text=str(cell.get("text") or ""),
+                font_name=theme.font_family,
+                font_size_pt=10.0 if len(cap_list) <= 3 else 9.0,
+                font_color=theme.get_rgb("secondary"),
+            )
+
+    if footnote:
+        tb_fn = slide.shapes.add_textbox(Inches(left_margin_in), Inches(6.62), Inches(total_w_in), Inches(0.24))
+        tf_fn = tb_fn.text_frame
+        tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
+        p_fn = tf_fn.paragraphs[0]
+        p_fn.text = footnote
+        p_fn.font.name = theme.font_family
+        p_fn.font.size = Pt(8.5)
+        p_fn.font.color.rgb = theme.get_rgb("muted")
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+    return slide
+
+
+def build_comparative_forecast_columns_slide(
+    prs_or_slide: Any,
+    theme: Optional[Theme] = None,
+    tracker: Optional[str] = None,
+    action_title: str = "Comparative Trajectory & Operational Impact",
+    subtitle: Optional[str] = None,
+    columns: Optional[List[Dict[str, Any]]] = None,
+    callout: Optional[str] = None,
+    footnote: Optional[str] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: Optional[str] = None,
+    source: Optional[str] = None,
+) -> Any:
+    """
+    3-column entity trajectory + narrative + bottom KPI callout (Batch 3, Image 6).
+    Each column renders a clean vector trend slope with plotted points, analytical narrative,
+    and a bottom lead-time/KPI pill.
+    """
+    if theme is None:
+        theme = get_theme("default")
+
+    if hasattr(prs_or_slide, "slides"):
+        slide = add_slide_with_background(prs_or_slide, theme)
+    else:
+        slide = prs_or_slide
+
+    header_bottom = add_slide_header(
+        slide,
+        theme,
+        tracker=tracker,
+        action_title=action_title,
+        subtitle=subtitle,
+    )
+    top_y_in = max(1.06, header_bottom + 0.16)
+    left_margin_in = 0.8
+    total_w_in = 11.733
+
+    cols = list(columns or [])[:4]
+    if not cols:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+        return slide
+
+    gap_in = 0.4
+    col_w_in = (total_w_in - gap_in * (len(cols) - 1)) / len(cols)
+    max_bottom_in = 6.16 if callout else (6.52 if footnote else 6.82)
+
+    all_vals = [float(pt.get("value", 0)) for c in cols for pt in (c.get("points") or [])]
+    global_max = max(all_vals, 100.0) or 100.0
+    global_min = min(all_vals, 0.0)
+
+    for idx, col in enumerate(cols):
+        cx_in = left_margin_in + idx * (col_w_in + gap_in)
+        col_accent = resolve_accent_color(col.get("accent_color"), theme, "accent")
+        badge_txt = str(col.get("badge") or col.get("entity") or f"E{idx + 1}")
+        col_title = str(col.get("title") or "")
+        points = list(col.get("points") or [])
+        analysis = str(col.get("analysis") or col.get("description") or "")
+        kpi_label = str(col.get("kpi_label") or "")
+        kpi_value = str(col.get("kpi_value") or "")
+
+        badge_d_in = 0.46
+        draw_hairline(
+            slide,
+            Inches(cx_in),
+            Inches(top_y_in + badge_d_in / 2.0),
+            Inches(col_w_in - badge_d_in - 0.08),
+            col_accent,
+            1.5,
+        )
+        if col_title:
+            tb_ct = slide.shapes.add_textbox(
+                Inches(cx_in), Inches(top_y_in), Inches(col_w_in - badge_d_in - 0.12), Inches(0.24)
+            )
+            tf_ct = tb_ct.text_frame
+            tf_ct.margin_left = tf_ct.margin_right = tf_ct.margin_top = tf_ct.margin_bottom = 0
+            p_ct = tf_ct.paragraphs[0]
+            p_ct.text = col_title
+            p_ct.font.name = theme.font_family_header
+            p_ct.font.size = Pt(11.0)
+            p_ct.font.bold = True
+            p_ct.font.color.rgb = theme.get_rgb("primary")
+
+        circ = slide.shapes.add_shape(
+            MSO_SHAPE.OVAL,
+            Inches(cx_in + col_w_in - badge_d_in),
+            Inches(top_y_in),
+            Inches(badge_d_in),
+            Inches(badge_d_in),
+        )
+        circ.shadow.inherit = False
+        strip_shape_shadows(circ)
+        circ.fill.solid()
+        circ.fill.fore_color.rgb = col_accent
+        circ.line.fill.background()
+        tf_c = circ.text_frame
+        tf_c.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_c.margin_left = tf_c.margin_right = tf_c.margin_top = tf_c.margin_bottom = 0
+        p_c = tf_c.paragraphs[0]
+        p_c.text = badge_txt[:4]
+        p_c.alignment = PP_ALIGN.CENTER
+        p_c.font.name = theme.font_family_header
+        p_c.font.size = Pt(10.5)
+        p_c.font.bold = True
+        p_c.font.color.rgb = _get_contrast_text_color(col_accent)
+
+        chart_top_in = top_y_in + 0.62
+        chart_h_in = 1.65
+        axis_y_in = chart_top_in + chart_h_in
+        draw_hairline(slide, Inches(cx_in), Inches(axis_y_in), Inches(col_w_in), theme.get_rgb("border"), 0.75)
+
+        if points:
+            n_pts = len(points)
+            span_max = (
+                global_max
+                if col.get("shared_scale", True)
+                else (max(float(pt.get("value", 0)) for pt in points) or 1.0)
+            )
+            span_min = (
+                min(0.0, global_min)
+                if col.get("shared_scale", True)
+                else min(0.0, min(float(pt.get("value", 0)) for pt in points))
+            )
+            val_range = max(1e-6, span_max - span_min)
+            pad_x_in = 0.28
+            usable_w_in = max(0.5, col_w_in - 2 * pad_x_in)
+            coords: List[Tuple[float, float]] = []
+
+            for p_i, pt in enumerate(points):
+                px = (
+                    cx_in + pad_x_in + (usable_w_in * p_i) / max(1, n_pts - 1)
+                    if n_pts > 1
+                    else cx_in + col_w_in / 2.0
+                )
+                val = float(pt.get("value", 0))
+                norm = (val - span_min) / val_range
+                py = (axis_y_in - 0.18) - norm * (chart_h_in - 0.48)
+                coords.append((px, py))
+
+            for i in range(len(coords) - 1):
+                x1, y1 = coords[i]
+                x2, y2 = coords[i + 1]
+                conn = slide.shapes.add_connector(
+                    MSO_CONNECTOR.STRAIGHT, Inches(x1), Inches(y1), Inches(x2), Inches(y2)
+                )
+                conn.shadow.inherit = False
+                strip_shape_shadows(conn)
+                conn.line.color.rgb = col_accent
+                conn.line.width = Pt(2.25)
+
+            dark_hi_rgb = (
+                theme.get_rgb("badge_blue_text")
+                if getattr(theme, "name", "") == "snowblue"
+                else theme.get_rgb("accent_secondary")
+            )
+            for p_i, (px, py) in enumerate(coords):
+                pt = points[p_i]
+                is_hi = bool(pt.get("highlight"))
+                if pt.get("color"):
+                    dot_rgb = resolve_accent_color(pt.get("color"), theme, "accent_secondary")
+                elif is_hi:
+                    dot_rgb = dark_hi_rgb
+                else:
+                    dot_rgb = col_accent
+                dot_d = 0.11 if is_hi else 0.09
+                dot = slide.shapes.add_shape(
+                    MSO_SHAPE.OVAL,
+                    Inches(px - dot_d / 2),
+                    Inches(py - dot_d / 2),
+                    Inches(dot_d),
+                    Inches(dot_d),
+                )
+                dot.shadow.inherit = False
+                strip_shape_shadows(dot)
+                dot.fill.solid()
+                dot.fill.fore_color.rgb = dot_rgb
+                dot.line.fill.background()
+
+                v_disp = (
+                    pt.get("display")
+                    or (int(pt["value"]) if float(pt["value"]).is_integer() else round(float(pt["value"]), 1))
+                )
+                tb_v = slide.shapes.add_textbox(Inches(px - 0.35), Inches(py - 0.25), Inches(0.7), Inches(0.2))
+                tf_v = tb_v.text_frame
+                tf_v.margin_left = tf_v.margin_right = tf_v.margin_top = tf_v.margin_bottom = 0
+                p_v = tf_v.paragraphs[0]
+                p_v.text = str(v_disp)
+                p_v.alignment = PP_ALIGN.CENTER
+                p_v.font.name = theme.font_family_header
+                p_v.font.size = Pt(9.0)
+                p_v.font.bold = True
+                p_v.font.color.rgb = dot_rgb if is_hi else theme.get_rgb("primary")
+
+                tb_x = slide.shapes.add_textbox(
+                    Inches(px - 0.35), Inches(axis_y_in + 0.05), Inches(0.7), Inches(0.2)
+                )
+                tf_x = tb_x.text_frame
+                tf_x.margin_left = tf_x.margin_right = tf_x.margin_top = tf_x.margin_bottom = 0
+                p_x = tf_x.paragraphs[0]
+                p_x.text = str(pt.get("label") or "")
+                p_x.alignment = PP_ALIGN.CENTER
+                p_x.font.name = theme.font_family
+                p_x.font.size = Pt(8.5)
+                p_x.font.color.rgb = theme.get_rgb("muted")
+
+        nar_top_in = axis_y_in + 0.38
+        kpi_h_in = 0.68 if (kpi_label or kpi_value) else 0.0
+        nar_h_in = max(0.8, max_bottom_in - kpi_h_in - 0.14 - nar_top_in)
+        tb_n = slide.shapes.add_textbox(Inches(cx_in), Inches(nar_top_in), Inches(col_w_in), Inches(nar_h_in))
+        tf_n = tb_n.text_frame
+        tf_n.word_wrap = True
+        tf_n.margin_left = tf_n.margin_right = tf_n.margin_top = tf_n.margin_bottom = 0
+        p_n = tf_n.paragraphs[0]
+        append_formatted_runs(
+            paragraph=p_n,
+            text=analysis,
+            font_name=theme.font_family,
+            font_size_pt=10.0,
+            font_color=theme.get_rgb("secondary"),
+        )
+
+        if kpi_label or kpi_value:
+            kpi_y_in = max_bottom_in - kpi_h_in
+            kbox = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE, Inches(cx_in), Inches(kpi_y_in), Inches(col_w_in), Inches(kpi_h_in)
+            )
+            kbox.shadow.inherit = False
+            strip_shape_shadows(kbox)
+            kbox.fill.solid()
+            kbox.fill.fore_color.rgb = col_accent
+            kbox.line.fill.background()
+            tf_k = kbox.text_frame
+            tf_k.word_wrap = True
+            tf_k.vertical_anchor = MSO_ANCHOR.MIDDLE
+            tf_k.margin_left = Inches(0.14)
+            tf_k.margin_right = Inches(0.14)
+            tf_k.margin_top = tf_k.margin_bottom = Inches(0.06)
+            contrast = _get_contrast_text_color(col_accent)
+            p_k1 = tf_k.paragraphs[0]
+            p_k1.text = kpi_label
+            p_k1.font.name = theme.font_family
+            p_k1.font.size = Pt(9.0)
+            p_k1.font.color.rgb = contrast
+            if kpi_value:
+                p_k2 = tf_k.add_paragraph()
+                p_k2.space_before = Pt(2)
+                p_k2.text = kpi_value
+                p_k2.font.name = theme.font_family_header
+                p_k2.font.size = Pt(11.5)
+                p_k2.font.bold = True
+                p_k2.font.color.rgb = contrast
+
+    if callout:
+        add_takeaway_bar(
+            slide,
+            theme,
+            callout,
+            top_y=Inches(6.24),
+            left_x=Inches(left_margin_in),
+            width=Inches(total_w_in),
+            height=Inches(0.46),
+        )
+
+    if footnote:
+        tb_fn = slide.shapes.add_textbox(Inches(left_margin_in), Inches(6.62), Inches(total_w_in), Inches(0.24))
+        tf_fn = tb_fn.text_frame
+        tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
+        p_fn = tf_fn.paragraphs[0]
+        p_fn.text = footnote
+        p_fn.font.name = theme.font_family
+        p_fn.font.size = Pt(8.5)
+        p_fn.font.color.rgb = theme.get_rgb("muted")
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+    return slide
+
+
+def _format_bridge_value(
+    value: float,
+    *,
+    is_delta: bool,
+    prefix: str = "",
+    suffix: str = "",
+) -> str:
+    """Format a numeric waterfall step value with optional sign, prefix, and suffix."""
+    sign = ""
+    if value < 0:
+        sign = "-"
+    elif is_delta and value > 0:
+        sign = "+"
+    abs_val = abs(value)
+    if abs_val >= 100 or abs_val == int(abs_val):
+        num_str = f"{abs_val:,.0f}"
+    else:
+        num_str = f"{abs_val:,.1f}".rstrip("0").rstrip(".")
+    return f"{sign}{prefix}{num_str}{suffix}"
+
+
+def build_waterfall_bridge_slide(
+    prs_or_slide: Any,
+    theme: Optional[Theme] = None,
+    tracker: Optional[str] = None,
+    action_title: str = "Sequential Bridge Explains Net Variance Across Key Drivers",
+    subtitle: Optional[str] = None,
+    steps: Optional[List[Dict[str, Any]]] = None,
+    value_prefix: str = "",
+    value_suffix: str = "",
+    unit: str = "",
+    positive_is_good: bool = True,
+    show_connectors: bool = True,
+    show_legend: bool = True,
+    right_panel: Optional[Dict[str, Any]] = None,
+    takeaway: Optional[Union[str, Dict[str, Any]]] = None,
+    footnote: Optional[str] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: Optional[str] = None,
+    source: Optional[str] = None,
+) -> Any:
+    """
+    MBB-style sequential waterfall bridge slide (financial cost bridges, latency SLA budgets,
+    headcount/capacity reconciliations, or supply-demand bridges).
+    Renders sharp DrawingML rectangles with floating delta bars, connector hairlines,
+    baseline zero line, and an optional right-side driver narrative panel.
+    """
+    if theme is None:
+        theme = get_theme("default")
+
+    if hasattr(prs_or_slide, "slides"):
+        slide = add_slide_with_background(prs_or_slide, theme)
+    else:
+        slide = prs_or_slide
+
+    header_bottom = add_slide_header(
+        slide,
+        theme,
+        tracker=tracker,
+        action_title=action_title,
+        subtitle=subtitle,
+    )
+    top_y_in = max(1.06, header_bottom + 0.16)
+    left_margin_in = 0.80
+    total_w_in = 11.733
+
+    step_list = bounded_slice(list(steps or []), limit=12, archetype="waterfall_bridge", field_name="steps")
+    if not step_list:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+        return slide
+
+    if takeaway:
+        max_bottom_in = 6.06
+    elif footnote:
+        max_bottom_in = 6.46
+    else:
+        max_bottom_in = 6.76
+
+    has_panel = isinstance(right_panel, dict) and bool(
+        right_panel.get("title") or right_panel.get("bullets") or right_panel.get("items")
+    )
+    if has_panel:
+        chart_w_in = total_w_in * 0.71
+        panel_gap_in = 0.30
+        panel_x_in = left_margin_in + chart_w_in + panel_gap_in
+        panel_w_in = total_w_in - chart_w_in - panel_gap_in
+    else:
+        chart_w_in = total_w_in
+        panel_x_in = 0.0
+        panel_w_in = 0.0
+
+    eff_prefix = value_prefix
+    eff_suffix = value_suffix
+    if unit and not eff_prefix and not eff_suffix:
+        if unit in ("$", "€", "£", "USD", "IDR"):
+            eff_prefix = unit
+        else:
+            eff_suffix = unit
+
+    running = 0.0
+    parsed_steps: List[Dict[str, Any]] = []
+    for idx, raw in enumerate(step_list):
+        if not isinstance(raw, dict):
+            continue
+        label = str(raw.get("label") or raw.get("name") or f"Step {idx + 1}")
+        sublabel = str(raw.get("sublabel") or raw.get("note") or "").strip()
+        val = float(raw.get("value", 0.0))
+        kind = str(raw.get("kind") or "").lower().strip()
+        if not kind:
+            if raw.get("is_total") or raw.get("total"):
+                kind = "start" if idx == 0 else ("end" if idx == len(step_list) - 1 else "total")
+            elif idx == 0:
+                kind = "start"
+            else:
+                kind = "delta"
+
+        is_total_bar = kind in ("start", "total", "subtotal", "end")
+        if is_total_bar:
+            y0, y1 = 0.0, val
+            running = val
+        else:
+            y0, y1 = running, running + val
+            running = y1
+
+        display = str(raw.get("display") or "").strip()
+        if not display:
+            display = _format_bridge_value(
+                val,
+                is_delta=not is_total_bar,
+                prefix=eff_prefix,
+                suffix=eff_suffix,
+            )
+
+        if raw.get("color"):
+            bar_color = resolve_accent_color(raw.get("color"), theme, "accent")
+        elif kind in ("start", "total", "subtotal"):
+            bar_color = theme.get_rgb("primary")
+        elif kind == "end":
+            bar_color = theme.get_rgb("accent")
+        else:
+            is_favorable = (val >= 0) if positive_is_good else (val <= 0)
+            bar_color = hex_to_rgb("#16A34A") if is_favorable else hex_to_rgb("#DC2626")
+
+        parsed_steps.append({
+            "label": label,
+            "sublabel": sublabel,
+            "value": val,
+            "kind": kind,
+            "is_total_bar": is_total_bar,
+            "y0": y0,
+            "y1": y1,
+            "end_level": running,
+            "display": display,
+            "color": bar_color,
+        })
+
+    if not parsed_steps:
+        add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+        return slide
+
+    legend_h_in = 0.0
+    if show_legend:
+        legend_h_in = 0.30
+        legend_items = [
+            ("Baseline / Total", theme.get_rgb("primary")),
+            ("Favorable" if positive_is_good else "Improvement", hex_to_rgb("#16A34A")),
+            ("Unfavorable" if positive_is_good else "Regression", hex_to_rgb("#DC2626")),
+            ("Target / End", theme.get_rgb("accent")),
+        ]
+        lx = left_margin_in
+        for l_txt, l_col in legend_items:
+            sw = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE, Inches(lx), Inches(top_y_in + 0.04), Inches(0.13), Inches(0.13)
+            )
+            sw.shadow.inherit = False
+            strip_shape_shadows(sw)
+            sw.fill.solid()
+            sw.fill.fore_color.rgb = l_col
+            sw.line.fill.background()
+
+            tb_l = slide.shapes.add_textbox(
+                Inches(lx + 0.18), Inches(top_y_in), Inches(1.45), Inches(0.22)
+            )
+            tf_l = tb_l.text_frame
+            tf_l.word_wrap = False
+            tf_l.margin_left = tf_l.margin_right = tf_l.margin_top = tf_l.margin_bottom = 0
+            p_l = tf_l.paragraphs[0]
+            p_l.text = l_txt
+            p_l.font.name = theme.font_family
+            p_l.font.size = Pt(8.5)
+            p_l.font.color.rgb = theme.get_rgb("secondary")
+            lx += 1.68
+
+    plot_top_in = top_y_in + legend_h_in + 0.28
+    has_sublabels = any(s["sublabel"] for s in parsed_steps)
+    label_band_in = 0.72 if has_sublabels else 0.52
+    plot_bottom_in = max_bottom_in - label_band_in
+    plot_h_in = max(1.20, plot_bottom_in - plot_top_in)
+
+    raw_min = min(0.0, min(min(s["y0"], s["y1"]) for s in parsed_steps))
+    raw_max = max(0.0, max(max(s["y0"], s["y1"]) for s in parsed_steps))
+    span = raw_max - raw_min
+    if span <= 1e-9:
+        span = 1.0
+        raw_max = raw_min + 1.0
+
+    scale_max = raw_max + span * 0.14
+    scale_min = raw_min - (span * 0.14 if raw_min < 0 else 0.0)
+    scale_span = scale_max - scale_min
+
+    def _val_to_y(v: float) -> float:
+        return plot_bottom_in - ((v - scale_min) / scale_span) * plot_h_in
+
+    zero_y_in = _val_to_y(0.0)
+    draw_hairline(
+        slide,
+        Inches(left_margin_in),
+        Inches(zero_y_in),
+        Inches(chart_w_in),
+        theme.get_rgb("border"),
+        width_pt=1.0,
+    )
+
+    n_steps = len(parsed_steps)
+    slot_w_in = chart_w_in / n_steps
+    bar_w_in = min(1.10, slot_w_in * 0.62)
+
+    for idx, step in enumerate(parsed_steps):
+        slot_x_in = left_margin_in + idx * slot_w_in
+        bar_x_in = slot_x_in + (slot_w_in - bar_w_in) / 2.0
+
+        y_high_in = _val_to_y(max(step["y0"], step["y1"]))
+        y_low_in = _val_to_y(min(step["y0"], step["y1"]))
+        bar_h_in = max(0.04, y_low_in - y_high_in)
+
+        bar = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(bar_x_in),
+            Inches(y_high_in),
+            Inches(bar_w_in),
+            Inches(bar_h_in),
+        )
+        bar.shadow.inherit = False
+        strip_shape_shadows(bar)
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = step["color"]
+        bar.line.fill.background()
+
+        if show_connectors and idx < n_steps - 1:
+            conn_y_in = _val_to_y(step["end_level"])
+            next_bar_x_in = left_margin_in + (idx + 1) * slot_w_in + (slot_w_in - bar_w_in) / 2.0
+            conn_x_in = bar_x_in + bar_w_in
+            conn_w_in = max(0.02, next_bar_x_in - conn_x_in)
+            draw_hairline(
+                slide,
+                Inches(conn_x_in),
+                Inches(conn_y_in),
+                Inches(conn_w_in),
+                theme.get_rgb("muted"),
+                width_pt=0.75,
+            )
+
+        is_neg_dir = step["y1"] < step["y0"] or (step["is_total_bar"] and step["value"] < 0)
+        lbl_y_in = (y_low_in + 0.03) if is_neg_dir else max(top_y_in + legend_h_in, y_high_in - 0.24)
+        tb_v = slide.shapes.add_textbox(
+            Inches(slot_x_in + 0.02),
+            Inches(lbl_y_in),
+            Inches(slot_w_in - 0.04),
+            Inches(0.22),
+        )
+        tf_v = tb_v.text_frame
+        tf_v.word_wrap = False
+        tf_v.margin_left = tf_v.margin_right = tf_v.margin_top = tf_v.margin_bottom = 0
+        p_v = tf_v.paragraphs[0]
+        p_v.text = step["display"]
+        p_v.alignment = PP_ALIGN.CENTER
+        p_v.font.name = theme.font_family_header
+        p_v.font.size = Pt(9.5)
+        p_v.font.bold = True
+        p_v.font.color.rgb = theme.get_rgb("primary")
+
+        tb_c = slide.shapes.add_textbox(
+            Inches(slot_x_in + 0.03),
+            Inches(plot_bottom_in + 0.06),
+            Inches(slot_w_in - 0.06),
+            Inches(label_band_in - 0.06),
+        )
+        tf_c = tb_c.text_frame
+        tf_c.word_wrap = True
+        tf_c.margin_left = tf_c.margin_right = tf_c.margin_top = tf_c.margin_bottom = 0
+        p_c = tf_c.paragraphs[0]
+        p_c.text = step["label"]
+        p_c.alignment = PP_ALIGN.CENTER
+        p_c.font.name = theme.font_family_header
+        p_c.font.size = Pt(8.5)
+        p_c.font.bold = True
+        p_c.font.color.rgb = theme.get_rgb("primary")
+        if step["sublabel"]:
+            p_s = tf_c.add_paragraph()
+            p_s.space_before = Pt(2)
+            p_s.text = step["sublabel"]
+            p_s.alignment = PP_ALIGN.CENTER
+            p_s.font.name = theme.font_family
+            p_s.font.size = Pt(8.0)
+            p_s.font.color.rgb = theme.get_rgb("muted_text")
+
+    if has_panel and isinstance(right_panel, dict):
+        panel_h_in = max_bottom_in - top_y_in
+        add_card(
+            slide,
+            theme,
+            Inches(panel_x_in),
+            Inches(top_y_in),
+            Inches(panel_w_in),
+            Inches(panel_h_in),
+            bg_color=theme.get_rgb("surface"),
+            border_color=theme.get_rgb("border"),
+            force_rectangle=True,
+        )
+        p_pad_x = 0.22
+        curr_py = top_y_in + 0.18
+        p_title = str(right_panel.get("title") or "Key Variance Drivers").strip()
+        tb_pt = slide.shapes.add_textbox(
+            Inches(panel_x_in + p_pad_x),
+            Inches(curr_py),
+            Inches(panel_w_in - p_pad_x * 2),
+            Inches(0.32),
+        )
+        tf_pt = tb_pt.text_frame
+        tf_pt.word_wrap = True
+        tf_pt.margin_left = tf_pt.margin_right = tf_pt.margin_top = tf_pt.margin_bottom = 0
+        pp_t = tf_pt.paragraphs[0]
+        pp_t.text = p_title
+        pp_t.font.name = theme.font_family_header
+        pp_t.font.size = Pt(12.5)
+        pp_t.font.bold = True
+        pp_t.font.color.rgb = theme.get_rgb("primary")
+        curr_py += 0.34
+
+        draw_hairline(
+            slide,
+            Inches(panel_x_in + p_pad_x),
+            Inches(curr_py),
+            Inches(panel_w_in - p_pad_x * 2),
+            theme.get_rgb("border"),
+            width_pt=0.75,
+        )
+        curr_py += 0.14
+
+        bullets = list(right_panel.get("bullets") or right_panel.get("items") or [])[:4]
+        if bullets:
+            tb_pb = slide.shapes.add_textbox(
+                Inches(panel_x_in + p_pad_x),
+                Inches(curr_py),
+                Inches(panel_w_in - p_pad_x * 2),
+                Inches(max(0.80, top_y_in + panel_h_in - curr_py - 0.16)),
+            )
+            tf_pb = tb_pb.text_frame
+            tf_pb.word_wrap = True
+            tf_pb.margin_left = tf_pb.margin_right = tf_pb.margin_top = tf_pb.margin_bottom = 0
+            for b_idx, b_item in enumerate(bullets):
+                _add_bullet_paragraph(
+                    tf=tf_pb,
+                    text=str(b_item),
+                    font_name=theme.font_family,
+                    font_size_pt=10.0,
+                    font_color=theme.get_rgb("secondary"),
+                    space_before_pt=8.0 if b_idx > 0 else 0.0,
+                    lead_color=theme.get_rgb("primary"),
+                )
+
+    if takeaway:
+        add_takeaway_bar(
+            slide,
+            theme,
+            takeaway,
+            top_y=Inches(6.18),
+            left_x=Inches(left_margin_in),
+            width=Inches(total_w_in),
+            height=Inches(0.46),
+        )
+
+    if footnote:
+        tb_fn = slide.shapes.add_textbox(Inches(left_margin_in), Inches(6.58), Inches(total_w_in), Inches(0.24))
+        tf_fn = tb_fn.text_frame
+        tf_fn.margin_left = tf_fn.margin_right = tf_fn.margin_top = tf_fn.margin_bottom = 0
+        p_fn = tf_fn.paragraphs[0]
+        p_fn.text = footnote
+        p_fn.font.name = theme.font_family
+        p_fn.font.size = Pt(8.5)
+        p_fn.font.color.rgb = theme.get_rgb("muted_text")
+
+    add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice, source=source)
+    return slide
+
 
