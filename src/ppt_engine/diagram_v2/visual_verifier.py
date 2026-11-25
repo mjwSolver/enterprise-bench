@@ -34,6 +34,11 @@ from PIL import Image, ImageStat
 from src.ppt_engine.diagram_v2.models import DiagramSpec
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
 from src.ppt_engine.diagram_v2.auditor import AuditIssue, Tier1GeometricLinter
+from src.ppt_engine.diagram_v2.contrast import (
+    contrast_ratio,
+    WCAG_AA_NORMAL_TEXT,
+    WCAG_AA_LARGE_TEXT,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +109,132 @@ class VisualQAResult:
         }
 
 
+def audit_wcag_and_legibility(spec: DiagramSpec) -> Tuple[List[VisualFinding], Dict[str, Any]]:
+    """
+    Audits WCAG 2.1 AA contrast ratios (>= 4.5:1 normal text, >= 3.0:1 large/bold)
+    and multi-resolution font legibility (1080p, 720p, and thumbnail pixel heights)
+    across header, containers, nodes, badges, bullet lists, and labeled flows.
+    """
+    findings: List[VisualFinding] = []
+    checks_total = 0
+    checks_passed = 0
+    min_cr = 21.0
+    font_pts: List[float] = []
+    canvas_bg = getattr(getattr(spec, "canvas", None), "background", None) or "#FFFFFF"
+
+    primary_hex = "#0F172A"
+    muted_hex = "#64748B"
+    try:
+        from src.ppt_engine.theme_engine import load_theme
+        theme_obj = load_theme(spec.theme) if getattr(spec, "theme", None) else None
+        if theme_obj is not None:
+            primary_hex = theme_obj.get_hex("primary", "#0F172A")
+            muted_hex = theme_obj.get_hex("muted", "#64748B")
+    except Exception:
+        pass
+
+    def _check_pair(elem_id: str, label: str, fg_hex: Optional[str], bg_hex: Optional[str], pt: float, is_large: bool = False) -> None:
+        nonlocal checks_total, checks_passed, min_cr
+        eff_bg = bg_hex or canvas_bg
+        if not fg_hex or not eff_bg:
+            return
+        cr = contrast_ratio(fg_hex, eff_bg)
+        checks_total += 1
+        min_cr = min(min_cr, cr)
+        req = WCAG_AA_LARGE_TEXT if is_large else WCAG_AA_NORMAL_TEXT
+        if cr >= req:
+            checks_passed += 1
+        elif cr < 3.0:
+            findings.append(VisualFinding(
+                dimension="TYPOGRAPHY_LEGIBILITY",
+                severity="CRITICAL",
+                element_or_region=elem_id,
+                flaw_description=f"{label} contrast ratio {cr:.2f}:1 ({fg_hex} on {eff_bg}) fails minimum 3.0:1 legibility floor.",
+                prescriptive_fix=f"Darken text or adjust fill to restore >= {req:.1f}:1 WCAG AA contrast.",
+            ))
+        else:
+            findings.append(VisualFinding(
+                dimension="TYPOGRAPHY_LEGIBILITY",
+                severity="WARNING",
+                element_or_region=elem_id,
+                flaw_description=f"{label} contrast ratio {cr:.2f}:1 ({fg_hex} on {eff_bg}) is below WCAG AA {req:.1f}:1.",
+                prescriptive_fix=f"Use higher-contrast slate/white ink to achieve >= {req:.1f}:1.",
+            ))
+
+    if getattr(spec, "header", None) and getattr(spec.header, "show", False):
+        if getattr(spec.header, "action_title", None):
+            font_pts.append(20.0)
+            _check_pair("header:action_title", "Header action title", primary_hex, canvas_bg, 20.0, is_large=True)
+        if getattr(spec.header, "subtitle", None):
+            font_pts.append(11.0)
+            _check_pair("header:subtitle", "Header subtitle", muted_hex, canvas_bg, 11.0, is_large=False)
+
+    for c in spec.containers:
+        raw_c_pt = getattr(c, "font_size", None)
+        c_pt = float(raw_c_pt) if raw_c_pt is not None else 12.0
+        font_pts.append(c_pt)
+        _check_pair(f"container:{c.id}", "Container label", c.font_color, c.fill_hex or canvas_bg, c_pt, is_large=(c_pt >= 14.0))
+
+    for n in spec.nodes:
+        t_pt = n.resolved_title_pt()
+        s_pt = n.resolved_subtitle_pt()
+        font_pts.append(t_pt)
+        n_bg = n.fill_hex or canvas_bg
+        _check_pair(f"node:{n.id}", "Node title", n.title_color, n_bg, t_pt, is_large=(t_pt >= 14.0))
+        if n.subtitle or n.bullets:
+            font_pts.append(s_pt)
+            _check_pair(f"node:{n.id}", "Node subtitle", n.subtitle_color, n_bg, s_pt, is_large=False)
+            if not spec.allow_dense_typography and s_pt < 10.0 and s_pt >= 8.0:
+                findings.append(VisualFinding(
+                    dimension="TYPOGRAPHY_LEGIBILITY",
+                    severity="ADVISORY",
+                    element_or_region=f"node:{n.id}",
+                    flaw_description=f"Node subtitle is {s_pt:.1f}pt ({s_pt * 96.0 / 72.0:.1f}px at 720p, {s_pt * 48.0 / 72.0:.1f}px thumbnail).",
+                    prescriptive_fix="Raise subtitle to >= 10.0pt or enable allow_dense_typography for appendix runbooks.",
+                ))
+
+    for idx, b in enumerate(spec.badges):
+        b_id = b.id or f"badge_{idx}"
+        b_pt = float(b.font_pt) if b.font_pt is not None else 9.0
+        font_pts.append(b_pt)
+        _check_pair(f"badge:{b_id}", "Badge text", b.text_hex, b.bg_hex or canvas_bg, b_pt, is_large=False)
+
+    for idx, bl in enumerate(getattr(spec, "bullet_lists", []) or []):
+        bl_id = bl.id or f"bullet_list_{idx}"
+        bl_pt = float(bl.font_size) if bl.font_size is not None else 11.5
+        font_pts.append(bl_pt)
+        _check_pair(f"bullet_list:{bl_id}", "Bullet list text", bl.font_color, canvas_bg, bl_pt, is_large=(bl_pt >= 14.0))
+
+    for idx, f in enumerate(spec.flows):
+        if f.label:
+            f_id = f.id or f"flow_{idx}"
+            f_pt = float(f.font_pt) if f.font_pt is not None else 9.0
+            font_pts.append(f_pt)
+            _check_pair(f"flow:{f_id}", "Flow pill text", f.label_text_hex, f.label_bg_hex or canvas_bg, f_pt, is_large=False)
+
+    min_font_pt = min(font_pts) if font_pts else 12.0
+    if min_font_pt < 8.0:
+        findings.append(VisualFinding(
+            dimension="TYPOGRAPHY_LEGIBILITY",
+            severity="CRITICAL",
+            element_or_region="Global Typography",
+            flaw_description=f"Minimum font size {min_font_pt:.1f}pt ({min_font_pt * 96.0 / 72.0:.1f}px at 720p) violates 8.0pt global floor.",
+            prescriptive_fix="Increase all text sizes to >= 8.0pt.",
+        ))
+
+    pass_rate = (checks_passed / checks_total * 100.0) if checks_total > 0 else 100.0
+    metrics: Dict[str, Any] = {
+        "wcag_checks_total": checks_total,
+        "wcag_checks_passed": checks_passed,
+        "wcag_aa_pass_rate_pct": round(pass_rate, 1),
+        "min_contrast_ratio": round(min_cr, 2) if checks_total > 0 else 21.0,
+        "min_font_pt": round(min_font_pt, 1),
+        "min_font_px_720p": round(min_font_pt * 96.0 / 72.0, 1),
+        "min_font_px_1080p": round(min_font_pt * 144.0 / 72.0, 1),
+    }
+    return findings, metrics
+
+
 class PerceptualImageAnalyzer:
     """
     Perceptual computer vision analyzer operating directly on rasterized PNG slide/diagram plates.
@@ -111,10 +242,66 @@ class PerceptualImageAnalyzer:
     """
 
     @staticmethod
-    def _is_ink_pixel(r: int, g: int, b: int, a: int) -> bool:
+    def _parse_hex_tuple(hex_color: Optional[str]) -> Optional[Tuple[int, int, int]]:
+        if not hex_color or not isinstance(hex_color, str):
+            return None
+        clean = hex_color.strip().lstrip("#")
+        if len(clean) == 3:
+            clean = "".join(c * 2 for c in clean)
+        if len(clean) != 6:
+            return None
+        try:
+            return (int(clean[0:2], 16), int(clean[2:4], 16), int(clean[4:6], 16))
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _is_near_color_segment(
+        r: int,
+        g: int,
+        b: int,
+        c0: Tuple[int, int, int],
+        c1: Tuple[int, int, int],
+        tol_manhattan: int = 24,
+    ) -> bool:
+        dx, dy, dz = c1[0] - c0[0], c1[1] - c0[1], c1[2] - c0[2]
+        denom = dx * dx + dy * dy + dz * dz
+        if denom == 0:
+            return abs(r - c0[0]) + abs(g - c0[1]) + abs(b - c0[2]) <= tol_manhattan
+        t = ((r - c0[0]) * dx + (g - c0[1]) * dy + (b - c0[2]) * dz) / denom
+        if t < -0.15 or t > 1.15:
+            return False
+        t_clamped = max(0.0, min(1.0, t))
+        pr = c0[0] + t_clamped * dx
+        pg = c0[1] + t_clamped * dy
+        pb = c0[2] + t_clamped * dz
+        return (abs(r - pr) + abs(g - pg) + abs(b - pb)) <= tol_manhattan
+
+    @staticmethod
+    def _is_ink_pixel(
+        r: int,
+        g: int,
+        b: int,
+        a: int,
+        bg_rgb: Optional[Tuple[int, int, int]] = None,
+        extra_bg_rgbs: Optional[Sequence[Tuple[int, int, int]]] = None,
+        grid_segment: Optional[Tuple[Tuple[int, int, int], Tuple[int, int, int]]] = None,
+    ) -> bool:
         """Determines if an RGBA pixel represents printable or non-background ink."""
         if a < 40:
             return False
+        if bg_rgb is not None:
+            if abs(r - bg_rgb[0]) + abs(g - bg_rgb[1]) + abs(b - bg_rgb[2]) <= 42:
+                return False
+        if extra_bg_rgbs:
+            for ebg in extra_bg_rgbs:
+                if abs(r - ebg[0]) + abs(g - ebg[1]) + abs(b - ebg[2]) <= 32:
+                    return False
+        if grid_segment is not None:
+            if PerceptualImageAnalyzer._is_near_color_segment(r, g, b, grid_segment[0], grid_segment[1]):
+                return False
+        if bg_rgb is not None and (sum(bg_rgb) / 3.0) < 128.0:
+            return True
         lum = (r + g + b) / 3.0
         sat = max(r, g, b) - min(r, g, b)
         # Exclude pure white background and faint background grid lines (#E2E8F0, lum>230, sat<18)
@@ -123,16 +310,60 @@ class PerceptualImageAnalyzer:
         return lum < 215 or sat > 25
 
     @staticmethod
-    def analyze_raster_image(png_path: Path) -> Dict[str, Any]:
+    def analyze_raster_image(
+        png_path: Path,
+        canvas_bg: Optional[str] = None,
+        show_grid: Optional[bool] = None,
+        grid_color: Optional[str] = None,
+        grid_opacity: Optional[float] = None,
+    ) -> Dict[str, Any]:
         """Performs localized perceptual heuristics on the generated diagram raster image."""
         if not png_path.exists():
             return {"error": f"Raster image not found: {png_path}"}
+
+        bg_rgb = PerceptualImageAnalyzer._parse_hex_tuple(canvas_bg)
 
         try:
             with Image.open(png_path) as img:
                 img_rgba = img.convert("RGBA")
                 w, h = img_rgba.size
                 is_ink = PerceptualImageAnalyzer._is_ink_pixel
+
+                extra_bg_rgbs: List[Tuple[int, int, int]] = []
+                grid_segment: Optional[Tuple[Tuple[int, int, int], Tuple[int, int, int]]] = None
+                if bg_rgb is not None:
+                    # SVGCompiler overlays #F8FAFC at opacity=0.45 when show_grid=True
+                    blended_bg = (
+                        int(round(0.55 * bg_rgb[0] + 0.45 * 248)),
+                        int(round(0.55 * bg_rgb[1] + 0.45 * 250)),
+                        int(round(0.55 * bg_rgb[2] + 0.45 * 252)),
+                    )
+                    use_grid = show_grid
+                    if use_grid is None:
+                        sample_bg = img_rgba.resize((max(1, w // 16), max(1, h // 16)), resample=Image.Resampling.NEAREST)
+                        blended_hits = 0
+                        raw_hits = 0
+                        total_s = 0
+                        for sr, sg, sb, sa in sample_bg.getdata():
+                            if sa < 40:
+                                continue
+                            total_s += 1
+                            if abs(sr - blended_bg[0]) + abs(sg - blended_bg[1]) + abs(sb - blended_bg[2]) <= 24:
+                                blended_hits += 1
+                            if abs(sr - bg_rgb[0]) + abs(sg - bg_rgb[1]) + abs(sb - bg_rgb[2]) <= 24:
+                                raw_hits += 1
+                        if total_s > 0 and blended_hits > raw_hits and blended_hits >= total_s * 0.25:
+                            use_grid = True
+                    if use_grid:
+                        extra_bg_rgbs.append(blended_bg)
+                        g_col = PerceptualImageAnalyzer._parse_hex_tuple(grid_color) or (226, 232, 240)
+                        g_op = float(grid_opacity) if grid_opacity is not None else 0.6
+                        line_rgb = (
+                            int(round(g_op * g_col[0] + (1.0 - g_op) * blended_bg[0])),
+                            int(round(g_op * g_col[1] + (1.0 - g_op) * blended_bg[1])),
+                            int(round(g_op * g_col[2] + (1.0 - g_op) * blended_bg[2])),
+                        )
+                        grid_segment = (blended_bg, line_rgb)
 
                 # 1. Canvas Ceiling & Margin Ink Analysis
                 # Detect non-background content pixels in central/right ceiling band (x: 30%-95%, top 4.5%)
@@ -144,7 +375,7 @@ class PerceptualImageAnalyzer:
                 ceiling_crop = img_rgba.crop((c_x1, 0, c_x2, c_y2))
                 ceiling_non_bg = sum(
                     1 for r, g, b, a in ceiling_crop.getdata()
-                    if is_ink(r, g, b, a)
+                    if is_ink(r, g, b, a, bg_rgb=bg_rgb, extra_bg_rgbs=extra_bg_rgbs, grid_segment=grid_segment)
                 )
 
                 # Outer 1.5% perimeter margin check
@@ -157,7 +388,7 @@ class PerceptualImageAnalyzer:
                 for crop in (left_crop, right_crop, bottom_crop):
                     edge_pixels += sum(
                         1 for r, g, b, a in crop.getdata()
-                        if is_ink(r, g, b, a)
+                        if is_ink(r, g, b, a, bg_rgb=bg_rgb, extra_bg_rgbs=extra_bg_rgbs, grid_segment=grid_segment)
                     )
 
                 # 2. Quadrant Ink Density Heatmap (3x2 grid)
@@ -172,7 +403,7 @@ class PerceptualImageAnalyzer:
                         cell_crop = img_rgba.crop(box)
                         ink_count = sum(
                             1 for pr, pg, pb, pa in cell_crop.getdata()
-                            if is_ink(pr, pg, pb, pa)
+                            if is_ink(pr, pg, pb, pa, bg_rgb=bg_rgb, extra_bg_rgbs=extra_bg_rgbs, grid_segment=grid_segment)
                         )
                         cell_area = cell_w * cell_h
                         cell_density = (ink_count / cell_area) * 100.0 if cell_area > 0 else 0.0
@@ -300,6 +531,8 @@ The deterministic Tier 1 geometric linter reported **{len(tier1_issues)} issue(s
 - **Quadrant Ink Densities (%):** `{perceptual_metrics.get('cell_densities_pct', [])}`
 - **Density Variance:** `{perceptual_metrics.get('density_variance', 0.0)}`
 - **Max-to-Mean Density Ratio:** `{perceptual_metrics.get('density_max_to_mean_ratio', 1.0)}`
+- **WCAG AA Contrast Pass Rate:** `{perceptual_metrics.get('wcag_aa_pass_rate_pct', 100.0)}%` (Min CR: `{perceptual_metrics.get('min_contrast_ratio', 21.0)}:1`)
+- **Multi-Resolution Font Legibility:** Min `{perceptual_metrics.get('min_font_pt', 12.0)}pt` (`{perceptual_metrics.get('min_font_px_720p', 16.0)}px` @ 720p, `{perceptual_metrics.get('min_font_px_1080p', 24.0)}px` @ 1080p)
 
 ---
 
@@ -462,6 +695,11 @@ Return your evaluation in the following strict JSON schema:
                 prescriptive_fix="Assign roles ('defect', 'wait', 'active', 'target') to convey system lifecycle state.",
             ))
 
+        # 4b. WCAG AA Contrast & Multi-Resolution Font Legibility Scanner
+        wcag_findings, wcag_metrics = audit_wcag_and_legibility(spec)
+        findings.extend(wcag_findings)
+        perceptual_metrics = {**perceptual_metrics, **wcag_metrics}
+
         # 5. Compute Composite Scores Across 7 Dimensions
         base_scores = {
             "geometric_clearance": 100.0,
@@ -555,7 +793,15 @@ class Tier2VisualVerifier:
         # 3. Run Perceptual Computer Vision Heuristics
         perceptual_metrics: Dict[str, Any] = {}
         if raster_path and raster_path.exists():
-            perceptual_metrics = PerceptualImageAnalyzer.analyze_raster_image(raster_path)
+            canvas_cfg = getattr(self.spec, "canvas", None)
+            canvas_bg = getattr(canvas_cfg, "background", None)
+            perceptual_metrics = PerceptualImageAnalyzer.analyze_raster_image(
+                raster_path,
+                canvas_bg=canvas_bg,
+                show_grid=getattr(canvas_cfg, "show_grid", None),
+                grid_color=getattr(canvas_cfg, "grid_color", None),
+                grid_opacity=getattr(canvas_cfg, "grid_opacity", None),
+            )
 
         # 4. Run Local Adversarial Evaluation
         result = AdversarialVisualQASubagent.evaluate_locally(

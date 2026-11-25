@@ -1045,7 +1045,6 @@ def build_open_telemetry_flow_slide(
     return slide
 
 
-
 # ============================================================================
 # 15. Gate Validation & Empirical Threshold Review Slide Archetype
 # ============================================================================
@@ -1893,4 +1892,374 @@ def build_medallion_tiers_slide(
 
     add_slide_footer(slide, theme, current_idx=current_idx, total_slides=total_slides, notice=notice)
     return slide
+
+
+def _resolve_diagram_v2_spec_path(spec_path: Union[str, Path]) -> Optional[Path]:
+    """Resolve a Diagram V2 spec_path across relative, ROOT_DIR, specs/diagrams, and samples."""
+    raw_p = Path(spec_path)
+    cand_paths: List[Path] = [raw_p]
+    try:
+        from src.core.config import ROOT_DIR
+        cand_paths.extend([
+            ROOT_DIR / raw_p,
+            ROOT_DIR / "specs" / "diagrams" / raw_p.name,
+            ROOT_DIR / "src" / "ppt_engine" / "diagram_v2" / "samples" / raw_p.name,
+        ])
+    except Exception:
+        pass
+    return next((cp for cp in cand_paths if cp.is_file()), None)
+
+
+def _fit_diagram_v2_vertical_bounds(spec: Any, avail_top_in: float, avail_bottom_in: float) -> None:
+    """Remap DiagramSpec vertical coordinates into [avail_top_in, avail_bottom_in] inches."""
+    from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer
+
+    norm = GeometryNormalizer(
+        canvas_width=spec.canvas.width,
+        canvas_height=spec.canvas.height,
+        canvas_unit=spec.canvas.unit,
+    )
+    sy_in = norm.scale_to_in_y
+    if sy_in <= 0.0:
+        return
+
+    y_mins: List[float] = []
+    y_maxs: List[float] = []
+
+    for c in spec.containers:
+        if c.y is not None and c.h is not None:
+            cy = float(c.y) * sy_in
+            ch = float(c.h) * sy_in
+            y_mins.append(cy)
+            y_maxs.append(cy + ch)
+    for n in spec.nodes:
+        if n.y is not None:
+            ny = float(n.y) * sy_in
+            nh = (float(n.h) * sy_in) if n.h is not None else 1.25
+            y_mins.append(ny)
+            y_maxs.append(ny + nh)
+    for b in spec.badges:
+        by = float(b.y) * sy_in
+        bh = float(b.h) * sy_in
+        y_mins.append(by)
+        y_maxs.append(by + bh)
+    for bl in spec.bullet_lists:
+        bly = float(bl.y) * sy_in
+        blh = float(bl.h) * sy_in
+        y_mins.append(bly)
+        y_maxs.append(bly + blh)
+    for f in spec.flows:
+        for pt in f.points:
+            if len(pt) >= 2:
+                py = float(pt[1]) * sy_in
+                y_mins.append(py)
+                y_maxs.append(py)
+        if f.label_at and len(f.label_at) >= 2:
+            ly = float(f.label_at[1]) * sy_in
+            y_mins.append(ly)
+            y_maxs.append(ly)
+
+    if not y_mins or not y_maxs:
+        return
+
+    min_y = min(y_mins)
+    max_y = max(y_maxs)
+    if min_y >= avail_top_in - 1e-4 and max_y <= avail_bottom_in + 1e-4:
+        return
+
+    avail_h = max(1.20, avail_bottom_in - avail_top_in)
+    span_y = max(0.01, max_y - min_y)
+    if span_y <= avail_h:
+        scale_y = 1.0
+        target_y0 = avail_top_in if min_y < avail_top_in else (avail_bottom_in - span_y)
+    else:
+        scale_y = avail_h / span_y
+        target_y0 = avail_top_in
+
+    inv_sy = 1.0 / sy_in
+
+    def _remap_y(raw_y: float) -> float:
+        y_in = float(raw_y) * sy_in
+        new_in = target_y0 + (y_in - min_y) * scale_y
+        return round(new_in * inv_sy, 4)
+
+    def _remap_h(raw_h: float) -> float:
+        return round(float(raw_h) * scale_y, 4)
+
+    for c in spec.containers:
+        if c.y is not None:
+            c.y = _remap_y(c.y)
+        if c.h is not None:
+            c.h = _remap_h(c.h)
+    for n in spec.nodes:
+        if n.y is not None:
+            n.y = _remap_y(n.y)
+        if n.h is not None:
+            n.h = _remap_h(n.h)
+        elif n.y is not None and scale_y < 1.0:
+            n.h = round((1.25 * inv_sy) * scale_y, 4)
+    for b in spec.badges:
+        b.y = _remap_y(b.y)
+        b.h = _remap_h(b.h)
+    for bl in spec.bullet_lists:
+        bl.y = _remap_y(bl.y)
+        bl.h = _remap_h(bl.h)
+    for f in spec.flows:
+        if f.points:
+            f.points = [[pt[0], _remap_y(pt[1])] + list(pt[2:]) for pt in f.points if len(pt) >= 2]
+        if f.label_at and len(f.label_at) >= 2:
+            f.label_at = [f.label_at[0], _remap_y(f.label_at[1])] + list(f.label_at[2:])
+
+
+def _fit_diagram_v2_horizontal_bounds(spec: Any, avail_left_in: float, avail_right_in: float) -> None:
+    """Remap DiagramSpec horizontal coordinates into [avail_left_in, avail_right_in] inches when overflowing."""
+    from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer
+
+    norm = GeometryNormalizer(
+        canvas_width=spec.canvas.width,
+        canvas_height=spec.canvas.height,
+        canvas_unit=spec.canvas.unit,
+    )
+    sx_in = norm.scale_to_in_x
+    if sx_in <= 0.0:
+        return
+
+    x_mins: List[float] = []
+    x_maxs: List[float] = []
+
+    for c in spec.containers:
+        if c.x is not None and c.w is not None:
+            cx = float(c.x) * sx_in
+            cw = float(c.w) * sx_in
+            x_mins.append(cx)
+            x_maxs.append(cx + cw)
+    for n in spec.nodes:
+        if n.x is not None:
+            nx = float(n.x) * sx_in
+            nw = (float(n.w) * sx_in) if n.w is not None else 2.0
+            x_mins.append(nx)
+            x_maxs.append(nx + nw)
+    for b in spec.badges:
+        bx = float(b.x) * sx_in
+        bw = float(b.w) * sx_in
+        x_mins.append(bx)
+        x_maxs.append(bx + bw)
+    for bl in spec.bullet_lists:
+        blx = float(bl.x) * sx_in
+        blw = float(bl.w) * sx_in
+        x_mins.append(blx)
+        x_maxs.append(blx + blw)
+    for f in spec.flows:
+        for pt in f.points:
+            if len(pt) >= 2:
+                px = float(pt[0]) * sx_in
+                x_mins.append(px)
+                x_maxs.append(px)
+        if f.label_at and len(f.label_at) >= 2:
+            lx = float(f.label_at[0]) * sx_in
+            x_mins.append(lx)
+            x_maxs.append(lx)
+
+    if not x_mins or not x_maxs:
+        return
+
+    min_x = min(x_mins)
+    max_x = max(x_maxs)
+    if min_x >= avail_left_in - 1e-4 and max_x <= avail_right_in + 1e-4:
+        return
+
+    avail_w = max(2.0, avail_right_in - avail_left_in)
+    span_x = max(0.01, max_x - min_x)
+    if span_x <= avail_w:
+        scale_x = 1.0
+        target_x0 = avail_left_in if min_x < avail_left_in else (avail_right_in - span_x)
+    else:
+        scale_x = avail_w / span_x
+        target_x0 = avail_left_in
+
+    inv_sx = 1.0 / sx_in
+
+    def _remap_x(raw_x: float) -> float:
+        x_in = float(raw_x) * sx_in
+        new_in = target_x0 + (x_in - min_x) * scale_x
+        return round(new_in * inv_sx, 4)
+
+    def _remap_w(raw_w: float) -> float:
+        return round(float(raw_w) * scale_x, 4)
+
+    for c in spec.containers:
+        if c.x is not None:
+            c.x = _remap_x(c.x)
+        if c.w is not None:
+            c.w = _remap_w(c.w)
+    for n in spec.nodes:
+        if n.x is not None:
+            n.x = _remap_x(n.x)
+        if n.w is not None:
+            n.w = _remap_w(n.w)
+        elif n.x is not None and scale_x < 1.0:
+            n.w = round((2.0 * inv_sx) * scale_x, 4)
+    for b in spec.badges:
+        b.x = _remap_x(b.x)
+        b.w = _remap_w(b.w)
+    for bl in spec.bullet_lists:
+        bl.x = _remap_x(bl.x)
+        bl.w = _remap_w(bl.w)
+    for f in spec.flows:
+        if f.points:
+            f.points = [[_remap_x(pt[0]), pt[1]] + list(pt[2:]) for pt in f.points if len(pt) >= 2]
+        if f.label_at and len(f.label_at) >= 2:
+            f.label_at = [_remap_x(f.label_at[0]), f.label_at[1]] + list(f.label_at[2:])
+
+
+def build_diagram_v2_slide(
+    prs: Presentation,
+    theme: Theme,
+    spec_path: Optional[Union[str, Path]] = None,
+    spec_dict: Optional[Dict[str, Any]] = None,
+    tracker: Optional[str] = None,
+    action_title: Optional[str] = None,
+    subtitle: Optional[str] = None,
+    show_diagram_header: bool = False,
+    footnote: Optional[str] = None,
+    current_idx: int = 1,
+    total_slides: int = 1,
+    notice: Optional[str] = None,
+    source: Optional[str] = None,
+) -> Any:
+    """
+    Compiles a declarative Diagram Engine V2 YAML topology directly onto a native
+    consulting presentation slide, integrating consulting header/footer chrome
+    unless `show_diagram_header=True`.
+    """
+    from src.ppt_engine.diagram_v2.compiler import load_diagram_spec
+    from src.ppt_engine.diagram_v2.pptx_compiler import PPTXCompiler
+
+    spec = None
+    resolved_path: Optional[Path] = None
+    if spec_path is not None:
+        resolved_path = _resolve_diagram_v2_spec_path(spec_path)
+        if resolved_path is not None:
+            spec = load_diagram_spec(resolved_path)
+        elif spec_dict is not None:
+            logger.warning(
+                "Diagram V2 spec_path '%s' not found on disk; falling back to inline spec_dict.",
+                spec_path,
+            )
+            spec = load_diagram_spec(spec_dict)
+    elif spec_dict is not None:
+        spec = load_diagram_spec(spec_dict)
+    else:
+        raise ValueError("build_diagram_v2_slide requires either `spec_path` or `spec_dict`.")
+
+    if spec is None:
+        logger.warning(
+            "Diagram V2 spec_path '%s' could not be resolved and no fallback spec_dict was provided; "
+            "rendering diagnostic placeholder card.",
+            spec_path,
+        )
+        slide = add_slide_with_background(prs, theme)
+        header_bottom = add_slide_header(
+            slide,
+            theme,
+            tracker=tracker,
+            action_title=action_title or "Architecture Diagram Specification Unavailable",
+            subtitle=subtitle,
+        )
+        card_top = resolve_content_top(header_bottom, gap_in=0.25, min_top_in=1.40)
+        card_h = max(Inches(1.50), Inches(6.90) - int(card_top))
+        card = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(0.80),
+            card_top,
+            Inches(11.733),
+            card_h,
+        )
+        card.fill.solid()
+        card.fill.fore_color.rgb = RGBColor(248, 250, 252)
+        card.line.color.rgb = RGBColor(203, 213, 225)
+        card.line.width = Pt(1.25)
+        strip_shape_shadows(card)
+        tf = card.text_frame
+        tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p1 = tf.paragraphs[0]
+        p1.text = "Missing Diagram V2 Specification"
+        p1.alignment = PP_ALIGN.CENTER
+        p1.font.name = theme.font_family_header
+        p1.font.size = Pt(16)
+        p1.font.bold = True
+        p1.font.color.rgb = RGBColor(15, 23, 42)
+        p2 = tf.add_paragraph()
+        p2.text = f"Could not resolve spec_path '{spec_path}'. Provide a valid YAML path or inline spec."
+        p2.alignment = PP_ALIGN.CENTER
+        p2.font.name = theme.font_family
+        p2.font.size = Pt(11)
+        p2.font.color.rgb = RGBColor(71, 85, 105)
+        p2.space_before = Pt(6)
+        add_slide_footer(
+            slide,
+            theme,
+            current_idx=current_idx,
+            total_slides=total_slides,
+            notice=notice,
+            source=source or footnote,
+        )
+        return slide
+
+    spec_to_compile = spec.model_copy(deep=True)
+    slide = add_slide_with_background(prs, theme)
+
+    use_consulting_chrome = not show_diagram_header
+    header_bottom = 0.0
+    if use_consulting_chrome:
+        resolved_title = action_title or spec_to_compile.header.action_title or spec_to_compile.name
+        resolved_subtitle = subtitle if (action_title is not None or subtitle is not None) else spec_to_compile.header.subtitle
+        header_bottom = add_slide_header(
+            slide,
+            theme,
+            tracker=tracker,
+            action_title=resolved_title,
+            subtitle=resolved_subtitle,
+        )
+        spec_to_compile.header.show = False
+
+    has_footer = (not show_diagram_header) or bool(notice or source or footnote)
+    avail_top = (
+        max(1.35, header_bottom + 0.14)
+        if use_consulting_chrome
+        else (1.35 if spec_to_compile.header.show else 0.35)
+    )
+    avail_bottom = 6.90 if has_footer else 7.20
+    slide_w_in = float(prs.slide_width) / 914400.0 if getattr(prs, "slide_width", None) else 13.333
+    avail_left = 0.45
+    avail_right = max(2.0, slide_w_in - 0.45)
+    _fit_diagram_v2_horizontal_bounds(spec_to_compile, avail_left_in=avail_left, avail_right_in=avail_right)
+    _fit_diagram_v2_vertical_bounds(spec_to_compile, avail_top_in=avail_top, avail_bottom_in=avail_bottom)
+    from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer
+    _norm_w = GeometryNormalizer(
+        canvas_width=spec_to_compile.canvas.width,
+        canvas_height=spec_to_compile.canvas.height,
+        canvas_unit=spec_to_compile.canvas.unit,
+    )
+    if _norm_w.scale_to_in_x > 0.0 and spec_to_compile.canvas.width * _norm_w.scale_to_in_x > slide_w_in:
+        spec_to_compile.canvas.width = round(slide_w_in / _norm_w.scale_to_in_x, 4)
+
+    PPTXCompiler(spec_to_compile).compile_slide(slide)
+
+    if has_footer:
+        add_slide_footer(
+            slide,
+            theme,
+            current_idx=current_idx,
+            total_slides=total_slides,
+            notice=notice,
+            source=source or footnote,
+        )
+
+    for sh in slide.shapes:
+        strip_shape_shadows(sh)
+
+    return slide
+
 

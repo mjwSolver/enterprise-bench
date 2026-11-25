@@ -233,6 +233,27 @@ uv run bench diagram export output/project_master.drawio --page "Ingestion Archi
 uv run bench diagram export output/project_master.drawio --page "Storage Cluster" --output output/diagrams/storage.svg --format svg
 ```
 
+### Diagram Engine V2 & Remote Cloud Drift Guard (`bench diagram v2 ...`, `bench stage ...`)
+```bash
+# 1. Auto-layout an unpositioned spec or ingest Mermaid (.mmd) to YAML
+uv run bench diagram v2 layout specs/unpositioned.yaml -o specs/positioned.yaml
+uv run bench diagram v2 ingest diagram.mmd -o specs/ingested.yaml
+
+# 2. Atomic slide hot-reload into an existing presentation (use --pop only on explicit user command)
+uv run bench diagram v2 compile specs/my_slide.yaml --target output/deck.pptx --slide 3 --pop
+
+# 3. Perceptual Visual QA (WCAG AA contrast + 1080p/720p legibility)
+uv run bench diagram v2 visual-qa output/my_slide.pptx
+
+# 4. Remote Cloud Drift & Race Condition Guard (OCC/CAS & sidecar locks)
+uv run bench stage preflight --remote-drift
+uv run bench stage lock-remote <target>
+uv run bench stage push --cas
+uv run bench stage pin <target>
+uv run bench stage merge-slide <target> --slide 3
+uv run bench stage unlock-remote <target>
+```
+
 ---
 
 ## 5. Security & Data Scrubbing Standards
@@ -272,4 +293,16 @@ python3 scripts/build_diagram_bundle.py --version v2.2
 ```
 - **Explicit Version Stamping Mandate:** All export archives MUST follow `output/releases/diagram_engine_v2_portable_v<SEMVER>_<TIMESTAMP>.zip` containing `diagram_engine_v2_bundle_v<SEMVER>_<TIMESTAMP>/`.
 - Never distribute unversioned or timestamp-only archives. Recipients must instantly see the release version in the filename.
+
+---
+
+## 7. Portable Python-Only Distribution Export
+
+When sharing the full `enterprise-bench` Python codebase (all engines + runtime `presets/`, `vendor_packs/`, `assets/icons/`, `assets/logos/` without AI docs, private vaults, client logos, or local workspaces):
+```bash
+uv run python scripts/export_python_bundle.py
+# Optional: reveal in macOS Finder
+uv run python scripts/export_python_bundle.py --reveal
+```
+- Outputs `output/enterprise-bench-python-v<SEMVER>_<TIMESTAMP>.zip` with a bundle-scoped `README.md` (no dead `clean_workspace/` or `HANDOVER.md` links, plus `cairo` prerequisite).
 

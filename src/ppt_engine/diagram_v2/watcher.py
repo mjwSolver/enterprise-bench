@@ -61,6 +61,9 @@ class PPTXWatcher:
         poll_interval: float = 0.1,
         on_reconciled: Optional[Callable[[ReconciliationResult], None]] = None,
         on_change_detected: Optional[Callable[[Path], None]] = None,
+        remote_drift: bool = False,
+        receipt_path: Optional[Union[str, Path]] = None,
+        drift_poll_interval: float = 30.0,
     ) -> None:
         self.spec_path = Path(spec_path).resolve()
         if not self.spec_path.exists():
@@ -75,6 +78,10 @@ class PPTXWatcher:
         self.poll_interval = max(0.02, float(poll_interval))
         self.on_reconciled = on_reconciled
         self.on_change_detected = on_change_detected
+        self.remote_drift = remote_drift
+        self.receipt_path = Path(receipt_path).resolve() if receipt_path else None
+        self.drift_poll_interval = max(1.0, float(drift_poll_interval))
+        self._last_drift_check: float = 0.0
 
         self._spec: DiagramSpec = load_diagram_spec(self.spec_path)
 
@@ -218,6 +225,21 @@ class PPTXWatcher:
                             # File still busy/locked; extend wait window slightly
                             time.sleep(0.05)
 
+                # Periodic remote cloud drift check (when --remote-drift enabled)
+                if self.remote_drift and (time.time() - self._last_drift_check) >= self.drift_poll_interval:
+                    self._last_drift_check = time.time()
+                    try:
+                        from src.core.delivery.remote_guard import RemoteDriftGuard
+                        drift_res = RemoteDriftGuard.check_directory_drift(
+                            staging_dir=self.pptx_path.parent,
+                            receipt_path=self.receipt_path,
+                        )
+                        if drift_res.has_drift:
+                            for warn in drift_res.warnings:
+                                logger.warning("[REMOTE DRIFT] %s", warn)
+                    except Exception as exc:
+                        logger.debug("Remote drift poll skipped: %s", exc)
+
                 time.sleep(self.poll_interval)
         finally:
             self._running = False
@@ -241,6 +263,9 @@ def watch_diagram(
     on_reconciled: Optional[Callable[[ReconciliationResult], None]] = None,
     on_change_detected: Optional[Callable[[Path], None]] = None,
     stop_event: Optional[threading.Event] = None,
+    remote_drift: bool = False,
+    receipt_path: Optional[Union[str, Path]] = None,
+    drift_poll_interval: float = 30.0,
 ) -> PPTXWatcher:
     """Public helper function creating and running PPTXWatcher."""
     watcher = PPTXWatcher(
@@ -255,6 +280,9 @@ def watch_diagram(
         poll_interval=poll_interval,
         on_reconciled=on_reconciled,
         on_change_detected=on_change_detected,
+        remote_drift=remote_drift,
+        receipt_path=receipt_path,
+        drift_poll_interval=drift_poll_interval,
     )
     watcher.watch(stop_event=stop_event)
     return watcher

@@ -1125,6 +1125,25 @@ ARCHETYPE_REGISTRY: Dict[str, Dict[str, Any]] = {
       members: ["Cortex Serving", "Model Validation", "Clinician Feedback"]
 """,
     },
+    "diagram_v2": {
+        "family": "Architecture & Flows",
+        "aliases": ["architecture_diagram_v2", "topology_diagram"],
+        "purpose": "Embeds a declarative Diagram Engine V2 YAML topology (external spec_path or inline containers/nodes/flows) as native DrawingML shapes inside a consulting deck.",
+        "keys": [
+            "spec_path (str, optional): Path to declarative Diagram V2 YAML file",
+            "spec (dict, optional): Inline DiagramSpec dictionary",
+            "tracker (str, optional): Category eyebrow tag",
+            "title (str, optional): Consulting slide action headline",
+            "subtitle (str, optional): Consulting slide subtitle",
+            "show_diagram_header (bool, default False): Use diagram's own header instead of consulting header",
+            "source (str, optional): Source attribution line",
+        ],
+        "example_yaml": """- archetype: diagram_v2
+  tracker: "TARGET ARCHITECTURE | DATA LAKEHOUSE"
+  title: "Medallion Lakehouse Separates Raw Ingestion from Curated Analytics"
+  spec_path: "specs/diagrams/template_medallion_architecture.yaml"
+""",
+    },
 }
 
 

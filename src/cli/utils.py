@@ -50,55 +50,26 @@ def open_desktop_review(path: Path | str, app_name: Optional[str] = None) -> boo
         return False
 
 
-def close_target_presentation(path: Path | str) -> bool:
+def close_target_presentation(path: Path | str, force: bool = False) -> bool:
     """Close a specific target presentation in Microsoft PowerPoint on macOS if open.
 
-    Ensures that subsequent saves do not collide with stale in-memory buffers or cause
-    data-loss race conditions. Does NOT quit Microsoft PowerPoint and leaves other
-    open presentations untouched. Safe to call headlessly (checks pgrep first).
+    Matches by canonical POSIX path and respects unsaved modification (`saved`) state
+    unless `force=True`. Does NOT quit Microsoft PowerPoint and leaves other open
+    presentations untouched. Safe to call headlessly (checks pgrep first).
     """
     if sys.platform != "darwin":
         return False
 
-    target = Path(path)
-    if not target.exists():
-        return False
+    from src.ppt_engine.diagram_v2.powerpoint_desktop import (
+        PowerPointDesktopManager,
+        PowerPointDirtyError,
+    )
 
-    target_name = target.name
-
-    # Check if Microsoft PowerPoint is running before executing AppleScript to avoid auto-launching it
     try:
-        check = subprocess.run(
-            ["pgrep", "-x", "Microsoft PowerPoint"],
-            capture_output=True,
-            text=True,
-        )
-        if check.returncode != 0:
-            return False
-    except Exception:
+        return PowerPointDesktopManager.close_presentation_if_open(path, force=force)
+    except PowerPointDirtyError as dirty_err:
+        console.print(f"[yellow]Warning: {dirty_err}[/yellow]")
         return False
-
-    script = """
-    on run argv
-        set targetName to item 1 of argv
-        tell application "Microsoft PowerPoint"
-            repeat with p in presentations
-                if name of p is targetName then
-                    close p saving no
-                end if
-            end repeat
-        end tell
-    end run
-    """
-    try:
-        subprocess.run(
-            ["osascript", "-e", script, target_name],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=5,
-        )
-        return True
     except Exception:
         return False
 

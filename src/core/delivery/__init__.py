@@ -12,12 +12,15 @@ from src.core.delivery.exceptions import (
     LockNotFoundError,
     LockOwnershipError,
     PreflightGateError,
+    RemoteConflictError,
     RemoteLockConflictError,
     SyncTransmissionError,
 )
 from src.core.delivery.locks import LockManager
 from src.core.delivery.models import (
     DeliveryManifest,
+    DriftCheckItem,
+    DriftReport,
     LockPayload,
     LockStatus,
     ManifestFileEntry,
@@ -25,12 +28,15 @@ from src.core.delivery.models import (
     OverlayStatus,
     PreflightGateResult,
     PreflightReport,
+    RemoteLockSidecar,
+    RemotePinRecord,
     SlideBadgeInfo,
     SyncItemRecord,
     SyncReceipt,
     SyncStatus,
 )
 from src.core.delivery.overlays import OverlayManager
+from src.core.delivery.remote_guard import RemoteDriftGuard, query_gdrive_file_metadata
 from src.core.delivery.staging import StagingPipeline, safe_extract_archive
 from src.core.delivery.sync import (
     RemoteSyncEngine,
@@ -45,6 +51,8 @@ __all__ = [
     "StagingPipeline",
     "safe_extract_archive",
     "RemoteSyncEngine",
+    "RemoteDriftGuard",
+    "query_gdrive_file_metadata",
     "discover_google_drive_mounts",
     "resolve_target_drive_root",
     # Status Enums
@@ -61,12 +69,17 @@ __all__ = [
     "DeliveryManifest",
     "SyncItemRecord",
     "SyncReceipt",
+    "RemotePinRecord",
+    "RemoteLockSidecar",
+    "DriftCheckItem",
+    "DriftReport",
     # Exceptions
     "DeliveryError",
     "LockConflictError",
     "LockNotFoundError",
     "LockOwnershipError",
     "PreflightGateError",
+    "RemoteConflictError",
     "RemoteLockConflictError",
     "SyncTransmissionError",
 ]

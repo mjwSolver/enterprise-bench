@@ -1,7 +1,7 @@
 # Diagram Engine V2 — Agent Operating Rules (`DIAGRAM_INSTRUCTIONS.md`)
 
 > **Subsystem:** Diagram Engine V2 (Declarative YAML to DrawingML Native Vectors)  
-> **Release Version:** `v2.3` | **Engineering Signature:** `[MJW/AGY]`  
+> **Release Version:** `v2.4` | **Engineering Signature:** `[MJW/AGY]`  
 > **Primary Rule:** Strictly Declarative YAML. Never write or patch monolithic imperative Python layout scripts.
 
 ---
@@ -58,4 +58,19 @@ uv run bench diagram v2 ideas scaffold -p 3-swimlane -o specs/my_slide.yaml
 
 # 4. Compile to native vector PowerPoint and vector assets
 uv run bench diagram v2 compile specs/my_slide.yaml
+
+# 5. Atomic desktop hot-reload into an existing deck slide (explicit user pop only)
+uv run bench diagram v2 compile specs/my_slide.yaml --target output/deck.pptx --slide 3 --pop
+
+# 6. Auto-layout an unpositioned spec or ingest a Mermaid diagram into YAML
+uv run bench diagram v2 layout specs/unpositioned.yaml -o specs/positioned.yaml
+uv run bench diagram v2 ingest diagram.mmd -o specs/ingested.yaml
+
+# 7. Perceptual Visual QA (WCAG AA contrast + 1080p/720p legibility)
+uv run bench diagram v2 visual-qa output/my_slide.pptx
 ```
+
+Starter enterprise templates are available in `specs/diagrams/`:
+- `template_medallion_architecture.yaml`
+- `template_active_active_dr.yaml`
+- `template_streaming_cdc_telemetry.yaml`

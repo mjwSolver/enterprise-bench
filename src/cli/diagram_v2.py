@@ -30,11 +30,19 @@ def compile_diagram_v2_cli(
     spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Destination file or directory for generated artifacts"),
     format: str = typer.Option("all", "--format", "-f", help="Target output format: 'all', 'drawio', 'svg', 'png', or 'pptx'"),
+    target: Optional[str] = typer.Option(None, "--target", "-t", help="Target PPTX presentation path for in-situ single-slide replacement"),
+    slide: int = typer.Option(1, "--slide", help="1-based slide index targeted for in-situ replacement"),
+    pop: bool = typer.Option(False, "--pop", help="Atomic desktop hot-reload: preflight audit, close clean PowerPoint deck, atomic replace, and activate"),
+    force: bool = typer.Option(False, "--force", help="Force-close unsaved PowerPoint presentation during hot-reload"),
+    strict: bool = typer.Option(False, "--strict", help="Treat Tier 1 WARNING audit findings as blocking preflight failures"),
+    skip_audit: bool = typer.Option(False, "--skip-audit", help="Skip Phase 1 Tier 1 geometric audit preflight gate"),
     open_deck: bool = typer.Option(False, "--open", help="Proactively launch generated PPTX slide deck on desktop"),
     preview_ascii: bool = typer.Option(False, "--ascii", help="Print ASCII layout wireframe before compiling"),
 ) -> None:
     """Compile a declarative YAML specification deterministically into Draw.io XML, SVG, PNG, and native PowerPoint slides."""
-    from src.ppt_engine.diagram_v2 import compile_diagram
+    from src.ppt_engine.diagram_v2 import compile_diagram, load_diagram_spec, Tier1GeometricLinter
+    from src.ppt_engine.diagram_v2.powerpoint_desktop import PowerPointDesktopManager, PowerPointDirtyError
+    from src.ppt_engine.diagram_v2.pptx_compiler import replace_slide_in_presentation
 
     spec_p = Path(spec)
     if not spec_p.exists():
@@ -53,7 +61,83 @@ def compile_diagram_v2_cli(
 
     try:
         formats_list = [f.strip() for f in format.split(",") if f.strip()]
-        result = compile_diagram(spec_path_or_dict=spec_p, output_dir_or_file=output, formats=formats_list, open_deck=open_deck)
+        wants_pptx = bool(target) or any(f.lower() in ("all", "pptx") for f in formats_list)
+        if pop and not wants_pptx:
+            rprint(
+                f"[yellow]⚠ --pop skipped: no --target specified and requested format(s) '{format}' do not include pptx.[/yellow]"
+            )
+        hot_reload_mode = bool((target or pop) and wants_pptx)
+
+        if hot_reload_mode:
+            # Phase 1: Headless Preflight & Tier 1 Geometric Audit Gate
+            ds = load_diagram_spec(spec_p)
+            if not skip_audit:
+                issues = Tier1GeometricLinter(ds).lint()
+                blocking = [
+                    iss for iss in issues
+                    if iss.severity == "CRITICAL" or (strict and iss.severity == "WARNING")
+                ]
+                if blocking:
+                    rprint(f"[red]✗ Phase 1 Preflight Audit Failed ({len(blocking)} blocking issue(s)):[/red]")
+                    for iss in blocking:
+                        rprint(f"  [red]• [{iss.severity}] {iss.category}[/red] ({iss.element_id}): {iss.description}")
+                    raise typer.Exit(code=1)
+
+            # Resolve target PPTX path
+            if target:
+                target_p = Path(target)
+            elif output and Path(output).suffix.lower() == ".pptx":
+                target_p = Path(output)
+            else:
+                out_dir = Path(output) if output else Path("output/diagrams_v2")
+                target_p = out_dir / f"{ds.id or spec_p.stem}.pptx"
+
+            # Phase 2: AppleScript PowerPoint State Inspection & Graceful Close
+            try:
+                closed = PowerPointDesktopManager.close_presentation_if_open(target_p, force=force)
+                if closed:
+                    rprint(f"[cyan]ℹ Closed open PowerPoint presentation cleanly:[/cyan] [bold]{target_p.name}[/bold]")
+            except PowerPointDirtyError as dirty_err:
+                rprint(f"[bold red]Unsaved Edits Guard:[/bold red] {dirty_err}")
+                raise typer.Exit(code=1)
+
+            # Phase 3: Safe Atomic OpenXML Slide Replacement / Compilation
+            if target:
+                replace_slide_in_presentation(ds, target_p, slide_index=slide)
+                non_pptx = [f for f in formats_list if f.lower() not in ("pptx", "all")]
+                rprint(f"[green]✓ Successfully compiled Diagram V2 topology:[/green] [bold]{ds.name}[/bold]")
+                rprint(f"  • Native PPTX:  [bold]{target_p}[/bold] (Slide {slide} replaced atomically)")
+                if non_pptx:
+                    comp_res = compile_diagram(spec_path_or_dict=ds, output_dir_or_file=output or target_p.parent, formats=non_pptx, open_deck=False)
+                    if comp_res.drawio_path:
+                        rprint(f"  • Draw.io XML:  [bold]{comp_res.drawio_path}[/bold]")
+                    if comp_res.svg_path:
+                        rprint(f"  • Vector SVG:   [bold]{comp_res.svg_path}[/bold]")
+                    if comp_res.png_path:
+                        rprint(f"  • High-DPI PNG: [bold]{comp_res.png_path}[/bold]")
+            else:
+                result = compile_diagram(spec_path_or_dict=ds, output_dir_or_file=output, formats=formats_list, open_deck=False)
+                if result.pptx_path:
+                    target_p = result.pptx_path
+                rprint(f"[green]✓ Successfully compiled Diagram V2 topology:[/green] [bold]{result.spec.name}[/bold]")
+                if result.drawio_path:
+                    rprint(f"  • Draw.io XML:  [bold]{result.drawio_path}[/bold]")
+                if result.svg_path:
+                    rprint(f"  • Vector SVG:   [bold]{result.svg_path}[/bold]")
+                if result.png_path:
+                    rprint(f"  • High-DPI PNG: [bold]{result.png_path}[/bold]")
+                if result.pptx_path:
+                    rprint(f"  • Native PPTX:  [bold]{result.pptx_path}[/bold]")
+
+            # Phase 4: Instant macOS Desktop Activation (--pop / --open)
+            if pop or open_deck:
+                activated = PowerPointDesktopManager.activate_presentation(target_p, slide_index=slide)
+                if not activated:
+                    rprint("[dim]Desktop launch skipped: AppleScript not available on this platform[/dim]")
+            return
+
+        effective_open = bool(open_deck and wants_pptx)
+        result = compile_diagram(spec_path_or_dict=spec_p, output_dir_or_file=output, formats=formats_list, open_deck=effective_open)
         rprint(f"[green]✓ Successfully compiled Diagram V2 topology:[/green] [bold]{result.spec.name}[/bold]")
         if result.drawio_path:
             rprint(f"  • Draw.io XML:  [bold]{result.drawio_path}[/bold]")
@@ -63,9 +147,117 @@ def compile_diagram_v2_cli(
             rprint(f"  • High-DPI PNG: [bold]{result.png_path}[/bold]")
         if result.pptx_path:
             rprint(f"  • Native PPTX:  [bold]{result.pptx_path}[/bold]")
+    except typer.Exit:
+        raise
     except Exception as e:
         rprint(f"[red]Error compiling diagram specification:[/red] {e}")
         raise typer.Exit(code=1)
+
+
+@diagram_v2_app.command("layout")
+def layout_diagram_v2_cli(
+    spec: str = typer.Argument(..., help="Path to declarative diagram YAML specification (with or without explicit coordinates)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Destination YAML file path for solved coordinates (prints to stdout if omitted)"),
+    strict: bool = typer.Option(False, "--strict", help="Exit with code 1 if Tier 1 audit reports any critical or warning issues"),
+) -> None:
+    """Resolve omitted coordinates via the 2D constraint & flexbox auto-layout solver and audit the result."""
+    import yaml
+    from src.ppt_engine.diagram_v2 import load_diagram_spec, Tier1GeometricLinter, dump_diagram_yaml
+
+    spec_p = Path(spec)
+    if not spec_p.exists():
+        rprint(f"[red]Error:[/red] Diagram specification file not found: {spec}")
+        raise typer.Exit(code=1)
+
+    try:
+        ds = load_diagram_spec(spec_p)
+        solved_dict = ds.model_dump(exclude_none=True)
+
+        if output:
+            out_p = dump_diagram_yaml(solved_dict, output)
+            rprint(f"[green]✓ Solved diagram layout written to:[/green] [bold]{out_p}[/bold]")
+        else:
+            console.print(yaml.safe_dump(solved_dict, sort_keys=False, allow_unicode=True))
+    except Exception as e:
+        rprint(f"[red]Error loading or solving diagram specification:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    issues = Tier1GeometricLinter(ds).lint()
+    crit_count = sum(1 for i in issues if i.severity == "CRITICAL")
+    warn_count = sum(1 for i in issues if i.severity == "WARNING")
+    if crit_count == 0 and warn_count == 0:
+        rprint(f"[green]✓ Tier 1 Geometric Audit Passed:[/green] Zero issues across {len(ds.nodes)} node(s) and {len(ds.containers)} container(s).")
+    else:
+        rprint(f"[yellow]⚠ Tier 1 Audit after layout:[/yellow] {crit_count} CRITICAL, {warn_count} WARNING.")
+        for iss in issues:
+            rprint(f"  • [{iss.severity}] {iss.category} ({iss.element_id}): {iss.description}")
+        if crit_count > 0 or (strict and warn_count > 0):
+            raise typer.Exit(code=1)
+
+
+@diagram_v2_app.command("ingest")
+def ingest_mermaid_v2_cli(
+    mermaid: Optional[str] = typer.Option(None, "--mermaid", "-m", help="Path to .mmd file or inline Mermaid flowchart text"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Destination YAML file path (prints to stdout if omitted)"),
+    diagram_id: Optional[str] = typer.Option(None, "--id", help="Diagram slug ID (defaults to input filename stem)"),
+    name: Optional[str] = typer.Option(None, "--name", "-n", help="Diagram title / action headline"),
+    theme: str = typer.Option("metrodata", "--theme", help="Theme name"),
+    audit: bool = typer.Option(True, "--audit/--no-audit", help="Run Tier 1 geometric audit on transpiled YAML"),
+    strict: bool = typer.Option(False, "--strict", help="Exit with code 1 if Tier 1 audit reports any critical or warning issues"),
+) -> None:
+    """Transpile a Mermaid flowchart (.mmd or inline snippet) into an audit-compliant Diagram V2 YAML spec."""
+    from src.ppt_engine.diagram_v2 import Tier1GeometricLinter
+    from src.ppt_engine.diagram_v2.mermaid_transpiler import transpile_mermaid_to_yaml
+
+    if not mermaid:
+        rprint("[red]Error:[/red] Provide --mermaid <path.mmd or inline Mermaid code>.")
+        raise typer.Exit(code=1)
+
+    is_file = False
+    m_path = None
+    try:
+        m_path = Path(mermaid)
+        is_file = m_path.exists() and m_path.is_file()
+    except OSError:
+        is_file = False
+
+    if is_file and m_path is not None:
+        code = m_path.read_text(encoding="utf-8")
+        resolved_id = diagram_id or m_path.stem
+    else:
+        code = mermaid
+        resolved_id = diagram_id or (Path(output).stem if output else "mermaid_diagram")
+
+    try:
+        spec_obj, yaml_text = transpile_mermaid_to_yaml(
+            mermaid_code=code,
+            diagram_id=resolved_id,
+            name=name,
+            theme=theme,
+            output_path=output,
+        )
+    except ValueError as err:
+        rprint(f"[red]Error transpiling Mermaid input:[/red] {err}")
+        raise typer.Exit(code=1)
+
+    if output:
+        rprint(f"[green]✓ Transpiled Mermaid AST to V2 YAML:[/green] [bold]{output}[/bold]")
+        rprint(f"  • Containers: {len(spec_obj.containers)} | Nodes: {len(spec_obj.nodes)} | Flows: {len(spec_obj.flows)}")
+    else:
+        console.print(yaml_text)
+
+    if audit or strict:
+        issues = Tier1GeometricLinter(spec_obj).lint()
+        crit = sum(1 for i in issues if i.severity == "CRITICAL")
+        warn = sum(1 for i in issues if i.severity == "WARNING")
+        if crit == 0 and warn == 0:
+            rprint("[green]✓ Tier 1 Geometric Audit Passed:[/green] Zero collisions or clearance violations.")
+        else:
+            rprint(f"[yellow]⚠ Tier 1 Audit Summary:[/yellow] {crit} CRITICAL, {warn} WARNING.")
+            for iss in issues:
+                rprint(f"  • [{iss.severity}] {iss.category} ({iss.element_id}): {iss.description}")
+            if crit > 0 or (strict and warn > 0):
+                raise typer.Exit(code=1)
 
 
 @diagram_v2_app.command("validate")
@@ -96,15 +288,19 @@ def validate_diagram_v2_cli(
 
 @diagram_v2_app.command("sample")
 def sample_diagram_v2_cli(
-    name: str = typer.Option("aws_lambda", "--name", "-n", help="Sample template name: 'aws_lambda', 'cdsw', or 'interwoven'"),
+    name: str = typer.Option("aws_lambda", "--name", "-n", help="Sample template name: 'aws_lambda', 'cdsw', 'interwoven', 'medallion', 'active_active_dr', or 'streaming_cdc'"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Destination path to write sample YAML"),
 ) -> None:
     """Emit a production-grade sample declarative diagram YAML specification."""
     sample_dir = ROOT_DIR / "src" / "ppt_engine" / "diagram_v2" / "samples"
+    diagrams_dir = ROOT_DIR / "specs" / "diagrams"
     file_map = {
         "aws_lambda": sample_dir / "proposed_aws_lambda.yaml",
         "cdsw": sample_dir / "cdsw_legacy_batch.yaml",
         "interwoven": sample_dir / "interwoven_migration.yaml",
+        "medallion": diagrams_dir / "template_medallion_architecture.yaml",
+        "active_active_dr": diagrams_dir / "template_active_active_dr.yaml",
+        "streaming_cdc": diagrams_dir / "template_streaming_cdc_telemetry.yaml",
     }
     src_file = file_map.get(name.lower())
     if not src_file or not src_file.exists():
@@ -596,6 +792,8 @@ def watch_diagram_v2_cli(
     threshold: float = typer.Option(0.02, "--threshold", help="Minimum shift delta in inches to trigger reconciliation (default: 0.02\")"),
     skip_pptx: bool = typer.Option(True, "--skip-pptx/--no-skip-pptx", help="Skip PPTX compilation to prevent cyclic write loops (default: True)"),
     format: str = typer.Option("drawio,svg,png", "--format", "-f", help="Companion formats to regenerate upon PowerPoint save"),
+    remote_drift: bool = typer.Option(False, "--remote-drift", help="Poll remote Google Drive pins every 30s and warn on out-of-band edits"),
+    receipt: Optional[str] = typer.Option(None, "--receipt", "-r", help="Optional path to .sync_receipt.json for remote drift checks"),
 ) -> None:
     """
     Autonomous PPTX File Watcher & Reverse Geometric Synchronization Daemon.
@@ -678,6 +876,8 @@ def watch_diagram_v2_cli(
             formats=formats_list,
             on_reconciled=on_reconciled,
             on_change_detected=on_change,
+            remote_drift=remote_drift,
+            receipt_path=receipt,
         )
     except Exception as e:
         rprint(f"[red]Error initializing PPTX watcher:[/red] {e}")

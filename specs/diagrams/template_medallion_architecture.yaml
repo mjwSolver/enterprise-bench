@@ -1,0 +1,188 @@
+id: template_medallion_architecture
+name: "Enterprise Lakehouse: Medallion Architecture (Bronze / Silver / Gold)"
+theme: metrodata
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: in
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+header:
+  show: true
+  action_title: "Medallion Lakehouse Separates Raw Ingestion from Curated Analytics"
+  subtitle: "Incremental Bronze landing, Silver schema & DQ enforcement, and Gold BI/ML serving"
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+containers:
+  - id: zone_sources
+    label: "DATA SOURCES"
+    x: 0.45
+    y: 1.35
+    w: 2.40
+    h: 5.75
+    role: neutral
+    dashed: true
+    align: center
+    vertical_align: top
+  - id: zone_bronze
+    label: "BRONZE (RAW LANDING)"
+    x: 3.65
+    y: 1.35
+    w: 2.55
+    h: 5.75
+    role: boundary
+    dashed: true
+    align: center
+    vertical_align: top
+  - id: zone_silver
+    label: "SILVER (CONFORMED)"
+    x: 7.00
+    y: 1.35
+    w: 2.55
+    h: 5.75
+    role: active
+    dashed: true
+    align: center
+    vertical_align: top
+  - id: zone_gold
+    label: "GOLD (CURATED SERVING)"
+    x: 10.35
+    y: 1.35
+    w: 2.53
+    h: 5.75
+    role: target
+    dashed: true
+    align: center
+    vertical_align: top
+nodes:
+  - id: src_oltp
+    container_id: zone_sources
+    title: "OLTP Databases"
+    subtitle: "ERP & Core Transactional"
+    shape: cylinder
+    role: ingress
+    x: 0.75
+    y: 2.25
+    w: 1.80
+    h: 1.25
+  - id: src_apis
+    container_id: zone_sources
+    title: "SaaS & REST APIs"
+    subtitle: "CRM, Billing, Webhooks"
+    shape: rounded
+    role: ingress
+    x: 0.65
+    y: 3.80
+    w: 2.00
+    h: 1.25
+  - id: src_events
+    container_id: zone_sources
+    title: "Telemetry & Logs"
+    subtitle: "Clickstream & IoT Events"
+    shape: rounded
+    role: ingress
+    x: 0.65
+    y: 5.35
+    w: 2.00
+    h: 1.25
+  - id: bronze_landing
+    container_id: zone_bronze
+    title: "Immutable Raw Zone"
+    subtitle: "Append-Only Parquet / JSON"
+    shape: cylinder
+    role: boundary
+    x: 4.02
+    y: 2.15
+    w: 1.80
+    h: 1.45
+  - id: bronze_schema_log
+    container_id: zone_bronze
+    title: "Schema & Audit Log"
+    subtitle: "Source Lineage & Checksums"
+    shape: rounded
+    role: neutral
+    x: 3.90
+    y: 4.45
+    w: 2.05
+    h: 1.35
+  - id: silver_dedup
+    container_id: zone_silver
+    title: "Cleansed & Conformed"
+    subtitle: "CDC Merge & Type Casting"
+    shape: cylinder
+    role: database
+    x: 7.37
+    y: 2.15
+    w: 1.80
+    h: 1.45
+  - id: silver_dq
+    container_id: zone_silver
+    title: "DQ & PII Masking Gate"
+    subtitle: "Quarantine & Contract Checks"
+    shape: rounded
+    role: gateway
+    x: 7.25
+    y: 4.45
+    w: 2.05
+    h: 1.35
+  - id: gold_bi
+    container_id: zone_gold
+    title: "Enterprise Data Marts"
+    subtitle: "Star Schemas & BI Dashboards"
+    shape: rounded
+    role: target
+    x: 10.60
+    y: 2.15
+    w: 2.03
+    h: 1.45
+  - id: gold_ml
+    container_id: zone_gold
+    title: "ML Feature Store"
+    subtitle: "Point-in-Time Training Sets"
+    shape: rounded
+    role: target
+    x: 10.60
+    y: 4.45
+    w: 2.03
+    h: 1.35
+flows:
+  - id: flow_src_bronze
+    source: src_oltp
+    target: bronze_landing
+    role: active
+    label: "CDC / Batch"
+    label_position: above
+  - id: flow_api_bronze
+    source: src_apis
+    target: bronze_schema_log
+    role: active
+    label: "Schema Check"
+    label_position: above
+  - id: flow_bronze_validate
+    source: bronze_schema_log
+    target: bronze_landing
+    role: gateway
+  - id: flow_bronze_silver
+    source: bronze_landing
+    target: silver_dedup
+    role: active
+    label: "Normalize"
+    label_position: above
+  - id: flow_silver_dq
+    source: silver_dedup
+    target: silver_dq
+    role: gateway
+  - id: flow_silver_gold_bi
+    source: silver_dedup
+    target: gold_bi
+    role: target
+    label: "Aggregate"
+    label_position: above
+  - id: flow_silver_gold_ml
+    source: silver_dq
+    target: gold_ml
+    role: target
+    label: "Features"
+    label_position: above

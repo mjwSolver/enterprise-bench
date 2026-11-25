@@ -1,0 +1,146 @@
+id: template_active_active_dr
+name: "Multi-Region Active-Active Disaster Recovery Topology"
+theme: metrodata
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: in
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+header:
+  show: true
+  action_title: "Active-Active Multi-Region Topology Eliminates Single-Region Outages"
+  subtitle: "Global Anycast DNS routing, stateless compute clusters, and synchronous cross-region state"
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+containers:
+  - id: zone_edge
+    label: "GLOBAL EDGE ROUTING"
+    x: 0.45
+    y: 1.35
+    w: 2.85
+    h: 5.75
+    role: gateway
+    dashed: true
+    align: center
+    vertical_align: top
+  - id: zone_region_a
+    label: "PRIMARY REGION A (ACTIVE)"
+    x: 4.35
+    y: 1.35
+    w: 3.70
+    h: 5.75
+    role: active
+    dashed: true
+    align: center
+    vertical_align: top
+  - id: zone_region_b
+    label: "SECONDARY REGION B (ACTIVE)"
+    x: 9.15
+    y: 1.35
+    w: 3.70
+    h: 5.75
+    role: target
+    dashed: true
+    align: center
+    vertical_align: top
+nodes:
+  - id: edge_dns
+    container_id: zone_edge
+    title: "Anycast Global DNS"
+    subtitle: "Latency & Health Steering"
+    shape: rounded
+    role: gateway
+    x: 0.72
+    y: 2.05
+    w: 2.30
+    h: 1.35
+  - id: edge_waf
+    container_id: zone_edge
+    title: "Global WAF & CDN"
+    subtitle: "DDoS Shield & TLS Edge"
+    shape: rounded
+    role: security
+    x: 0.72
+    y: 4.25
+    w: 2.30
+    h: 1.35
+  - id: reg_a_api
+    container_id: zone_region_a
+    title: "Region A Compute"
+    subtitle: "Auto-Scaling K8s / API"
+    shape: rounded
+    role: active
+    x: 4.70
+    y: 2.05
+    w: 3.00
+    h: 1.35
+  - id: reg_a_db
+    container_id: zone_region_a
+    title: "Primary State DB"
+    subtitle: "Multi-AZ Quorum Write"
+    shape: cylinder
+    role: database
+    x: 5.30
+    y: 4.25
+    w: 1.80
+    h: 1.45
+  - id: reg_b_api
+    container_id: zone_region_b
+    title: "Region B Compute"
+    subtitle: "Auto-Scaling K8s / API"
+    shape: rounded
+    role: target
+    x: 9.50
+    y: 2.05
+    w: 3.00
+    h: 1.35
+  - id: reg_b_db
+    container_id: zone_region_b
+    title: "Replica State DB"
+    subtitle: "Fast Failover & Read Local"
+    shape: cylinder
+    role: database
+    x: 10.10
+    y: 4.25
+    w: 1.80
+    h: 1.45
+flows:
+  - id: flow_dns_waf
+    source: edge_dns
+    target: edge_waf
+    role: gateway
+  - id: flow_edge_reg_a
+    source: edge_dns
+    target: reg_a_api
+    role: active
+    label: "50% Traffic"
+    label_position: above
+  - id: flow_edge_reg_b
+    source: edge_waf
+    target: reg_b_api
+    role: target
+    points:
+      - [1.87, 5.60]
+      - [1.87, 6.40]
+      - [12.35, 6.40]
+      - [12.35, 3.40]
+    label: "50% Failover"
+    label_at: [7.10, 6.40]
+  - id: flow_a_db
+    source: reg_a_api
+    target: reg_a_db
+    role: active
+  - id: flow_b_db
+    source: reg_b_api
+    target: reg_b_db
+    role: target
+  - id: flow_db_repl
+    source: reg_a_db
+    target: reg_b_db
+    role: boundary
+    dashed: true
+    label: "Sync Replication"
+    label_position: above

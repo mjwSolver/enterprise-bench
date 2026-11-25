@@ -23,14 +23,22 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from src.core.delivery.exceptions import (
     LockConflictError,
     PreflightGateError,
+    RemoteConflictError,
     RemoteLockConflictError,
     SyncTransmissionError,
 )
 from src.core.delivery.locks import LockManager
 from src.core.delivery.models import (
+    RemotePinRecord,
     SyncItemRecord,
     SyncReceipt,
     SyncStatus,
+)
+from src.core.delivery import remote_guard as _remote_guard
+from src.core.delivery.remote_guard import (
+    RemoteDriftGuard,
+    _file_revision_token,
+    _write_json_atomic,
 )
 
 logger = logging.getLogger(__name__)
@@ -213,6 +221,10 @@ class RemoteSyncEngine:
         fail_on_locks: bool = True,
         output_receipt_path: Optional[Union[str, Path]] = None,
         progress_callback: Optional[Callable[[int, int, str, SyncStatus], None]] = None,
+        strict_cas: bool = False,
+        current_user: Optional[str] = None,
+        branch_on_conflict: bool = True,
+        lock_ttl_seconds: int = 7200,
     ) -> SyncReceipt:
         """
         Executes differential synchronization of staged deliverables to Google Drive.
@@ -268,76 +280,174 @@ class RemoteSyncEngine:
         total_bytes_transmitted = 0
         records: List[SyncItemRecord] = []
 
+        receipt_target_p = Path(output_receipt_path) if output_receipt_path else manifest_dir / ".sync_receipt.json"
+        prior_pins = RemoteDriftGuard.load_pins(receipt_target_p)
+        updated_pins: Dict[str, RemotePinRecord] = dict(prior_pins)
+
         now_utc = datetime.now(timezone.utc)
         sync_id = f"SYNC-{now_utc.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
 
-        for idx, item in enumerate(candidate_items, start=1):
-            name = item["name"]
-            cat = item.get("category")
-            sha_expected = item.get("sha256", "")
-            size_bytes = item.get("size_bytes", 0)
-            local_rel = item.get("local_relpath", "")
+        try:
+            for idx, item in enumerate(candidate_items, start=1):
+                name = item["name"]
+                cat = item.get("category")
+                sha_expected = item.get("sha256", "")
+                size_bytes = item.get("size_bytes", 0)
+                local_rel = item.get("local_relpath", "")
 
-            # Resolve local source path
-            local_file: Optional[Path] = None
-            for candidate_p in [
-                project_root / local_rel,
-                manifest_dir / local_rel,
-                manifest_dir / (cat or "") / name,
-                Path(local_rel),
-            ]:
-                if candidate_p.exists() and candidate_p.is_file():
-                    local_file = candidate_p
-                    break
+                # Resolve local source path
+                local_file: Optional[Path] = None
+                for candidate_p in [
+                    project_root / local_rel,
+                    manifest_dir / local_rel,
+                    manifest_dir / (cat or "") / name,
+                    Path(local_rel),
+                ]:
+                    if candidate_p.exists() and candidate_p.is_file():
+                        local_file = candidate_p
+                        break
 
-            if not local_file:
-                err_msg = f"Source file does not exist locally: '{local_rel}'"
-                failed_count += 1
-                rec = SyncItemRecord(
-                    name=name,
-                    category=cat,
-                    relative_path=local_rel,
-                    target_drive_path=str(resolved_drive_root / (cat or "") / name),
-                    size_bytes=size_bytes,
-                    sha256=sha_expected,
-                    status=SyncStatus.FAILED,
-                    error_message=err_msg,
-                )
-                records.append(rec)
-                if progress_callback:
-                    progress_callback(idx, total_files, name, SyncStatus.FAILED)
-                continue
+                if not local_file:
+                    err_msg = f"Source file does not exist locally: '{local_rel}'"
+                    failed_count += 1
+                    rec = SyncItemRecord(
+                        name=name,
+                        category=cat,
+                        relative_path=local_rel,
+                        target_drive_path=str(resolved_drive_root / (cat or "") / name),
+                        size_bytes=size_bytes,
+                        sha256=sha_expected,
+                        status=SyncStatus.FAILED,
+                        error_message=err_msg,
+                    )
+                    records.append(rec)
+                    if progress_callback:
+                        progress_callback(idx, total_files, name, SyncStatus.FAILED)
+                    continue
 
-            if not sha_expected:
-                try:
-                    sha_expected = _compute_sha256(local_file)
-                except Exception as exc:
-                    logger.debug("Could not compute source sha256 for '%s': %s", local_file, exc)
+                if not sha_expected:
+                    try:
+                        sha_expected = _compute_sha256(local_file)
+                    except Exception as exc:
+                        logger.debug("Could not compute source sha256 for '%s': %s", local_file, exc)
 
-            # Resolve remote destination path
-            # item["drive_relpath"] typically starts with f"{target_folder_name}/..."
-            drive_rel = item.get("drive_relpath", "")
-            clean_drive_rel = drive_rel
-            if clean_drive_rel.startswith(f"{target_folder_name}/"):
-                clean_drive_rel = clean_drive_rel[len(target_folder_name) + 1 :]
-            elif cat and name:
-                clean_drive_rel = f"{cat}/{name}"
-            else:
-                clean_drive_rel = name
+                # Resolve remote destination path
+                # item["drive_relpath"] typically starts with f"{target_folder_name}/..."
+                drive_rel = item.get("drive_relpath", "")
+                clean_drive_rel = drive_rel
+                if clean_drive_rel.startswith(f"{target_folder_name}/"):
+                    clean_drive_rel = clean_drive_rel[len(target_folder_name) + 1 :]
+                elif cat and name:
+                    clean_drive_rel = f"{cat}/{name}"
+                else:
+                    clean_drive_rel = name
 
-            dest_path = resolved_drive_root / clean_drive_rel
+                dest_path = resolved_drive_root / clean_drive_rel
 
-            # Gate 2: Destination Lock Collision Check
-            dest_parent = dest_path.parent
-            dest_stem = dest_path.stem
-            dest_ext = dest_path.suffix
-            if dest_parent.exists():
-                remote_locks = list(dest_parent.glob(f"{dest_stem}_LOCKED_*{dest_ext}"))
-                remote_lockfiles = list(dest_parent.glob(f"{dest_path.name}.lock"))
-                if remote_locks or remote_lockfiles:
-                    err_msg = f"Remote destination file is actively LOCKED by a collaborator: '{dest_path.name}'"
-                    if fail_on_locks:
-                        raise RemoteLockConflictError(err_msg)
+                # Gate 2: Destination Lock Collision Check (local-style locks + remote JSON sidecars)
+                dest_parent = dest_path.parent
+                dest_stem = dest_path.stem
+                dest_ext = dest_path.suffix
+                if dest_parent.exists():
+                    remote_locks = list(dest_parent.glob(f"{dest_stem}_LOCKED_*{dest_ext}"))
+                    remote_lockfiles = list(dest_parent.glob(f"{dest_path.name}.lock"))
+                    sidecar_lock = RemoteDriftGuard.check_remote_lock_sidecars(
+                        dest_parent,
+                        current_user=current_user,
+                        default_ttl_seconds=lock_ttl_seconds,
+                        target_file_name=dest_path.name,
+                    )
+                    if remote_locks or remote_lockfiles or sidecar_lock is not None:
+                        if sidecar_lock is not None:
+                            err_msg = (
+                                f"Remote destination file '{dest_path.name}' is locked by "
+                                f"'{sidecar_lock.locked_by}' (sidecar lock since {sidecar_lock.locked_at})."
+                            )
+                        else:
+                            err_msg = f"Remote destination file is actively LOCKED by a collaborator: '{dest_path.name}'"
+                        if fail_on_locks:
+                            raise RemoteLockConflictError(err_msg)
+                        rec = SyncItemRecord(
+                            name=name,
+                            category=cat,
+                            relative_path=local_rel,
+                            target_drive_path=str(dest_path),
+                            size_bytes=size_bytes,
+                            sha256=sha_expected,
+                            status=SyncStatus.LOCKED_CONFLICT,
+                            error_message=err_msg,
+                        )
+                        records.append(rec)
+                        failed_count += 1
+                        if progress_callback:
+                            progress_callback(idx, total_files, name, SyncStatus.LOCKED_CONFLICT)
+                        continue
+
+                # Gate 3: Compare-And-Set (CAS) Remote Revision Pinning Guard
+                pin_key = local_rel or name
+                matched_pin_key: Optional[str] = None
+                prior_pin = prior_pins.get(pin_key)
+                if prior_pin is not None:
+                    matched_pin_key = pin_key
+                else:
+                    dest_resolved = str(dest_path.resolve())
+                    for cand_key, cand_pin in prior_pins.items():
+                        if not cand_pin.target_drive_path:
+                            continue
+                        try:
+                            if (
+                                cand_pin.target_drive_path == str(dest_path)
+                                or str(Path(cand_pin.target_drive_path).resolve()) == dest_resolved
+                            ):
+                                prior_pin = cand_pin
+                                matched_pin_key = cand_key
+                                break
+                        except OSError:
+                            continue
+                if strict_cas and prior_pin is not None and (dest_path.exists() or prior_pin.file_id):
+                    RemoteDriftGuard.verify_cas(
+                        pin=prior_pin,
+                        remote_path=dest_path,
+                        branch_on_conflict=(branch_on_conflict and not dry_run),
+                        conflict_dir=manifest_dir,
+                    )
+
+                # Differential Hash Evaluation
+                is_identical = False
+                if dest_path.exists() and dest_path.is_file():
+                    try:
+                        dest_sha = _compute_sha256(dest_path)
+                        if dest_sha == sha_expected:
+                            is_identical = True
+                    except Exception as exc:
+                        logger.warning("Could not compute remote hash for '%s': %s", dest_path, exc)
+
+                if is_identical:
+                    skipped_count += 1
+                    rev_id, md5_hex, sha_hex, mod_iso = _file_revision_token(dest_path)
+                    if prior_pin is not None and prior_pin.file_id:
+                        gmeta = _remote_guard.query_gdrive_file_metadata(prior_pin.file_id)
+                        if gmeta:
+                            rev_id = str(gmeta.get("headRevisionId") or prior_pin.base_revision_id or rev_id)
+                            md5_hex = str(gmeta.get("md5Checksum") or prior_pin.base_md5 or md5_hex)
+                            mod_iso = str(gmeta.get("modifiedTime") or prior_pin.base_modified_time or mod_iso)
+                        else:
+                            rev_id = prior_pin.base_revision_id or rev_id
+                            md5_hex = prior_pin.base_md5 or md5_hex
+                            mod_iso = prior_pin.base_modified_time or mod_iso
+                    if not dry_run:
+                        if matched_pin_key and matched_pin_key != pin_key:
+                            updated_pins.pop(matched_pin_key, None)
+                        updated_pins[pin_key] = RemotePinRecord(
+                            file_id=prior_pin.file_id if prior_pin else None,
+                            local_path=pin_key,
+                            target_drive_path=str(dest_path),
+                            base_revision_id=rev_id,
+                            base_md5=md5_hex,
+                            base_sha256=sha_hex,
+                            base_modified_time=mod_iso,
+                            checkout_user=current_user,
+                        )
                     rec = SyncItemRecord(
                         name=name,
                         category=cat,
@@ -345,114 +455,172 @@ class RemoteSyncEngine:
                         target_drive_path=str(dest_path),
                         size_bytes=size_bytes,
                         sha256=sha_expected,
-                        status=SyncStatus.LOCKED_CONFLICT,
+                        status=SyncStatus.SKIPPED_IDENTICAL,
+                        base_revision_id=rev_id,
+                        base_md5=md5_hex,
+                        remote_modified_time=mod_iso,
+                    )
+                    records.append(rec)
+                    if progress_callback:
+                        progress_callback(idx, total_files, name, SyncStatus.SKIPPED_IDENTICAL)
+                    continue
+
+                # Execution (Dry-Run vs Real Transmission)
+                if dry_run:
+                    transmitted_count += 1
+                    total_bytes_transmitted += size_bytes
+                    rec = SyncItemRecord(
+                        name=name,
+                        category=cat,
+                        relative_path=local_rel,
+                        target_drive_path=str(dest_path),
+                        size_bytes=size_bytes,
+                        sha256=sha_expected,
+                        status=SyncStatus.DRY_RUN,
+                    )
+                    records.append(rec)
+                    if progress_callback:
+                        progress_callback(idx, total_files, name, SyncStatus.DRY_RUN)
+                    continue
+
+                # Atomic Transmission via Temporary Staging File
+                temp_dest: Optional[Path] = None
+                try:
+                    dest_parent.mkdir(parents=True, exist_ok=True)
+                    temp_dest = dest_parent / f".{dest_path.name}.tmp_{uuid.uuid4().hex[:6]}"
+
+                    shutil.copy2(local_file, temp_dest)
+                    written_sha = _compute_sha256(temp_dest)
+                    if sha_expected and written_sha != sha_expected:
+                        if temp_dest.exists():
+                            temp_dest.unlink()
+                        raise SyncTransmissionError(
+                            f"Checksum mismatch after transmission for '{name}': expected {sha_expected}, got {written_sha}"
+                        )
+
+                    # Atomic swap into target path
+                    temp_dest.replace(dest_path)
+
+                    rev_id, md5_hex, sha_hex, mod_iso = _file_revision_token(dest_path)
+                    if prior_pin is not None and prior_pin.file_id:
+                        gmeta = _remote_guard.query_gdrive_file_metadata(prior_pin.file_id)
+                        if gmeta:
+                            rev_id = str(gmeta.get("headRevisionId") or rev_id)
+                            md5_hex = str(gmeta.get("md5Checksum") or md5_hex)
+                            mod_iso = str(gmeta.get("modifiedTime") or mod_iso)
+                    if matched_pin_key and matched_pin_key != pin_key:
+                        updated_pins.pop(matched_pin_key, None)
+                    updated_pins[pin_key] = RemotePinRecord(
+                        file_id=prior_pin.file_id if prior_pin else None,
+                        local_path=pin_key,
+                        target_drive_path=str(dest_path),
+                        base_revision_id=rev_id,
+                        base_md5=md5_hex,
+                        base_sha256=sha_hex,
+                        base_modified_time=mod_iso,
+                        checkout_user=current_user,
+                    )
+
+                    transmitted_count += 1
+                    total_bytes_transmitted += size_bytes
+                    rec = SyncItemRecord(
+                        name=name,
+                        category=cat,
+                        relative_path=local_rel,
+                        target_drive_path=str(dest_path),
+                        size_bytes=size_bytes,
+                        sha256=sha_expected,
+                        status=SyncStatus.TRANSMITTED,
+                        base_revision_id=rev_id,
+                        base_md5=md5_hex,
+                        remote_modified_time=mod_iso,
+                    )
+                    records.append(rec)
+                    if progress_callback:
+                        progress_callback(idx, total_files, name, SyncStatus.TRANSMITTED)
+
+                except Exception as exc:
+                    if temp_dest is not None and temp_dest.exists():
+                        try:
+                            temp_dest.unlink(missing_ok=True)
+                        except OSError:
+                            pass
+                    failed_count += 1
+                    err_msg = f"Transmission failed: {exc}"
+                    logger.error("Failed to sync '%s' to '%s': %s", local_file, dest_path, exc)
+                    rec = SyncItemRecord(
+                        name=name,
+                        category=cat,
+                        relative_path=local_rel,
+                        target_drive_path=str(dest_path),
+                        size_bytes=size_bytes,
+                        sha256=sha_expected,
+                        status=SyncStatus.FAILED,
                         error_message=err_msg,
                     )
                     records.append(rec)
-                    failed_count += 1
                     if progress_callback:
-                        progress_callback(idx, total_files, name, SyncStatus.LOCKED_CONFLICT)
-                    continue
-
-            # Differential Hash Evaluation
-            is_identical = False
-            if dest_path.exists() and dest_path.is_file():
-                try:
-                    dest_sha = _compute_sha256(dest_path)
-                    if dest_sha == sha_expected:
-                        is_identical = True
-                except Exception as exc:
-                    logger.warning("Could not compute remote hash for '%s': %s", dest_path, exc)
-
-            if is_identical:
-                skipped_count += 1
-                rec = SyncItemRecord(
-                    name=name,
-                    category=cat,
-                    relative_path=local_rel,
-                    target_drive_path=str(dest_path),
-                    size_bytes=size_bytes,
-                    sha256=sha_expected,
-                    status=SyncStatus.SKIPPED_IDENTICAL,
-                )
-                records.append(rec)
-                if progress_callback:
-                    progress_callback(idx, total_files, name, SyncStatus.SKIPPED_IDENTICAL)
-                continue
-
-            # Execution (Dry-Run vs Real Transmission)
-            if dry_run:
-                transmitted_count += 1
-                total_bytes_transmitted += size_bytes
-                rec = SyncItemRecord(
-                    name=name,
-                    category=cat,
-                    relative_path=local_rel,
-                    target_drive_path=str(dest_path),
-                    size_bytes=size_bytes,
-                    sha256=sha_expected,
-                    status=SyncStatus.DRY_RUN,
-                )
-                records.append(rec)
-                if progress_callback:
-                    progress_callback(idx, total_files, name, SyncStatus.DRY_RUN)
-                continue
-
-            # Atomic Transmission via Temporary Staging File
-            try:
-                dest_parent.mkdir(parents=True, exist_ok=True)
-                temp_dest = dest_parent / f".{dest_path.name}.tmp_{uuid.uuid4().hex[:6]}"
-
-                shutil.copy2(local_file, temp_dest)
-                written_sha = _compute_sha256(temp_dest)
-                if sha_expected and written_sha != sha_expected:
-                    if temp_dest.exists():
-                        temp_dest.unlink()
-                    raise SyncTransmissionError(
-                        f"Checksum mismatch after transmission for '{name}': expected {sha_expected}, got {written_sha}"
-                    )
-
-                # Atomic swap into target path
-                temp_dest.replace(dest_path)
-
-                transmitted_count += 1
-                total_bytes_transmitted += size_bytes
-                rec = SyncItemRecord(
-                    name=name,
-                    category=cat,
-                    relative_path=local_rel,
-                    target_drive_path=str(dest_path),
-                    size_bytes=size_bytes,
-                    sha256=sha_expected,
-                    status=SyncStatus.TRANSMITTED,
-                )
-                records.append(rec)
-                if progress_callback:
-                    progress_callback(idx, total_files, name, SyncStatus.TRANSMITTED)
-
-            except Exception as exc:
+                        progress_callback(idx, total_files, name, SyncStatus.FAILED)
+        except (RemoteConflictError, RemoteLockConflictError) as exc:
+            if not dry_run and (records or updated_pins != prior_pins):
                 failed_count += 1
-                err_msg = f"Transmission failed: {exc}"
-                logger.error("Failed to sync '%s' to '%s': %s", local_file, dest_path, exc)
-                rec = SyncItemRecord(
-                    name=name,
-                    category=cat,
-                    relative_path=local_rel,
-                    target_drive_path=str(dest_path),
-                    size_bytes=size_bytes,
-                    sha256=sha_expected,
-                    status=SyncStatus.FAILED,
-                    error_message=err_msg,
-                )
-                records.append(rec)
+                if isinstance(exc, RemoteConflictError):
+                    aborted_rec = SyncItemRecord(
+                        name=name,
+                        category=cat,
+                        relative_path=local_rel,
+                        target_drive_path=str(dest_path),
+                        size_bytes=size_bytes,
+                        sha256=sha_expected,
+                        status=SyncStatus.REMOTE_CONFLICT,
+                        error_message=str(exc),
+                        base_revision_id=exc.base_revision_id,
+                        base_md5=exc.base_hash,
+                        remote_modified_time=exc.remote_modified_time,
+                        conflict_branch_path=exc.conflict_branch_path,
+                    )
+                else:
+                    aborted_rec = SyncItemRecord(
+                        name=name,
+                        category=cat,
+                        relative_path=local_rel,
+                        target_drive_path=str(dest_path),
+                        size_bytes=size_bytes,
+                        sha256=sha_expected,
+                        status=SyncStatus.LOCKED_CONFLICT,
+                        error_message=str(exc),
+                    )
+                records.append(aborted_rec)
                 if progress_callback:
-                    progress_callback(idx, total_files, name, SyncStatus.FAILED)
+                    progress_callback(idx, total_files, name, aborted_rec.status)
+                partial_receipt = SyncReceipt(
+                    sync_id=sync_id,
+                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    source_manifest=str(mpath),
+                    resolved_target_root=str(resolved_drive_root),
+                    checkout_user=current_user,
+                    total_files=total_files,
+                    transmitted_count=transmitted_count,
+                    skipped_count=skipped_count,
+                    failed_count=failed_count,
+                    total_bytes_transmitted=total_bytes_transmitted,
+                    dry_run=dry_run,
+                    items=records,
+                    remote_pins=updated_pins,
+                )
+                try:
+                    _write_json_atomic(receipt_target_p, partial_receipt.model_dump_json(indent=2))
+                    logger.info("Saved partial sync receipt after conflict to: '%s'", receipt_target_p)
+                except Exception as write_exc:
+                    logger.warning("Could not persist partial sync receipt to '%s': %s", receipt_target_p, write_exc)
+            raise
 
         receipt = SyncReceipt(
             sync_id=sync_id,
             timestamp=datetime.now(timezone.utc).isoformat(),
             source_manifest=str(mpath),
             resolved_target_root=str(resolved_drive_root),
+            checkout_user=current_user,
             total_files=total_files,
             transmitted_count=transmitted_count,
             skipped_count=skipped_count,
@@ -460,15 +628,15 @@ class RemoteSyncEngine:
             total_bytes_transmitted=total_bytes_transmitted,
             dry_run=dry_run,
             items=records,
+            remote_pins=updated_pins,
         )
 
-        # Write sync receipt to file
-        receipt_target_p = Path(output_receipt_path) if output_receipt_path else manifest_dir / ".sync_receipt.json"
-        try:
-            receipt_target_p.parent.mkdir(parents=True, exist_ok=True)
-            receipt_target_p.write_text(receipt.model_dump_json(indent=2), encoding="utf-8")
-            logger.info("Saved sync receipt to: '%s'", receipt_target_p)
-        except Exception as exc:
-            logger.warning("Could not persist sync receipt to '%s': %s", receipt_target_p, exc)
+        # Write sync receipt to file (never mutate disk during dry-run)
+        if not dry_run:
+            try:
+                _write_json_atomic(receipt_target_p, receipt.model_dump_json(indent=2))
+                logger.info("Saved sync receipt to: '%s'", receipt_target_p)
+            except Exception as exc:
+                logger.warning("Could not persist sync receipt to '%s': %s", receipt_target_p, exc)
 
         return receipt

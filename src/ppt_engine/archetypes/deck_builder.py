@@ -684,6 +684,35 @@ class ConsultingDeckBuilder:
             source=source,
         )
 
+    def add_diagram_v2_slide(
+        self,
+        spec_path: Optional[Union[str, Path]] = None,
+        spec_dict: Optional[Dict[str, Any]] = None,
+        tracker: Optional[str] = None,
+        action_title: Optional[str] = None,
+        subtitle: Optional[str] = None,
+        show_diagram_header: bool = False,
+        footnote: Optional[str] = None,
+        notice: Optional[str] = None,
+        source: Optional[str] = None,
+    ) -> Any:
+        idx = len(self.prs.slides) + 1
+        return build_diagram_v2_slide(
+            prs=self.prs,
+            theme=self.theme,
+            spec_path=spec_path,
+            spec_dict=spec_dict,
+            tracker=tracker,
+            action_title=action_title,
+            subtitle=subtitle,
+            show_diagram_header=show_diagram_header,
+            footnote=footnote,
+            current_idx=idx,
+            total_slides=idx,
+            notice=notice,
+            source=source,
+        )
+
     def update_pagination(self) -> None:
         """
         Post-processes all slides to ensure bottom footer pagination (e.g. '02 / 07')

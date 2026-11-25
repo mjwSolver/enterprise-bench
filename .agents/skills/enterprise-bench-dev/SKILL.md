@@ -55,8 +55,8 @@ description: >-
   - Layout calculations, OpenXML sanitization (purging `<a:outerShdw>` and `<a:effectLst/>`), and typography rules are frozen in reusable compiler logic.
   - Agents must never generate monolithic imperative layout scripts. All content iteration touches only YAML specifications ([ADR](../../docs/decisions/ADR_DECLARATIVE_YAML_VS_IMPERATIVE_PYTHON.md)).
 * **Core Modules**:
-  - `consulting_archetypes.py`: Programmatic slide structures (BCG 3-Horizon, Balanced Scorecard, Metric Grids, Process Flows, De-Squared Chapter Dividers).
-  - `diagram_engine.py`: Vector diagram drawing (cloud topologies, sequenced pipelines).
+  - `archetypes/architecture.py`, `archetypes/deck_builder.py`, `pitch_deck.py`: Programmatic slide structures including `build_diagram_v2_slide` and `ConsultingDeckBuilder.add_diagram_v2_slide`.
+  - `diagram_v2/`: Declarative YAML-to-DrawingML engine (`models.py`, `layout_solver.py`, `mermaid_transpiler.py`, `pptx_compiler.py`, `powerpoint_desktop.py`, `auditor.py`, `visual_verifier.py` with WCAG AA & 1080p/720p legibility).
   - `theme_engine.py`: Corporate color palettes and font tokens loaded from `presets/themes/*.yaml`.
   - `resource_manager.py`: Asset resolution, silent pre-flight acquisition, graceful fallback handling, and automated `missing_resources.md` diagnostic ledger generation.
 * **Geometry Integrity Rule (Zero Overlapping Top Lines on Rounded Containers)**:
@@ -81,6 +81,7 @@ description: >-
 * `theme.py`: `BrandTheme` dataclass and hex/RGB color transformers.
 * `sanitizer.py`: High-entropy regex cleaner for masking corporate identities, PII, and credentials across DOCX and XLSX.
 * `docx_purger.py`: Zero-corruption OpenXML comment, highlight, tracked revision, and author profile purger. Preserves `[Content_Types].xml` and `.rels` while clearing part contents. See full runbook: [`docs/specs/openxml_purging_and_cleansing.md`](../../docs/specs/openxml_purging_and_cleansing.md).
+* `delivery/remote_guard.py` & `delivery/sync.py`: Remote Cloud Drift & Race Condition Guard (OCC checkout tokens, sidecar Drive locks, CAS push, slide merge).
 
 ---
 

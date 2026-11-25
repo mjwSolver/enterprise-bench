@@ -24,9 +24,19 @@ from src.ppt_engine.diagram_v2.models import (
     resolve_node_fonts,
 )
 from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point, SpatialIndex
+from src.ppt_engine.diagram_v2.layout_solver import (
+    solve_diagram_layout,
+    needs_auto_layout,
+    estimate_node_dimensions,
+    compute_corridor_span,
+)
 from src.ppt_engine.diagram_v2.drawio_compiler import DrawIOCompiler
 from src.ppt_engine.diagram_v2.svg_compiler import SVGCompiler
-from src.ppt_engine.diagram_v2.pptx_compiler import PPTXCompiler
+from src.ppt_engine.diagram_v2.pptx_compiler import PPTXCompiler, replace_slide_in_presentation
+from src.ppt_engine.diagram_v2.powerpoint_desktop import (
+    PowerPointDesktopManager,
+    PowerPointDirtyError,
+)
 from src.ppt_engine.diagram_v2.compiler import (
     compile_diagram,
     load_diagram_spec,
@@ -44,6 +54,7 @@ from src.ppt_engine.diagram_v2.visual_verifier import (
     PerceptualImageAnalyzer,
     AdversarialVisualQASubagent,
     Tier2VisualVerifier,
+    audit_wcag_and_legibility,
 )
 from src.ppt_engine.diagram_v2.reconciler import (
     ReconciledChange,
@@ -87,6 +98,10 @@ from src.ppt_engine.diagram_v2.ideas import (
     get_pattern,
     render_ascii_wireframe,
 )
+from src.ppt_engine.diagram_v2.mermaid_transpiler import (
+    transpile_mermaid_to_spec,
+    transpile_mermaid_to_yaml,
+)
 
 __all__ = [
     "DiagramSpec",
@@ -105,9 +120,16 @@ __all__ = [
     "Box",
     "Point",
     "SpatialIndex",
+    "solve_diagram_layout",
+    "needs_auto_layout",
+    "estimate_node_dimensions",
+    "compute_corridor_span",
     "DrawIOCompiler",
     "SVGCompiler",
     "PPTXCompiler",
+    "replace_slide_in_presentation",
+    "PowerPointDesktopManager",
+    "PowerPointDirtyError",
     "compile_diagram",
     "load_diagram_spec",
     "validate_diagram_spec",
@@ -120,6 +142,7 @@ __all__ = [
     "PerceptualImageAnalyzer",
     "AdversarialVisualQASubagent",
     "Tier2VisualVerifier",
+    "audit_wcag_and_legibility",
     "ReconciledChange",
     "ReconciliationResult",
     "PPTXDiagramDecompiler",
@@ -152,5 +175,7 @@ __all__ = [
     "list_idea_patterns",
     "get_pattern",
     "render_ascii_wireframe",
+    "transpile_mermaid_to_spec",
+    "transpile_mermaid_to_yaml",
 ]
 

@@ -8,7 +8,7 @@ preflight validation gates, and delivery manifests.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -139,7 +139,61 @@ class SyncStatus(str, Enum):
     SKIPPED_IDENTICAL = "SKIPPED_IDENTICAL"
     FAILED = "FAILED"
     LOCKED_CONFLICT = "LOCKED_CONFLICT"
+    REMOTE_CONFLICT = "REMOTE_CONFLICT"
     DRY_RUN = "DRY_RUN"
+
+
+class RemotePinRecord(BaseModel):
+    """Pinned remote revision baseline captured at checkout or last sync."""
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    file_id: Optional[str] = Field(default=None, description="Optional Google Drive file ID.")
+    local_path: str = Field(description="Local relative or absolute path.")
+    target_drive_path: str = Field(description="Resolved remote path on Google Drive.")
+    base_revision_id: str = Field(description="Pinned remote headRevisionId or mtime/size token.")
+    base_md5: str = Field(description="Pinned remote MD5 checksum.")
+    base_sha256: str = Field(default="", description="Pinned remote SHA-256 digest.")
+    base_modified_time: str = Field(description="ISO 8601 UTC timestamp of pinned remote state.")
+    checkout_user: Optional[str] = Field(default=None, description="Operator or agent who pinned baseline.")
+
+
+class RemoteLockSidecar(BaseModel):
+    """Remote collaborative lock sidecar (`._LOCKED_<user>_<ts>.json`) in Drive folder."""
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    file_name: str = Field(description="Target deliverable filename.")
+    locked_by: str = Field(description="User or agent holding the remote lock.")
+    locked_at: str = Field(description="ISO 8601 UTC lock creation timestamp.")
+    ttl_seconds: int = Field(default=7200, description="Time-to-live in seconds before lock expires.")
+    reason: Optional[str] = Field(default=None, description="Optional lock reason.")
+    lock_path: Optional[str] = Field(default=None, description="Path to the remote lock sidecar file.")
+
+
+class DriftCheckItem(BaseModel):
+    """Drift evaluation status for a single pinned deliverable."""
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    file_name: str = Field(description="Deliverable filename.")
+    status: Literal["IN_SYNC", "REMOTE_DRIFTED", "REMOTE_MISSING", "REMOTE_LOCKED"]
+    target_drive_path: str = Field(description="Remote file path checked.")
+    base_revision_id: Optional[str] = None
+    remote_revision_id: Optional[str] = None
+    base_hash: Optional[str] = None
+    remote_hash: Optional[str] = None
+    remote_modified_by: Optional[str] = None
+    remote_modified_time: Optional[str] = None
+    message: str = ""
+
+
+class DriftReport(BaseModel):
+    """Aggregated remote drift audit report across a staged directory."""
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    checked_at: str = Field(description="ISO 8601 UTC timestamp of drift check.")
+    directory: str = Field(description="Local staging directory audited.")
+    has_drift: bool = Field(default=False, description="True if any pinned deliverable drifted or is remotely locked.")
+    items: List[DriftCheckItem] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
 
 
 class SyncItemRecord(BaseModel):
@@ -154,6 +208,11 @@ class SyncItemRecord(BaseModel):
     sha256: str = Field(description="Cryptographic SHA-256 digest.")
     status: SyncStatus = Field(description="Transmission outcome status.")
     error_message: Optional[str] = Field(default=None, description="Error detail if transmission failed.")
+    remote_file_id: Optional[str] = Field(default=None, description="Optional Google Drive file ID.")
+    base_revision_id: Optional[str] = Field(default=None, description="Pinned or updated remote revision token.")
+    base_md5: Optional[str] = Field(default=None, description="Pinned or updated remote MD5 checksum.")
+    remote_modified_time: Optional[str] = Field(default=None, description="Remote modified timestamp.")
+    conflict_branch_path: Optional[str] = Field(default=None, description="Saved _REMOTE_ conflict branch path.")
 
 
 class SyncReceipt(BaseModel):
@@ -164,6 +223,7 @@ class SyncReceipt(BaseModel):
     timestamp: str = Field(description="ISO 8601 UTC timestamp of sync completion.")
     source_manifest: str = Field(description="Path to manifest file used for synchronization.")
     resolved_target_root: str = Field(description="Resolved target Google Drive root directory.")
+    checkout_user: Optional[str] = Field(default=None, description="Operator or agent executing sync.")
     total_files: int = Field(default=0, description="Total candidate files evaluated.")
     transmitted_count: int = Field(default=0, description="Files transmitted to Google Drive.")
     skipped_count: int = Field(default=0, description="Files skipped because remote copy is identical.")
@@ -171,4 +231,5 @@ class SyncReceipt(BaseModel):
     total_bytes_transmitted: int = Field(default=0, description="Total payload bytes transmitted.")
     dry_run: bool = Field(default=False, description="Whether execution was a dry-run simulation.")
     items: List[SyncItemRecord] = Field(default_factory=list, description="Detailed transmission records.")
+    remote_pins: Dict[str, RemotePinRecord] = Field(default_factory=dict, description="Pinned remote revision baselines.")
 

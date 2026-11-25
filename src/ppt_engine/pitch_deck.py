@@ -102,6 +102,7 @@ from src.ppt_engine.consulting_archetypes import (
     build_composable_split_slide,
     build_cover_slide,
     build_crisp_dm_gate_slide,
+    build_diagram_v2_slide,
     build_equity_corporate_tree_slide,
     build_bubble_matrix_slide,
     build_comparative_forecast_columns_slide,
@@ -163,6 +164,7 @@ class PitchDeckBuilder:
         self.product: str = self.metadata.get("product", "Snowflake AI Data Cloud")
         self.date_str: str = self.metadata.get("date_str", "September 2026")
         self.notice: Optional[str] = self.metadata.get("confidentiality")
+        self.spec_path: Optional[Path] = None
 
     @classmethod
     def from_yaml(
@@ -177,6 +179,7 @@ class PitchDeckBuilder:
 
         theme_name = theme_override or (data.get("theme") if isinstance(data, dict) else "metrodata") or "metrodata"
         builder = cls(theme=theme_name, config_dict=data)
+        builder.spec_path = p
         return builder
 
     def _validate_zero_emojis(self, obj: Any, context: str = "deck") -> None:
@@ -1170,6 +1173,69 @@ class PitchDeckBuilder:
                 show_legend=bool(cfg.get("show_legend", True)),
                 right_panel=cfg.get("right_panel"),
                 takeaway=cfg.get("takeaway"),
+                footnote=cfg.get("footnote"),
+                current_idx=idx,
+                total_slides=total,
+                notice=self.notice,
+                source=cfg.get("source"),
+            )
+
+        elif arch in ("diagram_v2", "architecture_diagram_v2", "topology_diagram"):
+            raw_spec_path = cfg.get("spec_path")
+            resolved_spec_path: Optional[Path] = None
+            if raw_spec_path:
+                raw_p = Path(str(raw_spec_path))
+                cand_paths: List[Path] = []
+                if getattr(self, "spec_path", None):
+                    cand_paths.append(Path(self.spec_path).parent / raw_p)
+                cand_paths.append(raw_p)
+                try:
+                    from src.core.config import ROOT_DIR
+                    cand_paths.extend([
+                        ROOT_DIR / raw_p,
+                        ROOT_DIR / "specs" / "diagrams" / raw_p.name,
+                        ROOT_DIR / "src" / "ppt_engine" / "diagram_v2" / "samples" / raw_p.name,
+                    ])
+                except Exception:
+                    pass
+                resolved_spec_path = next((cp for cp in cand_paths if cp.is_file()), None)
+
+            inline_spec = cfg.get("spec")
+            if inline_spec is None and resolved_spec_path is None:
+                if any(k in cfg for k in ("containers", "nodes", "flows", "badges", "bullet_lists")):
+                    inline_spec = {
+                        "id": cfg.get("id", f"slide_{idx}_diagram"),
+                        "name": cfg.get("title", cfg.get("action_title", f"Slide {idx} Diagram")),
+                        "theme": cfg.get("diagram_theme", "metrodata"),
+                        "layout": cfg.get("layout"),
+                        "containers": cfg.get("containers", []),
+                        "nodes": cfg.get("nodes", []),
+                        "flows": cfg.get("flows", []),
+                        "badges": cfg.get("badges", []),
+                        "bullet_lists": cfg.get("bullet_lists", []),
+                    }
+                    if cfg.get("canvas") is not None:
+                        inline_spec["canvas"] = cfg["canvas"]
+                    if cfg.get("header") is not None:
+                        inline_spec["header"] = cfg["header"]
+                    if cfg.get("container_gap") is not None:
+                        inline_spec["container_gap"] = cfg["container_gap"]
+                    if cfg.get("allow_dense_typography") is not None:
+                        inline_spec["allow_dense_typography"] = cfg["allow_dense_typography"]
+
+            pass_spec_path = resolved_spec_path if resolved_spec_path is not None else (
+                Path(str(raw_spec_path)) if (raw_spec_path and inline_spec is None) else None
+            )
+
+            build_diagram_v2_slide(
+                self.prs,
+                self.theme,
+                spec_path=pass_spec_path,
+                spec_dict=inline_spec,
+                tracker=cfg.get("tracker"),
+                action_title=cfg.get("title") or cfg.get("action_title"),
+                subtitle=cfg.get("subtitle"),
+                show_diagram_header=bool(cfg.get("show_diagram_header", False)),
                 footnote=cfg.get("footnote"),
                 current_idx=idx,
                 total_slides=total,

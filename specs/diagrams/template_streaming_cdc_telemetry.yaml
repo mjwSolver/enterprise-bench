@@ -1,0 +1,178 @@
+id: template_streaming_cdc_telemetry
+name: "Real-Time Streaming CDC & Event Telemetry Pipeline"
+theme: metrodata
+canvas:
+  width: 13.333
+  height: 7.5
+  unit: in
+  background: "#FFFFFF"
+  show_grid: true
+  grid_spacing: 60.0
+header:
+  show: true
+  action_title: "Log-Based CDC Streaming Delivers Sub-Second Telemetry Without DB Load"
+  subtitle: "Transaction log capture, schema-governed event bus, stateful stream enrichment, and dual sinks"
+  brand_stripes: true
+  red_hex: "#E11D48"
+  blue_hex: "#0284C7"
+containers:
+  - id: zone_cdc_source
+    label: "SOURCE & CDC CAPTURE"
+    x: 0.45
+    y: 1.35
+    w: 2.40
+    h: 5.75
+    role: neutral
+    dashed: true
+    align: center
+    vertical_align: top
+  - id: zone_event_bus
+    label: "EVENT STREAMING BUS"
+    x: 3.70
+    y: 1.35
+    w: 2.50
+    h: 5.75
+    role: boundary
+    dashed: true
+    align: center
+    vertical_align: top
+  - id: zone_stream_proc
+    label: "STREAM PROCESSING"
+    x: 7.05
+    y: 1.35
+    w: 2.50
+    h: 5.75
+    role: active
+    dashed: true
+    align: center
+    vertical_align: top
+  - id: zone_sinks
+    label: "SERVING & COLD SINKS"
+    x: 10.40
+    y: 1.35
+    w: 2.48
+    h: 5.75
+    role: target
+    dashed: true
+    align: center
+    vertical_align: top
+nodes:
+  - id: cdc_oltp
+    container_id: zone_cdc_source
+    title: "Core OLTP Store"
+    subtitle: "WAL / Binlog Stream"
+    shape: cylinder
+    role: ingress
+    x: 0.75
+    y: 2.15
+    w: 1.80
+    h: 1.45
+  - id: cdc_connector
+    container_id: zone_cdc_source
+    title: "Debezium CDC"
+    subtitle: "Zero-Polling Log Reader"
+    shape: rounded
+    role: active
+    x: 0.65
+    y: 4.45
+    w: 2.00
+    h: 1.35
+  - id: bus_kafka
+    container_id: zone_event_bus
+    title: "Kafka Event Broker"
+    subtitle: "Partitioned Durable Topics"
+    shape: rounded
+    role: boundary
+    x: 3.95
+    y: 2.15
+    w: 2.00
+    h: 1.45
+  - id: bus_schema
+    container_id: zone_event_bus
+    title: "Schema Registry"
+    subtitle: "Avro / Protobuf Contracts"
+    shape: rounded
+    role: gateway
+    x: 3.95
+    y: 4.45
+    w: 2.00
+    h: 1.35
+  - id: proc_flink
+    container_id: zone_stream_proc
+    title: "Stateful Stream Engine"
+    subtitle: "Windowed Joins & Alerts"
+    shape: rounded
+    role: active
+    x: 7.30
+    y: 2.15
+    w: 2.00
+    h: 1.45
+  - id: proc_dlq
+    container_id: zone_stream_proc
+    title: "Dead-Letter Queue"
+    subtitle: "Poison-Pill Replay Buffer"
+    shape: rounded
+    role: defect
+    x: 7.30
+    y: 4.45
+    w: 2.00
+    h: 1.35
+  - id: sink_realtime
+    container_id: zone_sinks
+    title: "Operational Cache"
+    subtitle: "Low-Latency API Serving"
+    shape: cylinder
+    role: target
+    x: 10.74
+    y: 2.15
+    w: 1.80
+    h: 1.45
+  - id: sink_lakehouse
+    container_id: zone_sinks
+    title: "Iceberg Cold Lake"
+    subtitle: "Time-Travel Analytics"
+    shape: cylinder
+    role: database
+    x: 10.74
+    y: 4.45
+    w: 1.80
+    h: 1.45
+flows:
+  - id: flow_wal_cdc
+    source: cdc_oltp
+    target: cdc_connector
+    role: active
+  - id: flow_cdc_kafka
+    source: cdc_connector
+    target: bus_kafka
+    role: active
+    label: "Avro Events"
+    label_position: above
+  - id: flow_kafka_schema
+    source: bus_kafka
+    target: bus_schema
+    role: gateway
+    dashed: true
+  - id: flow_kafka_flink
+    source: bus_kafka
+    target: proc_flink
+    role: active
+    label: "Consume"
+    label_position: above
+  - id: flow_flink_dlq
+    source: proc_flink
+    target: proc_dlq
+    role: defect
+    dashed: true
+  - id: flow_flink_cache
+    source: proc_flink
+    target: sink_realtime
+    role: target
+    label: "Alert / API"
+    label_position: above
+  - id: flow_cache_lake
+    source: sink_realtime
+    target: sink_lakehouse
+    role: database
+    label: "Cold Tier Sync"
+    label_position: side

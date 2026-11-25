@@ -119,6 +119,7 @@ class StagingPipeline:
         directory: Union[str, Path],
         fail_on_locks: bool = True,
         fail_on_draft: bool = False,
+        check_remote_drift: bool = False,
     ) -> PreflightReport:
         """
         Executes stage-gate preflight checks against all deliverables in a directory.
@@ -172,7 +173,10 @@ class StagingPipeline:
         ]
         deliverable_files = [
             f for f in all_files
-            if not f.name.endswith(".lock") and "_LOCKED_" not in f.stem and f.name != "delivery_manifest.json"
+            if not f.name.endswith(".lock")
+            and "_LOCKED_" not in f.stem
+            and "_REMOTE_" not in f.stem
+            and f.name != "delivery_manifest.json"
         ]
 
         # Gate 2: Deliverable Inventory
@@ -313,6 +317,27 @@ class StagingPipeline:
             )
         )
 
+        if check_remote_drift:
+            from src.core.delivery.remote_guard import RemoteDriftGuard
+            drift_report = RemoteDriftGuard.check_directory_drift(dir_path)
+            drift_passed = not drift_report.has_drift
+            if drift_report.has_drift:
+                for w in drift_report.warnings:
+                    warnings.append(w)
+                    errors.append(w)
+            gates.append(
+                PreflightGateResult(
+                    gate_name="REMOTE_DRIFT_GUARD",
+                    passed=drift_passed,
+                    message=(
+                        f"Zero remote drift detected across {len(drift_report.items)} pinned file(s)."
+                        if drift_passed
+                        else f"Remote drift or lock detected on {sum(1 for it in drift_report.items if it.status != 'IN_SYNC')} file(s)."
+                    ),
+                    details={"checked_files": len(drift_report.items), "has_drift": drift_report.has_drift},
+                )
+            )
+
         overall_passed = all(g.passed for g in gates) and len(errors) == 0
 
         return PreflightReport(
@@ -357,6 +382,7 @@ class StagingPipeline:
             and not f.name.startswith("~$")
             and not f.name.endswith(".lock")
             and "_LOCKED_" not in f.stem
+            and "_REMOTE_" not in f.stem
             and f.name != "delivery_manifest.json"
         ]
         deliverable_files.sort(key=lambda p: str(p.relative_to(dir_path)))

@@ -957,13 +957,41 @@ class DiagramReconciler:
                     else:
                         effective_formats = [f for f in effective_formats if f.lower() != "pptx"]
                 if effective_formats:
-                    recompile_res = compile_diagram(
-                        spec_path_or_dict=validated_spec,
-                        output_dir_or_file=self.pptx_path,
-                        formats=effective_formats,
-                    )
-                    res.recompiled = True
-                    res.recompile_result = recompile_res
+                    wants_pptx = "all" in effective_formats or any(f.lower() == "pptx" for f in effective_formats)
+                    non_pptx_formats = [f for f in effective_formats if f.lower() not in ("pptx", "all")]
+                    if "all" in effective_formats:
+                        non_pptx_formats = ["drawio", "svg", "png"]
+
+                    in_situ_multislide = False
+                    if wants_pptx and self.pptx_path.exists():
+                        try:
+                            from pptx import Presentation as _PptxPresentation
+                            existing_prs = _PptxPresentation(str(self.pptx_path))
+                            if len(existing_prs.slides) > 1 or self.slide_index > 1:
+                                in_situ_multislide = True
+                        except Exception:
+                            in_situ_multislide = self.slide_index > 1
+
+                    if in_situ_multislide:
+                        from src.ppt_engine.diagram_v2.pptx_compiler import replace_slide_in_presentation
+                        replace_slide_in_presentation(validated_spec, self.pptx_path, slide_index=self.slide_index)
+                        if non_pptx_formats:
+                            recompile_res = compile_diagram(
+                                spec_path_or_dict=validated_spec,
+                                output_dir_or_file=self.pptx_path,
+                                formats=non_pptx_formats,
+                            )
+                            recompile_res.pptx_path = self.pptx_path
+                            res.recompile_result = recompile_res
+                        res.recompiled = True
+                    else:
+                        recompile_res = compile_diagram(
+                            spec_path_or_dict=validated_spec,
+                            output_dir_or_file=self.pptx_path,
+                            formats=effective_formats,
+                        )
+                        res.recompiled = True
+                        res.recompile_result = recompile_res
 
         return res
 

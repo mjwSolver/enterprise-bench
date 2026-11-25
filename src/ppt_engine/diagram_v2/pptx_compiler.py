@@ -14,6 +14,8 @@ import os
 import re
 import subprocess
 import tempfile
+import uuid
+import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -37,7 +39,7 @@ from src.ppt_engine.diagram_v2.models import (
     classify_geometric_tier,
     CANONICAL_TYPOGRAPHIC_SCALE,
 )
-from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point
+from src.ppt_engine.diagram_v2.geometry import GeometryNormalizer, Box, Point, _PORT_AT_RE, _PORT_COORD_RE
 from src.ppt_engine.icon_engine import recolor_svg, normalize_color, is_multicolor_vendor_logo
 
 logger = logging.getLogger(__name__)
@@ -299,16 +301,71 @@ class _CardPlan:
         return self.region_bottom - self.region_top
 
 
-class PPTXCompiler:
-    """Compiles a DiagramSpec into a 16:9 widescreen PowerPoint presentation."""
+EMU_PER_INCH = 914400.0
 
-    def __init__(self, spec: DiagramSpec) -> None:
+_DIAGRAM_V2_EXACT_SHAPE_NAMES = {
+    "header:stripe:red",
+    "header:stripe:blue",
+    "header:title",
+}
+_DIAGRAM_V2_PREFIXES = (
+    "container:",
+    "node:",
+    "badge:",
+    "bullet_list:",
+    "flow:",
+)
+
+
+def _canvas_dimensions_in(spec: DiagramSpec) -> Tuple[float, float]:
+    """Compute declared canvas dimensions in PowerPoint inches via GeometryNormalizer."""
+    norm = GeometryNormalizer(
+        canvas_width=spec.canvas.width,
+        canvas_height=spec.canvas.height,
+        canvas_unit=spec.canvas.unit,
+    )
+    return (
+        round(norm.canvas_width * norm.scale_to_in_x, 4),
+        round(norm.canvas_height * norm.scale_to_in_y, 4),
+    )
+
+
+class PPTXCompiler:
+    """Compiles a DiagramSpec into a native PowerPoint presentation."""
+
+    def __init__(
+        self,
+        spec: DiagramSpec,
+        target_width_in: Optional[float] = None,
+        target_height_in: Optional[float] = None,
+    ) -> None:
         self.spec = spec
         self.norm = GeometryNormalizer(
             canvas_width=spec.canvas.width,
             canvas_height=spec.canvas.height,
             canvas_unit=spec.canvas.unit,
         )
+        spec_w_in, spec_h_in = _canvas_dimensions_in(spec)
+        if (
+            target_width_in is not None
+            and target_height_in is not None
+            and (abs(target_width_in - spec_w_in) > 0.02 or abs(target_height_in - spec_h_in) > 0.02)
+        ):
+            self._fit_scale = min(
+                float(target_width_in) / max(0.1, spec_w_in),
+                float(target_height_in) / max(0.1, spec_h_in),
+            )
+            self._fit_ox = max(0.0, (float(target_width_in) - spec_w_in * self._fit_scale) / 2.0)
+            self._fit_oy = max(0.0, (float(target_height_in) - spec_h_in * self._fit_scale) / 2.0)
+            self._target_w_in = float(target_width_in)
+            self._target_h_in = float(target_height_in)
+        else:
+            self._fit_scale = 1.0
+            self._fit_ox = 0.0
+            self._fit_oy = 0.0
+            self._target_w_in = spec_w_in
+            self._target_h_in = spec_h_in
+
         self._node_boxes: Dict[str, Box] = {}
         self._container_boxes: Dict[str, Box] = {}
         self.font_name: str = "Arial"
@@ -325,6 +382,58 @@ class PPTXCompiler:
                 self._muted_hex = theme_obj.get_hex("muted", "#64748B")
         except Exception as ex:
             logger.debug("Diagram V2 theme load skipped (%s): %s", spec.theme, ex)
+
+    def _fit_box(self, box: Box) -> Box:
+        if self._fit_scale == 1.0 and self._fit_ox == 0.0 and self._fit_oy == 0.0:
+            return box
+        return Box(
+            x=round(box.x * self._fit_scale + self._fit_ox, 4),
+            y=round(box.y * self._fit_scale + self._fit_oy, 4),
+            w=round(box.w * self._fit_scale, 4),
+            h=round(box.h * self._fit_scale, 4),
+        )
+
+    def _fit_point(self, pt: Point) -> Point:
+        if self._fit_scale == 1.0 and self._fit_ox == 0.0 and self._fit_oy == 0.0:
+            return pt
+        return (
+            round(pt[0] * self._fit_scale + self._fit_ox, 4),
+            round(pt[1] * self._fit_scale + self._fit_oy, 4),
+        )
+
+    def _to_target_box(self, x: float, y: float, w: float, h: float) -> Box:
+        return self._fit_box(self.norm.to_inches(x, y, w, h))
+
+    def _node_to_target_box(self, n: NodeSpec) -> Box:
+        raw_x = n.x if n.x is not None else (0.45 / self.norm.scale_to_in_x)
+        raw_y = n.y if n.y is not None else (1.35 / self.norm.scale_to_in_y)
+        raw_w = n.w if n.w is not None else (2.00 / self.norm.scale_to_in_x)
+        raw_h = n.h if n.h is not None else (1.25 / self.norm.scale_to_in_y)
+        return self._to_target_box(raw_x, raw_y, raw_w, raw_h)
+
+    def _scale_port_for_target(self, port_desc: Optional[Union[str, Sequence[float]]]) -> Optional[Union[str, Sequence[float]]]:
+        if port_desc is None:
+            return None
+        if self._fit_scale == 1.0 and self._fit_ox == 0.0 and self._fit_oy == 0.0 and self.norm.unit == "in":
+            return port_desc
+        if isinstance(port_desc, (tuple, list)) and len(port_desc) >= 2:
+            return self._fit_point(self.norm.point_to_inches((float(port_desc[0]), float(port_desc[1]))))
+        s = str(port_desc).strip().lower()
+        if not s:
+            return port_desc
+        m_coord = _PORT_COORD_RE.match(s)
+        if m_coord:
+            pt = self._fit_point(self.norm.point_to_inches((float(m_coord.group(1)), float(m_coord.group(2)))))
+            return f"({pt[0]:.4f}, {pt[1]:.4f})"
+        m_at = _PORT_AT_RE.match(s)
+        if m_at:
+            side, val = m_at.group(1), float(m_at.group(2))
+            if side in ("left", "right"):
+                scaled_v = self._fit_point(self.norm.point_to_inches((0.0, val)))[1]
+            else:
+                scaled_v = self._fit_point(self.norm.point_to_inches((val, 0.0)))[0]
+            return f"{side}_at({scaled_v:.4f})"
+        return port_desc
 
     def _plan_card(
         self,
@@ -343,6 +452,8 @@ class PPTXCompiler:
         valign: str = "middle",
         elastic_text: Optional[bool] = None,
         bullets: Optional[List[str]] = None,
+        title_color: str = "#0F172A",
+        subtitle_color: str = "#64748B",
     ) -> _CardPlan:
         ss = min(w, h)
         pad_v = _clamp(0.11 * ss, 0.10, 0.20)
@@ -370,19 +481,21 @@ class PPTXCompiler:
             icon = min(icon, max(0.26, (region_bottom - region_top) * 0.80))
         icon_gap = _clamp(0.05 * ss, 0.04, 0.08)
 
+        resolved_title_color = title_color or "#0F172A"
+        resolved_subtitle_color = subtitle_color or "#64748B"
         plan = _CardPlan(mode, pad_h, region_top, region_bottom, icon, icon_gap)
         shrunk_during_loop = False
         for _ in range(16):
             paras: List[_ParaSpec] = []
             if kicker:
                 paras.append(_ParaSpec(kicker.upper(), k_pt, True, stroke_hex))
-            paras.append(_ParaSpec(title, t_pt, True, "#0F172A", 1.0 if kicker else 0.0))
+            paras.append(_ParaSpec(title, t_pt, True, resolved_title_color, 1.0 if kicker else 0.0))
             if subtitle:
-                paras.append(_ParaSpec(subtitle, s_pt, False, "#64748B", 2.0))
+                paras.append(_ParaSpec(subtitle, s_pt, False, resolved_subtitle_color, 2.0))
             if bullets:
                 for b in bullets:
                     b_str = str(b)
-                    paras.append(_ParaSpec(b_str if b_str.startswith("•") else f"• {b_str}", s_pt, False, "#64748B", 2.0))
+                    paras.append(_ParaSpec(b_str if b_str.startswith("•") else f"• {b_str}", s_pt, False, resolved_subtitle_color, 2.0))
 
             inner_w = max(0.20, w - 2 * pad_h)
             if mode == "side" and has_icon:
@@ -456,13 +569,13 @@ class PPTXCompiler:
                     cand_paras: List[_ParaSpec] = []
                     if kicker:
                         cand_paras.append(_ParaSpec(kicker.upper(), k_pt, True, stroke_hex))
-                    cand_paras.append(_ParaSpec(title, cand_t, True, "#0F172A", 1.0 if kicker else 0.0))
+                    cand_paras.append(_ParaSpec(title, cand_t, True, resolved_title_color, 1.0 if kicker else 0.0))
                     if subtitle:
-                        cand_paras.append(_ParaSpec(subtitle, cand_s, False, "#64748B", cand_sp))
+                        cand_paras.append(_ParaSpec(subtitle, cand_s, False, resolved_subtitle_color, cand_sp))
                     if bullets:
                         for b in bullets:
                             b_str = str(b)
-                            cand_paras.append(_ParaSpec(b_str if b_str.startswith("•") else f"• {b_str}", cand_s, False, "#64748B", cand_sp))
+                            cand_paras.append(_ParaSpec(b_str if b_str.startswith("•") else f"• {b_str}", cand_s, False, resolved_subtitle_color, cand_sp))
 
                     if mode == "side" and has_icon:
                         cand_text_h = sum(p.height_in(plan.text_width) for p in cand_paras)
@@ -547,11 +660,11 @@ class PPTXCompiler:
     def compile_slide(self, slide: Any) -> None:
         """Compiles the diagram specification elements onto an existing PowerPoint slide."""
         self._node_boxes = {
-            n.id: self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+            n.id: self._node_to_target_box(n)
             for n in self.spec.nodes
         }
         self._container_boxes = {
-            c.id: self.norm.to_inches(c.x, c.y, c.w, c.h)
+            c.id: self._to_target_box(c.x, c.y, c.w, c.h)
             for c in self.spec.containers
         }
 
@@ -584,9 +697,10 @@ class PPTXCompiler:
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
 
+        w_in, h_in = _canvas_dimensions_in(self.spec)
         prs = Presentation()
-        prs.slide_width = Inches(13.333)
-        prs.slide_height = Inches(7.5)
+        prs.slide_width = Inches(w_in)
+        prs.slide_height = Inches(h_in)
         slide = prs.slides.add_slide(prs.slide_layouts[6])
 
         self.compile_slide(slide)
@@ -598,22 +712,28 @@ class PPTXCompiler:
         except Exception as ex:
             logger.debug("close_target_presentation failed or skipped: %s", ex)
 
-        prs.save(str(out_p))
-        return out_p
+        return _atomic_save_presentation(prs, out_p)
 
     def _compile_header(self, slide: Any) -> None:
         h = self.spec.header
         hx = h.x if h.x is not None else DeckHeaderContract.STRIPES_LEFT_IN
         hy = h.y if h.y is not None else DeckHeaderContract.STRIPES_TOP_IN
-        box = self.norm.to_inches(hx, hy, 11.5, DeckHeaderContract.TITLE_H_IN)
+        if self.norm.unit != "in":
+            hx_in = (float(hx) * self.norm.scale_to_in_x) if float(hx) > 15.0 else float(hx)
+            hy_in = (float(hy) * self.norm.scale_to_in_y) if float(hy) > 10.0 else float(hy)
+        else:
+            hx_in = float(hx)
+            hy_in = float(hy)
+        box = self._fit_box(Box(x=hx_in, y=hy_in, w=11.5, h=DeckHeaderContract.TITLE_H_IN))
+        s = self._fit_scale
 
         if h.brand_stripes:
             s_red = slide.shapes.add_shape(
                 MSO_SHAPE.RECTANGLE,
                 Inches(box.x),
                 Inches(box.y),
-                Inches(DeckHeaderContract.STRIPE_RED_W_IN),
-                Inches(DeckHeaderContract.STRIPES_H_IN),
+                Inches(DeckHeaderContract.STRIPE_RED_W_IN * s),
+                Inches(DeckHeaderContract.STRIPES_H_IN * s),
             )
             s_red.name = "header:stripe:red"
             s_red.fill.solid()
@@ -621,27 +741,36 @@ class PPTXCompiler:
             s_red.line.fill.background()
             _flatten(s_red)
 
-            s_blue_x = box.x + DeckHeaderContract.STRIPE_RED_W_IN + DeckHeaderContract.STRIPES_GAP_IN
+            s_blue_x = box.x + (DeckHeaderContract.STRIPE_RED_W_IN + DeckHeaderContract.STRIPES_GAP_IN) * s
             s_blue = slide.shapes.add_shape(
                 MSO_SHAPE.RECTANGLE,
                 Inches(s_blue_x),
                 Inches(box.y),
-                Inches(DeckHeaderContract.STRIPE_BLUE_W_IN),
-                Inches(DeckHeaderContract.STRIPES_H_IN),
+                Inches(DeckHeaderContract.STRIPE_BLUE_W_IN * s),
+                Inches(DeckHeaderContract.STRIPES_H_IN * s),
             )
             s_blue.name = "header:stripe:blue"
             s_blue.fill.solid()
             s_blue.fill.fore_color.rgb = _hex_to_rgb(h.blue_hex)
             s_blue.line.fill.background()
             _flatten(s_blue)
-            tx = box.x + (DeckHeaderContract.TITLE_LEFT_WITH_STRIPES_IN - DeckHeaderContract.STRIPES_LEFT_IN)
-            title_w = h.w if h.w is not None else DeckHeaderContract.TITLE_W_WITH_STRIPES_IN
+            tx = box.x + (DeckHeaderContract.TITLE_LEFT_WITH_STRIPES_IN - DeckHeaderContract.STRIPES_LEFT_IN) * s
+            if h.w is not None:
+                hw_in = (float(h.w) * self.norm.scale_to_in_x) if (self.norm.unit != "in" and float(h.w) > 25.0) else float(h.w)
+                raw_title_w = hw_in * s
+            else:
+                raw_title_w = DeckHeaderContract.TITLE_W_WITH_STRIPES_IN * s
         else:
             tx = box.x
-            title_w = h.w if h.w is not None else DeckHeaderContract.TITLE_W_NO_STRIPES_IN
+            if h.w is not None:
+                hw_in = (float(h.w) * self.norm.scale_to_in_x) if (self.norm.unit != "in" and float(h.w) > 25.0) else float(h.w)
+                raw_title_w = hw_in * s
+            else:
+                raw_title_w = DeckHeaderContract.TITLE_W_NO_STRIPES_IN * s
 
-        title_y = box.y - (DeckHeaderContract.STRIPES_TOP_IN - DeckHeaderContract.TITLE_TOP_IN)
-        tb = slide.shapes.add_textbox(Inches(tx), Inches(title_y), Inches(title_w), Inches(DeckHeaderContract.TITLE_H_IN))
+        title_w = max(1.0, min(raw_title_w, self._target_w_in - tx - 0.25))
+        title_y = box.y - (DeckHeaderContract.STRIPES_TOP_IN - DeckHeaderContract.TITLE_TOP_IN) * s
+        tb = slide.shapes.add_textbox(Inches(tx), Inches(title_y), Inches(title_w), Inches(DeckHeaderContract.TITLE_H_IN * s))
         tb.name = "header:title"
         _flatten(tb)
         tf = tb.text_frame
@@ -683,7 +812,7 @@ class PPTXCompiler:
         bottom_threshold = box.y2 - 0.40
         obstructing_nodes: List[Box] = []
         for n in self.spec.nodes:
-            nbox = self._node_boxes.get(n.id) or self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+            nbox = self._node_boxes.get(n.id) or self._node_to_target_box(n)
             is_inside = (n.container_id == c.id) or (
                 nbox.cx >= box.x and nbox.cx <= box.x2 and nbox.cy >= box.y and nbox.cy <= box.y2
             )
@@ -755,7 +884,7 @@ class PPTXCompiler:
         return max(box.x + 0.1, min(box.x2 - estimated_text_w - 0.1, new_x))
 
     def _compile_container(self, slide: Any, c: ContainerSpec) -> None:
-        box = self._container_boxes.get(c.id) or self.norm.to_inches(c.x, c.y, c.w, c.h)
+        box = self._container_boxes.get(c.id) or self._to_target_box(c.x, c.y, c.w, c.h)
         self._container_boxes[c.id] = box
         shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(box.x), Inches(box.y), Inches(box.w), Inches(box.h))
         shape.name = f"container:{c.id}"
@@ -813,7 +942,7 @@ class PPTXCompiler:
             p_b.font.color.rgb = _hex_to_rgb(c.tag_text_hex)
 
     def _compile_node(self, slide: Any, n: NodeSpec) -> None:
-        box = self._node_boxes.get(n.id) or self.norm.to_inches(n.x, n.y, n.w, n.h if n.h is not None else 1.25)
+        box = self._node_boxes.get(n.id) or self._node_to_target_box(n)
         self._node_boxes[n.id] = box
 
         # Resolve Icon
@@ -861,6 +990,8 @@ class PPTXCompiler:
             valign=getattr(n, "valign", "middle"),
             elastic_text=getattr(n, "elastic_text", None),
             bullets=getattr(n, "bullets", None),
+            title_color=getattr(n, "title_color", None) or "#0F172A",
+            subtitle_color=getattr(n, "subtitle_color", None) or "#64748B",
         )
         region_top = box.y + plan.region_top
         region_h = plan.region_h
@@ -981,7 +1112,7 @@ class PPTXCompiler:
 
     def _compile_badge(self, slide: Any, b: BadgeSpec, idx: int = 0) -> None:
         badge_id = b.id or f"badge_{idx}"
-        box = self.norm.to_inches(b.x, b.y, b.w, b.h)
+        box = self._to_target_box(b.x, b.y, b.w, b.h)
         pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(box.x), Inches(box.y), Inches(box.w), Inches(box.h))
         pill.name = f"badge:{badge_id}"
         pill.fill.solid()
@@ -1004,7 +1135,7 @@ class PPTXCompiler:
 
     def _compile_bullet_list(self, slide: Any, bl: BulletListSpec, idx: int = 0) -> None:
         bl_id = bl.id or f"bullet_list_{idx}"
-        box = self.norm.to_inches(bl.x, bl.y, bl.w, bl.h)
+        box = self._to_target_box(bl.x, bl.y, bl.w, bl.h)
         tb = slide.shapes.add_textbox(Inches(box.x), Inches(box.y), Inches(box.w), Inches(box.h))
         tb.name = f"bullet_list:{bl_id}"
         _flatten(tb)
@@ -1027,7 +1158,7 @@ class PPTXCompiler:
         pts: List[Point] = []
         all_boxes = {**self._container_boxes, **self._node_boxes}
         if f.points:
-            pts = [self.norm.point_to_inches(p) for p in f.points if len(p) >= 2]
+            pts = [self._fit_point(self.norm.point_to_inches(p)) for p in f.points if len(p) >= 2]
         elif f.source and f.target and f.source in all_boxes and f.target in all_boxes:
             src_box = all_boxes[f.source]
             tgt_box = all_boxes[f.target]
@@ -1035,8 +1166,8 @@ class PPTXCompiler:
                 src_box,
                 tgt_box,
                 curve=f.curve,
-                src_port=f.source_port,
-                tgt_port=f.target_port,
+                src_port=self._scale_port_for_target(f.source_port),
+                tgt_port=self._scale_port_for_target(f.target_port),
             )
 
         if len(pts) < 2:
@@ -1071,7 +1202,7 @@ class PPTXCompiler:
             is_vert = abs(p2[0] - p1[0]) < 0.05
 
             if f.label_at:
-                lx, ly = self.norm.point_to_inches(f.label_at)
+                lx, ly = self._fit_point(self.norm.point_to_inches(f.label_at))
             else:
                 lx = (best_seg[0][0] + best_seg[1][0]) / 2.0
                 ly = (best_seg[0][1] + best_seg[1][1]) / 2.0
@@ -1120,3 +1251,115 @@ class PPTXCompiler:
                 p.font.size = Pt(flow_font_pt)
                 p.font.bold = True
                 p.font.color.rgb = _hex_to_rgb(f.label_text_hex)
+
+
+def _atomic_save_presentation(prs: Presentation, target_path: Path) -> Path:
+    """
+    Saves a python-pptx Presentation atomically using sibling staging,
+    ZIP CRC-32 verification (`testzip()`), and `os.replace()`.
+    """
+    target_p = Path(target_path)
+    target_p.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = target_p.parent / f".tmp_{target_p.stem}_{uuid.uuid4().hex[:8]}.pptx"
+    try:
+        prs.save(str(tmp_path))
+        with zipfile.ZipFile(tmp_path, "r") as zf:
+            bad_member = zf.testzip()
+            if bad_member is not None:
+                raise zipfile.BadZipFile(f"Corrupt ZIP member after save: {bad_member}")
+        os.replace(tmp_path, target_p)
+        return target_p
+    except Exception:
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
+        raise
+
+
+def _purge_slide_shapes(slide: Any) -> int:
+    """
+    Removes all shape elements from a slide's DrawingML shape tree (`_spTree`)
+    while strictly preserving `nvGrpSpPr`, `grpSpPr`, background, layout, notes,
+    and master relationships.
+    """
+    sp_tree = slide.shapes._spTree
+    shape_tags = {"sp", "grpSp", "graphicFrame", "cxnSp", "pic", "contentPart"}
+    purged = 0
+    for elem in list(sp_tree):
+        local_tag = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
+        if local_tag in shape_tags:
+            sp_tree.remove(elem)
+            purged += 1
+    return purged
+
+
+def _purge_diagram_v2_shapes(slide: Any) -> int:
+    """
+    Selectively removes only Diagram Engine V2 shapes from a slide's shape tree (`_spTree`),
+    preserving non-Diagram-V2 shapes (template headers/footers, logos, placeholders, user boxes).
+    """
+    sp_tree = slide.shapes._spTree
+    purged = 0
+    for sh in list(slide.shapes):
+        name = getattr(sh, "name", "") or ""
+        if name in _DIAGRAM_V2_EXACT_SHAPE_NAMES or name.startswith(_DIAGRAM_V2_PREFIXES):
+            sp_tree.remove(sh._element)
+            purged += 1
+    return purged
+
+
+def replace_slide_in_presentation(
+    spec: DiagramSpec,
+    target_path: Union[str, Path],
+    slide_index: int = 1,
+    purge_all: bool = False,
+) -> Path:
+    """
+    Atomically replaces a single 1-based slide in an existing PowerPoint presentation
+    (or creates a new presentation if `target_path` does not exist and `slide_index == 1`),
+    preserving all sibling slides, layouts, notes, master formatting, and non-Diagram-V2
+    shapes unless `purge_all=True`.
+    """
+    if slide_index < 1:
+        raise ValueError(f"slide_index must be >= 1, got {slide_index}")
+
+    target_p = Path(target_path)
+    if not target_p.exists():
+        if slide_index != 1:
+            raise IndexError(
+                f"Cannot target slide {slide_index} on non-existent presentation '{target_p}'; create slide 1 first."
+            )
+        w_in, h_in = _canvas_dimensions_in(spec)
+        prs = Presentation()
+        prs.slide_width = Inches(w_in)
+        prs.slide_height = Inches(h_in)
+        blank_layout = prs.slide_layouts[6] if len(prs.slide_layouts) > 6 else prs.slide_layouts[-1]
+        slide = prs.slides.add_slide(blank_layout)
+        PPTXCompiler(spec).compile_slide(slide)
+        return _atomic_save_presentation(prs, target_p)
+
+    prs = Presentation(str(target_p))
+    num_slides = len(prs.slides)
+    if slide_index > num_slides + 1:
+        raise IndexError(
+            f"slide_index {slide_index} out of bounds for '{target_p.name}' ({num_slides} slide(s))."
+        )
+
+    target_w_in = (prs.slide_width / EMU_PER_INCH) if prs.slide_width else 13.333
+    target_h_in = (prs.slide_height / EMU_PER_INCH) if prs.slide_height else 7.5
+
+    if slide_index == num_slides + 1:
+        blank_layout = prs.slide_layouts[6] if len(prs.slide_layouts) > 6 else prs.slide_layouts[-1]
+        slide = prs.slides.add_slide(blank_layout)
+    else:
+        slide = prs.slides[slide_index - 1]
+        if purge_all:
+            _purge_slide_shapes(slide)
+        else:
+            _purge_diagram_v2_shapes(slide)
+
+    PPTXCompiler(spec, target_width_in=target_w_in, target_height_in=target_h_in).compile_slide(slide)
+    return _atomic_save_presentation(prs, target_p)
+

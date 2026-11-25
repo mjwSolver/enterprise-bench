@@ -7,6 +7,8 @@ status overlay badges, and cryptographic SHA-256 delivery manifests.
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 from typing import List, Optional
 
@@ -23,7 +25,10 @@ from src.core.delivery import (
     OverlayManager,
     OverlayStatus,
     PreflightGateError,
+    RemoteConflictError,
+    RemoteDriftGuard,
     RemoteLockConflictError,
+    RemoteLockSidecar,
     RemoteSyncEngine,
     StagingPipeline,
     SyncStatus,
@@ -174,8 +179,9 @@ def stage_status(
 def stage_preflight(
     directory: str = typer.Argument("output", help="Directory containing staged deliverables"),
     strict: bool = typer.Option(True, "--strict/--no-strict", help="Fail with exit code 1 if any gate fails or active locks exist"),
+    remote_drift: bool = typer.Option(False, "--remote-drift", help="Check pinned deliverables for out-of-band remote drift or locks"),
 ) -> None:
-    """Headless preflight verification (Gate 1 locks, Gate 2 badges, Gate 3 checksums & corruption)."""
+    """Headless preflight verification (Gate 1 locks, Gate 2 badges, Gate 3 checksums & corruption, optional remote drift)."""
     dir_path = Path(directory)
     if not dir_path.exists() or not dir_path.is_dir():
         rprint(f"[red]Error:[/red] Directory not found: {directory}")
@@ -185,7 +191,12 @@ def stage_preflight(
 
     rprint(f"[cyan]ℹ Running stage-gate preflight checks on:[/cyan] [bold]{directory}[/bold]")
     try:
-        report = pipeline.run_preflight(dir_path, fail_on_locks=strict, fail_on_draft=strict)
+        report = pipeline.run_preflight(
+            dir_path,
+            fail_on_locks=strict,
+            fail_on_draft=strict,
+            check_remote_drift=remote_drift,
+        )
     except DeliveryError as exc:
         rprint(f"[bold red]Preflight Error:[/bold red] {exc}")
         raise typer.Exit(code=1)
@@ -316,6 +327,9 @@ def stage_sync(
     dry_run: bool = typer.Option(False, "--dry-run", help="Simulate synchronization without writing or modifying files"),
     strict: bool = typer.Option(True, "--strict/--no-strict", help="Fail if active collaborative locks or lock collisions exist"),
     receipt: Optional[str] = typer.Option(None, "--receipt", "-r", help="Path to write .sync_receipt.json (defaults to <directory>/.sync_receipt.json)"),
+    cas: bool = typer.Option(False, "--cas", "--strict-cas", help="Enforce Compare-And-Set (CAS) remote revision guard (exit code 2 on drift)"),
+    user: Optional[str] = typer.Option(None, "--user", "-u", help="Operator or agent identity for remote lock sidecar checks"),
+    branch_on_conflict: bool = typer.Option(True, "--branch-on-conflict/--no-branch-on-conflict", help="Save remote copy as _REMOTE_<ts> on CAS conflict"),
 ) -> None:
     """Transmits staged deliverables from manifest to shared Google Drive target root."""
     dir_path = Path(directory)
@@ -348,6 +362,7 @@ def stage_sync(
                 SyncStatus.SKIPPED_IDENTICAL: "[dim cyan]UP-TO-DATE[/dim cyan]",
                 SyncStatus.DRY_RUN: "[yellow]DRY-RUN[/yellow]",
                 SyncStatus.LOCKED_CONFLICT: "[red]LOCKED[/red]",
+                SyncStatus.REMOTE_CONFLICT: "[red]CONFLICT[/red]",
                 SyncStatus.FAILED: "[red]FAILED[/red]",
             }.get(status, f"[dim]{status.value}[/dim]")
             rprint(f"  {meter} ({cur}/{tot}) {status_style} {fname}")
@@ -365,6 +380,9 @@ def stage_sync(
             fail_on_locks=strict,
             output_receipt_path=receipt,
             progress_callback=on_progress,
+            strict_cas=cas,
+            current_user=user,
+            branch_on_conflict=branch_on_conflict,
         )
 
         rprint("\n" + "=" * 70)
@@ -377,7 +395,10 @@ def stage_sync(
         if res.failed_count > 0:
             rprint(f"  Failed:           [bold red]{res.failed_count}[/bold red] file(s)")
         out_receipt = receipt or str(manifest_p.parent / ".sync_receipt.json")
-        rprint(f"  Receipt Ledger:   [bold green]{out_receipt}[/bold green]")
+        if dry_run:
+            rprint(f"  Receipt Ledger:   [dim]{out_receipt} (dry-run: not written)[/dim]")
+        else:
+            rprint(f"  Receipt Ledger:   [bold green]{out_receipt}[/bold green]")
         rprint("=" * 70)
 
         # Summary Table of Transmitted / Modified Items
@@ -408,6 +429,10 @@ def stage_sync(
         if res.failed_count > 0 and strict:
             raise typer.Exit(code=1)
 
+    except RemoteConflictError as exc:
+        rprint(f"\n[bold red]ABORT TRANSMISSION (RemoteConflictError):[/bold red]\n{exc}")
+        rprint("[yellow]Resolve via 3-way merge:[/yellow] [bold]bench stage merge-slide <spec.yaml> --remote <remote.pptx> --slide <num> --output <merged.pptx>[/bold]")
+        raise typer.Exit(code=2)
     except (LockConflictError, RemoteLockConflictError, PreflightGateError, SyncTransmissionError) as exc:
         rprint(f"\n[bold red]Sync Transmission Error:[/bold red] {exc}")
         raise typer.Exit(code=1)
@@ -424,6 +449,9 @@ def stage_push(
     dry_run: bool = typer.Option(False, "--dry-run", help="Simulate synchronization without writing or modifying files"),
     strict: bool = typer.Option(True, "--strict/--no-strict", help="Fail if active collaborative locks or lock collisions exist"),
     receipt: Optional[str] = typer.Option(None, "--receipt", "-r", help="Path to write .sync_receipt.json (defaults to <directory>/.sync_receipt.json)"),
+    cas: bool = typer.Option(False, "--cas", "--strict-cas", help="Enforce Compare-And-Set (CAS) remote revision guard (exit code 2 on drift)"),
+    user: Optional[str] = typer.Option(None, "--user", "-u", help="Operator or agent identity for remote lock sidecar checks"),
+    branch_on_conflict: bool = typer.Option(True, "--branch-on-conflict/--no-branch-on-conflict", help="Save remote copy as _REMOTE_<ts> on CAS conflict"),
 ) -> None:
     """Push staged deliverables to shared Google Drive target root (alias for bench stage sync)."""
     stage_sync(
@@ -436,5 +464,218 @@ def stage_push(
         dry_run=dry_run,
         strict=strict,
         receipt=receipt,
+        cas=cas,
+        user=user,
+        branch_on_conflict=branch_on_conflict,
     )
+
+
+@stage_app.command("pin")
+def stage_pin(
+    file: str = typer.Argument(..., help="Local deliverable path to pin"),
+    target: str = typer.Option(..., "--target", "-t", help="Remote Drive destination file path"),
+    user: str = typer.Option(..., "--user", "-u", help="Operator or agent identity"),
+    file_id: Optional[str] = typer.Option(None, "--file-id", help="Optional Google Drive file ID"),
+    receipt: Optional[str] = typer.Option(None, "--receipt", "-r", help="Path to .sync_receipt.json"),
+) -> None:
+    """Record a remote revision baseline pin into .sync_receipt.json for CAS protection."""
+    local_p = Path(file)
+    receipt_p = Path(receipt) if receipt else local_p.parent / ".sync_receipt.json"
+    try:
+        pin = RemoteDriftGuard.pin_checkout(
+            receipt_path=receipt_p,
+            local_path=local_p,
+            target_drive_path=target,
+            checkout_user=user,
+            file_id=file_id,
+        )
+        rprint(f"[green]✓ Pinned remote baseline:[/green] [bold]{local_p.name}[/bold]")
+        rprint(f"  Revision: {pin.base_revision_id} | MD5: {pin.base_md5[:12]}...")
+        rprint(f"  Receipt:  [bold]{receipt_p}[/bold]")
+    except Exception as exc:
+        rprint(f"[bold red]Pin Error:[/bold red] {exc}")
+        raise typer.Exit(code=1)
+
+
+@stage_app.command("merge-slide")
+def stage_merge_slide(
+    spec: str = typer.Argument(..., help="Path to Diagram V2 YAML specification for the local slide"),
+    remote: str = typer.Option(..., "--remote", "-r", help="Path to diverged remote PPTX (_REMOTE_*.pptx)"),
+    slide: int = typer.Option(1, "--slide", "-s", help="1-based slide index to replace with compiled local spec"),
+    output: str = typer.Option(..., "--output", "-o", help="Merged output PPTX path"),
+) -> None:
+    """Phase 3 Slide-Level 3-Way Merge: preserve remote sibling slides while updating target slide from YAML."""
+    try:
+        out_p = RemoteDriftGuard.reconcile_three_way_slide(
+            spec_path=spec,
+            remote_pptx_path=remote,
+            slide_index=slide,
+            output_path=output,
+        )
+        rprint(f"[green]✓ 3-Way Slide Merge complete:[/green] [bold]{out_p}[/bold] (Slide {slide} updated; sibling slides preserved)")
+    except Exception as exc:
+        rprint(f"[bold red]Merge Error:[/bold red] {exc}")
+        raise typer.Exit(code=1)
+
+
+def _resolve_remote_dir_and_filename(
+    target: str,
+    remote_dir: Optional[str],
+) -> tuple[Path, str]:
+    """Resolves `(remote_dir, filename)` from `<target>` and optional `--remote-dir`."""
+    cleaned = (target or "").strip()
+    if not cleaned:
+        raise ValueError("Target deliverable path/filename must be non-empty.")
+    raw_segments = re.split(r"[/\\]", cleaned)
+    if cleaned.endswith(("/", "\\")) or raw_segments[-1] in {"", ".", ".."}:
+        raise ValueError(f"Target '{target}' appears to be a directory path, not a deliverable file.")
+    tp = Path(cleaned)
+    if not tp.name or tp.name in {".", ".."}:
+        raise ValueError(f"Target '{target}' is not a valid deliverable filename.")
+    if remote_dir:
+        rdir = Path(remote_dir)
+        if rdir.exists() and not rdir.is_dir():
+            raise ValueError(f"Remote directory path is not a directory: '{rdir}'.")
+        rdir_res = rdir.resolve()
+        if tp.is_absolute():
+            if not tp.resolve().is_relative_to(rdir_res):
+                raise ValueError(f"Target '{target}' is outside remote directory '{rdir}'.")
+            if tp.is_dir():
+                raise ValueError(f"Target '{target}' is a directory, not a deliverable file.")
+            return tp.parent, tp.name
+        resolved_target = rdir / tp
+        if not resolved_target.resolve().is_relative_to(rdir_res):
+            raise ValueError(f"Target '{target}' escapes remote directory '{rdir}'.")
+        if resolved_target.is_dir():
+            raise ValueError(f"Target '{target}' resolves to a directory in '{rdir}', not a deliverable file.")
+        return resolved_target.parent, resolved_target.name
+    if tp.is_dir():
+        raise ValueError(f"Target '{target}' is a directory, not a deliverable file.")
+    if "/" in cleaned or "\\" in cleaned:
+        return tp.parent, tp.name
+    raise ValueError("Bare filename requires '--remote-dir / -d' to specify the remote directory.")
+
+
+@stage_app.command("lock-remote")
+def stage_lock_remote(
+    file: str = typer.Argument(..., help="Remote deliverable path or bare filename"),
+    remote_dir: Optional[str] = typer.Option(None, "--remote-dir", "-d", help="Remote Drive folder containing the deliverable (required if <file> is a bare filename)"),
+    user: str = typer.Option(..., "--user", "-u", help="Operator or agent identity acquiring the lock"),
+    ttl: int = typer.Option(7200, "--ttl", help="Lock time-to-live in seconds (must be > 0)"),
+    reason: Optional[str] = typer.Option(None, "--reason", "-r", help="Optional reason for locking"),
+    force: bool = typer.Option(False, "--force", "-f", help="Acquire lock sidecar even if another user holds an active lock"),
+) -> None:
+    """Acquires an advisory remote lock sidecar (`._LOCKED_*.json`) in a shared Drive directory."""
+    try:
+        rdir, fname = _resolve_remote_dir_and_filename(file, remote_dir)
+        lock_path = RemoteDriftGuard.acquire_remote_lock_sidecar(
+            remote_dir=rdir,
+            file_name=fname,
+            user=user,
+            ttl_seconds=ttl,
+            reason=reason,
+            fail_on_conflict=not force,
+        )
+        rprint(f"[green]✓ Remote lock sidecar acquired:[/green] [bold]{fname}[/bold]")
+        rprint(f"  Owner:   [bold cyan]{user}[/bold cyan]")
+        rprint(f"  TTL:     {ttl}s")
+        if reason:
+            rprint(f"  Reason:  {reason}")
+        rprint(f"  Sidecar: [bold]{lock_path}[/bold]")
+    except (ValueError, RemoteLockConflictError, DeliveryError) as exc:
+        rprint(f"[bold red]Remote Lock Error:[/bold red] {exc}")
+        raise typer.Exit(code=1)
+
+
+@stage_app.command("unlock-remote")
+def stage_unlock_remote(
+    target: str = typer.Argument(..., help="Explicit sidecar path (`._LOCKED_*.json`) or remote deliverable path/filename"),
+    remote_dir: Optional[str] = typer.Option(None, "--remote-dir", "-d", help="Remote Drive folder when <target> is a bare filename"),
+    user: Optional[str] = typer.Option(None, "--user", "-u", help="Operator identity for ownership verification"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force release even if locked by another user"),
+) -> None:
+    """Releases remote lock sidecar(s) (`._LOCKED_*.json`) cleanly with ownership validation."""
+    cleaned_target = (target or "").strip()
+    if not cleaned_target:
+        rprint("[bold red]Remote Unlock Error:[/bold red] Target path or filename must be non-empty.")
+        raise typer.Exit(code=1)
+    raw_segments = re.split(r"[/\\]", cleaned_target)
+    if cleaned_target.endswith(("/", "\\")) or raw_segments[-1] in {"", ".", ".."}:
+        rprint(f"[bold red]Remote Unlock Error:[/bold red] Target '{target}' is a directory path, not a deliverable file or sidecar.")
+        raise typer.Exit(code=1)
+
+    if (user is None or not user.strip()) and not force:
+        rprint(
+            "[bold red]Remote Unlock Error:[/bold red] Unlocking requires "
+            "[bold]--user / -u[/bold] or [bold]--force / -f[/bold]."
+        )
+        raise typer.Exit(code=1)
+
+    tp = Path(cleaned_target)
+    is_explicit_sidecar = tp.name.startswith("._LOCKED_") and tp.suffix == ".json"
+
+    try:
+        if is_explicit_sidecar:
+            if remote_dir:
+                rdir = Path(remote_dir)
+                if rdir.exists() and not rdir.is_dir():
+                    raise ValueError(f"Remote directory path is not a directory: '{rdir}'.")
+                lock_p = tp if tp.is_absolute() else (rdir / tp)
+                if not lock_p.resolve().is_relative_to(rdir.resolve()):
+                    raise ValueError(f"Sidecar path '{target}' escapes remote directory '{rdir}'.")
+            else:
+                lock_p = tp
+            if lock_p.is_dir():
+                rprint(f"[bold red]Remote Unlock Error:[/bold red] Target is a directory, not a sidecar file: {lock_p}")
+                raise typer.Exit(code=1)
+            released = RemoteDriftGuard.release_remote_lock_sidecar(
+                lock_p,
+                user=user,
+                force=force,
+            )
+            if not released:
+                rprint(f"[bold red]Remote Unlock Error:[/bold red] Sidecar not found: {lock_p}")
+                raise typer.Exit(code=1)
+            rprint(f"[green]✓ Remote lock sidecar released:[/green] [bold]{lock_p}[/bold]")
+            return
+
+        rdir, fname = _resolve_remote_dir_and_filename(cleaned_target, remote_dir)
+        if not rdir.exists() or not rdir.is_dir():
+            rprint(f"[bold red]Remote Unlock Error:[/bold red] Remote directory not found: {rdir}")
+            raise typer.Exit(code=1)
+
+        matching_sidecars: List[tuple[Path, RemoteLockSidecar]] = []
+        for cand in sorted(rdir.glob("._LOCKED_*.json")):
+            try:
+                raw = json.loads(cand.read_text(encoding="utf-8"))
+                sidecar = RemoteLockSidecar.model_validate(raw)
+                if Path(sidecar.file_name).name == fname:
+                    matching_sidecars.append((cand, sidecar))
+            except Exception:
+                continue
+
+        if not matching_sidecars:
+            rprint(f"[bold red]Remote Unlock Error:[/bold red] No active remote lock sidecars found for '{fname}' in '{rdir}'.")
+            raise typer.Exit(code=1)
+
+        released_paths: List[Path] = []
+        foreign_owners: List[str] = []
+        for cand, sidecar in matching_sidecars:
+            if not force and user is not None and sidecar.locked_by.strip().lower() != user.strip().lower():
+                foreign_owners.append(sidecar.locked_by)
+                continue
+            if RemoteDriftGuard.release_remote_lock_sidecar(cand, user=user, force=force):
+                released_paths.append(cand)
+
+        if not released_paths:
+            owners_str = ", ".join(sorted(set(foreign_owners))) or "unknown"
+            raise LockOwnershipError(
+                f"Cannot unlock '{fname}': locked by '{owners_str}', requested by '{user}'. Pass --force to override."
+            )
+
+        for rp in released_paths:
+            rprint(f"[green]✓ Remote lock sidecar released:[/green] [bold]{rp}[/bold]")
+    except (ValueError, LockOwnershipError, DeliveryError) as exc:
+        rprint(f"[bold red]Remote Unlock Error:[/bold red] {exc}")
+        raise typer.Exit(code=1)
 

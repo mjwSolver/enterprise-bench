@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
 
 
 
@@ -126,10 +126,15 @@ class ContainerSpec(BaseModel):
     """Zone boundary or swimlane container enclosing entity cards."""
     id: str
     label: str
-    x: float
-    y: float
-    w: float
-    h: float
+    x: Optional[float] = None
+    y: Optional[float] = None
+    w: Optional[float] = None
+    h: Optional[float] = None
+    box: Optional[Union[List[float], Literal["auto"]]] = None
+    layout: Optional[Literal["horizontal", "vertical", "grid", "none"]] = None
+    gap: float = 0.25
+    padding: float = 0.22
+    columns: Optional[int] = None
     role: Optional[str] = None
     border_hex: str = "#94A3B8"
     fill_hex: str = "#F8FAFC"
@@ -150,16 +155,45 @@ class ContainerSpec(BaseModel):
     icon: Optional[str] = None
     icon_emoji: Optional[str] = None
     allow_dense_typography: bool = False  # Explicit bypass valve allowing typography down to 8pt (Gear 3 appendix/reading decks)
+    _unit: Optional[str] = PrivateAttr(default=None)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _unpack_box_and_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            data = dict(data)
+            box_val = data.get("box")
+            if box_val is not None:
+                if isinstance(box_val, str) and box_val.strip().lower() == "auto":
+                    data["box"] = None
+                elif isinstance(box_val, (list, tuple)):
+                    if len(box_val) == 4:
+                        data.setdefault("x", box_val[0])
+                        data.setdefault("y", box_val[1])
+                        data.setdefault("w", box_val[2])
+                        data.setdefault("h", box_val[3])
+                        data["box"] = None
+                    else:
+                        raise ValueError(
+                            f"ContainerSpec 'box' must be 'auto' or a 4-element [x, y, w, h] sequence, got length {len(box_val)}."
+                        )
+        return data
 
     def resolved_vertical_align(self) -> str:
         if self.vertical_align is not None and self.vertical_align in ("top", "bottom", "middle"):
             return self.vertical_align
-        return "bottom" if self.h >= 4.0 else "top"
+        if self.h is None:
+            return "top"
+        _, h_in = _normalize_dim_pair_to_in(self.w, self.h, 2.0, 1.25, w_unit=self._unit, h_unit=self._unit)
+        return "bottom" if h_in >= 4.0 else "top"
 
     def resolved_align(self) -> str:
         if self.align is not None and self.align in ("left", "center", "right"):
             return self.align
-        return "center" if self.w <= 2.0 else "left"
+        if self.w is None:
+            return "center"
+        w_in, _ = _normalize_dim_pair_to_in(self.w, self.h, 2.0, 1.25, w_unit=self._unit, h_unit=self._unit)
+        return "center" if w_in <= 2.0 else "left"
 
     def apply_contrast_auto_inversion(self) -> None:
         """Auto-invert font color on perceptually dark background fills."""
@@ -178,6 +212,35 @@ class ContainerSpec(BaseModel):
 
 
 
+def _normalize_dim_pair_to_in(
+    raw_w: Optional[float],
+    raw_h: Optional[float],
+    default_w_in: float = 2.0,
+    default_h_in: float = 1.25,
+    w_unit: Optional[str] = None,
+    h_unit: Optional[str] = None,
+) -> Tuple[float, float]:
+    """
+    Normalize (raw_w, raw_h) independently per axis before applying inch defaults.
+    When an explicit unit ('in', 'px', 'pt') is known, follow it directly; otherwise
+    values > 45.0 are px/pt and values in (25.0, 45.0] scale only when paired with a > 25.0 peer.
+    """
+    def _is_axis_px(val: float, peer: Optional[float], unit: Optional[str]) -> bool:
+        if unit is not None:
+            return unit.lower().strip() != "in"
+        if val > 45.0:
+            return True
+        if val > 25.0:
+            return peer is not None and peer > 25.0
+        return False
+
+    w_val = float(raw_w) if raw_w is not None else None
+    h_val = float(raw_h) if raw_h is not None else None
+    w_out = (w_val / 90.0 if _is_axis_px(w_val, h_val, w_unit) else w_val) if w_val is not None else default_w_in
+    h_out = (h_val / 90.0 if _is_axis_px(h_val, w_val, h_unit) else h_val) if h_val is not None else default_h_in
+    return w_out, h_out
+
+
 def classify_geometric_tier(w_in: float, h_in: float) -> str:
     """
     Classify node dimensions (in inches) into 4-tier geometric scale:
@@ -185,9 +248,7 @@ def classify_geometric_tier(w_in: float, h_in: float) -> str:
     - Tier B: Compact Card / Section Header Banner (0.50 <= h < 1.15 or h >= 1.15, w < 1.00)
     - Tier C: Sequential Process / Micro-Step Pill (h < 0.50)
     """
-    if w_in > 25.0 or h_in > 25.0:
-        w_in = w_in / 90.0
-        h_in = h_in / 90.0
+    w_in, h_in = _normalize_dim_pair_to_in(w_in, h_in)
     if h_in >= 1.15 and w_in >= 1.00:
         return "Tier A"
     elif h_in >= 0.50:
@@ -219,10 +280,11 @@ class NodeSpec(BaseModel):
     kicker: Optional[str] = None
     shape: str = "rounded"  # "rounded", "rect", "cylinder", "database", "circle", "pill"
     role: Optional[str] = None
-    x: float
-    y: float
-    w: float
+    x: Optional[float] = None
+    y: Optional[float] = None
+    w: Optional[float] = None
     h: Optional[float] = None  # None = auto-measure proportional height
+    box: Optional[Union[List[float], Literal["auto"]]] = None
     icon: Optional[str] = None  # Asset path, vendor slug (e.g. "aws:aws_lambda"), or SVG path
     icon_emoji: Optional[str] = None  # Deprecated (Zero-Emoji invariant forbids emojis; use SVG `icon` instead)
     icon_layout: str = "auto"  # "auto", "stack", "side"
@@ -240,13 +302,41 @@ class NodeSpec(BaseModel):
     shadow: bool = False
     valign: Literal["middle", "top", "bottom"] = "middle"
     align: Literal["center", "left", "right"] = "center"
+    _unit: Optional[str] = PrivateAttr(default=None)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _unpack_box_and_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            data = dict(data)
+            if "container" in data and "container_id" not in data:
+                data["container_id"] = data["container"]
+            box_val = data.get("box")
+            if box_val is not None:
+                if isinstance(box_val, str) and box_val.strip().lower() == "auto":
+                    data["box"] = None
+                elif isinstance(box_val, (list, tuple)):
+                    if len(box_val) == 4:
+                        data.setdefault("x", box_val[0])
+                        data.setdefault("y", box_val[1])
+                        data.setdefault("w", box_val[2])
+                        data.setdefault("h", box_val[3])
+                        data["box"] = None
+                    else:
+                        raise ValueError(
+                            f"NodeSpec 'box' must be 'auto' or a 4-element [x, y, w, h] sequence, got length {len(box_val)}."
+                        )
+        return data
 
     def resolved_title_pt(self, w_in: Optional[float] = None, h_in: Optional[float] = None) -> float:
         """Returns explicitly declared title_pt or canonical tier-based default."""
         if self.title_pt is not None:
             return float(self.title_pt)
-        eff_w = w_in if w_in is not None else self.w
-        eff_h = h_in if h_in is not None else (self.h if self.h is not None else 1.25)
+        raw_w = w_in if w_in is not None else self.w
+        raw_h = h_in if h_in is not None else self.h
+        w_unit = "in" if w_in is not None else self._unit
+        h_unit = "in" if h_in is not None else self._unit
+        eff_w, eff_h = _normalize_dim_pair_to_in(raw_w, raw_h, 2.0, 1.25, w_unit=w_unit, h_unit=h_unit)
         tier = classify_geometric_tier(eff_w, eff_h)
         return CANONICAL_TYPOGRAPHIC_SCALE[tier]["title_pt"]
 
@@ -254,8 +344,11 @@ class NodeSpec(BaseModel):
         """Returns explicitly declared subtitle_pt or canonical tier-based default."""
         if self.subtitle_pt is not None:
             return float(self.subtitle_pt)
-        eff_w = w_in if w_in is not None else self.w
-        eff_h = h_in if h_in is not None else (self.h if self.h is not None else 1.25)
+        raw_w = w_in if w_in is not None else self.w
+        raw_h = h_in if h_in is not None else self.h
+        w_unit = "in" if w_in is not None else self._unit
+        h_unit = "in" if h_in is not None else self._unit
+        eff_w, eff_h = _normalize_dim_pair_to_in(raw_w, raw_h, 2.0, 1.25, w_unit=w_unit, h_unit=h_unit)
         tier = classify_geometric_tier(eff_w, eff_h)
         return CANONICAL_TYPOGRAPHIC_SCALE[tier].get("subtitle_pt", 9.0)
 
@@ -303,11 +396,11 @@ def resolve_node_fonts(
     Resolves final rendered (title_pt, subtitle_pt, space_before_pt) for a node.
     Applies canonical tier defaults and Elastic Typography Auto-Fill when qualified.
     """
-    eff_w = w_in if w_in is not None else node.w
-    eff_h = h_in if h_in is not None else (node.h if node.h is not None else 1.25)
-    if eff_w > 25.0 or eff_h > 25.0:
-        eff_w = eff_w / 90.0
-        eff_h = eff_h / 90.0
+    raw_w = w_in if w_in is not None else node.w
+    raw_h = h_in if h_in is not None else node.h
+    w_unit = "in" if w_in is not None else getattr(node, "_unit", None)
+    h_unit = "in" if h_in is not None else getattr(node, "_unit", None)
+    eff_w, eff_h = _normalize_dim_pair_to_in(raw_w, raw_h, 2.0, 1.25, w_unit=w_unit, h_unit=h_unit)
 
     t_pt = node.resolved_title_pt(eff_w, eff_h)
     s_pt = node.resolved_subtitle_pt(eff_w, eff_h)
@@ -525,6 +618,8 @@ class DiagramSpec(BaseModel):
     flows: List[FlowSpec] = Field(default_factory=list)
     badges: List[BadgeSpec] = Field(default_factory=list)
     bullet_lists: List[BulletListSpec] = Field(default_factory=list)
+    layout: Optional[Literal["horizontal", "vertical", "grid", "auto"]] = None
+    container_gap: float = 0.55
     allow_dense_typography: bool = False  # Global diagram-level bypass valve for dense appendix slides
 
     @model_validator(mode="before")
@@ -540,6 +635,12 @@ class DiagramSpec(BaseModel):
         return data
 
     def model_post_init(self, __context: Any) -> None:
+        unit = (self.canvas.unit or "in").lower().strip()
+        for node in self.nodes:
+            node._unit = unit
+        for container in self.containers:
+            container._unit = unit
+
         try:
             from src.ppt_engine.theme_engine import load_theme
         except ImportError:
@@ -610,6 +711,25 @@ class DiagramSpec(BaseModel):
             for container in self.containers:
                 if hasattr(container, "apply_contrast_auto_inversion"):
                     container.apply_contrast_auto_inversion()
+
+        # Run 2D constraint & flexbox auto-layout solver if coordinates are omitted
+        try:
+            from src.ppt_engine.diagram_v2.layout_solver import needs_auto_layout, solve_diagram_layout
+        except ImportError:
+            try:
+                from .layout_solver import needs_auto_layout, solve_diagram_layout
+            except ImportError:
+                needs_auto_layout = None  # type: ignore[assignment]
+                solve_diagram_layout = None  # type: ignore[assignment]
+
+        if needs_auto_layout is not None and solve_diagram_layout is not None:
+            if needs_auto_layout(self):
+                solve_diagram_layout(self)
+
+        for node in self.nodes:
+            node._unit = unit
+        for container in self.containers:
+            container._unit = unit
 
         # Apply comprehensive Readability & Contrast Subsystem pass (WCAG 2.1 compliance,
         # faded text elimination on light backgrounds, borderless layout protection)

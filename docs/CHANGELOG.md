@@ -4,6 +4,25 @@ This document serves as the **authoritative, chronological historical ledger** o
 
 ---
 
+## [2026-11-24] - Tier 34 Backlog Sweep — Hot-Reload, Auto-Layout, Mermaid Ingest, Remote Guard & WCAG QA *(Pending Sign-Off)*
+
+**Timestamp:** `2026-11-24T20:15:00+07:00`
+
+### Summary
+Implemented and hardened the Tier 34 backlog sweep across Diagram Engine V2, Consulting Deck Archetypes, Remote Delivery Sync, and Visual QA (uncommitted on `main`, awaiting final user sign-off).
+
+### Milestones Delivered
+- **Single-Command Atomic Desktop Hot-Reload (`powerpoint_desktop.py`, `src/cli/diagram_v2.py`):** Added canonical full-path window matching (`_canonical_path_pair`), `replace_slide_in_presentation`, and `bench diagram v2 compile --target <deck.pptx> --slide <num> --pop`.
+- **2D Constraint & Flexbox Auto-Layout Solver (`layout_solver.py`, `src/cli/diagram_v2.py`):** Added optional `box`/`x/y/w/h` coordinates, topological layering, corridor span enforcement, pinned dimension handling, `px` normalization, and `bench diagram v2 layout`.
+- **Mermaid-to-YAML AST Transpiler (`mermaid_transpiler.py`, `src/cli/diagram_v2.py`):** Implemented `bench diagram v2 ingest` reusing `MermaidParser` + auto-layout.
+- **Consulting Deck Deep Integration (`architecture.py`, `deck_builder.py`, `pitch_deck.py`, `catalog.py`):** Wired `build_diagram_v2_slide`, `ConsultingDeckBuilder.add_diagram_v2_slide`, `PitchDeckBuilder`, and `ARCHETYPE_REGISTRY`.
+- **Multi-Track Enterprise Template Harvesting (`specs/diagrams/`):** Added `template_medallion_architecture.yaml`, `template_active_active_dr.yaml`, and `template_streaming_cdc_telemetry.yaml`.
+- **Remote Cloud Drift & Race Condition Guard (`remote_guard.py`, `sync.py`, `src/cli/stage.py`):** Implemented OCC checkout tokens, sidecar Drive locks, CAS push (`bench stage push --cas`, `pin`, `merge-slide`, `lock-remote`, `unlock-remote`, `preflight --remote-drift`), and `bench diagram v2 watch --remote-drift`.
+- **Perceptual Visual QA Expansion (`visual_verifier.py`):** Added `audit_wcag_and_legibility` for WCAG AA contrast and 1080p/720p multi-resolution legibility scanning.
+- **Reference Handover:** [`docs/handovers/2026-11-24_tier34_backlog_sweep_and_hardening.md`](handovers/2026-11-24_tier34_backlog_sweep_and_hardening.md)
+
+---
+
 ## [2026-10-26] - Release 5: v2.2 — Declarative Architecture Guardrails & Native Inspection/Patching Engine (Tier 31)
 
 **Timestamp:** `2026-10-26T14:25:00+07:00`
